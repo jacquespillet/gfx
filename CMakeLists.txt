@@ -8,6 +8,16 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILE_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LINK_FLAGS}")
 set(CMAKE_CXX_STANDARD 17)
 add_compile_definitions(_GLFW_WIN32 GLFW_EXPOSE_NATIVE_WIN32 VK_USE_PLATFORM_WIN32_KHR)
+
+set(API_GL 0)
+set(API_VK 1)
+set(API_D3D12 2)
+add_definitions(-DGL=${API_GL})
+add_definitions(-DVK=${API_VK})
+add_definitions(-DD3D12=${API_D3D12})
+
+add_definitions(-DAPI=${API_VK})
+
 # include_directories("common/")
 
 ################################################
@@ -18,9 +28,9 @@ add_compile_definitions(_GLFW_WIN32 GLFW_EXPOSE_NATIVE_WIN32 VK_USE_PLATFORM_WIN
 # Third parties
 ################
 
-# # GLM
-# set(GLM_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glm)
-# include_directories(${GLM_INC_DIR})
+# GLM
+set(GLM_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glm)
+include_directories(${GLM_INC_DIR})
 
 # # stb
 # set(STB_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/stb)
@@ -67,27 +77,27 @@ link_directories(${GLFW_LIB_DIR})
 # include_directories(${VOLK_INC_DIR})
 
 # Vulkan
-# set(VULKAN_LIB_DIR $ENV{VULKAN_SDK}/Lib)
-# set(VULKAN_INC_DIR $ENV{VULKAN_SDK}/Include)
-# set(VULKAN_BIN_DIR $ENV{VULKAN_SDK}/Bin)
-# include_directories(${VULKAN_INC_DIR})
-# link_directories(${VULKAN_LIB_DIR})
+set(VULKAN_LIB_DIR $ENV{VULKAN_SDK}/Lib)
+set(VULKAN_INC_DIR $ENV{VULKAN_SDK}/Include)
+set(VULKAN_BIN_DIR $ENV{VULKAN_SDK}/Bin)
+include_directories(${VULKAN_INC_DIR})
+link_directories(${VULKAN_LIB_DIR})
 
-# # Vma
-# set(VMA_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/vma/include)
-# set(VMA_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/vma/lib)
-# include_directories(${VMA_INC_DIR})
-# link_directories(${VMA_LIB_DIR})
+# Vma
+set(VMA_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/vma/include)
+set(VMA_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/vma/lib)
+include_directories(${VMA_INC_DIR})
+link_directories(${VMA_LIB_DIR})
 
 # # Vma
 # set(WYHASH_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/wyhash)
 # include_directories(${WYHASH_INC_DIR})
 
-# # glslang
-# set(GLSLANG_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang/include/glslang)
-# set(GLSLANG_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang/lib)
-# include_directories(${GLSLANG_INC_DIR})
-# link_directories(${GLSLANG_LIB_DIR})
+# glslang
+set(GLSLANG_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang/include/glslang)
+set(GLSLANG_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang/lib)
+include_directories(${GLSLANG_INC_DIR})
+link_directories(${GLSLANG_LIB_DIR})
 
 # # spirv_reflect
 # set(SPIRVREFLECT_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/spirv-reflect)
@@ -107,12 +117,29 @@ link_directories(${GLFW_LIB_DIR})
 
 set(sourceCode
         src/Main.cpp
+
+        src/Gfx/VK/GfxContext.cpp
+        
+        src/App/Window.cpp
+
         ${VOLK_SOURCE}
 )
                 
 add_executable(Main ${sourceCode})
 target_link_libraries(Main glfw3)
-
+target_link_libraries(Main vulkan-1)
+target_link_libraries(Main debug VulkanMemoryAllocatord optimized VulkanMemoryAllocator)
+target_link_libraries(Main 
+                        debug OSDependentd.lib optimized OSDependent.lib
+                        debug SPIRVd.lib optimized SPIRV.lib
+                        debug glslangd.lib optimized glslang.lib
+                        debug MachineIndependentd.lib optimized MachineIndependent.lib
+                        debug SPVRemapperd.lib optimized SPVRemapper.lib
+                        debug GenericCodeGend.lib optimized GenericCodeGen.lib
+                        debug glslang-default-resource-limitsd.lib optimized glslang-default-resource-limits.lib
+                        debug HLSLd.lib optimized HLSL.lib
+                        debug OGLCompilerd.lib optimized OGLCompiler.lib
+                        )
 install(TARGETS Main
         RUNTIME
         DESTINATION bin)
