@@ -41,11 +41,11 @@ set(CMAKE_CXX_STANDARD 17)
 # )
 # include_directories(${IMGUI_INC_DIR})
 
-# # Glfw
-# set(GLFW_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/include)
-# set(GLFW_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/lib)
-# include_directories(${GLFW_INC_DIR})
-# link_directories(${GLFW_LIB_DIR})
+# Glfw
+set(GLFW_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/build/install/include)
+set(GLFW_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/build/install/lib)
+include_directories(${GLFW_INC_DIR})
+link_directories(${GLFW_LIB_DIR})
 
 # # ASSIMP
 # set(ASSIMP_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/assimp/include)
@@ -61,11 +61,12 @@ set(CMAKE_CXX_STANDARD 17)
 # include_directories(${GLEW_INC_DIR})
 # link_directories(${GLEW_LIB_DIR})
 
-# # Vulkan
-# set(VULKAN_INC_DIR $ENV{VULKAN_SDK}/Include)
-# set(VULKAN_LIB_DIR $ENV{VULKAN_SDK}/Lib)
-# include_directories(${VULKAN_INC_DIR})
-# link_directories(${VULKAN_LIB_DIR})
+# Vulkan
+set(VULKAN_INC_DIR $ENV{VULKAN_SDK}/Include)
+set(VULKAN_LIB_DIR $ENV{VULKAN_SDK}/Lib)
+set(VULKAN_BIN_DIR $ENV{VULKAN_SDK}/Bin)
+include_directories(${VULKAN_INC_DIR})
+link_directories(${VULKAN_LIB_DIR})
 
 # # Vma
 # set(VMA_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/vma/include)
@@ -94,34 +95,27 @@ set(CMAKE_CXX_STANDARD 17)
 # include_directories(${TLSF_INC_DIR})
 
 
-#opengl Lib
-set(libSource
-        lib/Test.cpp
-)
-include_directories("lib")
-add_library(dbLib STATIC ${libSource})
-
-install(TARGETS dbLib
-ARCHIVE DESTINATION lib/dbLib/lib
-RUNTIME DESTINATION bin)
-
 
 ################################################
 ##########      Test              ##############
 ################################################
 
-set(libTestSource
-        test/Main.cpp
+set(sourceCode
+        src/Main.cpp
 )
                 
-add_executable(test ${libTestSource})
-target_link_libraries(test dbLib)
-set_property(TARGET test PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
+add_executable(Main ${sourceCode})
+target_link_libraries(Main glfw3)
+target_link_libraries(Main vulkan-1)
 
-install(TARGETS test
+install(TARGETS Main
         RUNTIME
         DESTINATION bin)
+
+add_custom_command(TARGET Main PRE_BUILD COMMAND ${VULKAN_BIN_DIR}/glslc.exe resources/shaders/glsl/triangle.vert -fshader-stage=vertex -o resources/shaders/spirv/triangle.vert.spv  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_custom_command(TARGET Main PRE_BUILD COMMAND ${VULKAN_BIN_DIR}/glslc.exe resources/shaders/glsl/triangle.frag -fshader-stage=fragment -o resources/shaders/spirv/triangle.frag.spv  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources/
         DESTINATION bin/resources
 )
+
