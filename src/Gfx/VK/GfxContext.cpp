@@ -4,14 +4,16 @@
 #include <optional>
 #include <iostream>
 #include <algorithm>
-#include <vk_mem_alloc.h>
 #include <glslang/Public/ShaderLang.h>
 
-#include "../Include/GfxContext.h"
 #include "../../App/App.h"
-#include "Mapping.h"
+#include "../Include/GfxContext.h"
 #include "../Include/Image.h"
+#include "../Include/CommandBuffer.h"
+#include "Mapping.h"
 #include "VkImage.h"
+#include "VkCommandBuffer.h"
+#include "VkGfxContext.h"
 
 #define GET_CONTEXT(data, context) \
     vkData *data = (vkData*)context->ApiContextData; \
@@ -21,45 +23,6 @@ namespace gfx
 {
 
 context* context::Singleton= nullptr;
-
-struct vkData
-{
-    vk::Instance Instance;
-    u32 ApiVersion;
-    vk::SurfaceKHR Surface;
-    
-    vk::PhysicalDevice PhysicalDevice;
-    vk::PhysicalDeviceProperties PhysicalDeviceProperties;
-    
-    u32 QueueFamilyIndex;
-
-    vk::PresentModeKHR SurfacePresentMode;
-    u32 PresentImageCount;
-    vk::SurfaceFormatKHR SurfaceFormat;
-
-    vk::Device Device;
-    vk::Queue DeviceQueue;
-
-    vk::DispatchLoaderDynamic DynamicLoader;
-
-    vk::DebugUtilsMessengerEXT DebugUtilsMessenger;
-
-    VmaAllocator Allocator;
-
-    vk::Semaphore ImageAvailableSemaphore;
-    vk::Semaphore RenderingFinishedSemaphore;
-    vk::Fence ImmediateFence;
-
-    vk::CommandPool CommandPool;
-    // commandBuffer ImmediateCommandBuffer{{}};
-
-    vk::Extent2D SurfaceExtent;
-
-    vk::SwapchainKHR Swapchain;
-    std::vector<image*> SwapchainImages;
-    std::vector<imageUsage::bits> SwapchainImageUsages;
-};
-
 
 context *context::Get()
 {
@@ -414,13 +377,13 @@ context* context::Initialize(context::initializeInfo &InitializeInfo, app::windo
                              .setCommandPool(VkData->CommandPool)
                              .setCommandBufferCount(1);
     
-    // VkData->ImmediateCommandBuffer = commandBuffer(VkData->Device.allocateCommandBuffers(CommandBufferAllocateInfo).front());
-    // InitializeInfo.InfoCallback("Created Command Buffer");
+    VkData->ImmediateCommandBuffer = CreateVkCommandBuffer(VkData->Device.allocateCommandBuffers(CommandBufferAllocateInfo).front());
+    InitializeInfo.InfoCallback("Created Command Buffer");
 
     // //Initialize descriptor cache
     // VkData->DescriptorCache.Init();
     
-    // //Initialize virtual frames
+    //Initialize virtual frames
     // VkData->VirtualFrames.Init(InitializeInfo.VirtualFrameCount, InitializeInfo.MaxStageBufferSize);
 
     InitializeInfo.InfoCallback("Initialization Finished");    

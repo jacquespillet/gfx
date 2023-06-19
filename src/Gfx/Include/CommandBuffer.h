@@ -17,5 +17,7 @@ struct commandBuffer
     void DrawTriangles(uint32_t Start, uint32_t Count);
     void EndPass();
     void End();
+
+    void *VkData;
 };
 }
