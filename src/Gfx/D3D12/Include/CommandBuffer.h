@@ -11,8 +11,8 @@ struct commandBuffer
     void BeginPass(renderPassHandle RenderPass);
     void BindGraphicsPipeline(pipelineHandle Pipeline);
     void BindVertexBuffer(bufferHandle Buffer);
-    void SetViewport(float X, float Y, float Width, float Height);
-    void ClearColor(float R, float G,float B,float A);
+    void SetViewport(f32 X, f32 Y, f32 Width, f32 Height);
+    void ClearColor(f32 R, f32 G,f32 B,f32 A);
     void ClearBuffers(clearBufferType Type);
     void DrawTriangles(uint32_t Start, uint32_t Count);
     void EndPass();

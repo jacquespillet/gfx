@@ -1,5 +1,5 @@
 #include "Gfx/Apis.h"
-#define API GL
+#define API VK
 
 #if API == GL
 #include "Gfx/OpenGL/Api.h"

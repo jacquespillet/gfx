@@ -13,8 +13,8 @@ struct context
     void Initialize();
     commandBuffer *CreateCommandBuffer();   
     swapchain *CreateSwapchain();
-    bufferHandle CreateVertexBuffer(float *Values, size_t Count);
-    pipelineHandle CreatePipeline(const char *FileName);   
+    bufferHandle CreateVertexBuffer(f32 *Values, sz Count);
+    pipelineHandle CreatePipeline(const char* FileName);   
 
     renderPassHandle GetDefaultRenderPass();
     
