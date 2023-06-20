@@ -47,7 +47,10 @@ struct context
     static context* Initialize(initializeInfo &InitializeInfo, app::window &Window);
 
     commandBuffer *CreateCommandBuffer();   
-    swapchain *CreateSwapchain();
+    
+    swapchain *CreateSwapchain(u32 Width, u32 Height);
+    swapchain *RecreateSwapchain(u32 Width, u32 Height, swapchain *OldSwapchain);
+
     bufferHandle CreateVertexBuffer(f32 *Values, sz Count);
     pipelineHandle CreatePipeline(const char* FileName);   
 

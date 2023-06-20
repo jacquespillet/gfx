@@ -10,10 +10,12 @@
 #include "../Include/GfxContext.h"
 #include "../Include/Image.h"
 #include "../Include/CommandBuffer.h"
+#include "../Include/Swapchain.h"
 #include "Mapping.h"
 #include "VkImage.h"
 #include "VkCommandBuffer.h"
 #include "VkGfxContext.h"
+#include "VkSwapchain.h"
 
 #define GET_CONTEXT(data, context) \
     vkData *data = (vkData*)context->ApiContextData; \
@@ -139,8 +141,15 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL ValidationLayerCallback(VkDebugUtilsMessag
     return VK_FALSE;
 }
 
-void RecreateSwapchain(u32 Width, u32 Height, vkData *VkData)
+swapchain *context::CreateSwapchain(u32 Width, u32 Height)
 {
+    GET_CONTEXT(VkData, this);
+
+    swapchain *Swapchain = new swapchain();
+
+    Swapchain->ApiData = new vkSwapchainData();
+    vkSwapchainData *VkSwapchainData = (vkSwapchainData*)Swapchain->ApiData;
+
     VkData->Device.waitIdle();
 
     //Get width and height
@@ -154,7 +163,73 @@ void RecreateSwapchain(u32 Width, u32 Height, vkData *VkData)
     if(VkData->SurfaceExtent == vk::Extent2D(0,0))
     {
         VkData->SurfaceExtent = vk::Extent2D(1,1);
-        return;
+        return nullptr;
+    }
+
+    //Create a swapchain
+    vk::SwapchainCreateInfoKHR SwapchainCreateInfo;
+    SwapchainCreateInfo.setSurface(VkData->Surface)
+                       .setMinImageCount(VkData->PresentImageCount)
+                       .setImageFormat(VkData->SurfaceFormat.format)
+                       .setImageColorSpace(VkData->SurfaceFormat.colorSpace)
+                       .setImageExtent(VkData->SurfaceExtent)
+                       .setImageArrayLayers(1)
+                       .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst)
+                       .setImageSharingMode(vk::SharingMode::eExclusive)
+                       .setPreTransform(SurfaceCapabilities.currentTransform)
+                       .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
+                       .setPresentMode(VkData->SurfacePresentMode)
+                       .setClipped(true);
+    VkSwapchainData->Handle = VkData->Device.createSwapchainKHR(SwapchainCreateInfo);
+    
+    //Destroy old one
+    if(SwapchainCreateInfo.oldSwapchain)
+    {
+        VkData->Device.destroySwapchainKHR(SwapchainCreateInfo.oldSwapchain);
+    }
+    auto SwapchainImages = VkData->Device.getSwapchainImagesKHR(VkSwapchainData->Handle);
+
+    //reinitialize internal buffers
+    VkData->PresentImageCount = (u32)SwapchainImages.size();
+    VkSwapchainData->SwapchainImages.clear();
+    VkSwapchainData->SwapchainImages.reserve(VkData->PresentImageCount);
+    VkSwapchainData->SwapchainImageUsages.assign(VkData->PresentImageCount, imageUsage::UNKNOWN);
+
+    //Initialize texture representations of swapchain images
+    for(u32 i=0; i<VkData->PresentImageCount; i++)
+    {
+        VkSwapchainData->SwapchainImages.push_back(
+            CreateImage(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format))
+        );
+    }
+
+    return Swapchain;
+}
+
+
+swapchain *context::RecreateSwapchain(u32 Width, u32 Height, swapchain *OldSwapchain)
+{
+    GET_CONTEXT(VkData, this);
+
+    assert(OldSwapchain);
+    assert(OldSwapchain->ApiData);
+
+    vkSwapchainData *VkSwapchainData = (vkSwapchainData*)OldSwapchain->ApiData;
+
+    VkData->Device.waitIdle();
+
+    //Get width and height
+    auto SurfaceCapabilities = VkData->PhysicalDevice.getSurfaceCapabilitiesKHR(VkData->Surface);
+    VkData->SurfaceExtent = vk::Extent2D(
+        std::clamp(Width, SurfaceCapabilities.minImageExtent.width, SurfaceCapabilities.maxImageExtent.width),
+        std::clamp(Height, SurfaceCapabilities.minImageExtent.height, SurfaceCapabilities.maxImageExtent.height)
+    );
+
+    //Disable rendering if surface size is 0
+    if(VkData->SurfaceExtent == vk::Extent2D(0,0))
+    {
+        VkData->SurfaceExtent = vk::Extent2D(1,1);
+        return nullptr;
     }
 
     //Create a swapchain
@@ -171,26 +246,26 @@ void RecreateSwapchain(u32 Width, u32 Height, vkData *VkData)
                        .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
                        .setPresentMode(VkData->SurfacePresentMode)
                        .setClipped(true)
-                       .setOldSwapchain(VkData->Swapchain);
-    VkData->Swapchain = VkData->Device.createSwapchainKHR(SwapchainCreateInfo);
+                       .setOldSwapchain(VkSwapchainData->Handle);
+    VkSwapchainData->Handle = VkData->Device.createSwapchainKHR(SwapchainCreateInfo);
     
     //Destroy old one
     if(SwapchainCreateInfo.oldSwapchain)
     {
         VkData->Device.destroySwapchainKHR(SwapchainCreateInfo.oldSwapchain);
     }
-    auto SwapchainImages = VkData->Device.getSwapchainImagesKHR(VkData->Swapchain);
+    auto SwapchainImages = VkData->Device.getSwapchainImagesKHR(VkSwapchainData->Handle);
 
     //reinitialize internal buffers
     VkData->PresentImageCount = (u32)SwapchainImages.size();
-    VkData->SwapchainImages.clear();
-    VkData->SwapchainImages.reserve(VkData->PresentImageCount);
-    VkData->SwapchainImageUsages.assign(VkData->PresentImageCount, imageUsage::UNKNOWN);
+    VkSwapchainData->SwapchainImages.clear();
+    VkSwapchainData->SwapchainImages.reserve(VkData->PresentImageCount);
+    VkSwapchainData->SwapchainImageUsages.assign(VkData->PresentImageCount, imageUsage::UNKNOWN);
 
     //Initialize texture representations of swapchain images
     for(u32 i=0; i<VkData->PresentImageCount; i++)
     {
-        VkData->SwapchainImages.push_back(
+        VkSwapchainData->SwapchainImages.push_back(
             CreateImage(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format))
         );
     }
@@ -355,10 +430,7 @@ context* context::Initialize(context::initializeInfo &InitializeInfo, app::windo
     glslang::InitializeProcess();
     InitializeInfo.InfoCallback("Initialized GLSL compiler");
 
-    //Initialize swapchain
-    RecreateSwapchain(SurfaceCapabilities.maxImageExtent.width, SurfaceCapabilities.maxImageExtent.height, VkData);
-    InitializeInfo.InfoCallback("Created Swapchain");
-
+    
     //Initialize sync objects
     VkData->ImageAvailableSemaphore = VkData->Device.createSemaphore(vk::SemaphoreCreateInfo());
     VkData->RenderingFinishedSemaphore = VkData->Device.createSemaphore(vk::SemaphoreCreateInfo());
@@ -390,6 +462,19 @@ context* context::Initialize(context::initializeInfo &InitializeInfo, app::windo
 
     return Singleton;
 }
+
+commandBuffer *context::CreateCommandBuffer()
+{
+    GET_CONTEXT(VkData, this);
+    vk::CommandBufferAllocateInfo CommandBufferAllocateInfo;
+    CommandBufferAllocateInfo.setLevel(vk::CommandBufferLevel::ePrimary)
+                             .setCommandPool(VkData->CommandPool)
+                             .setCommandBufferCount(1);
+    
+    commandBuffer *CommandBuffer = CreateVkCommandBuffer(VkData->Device.allocateCommandBuffers(CommandBufferAllocateInfo).front());
+    return CommandBuffer;
+}
+
 }
 
 #endif

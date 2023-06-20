@@ -46,7 +46,7 @@ int main()
 
 	// Create a command buffer and swap chain
 	gfx::commandBuffer *CommandBuffer = GfxContext->CreateCommandBuffer();
-	gfx::swapchain *Swapchain = GfxContext->CreateSwapchain();
+	gfx::swapchain *Swapchain = GfxContext->CreateSwapchain(Width, Height);
 
 
 	// Create a vertex buffer with triangle data
@@ -58,36 +58,39 @@ int main()
 
 	gfx::bufferHandle vertexBuffer = GfxContext->CreateVertexBuffer(vertices, sizeof(vertices));
 
-    gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipeline("Shader.shader");
+    gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipeline("resources/Shaders/Triangle.shader");
 	
 	gfx::renderPassHandle RenderPass = GfxContext->GetDefaultRenderPass();
 	// Set other pipeline configuration parameters as needed
 
-	// Set up the render state
-	
-	// Begin recording commands into the command buffer
-	CommandBuffer->Begin();
-	CommandBuffer->BeginPass(RenderPass);
+	while(!Window.ShouldClose())
+	{
+		// Set up the render state
+		
+		// Begin recording commands into the command buffer
+		CommandBuffer->Begin();
+		CommandBuffer->BeginPass(RenderPass);
 
-	CommandBuffer->BindGraphicsPipeline(PipelineHandle);
-	CommandBuffer->BindVertexBuffer(vertexBuffer);
-	CommandBuffer->SetViewport(0, 0, 800, 600);
+		CommandBuffer->BindGraphicsPipeline(PipelineHandle);
+		CommandBuffer->BindVertexBuffer(vertexBuffer);
+		CommandBuffer->SetViewport(0, 0, 800, 600);
 
-	// Render the triangle
-	CommandBuffer->ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	CommandBuffer->ClearBuffers(gfx::clearBufferType::Color);
-	CommandBuffer->DrawTriangles(0, 3);
+		// Render the triangle
+		CommandBuffer->ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		CommandBuffer->ClearBuffers(gfx::clearBufferType::Color);
+		CommandBuffer->DrawTriangles(0, 3);
 
 
-	CommandBuffer->EndPass();
-	// End recording commands
-	CommandBuffer->End();
+		CommandBuffer->EndPass();
+		// End recording commands
+		CommandBuffer->End();
 
-	// Submit the command buffer to the graphics API for execution
-	GfxContext->SubmitCommandBuffer(CommandBuffer);
+		// Submit the command buffer to the graphics API for execution
+		GfxContext->SubmitCommandBuffer(CommandBuffer);
 
-	// Present the rendered frame
-	Swapchain->Present();
+		// Present the rendered frame
+		Swapchain->Present();
+	}
 
 	// Clean up and release resources
 	GfxContext->DestroyCommandBuffer(CommandBuffer);

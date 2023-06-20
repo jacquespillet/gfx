@@ -41,10 +41,6 @@ struct vkData
     commandBuffer *ImmediateCommandBuffer {};
 
     vk::Extent2D SurfaceExtent;
-
-    vk::SwapchainKHR Swapchain;
-    std::vector<image*> SwapchainImages;
-    std::vector<imageUsage::bits> SwapchainImageUsages;
 };
 
 }
