@@ -10,14 +10,14 @@ window::window(const windowCreateOptions &WindowCreateOptions)
         WindowCreateOptions.ErrorCallback("GLFW Context initialization failed");
         return;
     }
-#if GRAPHICS_API == VK
+#if API == VK
     if(glfwVulkanSupported() != GLFW_TRUE)
     {
         WindowCreateOptions.ErrorCallback("Vulkan not supported");
         return;
     }
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-#else if GRAPHICS_API == GL
+#else if API == GL
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, WindowCreateOptions.VersionMajor);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, WindowCreateOptions.VersionMinor);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -36,7 +36,7 @@ window::window(const windowCreateOptions &WindowCreateOptions)
         return;
     }
 
-#if GRAPHICS_API == GL
+#if API == GL
     glfwMakeContextCurrent(this->Handle);
     glfwSwapInterval(1);
 #endif
@@ -90,7 +90,7 @@ void window::CheckErrors() const
 
 void window::Present()
 {
-#if GRAPHICS_API == GL
+#if API == GL
     glfwSwapBuffers(this->Handle);
 #endif
 }
@@ -102,7 +102,7 @@ GLFWwindow *window::GetHandle()
 
 std::vector<const char *> window::GetRequiredExtensions()
 {
-#if GRAPHICS_API == VK
+#if API == VK
     uint32_t ExtensionsCount=0;
     const char **Extensions = glfwGetRequiredInstanceExtensions(&ExtensionsCount);
     return std::vector<const char *>(Extensions, Extensions + ExtensionsCount);

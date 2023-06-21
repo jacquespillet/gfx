@@ -118,6 +118,7 @@ link_directories(${GLSLANG_LIB_DIR})
 set(sourceCode
         src/Main.cpp
 
+        src/Gfx/Common/ResourceManager.cpp
         src/Gfx/VK/VkGfxContext.cpp
         src/Gfx/VK/VkCommandBuffer.cpp
         src/Gfx/VK/VkBuffer.cpp
@@ -126,6 +127,7 @@ set(sourceCode
         src/Gfx/VK/VkMemoryAllocation.cpp
         
         src/App/Window.cpp
+
 
         ${VOLK_SOURCE}
 )

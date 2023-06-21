@@ -170,13 +170,15 @@ context* context::Initialize(context::initializeInfo &InitializeInfo, app::windo
         Singleton = new context();
     }
 
+    Singleton->ResourceManager.Init();
+
     Singleton->ApiContextData = new vkData();
     GET_CONTEXT(VkData, Singleton);
     CreateInstance(InitializeInfo, VkData);
     
     
     VkSurfaceKHR Surface;
-    (void)glfwCreateWindowSurface(VkData->Instance, Window.GetHandle(), nullptr, &Surface);
+    vk::Result Result = (vk::Result)glfwCreateWindowSurface(VkData->Instance, Window.GetHandle(), nullptr, &Surface);
 
     //Get the surface
     VkData->Surface = *reinterpret_cast<const VkSurfaceKHR*>(&Surface);
@@ -265,7 +267,8 @@ context* context::Initialize(context::initializeInfo &InitializeInfo, app::windo
     //Extensions
     auto DeviceExtensions = InitializeInfo.DeviceExtensions;
     DeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    DeviceExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    /*DeviceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);    
+    DeviceExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);*/
 
     //Extensions
     vk::PhysicalDeviceDescriptorIndexingFeatures DescriptorIndexingFeatures;
@@ -290,7 +293,7 @@ context* context::Initialize(context::initializeInfo &InitializeInfo, app::windo
     vk::DeviceCreateInfo DeviceCreateInfo;
     DeviceCreateInfo.setQueueCreateInfos(DeviceQueueCreateInfo)
                     .setPEnabledExtensionNames(DeviceExtensions)
-                    .setPNext(&DescriptorIndexingFeatures)
+                    //.setPNext(&DescriptorIndexingFeatures)
                     ;
 
     VkData->Device = VkData->PhysicalDevice.createDevice(DeviceCreateInfo);
@@ -433,18 +436,14 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage
 
     //Allocate with vma
     VkBufferData->Allocation = gfx::AllocateBuffer(BufferCreateInfo, MemoryUsage, &VkBufferData->Handle);    
+
+    return Handle;
 }
 
 stageBuffer context::CreateStageBuffer(sz Size)
 {
     stageBuffer Result;
-    
     Result.Init(Size);
-    bufferHandle Handle = CreateBuffer(Size, bufferUsage::TransferSource, memoryUsage::CpuToGpu);
-    Result.Buffer = (buffer*)ResourceManager.Buffers.GetResource(Handle);
-    Result.CurrentOffset=0;
-    Result.Buffer->MapMemory();
-
     return Result;
 }
 

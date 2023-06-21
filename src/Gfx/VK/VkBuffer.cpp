@@ -2,6 +2,7 @@
 #include "VkBuffer.h"
 #include "../Include/Buffer.h"
 #include "VkMemoryAllocation.h"
+#include "../Include/GfxContext.h"
 
 namespace gfx
 {
@@ -96,6 +97,9 @@ void buffer::CopyData(const uint8_t *Data, size_t ByteSize, size_t Offset)
 
 void stageBuffer::Init(sz Size)
 {
+    bufferHandle Handle = context::Get()->CreateBuffer(Size, bufferUsage::TransferSource, memoryUsage::CpuToGpu);    
+    this->Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(Handle);
+    this->CurrentOffset=0;
     this->Buffer->MapMemory();
 }
 

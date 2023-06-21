@@ -42,6 +42,9 @@ int main()
 	
 	// Initialize the graphics API
 	gfx::context::initializeInfo ContextInitialize;
+	ContextInitialize.Extensions = Window.GetRequiredExtensions();
+	ContextInitialize.ErrorCallback = ErrorCallback;
+    ContextInitialize.InfoCallback = InfoCallback;
 	gfx::context *GfxContext = gfx::context::Initialize(ContextInitialize, Window);
 
 	// Create a command buffer and swap chain
@@ -58,9 +61,9 @@ int main()
 
 	gfx::bufferHandle vertexBuffer = GfxContext->CreateVertexBuffer(vertices, sizeof(vertices));
 
-#if 0
     gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipeline("resources/Shaders/Triangle.shader");
 	
+#if 0
 	gfx::renderPassHandle RenderPass = GfxContext->GetDefaultRenderPass();
 	// Set other pipeline configuration parameters as needed
 
