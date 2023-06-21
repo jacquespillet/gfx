@@ -16,23 +16,6 @@ constexpr vk::PhysicalDeviceType DeviceTypeMapping[] =
 };
 
 
-struct imageUsage
-{
-    using value = u32;
-
-    enum bits : value
-    {
-        UNKNOWN = (value) vk::ImageUsageFlagBits(),
-        TRANSFER_SOURCE = (value)vk::ImageUsageFlagBits::eTransferSrc,
-        TRANSFER_DESTINATION = (value)vk::ImageUsageFlagBits::eTransferDst,
-        SHADER_READ = (value)vk::ImageUsageFlagBits::eSampled,
-        STORAGE = (value)vk::ImageUsageFlagBits::eStorage,
-        COLOR_ATTACHMENT = (value)vk::ImageUsageFlagBits::eColorAttachment,
-        DEPTH_STENCIL_ATTACHMENT = (value)vk::ImageUsageFlagBits::eDepthStencilAttachment,
-        INPUT_ATTACHMENT = (value)vk::ImageUsageFlagBits::eInputAttachment,
-        FRAGNENT_SHADING_RATE_ATTACHMENT = (value)vk::ImageUsageFlagBits::eFragmentShadingRateAttachmentKHR,
-    };
-};
 
 
 static vk::Format FormatTable[] = 
@@ -170,18 +153,11 @@ static vk::Format FormatTable[] =
     vk::Format::eD32SfloatS8Uint,        
 };
 
-format FormatFromNative(const vk::Format &VkFormat)
-{
-    for(u64 i=0; i<std::size(FormatTable); i++)
-    {
-        if(FormatTable[i] == VkFormat)
-        {
-            return (format)i;
-        }
-    }
-    assert(false);
-    return (format)0;    
-}
+format FormatFromNative(const vk::Format &VkFormat);
+vk::Format &FormatToNative(format Format);
+
+
+vk::ImageAspectFlags ImageFormatToImageAspect(format Format);
 
 }
 

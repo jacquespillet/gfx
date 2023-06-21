@@ -2,7 +2,7 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 
-#include "Mapping.h"
+#include "VkMapping.h"
 
 namespace gfx
 {

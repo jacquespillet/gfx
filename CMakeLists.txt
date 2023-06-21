@@ -118,7 +118,12 @@ link_directories(${GLSLANG_LIB_DIR})
 set(sourceCode
         src/Main.cpp
 
-        src/Gfx/VK/GfxContext.cpp
+        src/Gfx/VK/VkGfxContext.cpp
+        src/Gfx/VK/VkCommandBuffer.cpp
+        src/Gfx/VK/VkBuffer.cpp
+        src/Gfx/VK/VkMapping.cpp
+        src/Gfx/VK/VkImage.cpp
+        src/Gfx/VK/VkMemoryAllocation.cpp
         
         src/App/Window.cpp
 

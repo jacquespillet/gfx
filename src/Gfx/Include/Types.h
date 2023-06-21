@@ -1,5 +1,13 @@
 #pragma once
 #include "stdint.h"
+
+#if API==VK
+#include <vulkan/vulkan.hpp>
+#elif API==GL
+#elif API==D3D12
+#endif
+
+
 namespace gfx
 {
 
@@ -19,6 +27,10 @@ typedef bool b8;
 typedef uint32_t bufferHandle;
 typedef uint32_t pipelineHandle;
 typedef uint32_t renderPassHandle;
+typedef uint32_t imageHandle;
+static const u32 InvalidHandle = 0xffffffff;
+
+
 
 enum class clearBufferType
 {
@@ -172,6 +184,71 @@ enum class format : u32
     D24_UNORM_S8_UINT,
     D32_SFLOAT_S8_UINT,
 };
+
+enum class memoryUsage
+{
+    GpuOnly = 0,
+    CpuOnly,
+    CpuToGpu,
+    GpuToCpu,
+    CpuCopy,
+    GpuLazilyAllocated
+};
+
+
+struct bufferUsage
+{
+    using value = u32;
+    enum Bits : value
+    {
+#if API==VK
+        UNKNOWN = (value)vk::BufferUsageFlags{ },
+        TransferSource = (value)vk::BufferUsageFlagBits::eTransferSrc,
+        TransferDestination = (value)vk::BufferUsageFlagBits::eTransferDst,
+        UniformTexelBuffer = (value)vk::BufferUsageFlagBits::eUniformTexelBuffer,
+        StorageTexelBuffer = (value)vk::BufferUsageFlagBits::eStorageTexelBuffer,
+        UniformBuffer = (value)vk::BufferUsageFlagBits::eUniformBuffer,
+        StorageBuffer = (value)vk::BufferUsageFlagBits::eStorageBuffer,
+        IndexBuffer = (value)vk::BufferUsageFlagBits::eIndexBuffer,
+        VertexBuffer = (value)vk::BufferUsageFlagBits::eVertexBuffer,
+        IndirectBuffer = (value)vk::BufferUsageFlagBits::eIndirectBuffer,
+        ShaderDeviceAddress = (value)vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        TransformFeedbackBuffer = (value)vk::BufferUsageFlagBits::eTransformFeedbackBufferEXT,
+        TransformFeedbackCounterBuffer = (value)vk::BufferUsageFlagBits::eTransformFeedbackCounterBufferEXT,
+        ConditionalRendering = (value)vk::BufferUsageFlagBits::eConditionalRenderingEXT,
+        AccelerationStructureBuildInputReadonly = (value)vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR,
+        AccelerationStructureStorage = (value)vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR,
+        ShaderBindingTable = (value)vk::BufferUsageFlagBits::eShaderBindingTableKHR,
+#elif API==GL
+
+#elif API==D3D12
+
+#endif
+    };
+};
+
+struct imageUsage
+{
+    using value = u32;
+    enum bits : value
+    {
+#if API==VK
+        UNKNOWN = (value) vk::ImageUsageFlagBits(),
+        TRANSFER_SOURCE = (value)vk::ImageUsageFlagBits::eTransferSrc,
+        TRANSFER_DESTINATION = (value)vk::ImageUsageFlagBits::eTransferDst,
+        SHADER_READ = (value)vk::ImageUsageFlagBits::eSampled,
+        STORAGE = (value)vk::ImageUsageFlagBits::eStorage,
+        COLOR_ATTACHMENT = (value)vk::ImageUsageFlagBits::eColorAttachment,
+        DEPTH_STENCIL_ATTACHMENT = (value)vk::ImageUsageFlagBits::eDepthStencilAttachment,
+        INPUT_ATTACHMENT = (value)vk::ImageUsageFlagBits::eInputAttachment,
+        FRAGNENT_SHADING_RATE_ATTACHMENT = (value)vk::ImageUsageFlagBits::eFragmentShadingRateAttachmentKHR,
+#elif API==GL
+#elif API==D3D12
+#endif
+    };
+};
+
+
 
 struct extent2D
 {

@@ -3,6 +3,7 @@
 #include "Types.h"
 #include <vector>
 #include <functional>
+#include "ResourceManager.h"
 
 namespace app
 {
@@ -14,6 +15,7 @@ namespace gfx
 struct commandBuffer;
 struct swapchain;
 struct pipeline;
+struct stageBuffer;
 
 inline void DefaultCallback(const std::string&) {}
 
@@ -48,21 +50,31 @@ struct context
 
     commandBuffer *CreateCommandBuffer();   
     
+    commandBuffer *GetCommandBuffer();
+    stageBuffer *GetStageBuffer();
+    
     swapchain *CreateSwapchain(u32 Width, u32 Height);
     swapchain *RecreateSwapchain(u32 Width, u32 Height, swapchain *OldSwapchain);
 
+    stageBuffer CreateStageBuffer(sz Size);
     bufferHandle CreateVertexBuffer(f32 *Values, sz Count);
-    pipelineHandle CreatePipeline(const char* FileName);   
+    bufferHandle CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage MemoryUsage);
+
+    pipelineHandle CreatePipeline(const char* FileName);
+    imageHandle CreateImage(u32 Width, u32 Height, format Format, u8 *Pixels);
 
     renderPassHandle GetDefaultRenderPass();
     
     pipeline *GetPipeline(pipelineHandle Handle);   
 
     void SubmitCommandBuffer(commandBuffer *CommandBuffer);
+    void SubmitCommandBufferImmediate(commandBuffer *CommandBuffer);
 
     void DestroyCommandBuffer(commandBuffer* Handle);
     void DestroySwapchain(swapchain *Swapchain);
 
     void *ApiContextData;
+
+    resourceManager ResourceManager;
 };
 }

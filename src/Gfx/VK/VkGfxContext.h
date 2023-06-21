@@ -2,7 +2,8 @@
 #include "../Include/Types.h"
 #include "../Include/CommandBuffer.h"
 #include "../Include/Image.h"
-#include "Mapping.h"
+#include "../Include/Buffer.h"
+#include "VkMapping.h"
 
 #include <vulkan/vulkan.hpp>
 #include <vk_mem_alloc.h>
@@ -39,6 +40,8 @@ struct vkData
 
     vk::CommandPool CommandPool;
     commandBuffer *ImmediateCommandBuffer {};
+
+    stageBuffer StageBuffer;
 
     vk::Extent2D SurfaceExtent;
 };

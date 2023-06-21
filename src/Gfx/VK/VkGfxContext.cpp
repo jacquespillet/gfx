@@ -11,14 +11,16 @@
 #include "../Include/Image.h"
 #include "../Include/CommandBuffer.h"
 #include "../Include/Swapchain.h"
-#include "Mapping.h"
+#include "../Include/Buffer.h"
+#include "VkMapping.h"
 #include "VkImage.h"
 #include "VkCommandBuffer.h"
 #include "VkGfxContext.h"
 #include "VkSwapchain.h"
-
-#define GET_CONTEXT(data, context) \
-    vkData *data = (vkData*)context->ApiContextData; \
+#include "VkBuffer.h"
+#include "VkMemoryAllocation.h"
+#include "VkUtil.h"
+#include "VkCommon.h"
 
 
 namespace gfx
@@ -29,116 +31,6 @@ context* context::Singleton= nullptr;
 context *context::Get()
 {
     return Singleton;
-}
-
-void CheckRequestedExtensions(context::initializeInfo &InitializeInfos)
-{
-    InitializeInfos.InfoCallback("Requested Extensions : ");
-
-    auto Extensions = vk::enumerateInstanceExtensionProperties();
-    for(const char *ExtensionName : InitializeInfos.Extensions)
-    {
-        InitializeInfos.InfoCallback("- " + std::string(ExtensionName));
-
-        auto LayerIterator = std::find_if(Extensions.begin(), Extensions.end(), 
-            [ExtensionName](const vk::ExtensionProperties &Extension)
-            {
-                return std::strcmp(Extension.extensionName.data(), ExtensionName) == 0;
-            });
-        
-        if(LayerIterator == Extensions.end())
-        {
-            InitializeInfos.ErrorCallback("Cannot enable requested extension");
-            return;
-        }
-    }
-}
-
-
-void CheckRequestedLayers(context::initializeInfo &InitializeInfos)
-{
-    InitializeInfos.InfoCallback("Requested Validation Layers : ");
-
-    auto Extensions = vk::enumerateInstanceLayerProperties();
-    for(const char *LayerName : InitializeInfos.Layers)
-    {
-        InitializeInfos.InfoCallback("- " + std::string(LayerName));
-
-        auto LayerIterator = std::find_if(Extensions.begin(), Extensions.end(), 
-            [LayerName](const vk::LayerProperties &Layer)
-            {
-                return std::strcmp(Layer.layerName.data(), LayerName) == 0;
-            });
-        
-        if(LayerIterator == Extensions.end())
-        {
-            InitializeInfos.ErrorCallback(("Cannot enable requested layer " + std::string(LayerName)).c_str());
-            return;
-        }
-    }
-}
-
-void CreateInstance(context::initializeInfo &InitializeInfo, vkData *VkData)
-{
-    
-    if(InitializeInfo.Debug)  InitializeInfo.Layers = {"VK_LAYER_KHRONOS_validation"};
-    vk::ApplicationInfo ApplicationInfo;
-    ApplicationInfo.setPApplicationName(InitializeInfo.AppName)
-                   .setApplicationVersion(VK_MAKE_VERSION(1,0,0))
-                   .setPEngineName(InitializeInfo.EngineName)
-                   .setEngineVersion(VK_MAKE_VERSION(1,0,0))
-                   .setApiVersion(VK_MAKE_VERSION(InitializeInfo.MajorVersion, InitializeInfo.MinorVersion, 0));
-
-    auto Extensions = InitializeInfo.Extensions;
-    Extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-
-    vk::InstanceCreateInfo InstanceCreateInfo;
-    InstanceCreateInfo.setPApplicationInfo(&ApplicationInfo)
-                      .setPEnabledExtensionNames(Extensions)
-                      .setPEnabledLayerNames(InitializeInfo.Layers);
-
-    CheckRequestedExtensions(InitializeInfo);
-    CheckRequestedLayers(InitializeInfo);
-
-    VkData->Instance  = vk::createInstance(InstanceCreateInfo);
-    VkData->ApiVersion = ApplicationInfo.apiVersion;
-    InitializeInfo.InfoCallback("Created Vulkan instance ");
-}
-
-
-bool CheckVulkanPresentationSupport(const vk::Instance& _Instance, const vk::PhysicalDevice& _PhysicalDevice, u32 _FamilyQueueIndex)
-{
-    return glfwGetPhysicalDevicePresentationSupport(_Instance, _PhysicalDevice, _FamilyQueueIndex) == GLFW_TRUE;
-}
-
-std::optional<uint32_t> DetermineQueueFamilyIndex(const vk::Instance &_Instance, const vk::PhysicalDevice &_PhysicalDevice, const vk::SurfaceKHR &_Surface)
-{
-    auto QueueFamilyProperties = _PhysicalDevice.getQueueFamilyProperties();
-    u32 Index=0;
-
-    for(const auto &Property : QueueFamilyProperties)
-    {
-        if(
-            (Property.queueCount > 0 ) &&
-            (_PhysicalDevice.getSurfaceSupportKHR(Index, _Surface)) &&
-            (CheckVulkanPresentationSupport(_Instance, _PhysicalDevice, Index)) &&
-            (Property.queueFlags & vk::QueueFlagBits::eGraphics) &&
-            (Property.queueFlags & vk::QueueFlagBits::eCompute)
-        )
-        {
-            return Index;
-        }
-        Index++;
-    }
-
-    return {};
-}
-
-static VKAPI_ATTR VkBool32 VKAPI_CALL ValidationLayerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT Severity, VkDebugUtilsMessageTypeFlagsEXT Type, const VkDebugUtilsMessengerCallbackDataEXT *pCallBackData, void *pUserData)
-{
-    std::cout << pCallBackData->pMessage << std::endl;
-
-    return VK_FALSE;
 }
 
 swapchain *context::CreateSwapchain(u32 Width, u32 Height)
@@ -199,7 +91,7 @@ swapchain *context::CreateSwapchain(u32 Width, u32 Height)
     for(u32 i=0; i<VkData->PresentImageCount; i++)
     {
         VkSwapchainData->SwapchainImages.push_back(
-            CreateImage(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format))
+            gfx::CreateImage(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format))
         );
     }
 
@@ -266,7 +158,7 @@ swapchain *context::RecreateSwapchain(u32 Width, u32 Height, swapchain *OldSwapc
     for(u32 i=0; i<VkData->PresentImageCount; i++)
     {
         VkSwapchainData->SwapchainImages.push_back(
-            CreateImage(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format))
+            gfx::CreateImage(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format))
         );
     }
 }
@@ -452,6 +344,8 @@ context* context::Initialize(context::initializeInfo &InitializeInfo, app::windo
     VkData->ImmediateCommandBuffer = CreateVkCommandBuffer(VkData->Device.allocateCommandBuffers(CommandBufferAllocateInfo).front());
     InitializeInfo.InfoCallback("Created Command Buffer");
 
+    VkData->StageBuffer = Singleton->CreateStageBuffer(InitializeInfo.MaxStageBufferSize);
+
     // //Initialize descriptor cache
     // VkData->DescriptorCache.Init();
     
@@ -473,6 +367,110 @@ commandBuffer *context::CreateCommandBuffer()
     
     commandBuffer *CommandBuffer = CreateVkCommandBuffer(VkData->Device.allocateCommandBuffers(CommandBufferAllocateInfo).front());
     return CommandBuffer;
+}
+
+bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count)
+{
+    bufferHandle Handle = ResourceManager.Buffers.ObtainResource();
+    if(Handle == InvalidHandle)
+    {
+        return Handle;
+    }
+
+    buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(Handle);
+    
+    Buffer->Name = "";
+    Buffer->ApiData = new vkBufferData();
+    vkBufferData *VkBufferData = (vkBufferData*)Buffer->ApiData;
+    
+
+    auto VulkanContext = context::Get();
+    
+    auto StageBuffer = VulkanContext->GetStageBuffer();
+    auto CommandBuffer = VulkanContext->GetCommandBuffer();
+
+    CommandBuffer->Begin();
+
+    auto VertexAllocation = StageBuffer->Submit((uint8_t*)Values, (u32)Count * sizeof(f32));
+
+    Buffer->Init(VertexAllocation._Size, gfx::bufferUsage::VertexBuffer | gfx::bufferUsage::TransferDestination, gfx::memoryUsage::GpuOnly);
+
+    CommandBuffer->CopyBuffer(
+        gfx::bufferInfo {StageBuffer->Buffer, VertexAllocation._Offset},
+        gfx::bufferInfo {Buffer, 0},
+        VertexAllocation._Size
+    );
+    
+    StageBuffer->Flush();
+    CommandBuffer->End();
+
+    VulkanContext->SubmitCommandBufferImmediate(CommandBuffer);
+    StageBuffer->Reset();     
+
+    return Handle;
+}
+
+bufferHandle context::CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage MemoryUsage)
+{
+    bufferHandle Handle = ResourceManager.Buffers.ObtainResource();
+    if(Handle == InvalidHandle)
+    {
+        return Handle;
+    }
+    buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(Handle);
+    Buffer->ApiData = new vkBufferData();
+    vkBufferData *VkBufferData = (vkBufferData*)Buffer->ApiData;
+    
+    constexpr std::array BufferQueueFamilyIndices = {(u32)0};
+
+    //Set size, usage
+    Buffer->Size = Size;
+    vk::BufferCreateInfo BufferCreateInfo;
+    BufferCreateInfo.setSize(Buffer->Size)
+                    .setUsage((vk::BufferUsageFlags)Usage)
+                    .setSharingMode(vk::SharingMode::eExclusive)
+                    .setQueueFamilyIndices(BufferQueueFamilyIndices);
+
+    //Allocate with vma
+    VkBufferData->Allocation = gfx::AllocateBuffer(BufferCreateInfo, MemoryUsage, &VkBufferData->Handle);    
+}
+
+stageBuffer context::CreateStageBuffer(sz Size)
+{
+    stageBuffer Result;
+    
+    Result.Init(Size);
+    bufferHandle Handle = CreateBuffer(Size, bufferUsage::TransferSource, memoryUsage::CpuToGpu);
+    Result.Buffer = (buffer*)ResourceManager.Buffers.GetResource(Handle);
+    Result.CurrentOffset=0;
+    Result.Buffer->MapMemory();
+
+    return Result;
+}
+
+commandBuffer *context::GetCommandBuffer()
+{
+    GET_CONTEXT(VkData, this);
+    return VkData->ImmediateCommandBuffer;
+}
+
+stageBuffer *context::GetStageBuffer()
+{
+    GET_CONTEXT(VkData, this);
+    return &VkData->StageBuffer;
+}
+
+void context::SubmitCommandBufferImmediate(commandBuffer *CommandBuffer)
+{
+    GET_CONTEXT(VkData, this);
+    vkCommandBufferData *VkCommandBufferData = (vkCommandBufferData*)CommandBuffer->ApiData;
+
+    vk::SubmitInfo SubmitInfo;
+    SubmitInfo.setCommandBuffers(VkCommandBufferData->Handle);
+    VkData->DeviceQueue.submit(SubmitInfo, VkData->ImmediateFence);
+    auto WaitResult = VkData->Device.waitForFences(VkData->ImmediateFence, false, UINT64_MAX);
+    assert(WaitResult == vk::Result::eSuccess);
+    VkData->Device.resetFences(VkData->ImmediateFence);
 }
 
 }

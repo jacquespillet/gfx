@@ -58,6 +58,7 @@ int main()
 
 	gfx::bufferHandle vertexBuffer = GfxContext->CreateVertexBuffer(vertices, sizeof(vertices));
 
+#if 0
     gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipeline("resources/Shaders/Triangle.shader");
 	
 	gfx::renderPassHandle RenderPass = GfxContext->GetDefaultRenderPass();
@@ -97,6 +98,6 @@ int main()
 	GfxContext->DestroySwapchain(Swapchain);
 
 	delete GfxContext;
-
+#endif
 	return 0;
 }
