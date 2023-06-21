@@ -14,7 +14,7 @@
 					"stream_rate" : "Vertex"
 				}
 			],
-			"render_pass" : "depth_pre_pass",
+			"render_pass" : "TrianglePass",
 			"depth" : {
 				"write" : true,
 				"test" : "less_or_equal"
@@ -22,8 +22,11 @@
 			"shaders" : [
 				{
 					"stage" : "vertex",
-					"shader" : "depth.vert",
-					"includes" : ["platform.h", "mesh.h"]
+					"shader" : "triangle.vert"
+				},
+				{
+					"stage" : "fragment",
+					"shader" : "triangle.glsl"
 				}
 			]
 		}

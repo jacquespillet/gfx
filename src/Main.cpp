@@ -61,7 +61,7 @@ int main()
 
 	gfx::bufferHandle vertexBuffer = GfxContext->CreateVertexBuffer(vertices, sizeof(vertices));
 
-    gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipeline("resources/Shaders/Triangle.shader");
+    gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.shader");
 	
 #if 0
 	gfx::renderPassHandle RenderPass = GfxContext->GetDefaultRenderPass();

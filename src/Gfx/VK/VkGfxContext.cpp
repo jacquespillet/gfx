@@ -12,6 +12,8 @@
 #include "../Include/CommandBuffer.h"
 #include "../Include/Swapchain.h"
 #include "../Include/Buffer.h"
+#include "../Include/Pipeline.h"
+#include "../Common/Util.h"
 #include "VkMapping.h"
 #include "VkImage.h"
 #include "VkCommandBuffer.h"
@@ -470,6 +472,11 @@ void context::SubmitCommandBufferImmediate(commandBuffer *CommandBuffer)
     auto WaitResult = VkData->Device.waitForFences(VkData->ImmediateFence, false, UINT64_MAX);
     assert(WaitResult == vk::Result::eSuccess);
     VkData->Device.resetFences(VkData->ImmediateFence);
+}
+
+pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
+{
+    return InvalidHandle;
 }
 
 }

@@ -57,6 +57,11 @@ set(GLFW_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/build/install/lib)
 include_directories(${GLFW_INC_DIR})
 link_directories(${GLFW_LIB_DIR})
 
+# JSON
+set(JSON_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/json)
+include_directories(${JSON_INC_DIR})
+
+
 # # ASSIMP
 # set(ASSIMP_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/assimp/include)
 # set(ASSIMP_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/assimp/lib)
@@ -119,6 +124,9 @@ set(sourceCode
         src/Main.cpp
 
         src/Gfx/Common/ResourceManager.cpp
+        src/Gfx/Common/Pipeline.cpp
+        src/Gfx/Common/Util.cpp
+
         src/Gfx/VK/VkGfxContext.cpp
         src/Gfx/VK/VkCommandBuffer.cpp
         src/Gfx/VK/VkBuffer.cpp

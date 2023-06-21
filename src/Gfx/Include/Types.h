@@ -195,6 +195,117 @@ enum class memoryUsage
     GpuLazilyAllocated
 };
 
+enum class stencilOperation
+{
+    Keep,
+    Zero,
+    Replace,
+    IncrementAndClamp,
+    DecrementAndClamp,
+    Invert,
+    IncrementAndWrap,
+    DecrementAndWrap
+};
+
+enum class compareOperation
+{
+    Never,
+    Less,
+    Equal,
+    LessOrEqual,
+    Greater,
+    NotEqual,
+    GreaterOrEqual,
+    Always
+};
+
+
+enum class blendFactor
+{
+    Zero,
+    One,
+    SrcColor,
+    OneMinusSrcColor,
+    DstColor,
+    OneMinusDstColor,
+    SrcAlpha,
+    OneMinusSrcAlpha,
+    DstAlpha,
+    OneMinusDstAlpha,
+    ConstantColor,
+    OneMinusConstantColor,
+    ConstantAlpha,
+    OneMinusConstantAlpha,
+    SrcAlphaSaturate,
+    Src1Color,
+    OneMinusSrc1Color,
+    Src1Alpha,
+    OneMinusSrc1Alpha
+};
+
+
+enum class blendOperation
+{
+    Add,
+    Subtract,
+    ReverseSubtract,
+    Min,
+    Max,
+    ZeroEXT,
+    SrcEXT,
+    DstEXT,
+    SrcOverEXT,
+    DstOverEXT,
+    SrcInEXT,
+    DstInEXT,
+    SrcOutEXT,
+    DstOutEXT,
+    SrcAtopEXT,
+    DstAtopEXT,
+    XorEXT,
+    MultiplyEXT,
+    ScreenEXT,
+    OverlayEXT,
+    DarkenEXT,
+    LightenEXT,
+    ColordodgeEXT,
+    ColorburnEXT,
+    HardlightEXT,
+    SoftlightEXT,
+    DifferenceEXT,
+    ExclusionEXT,
+    InvertEXT,
+    InvertRgbEXT,
+    LineardodgeEXT,
+    LinearburnEXT,
+    VividlightEXT,
+    LinearlightEXT,
+    PinlightEXT,
+    HardmixEXT,
+    HslHueEXT,
+    HslSaturationEXT,
+    HslColorEXT,
+    HslLuminosityEXT,
+    PlusEXT,
+    PlusClampedEXT,
+    PlusClampedAlphaEXT,
+    PlusDarkerEXT,
+    MinusEXT,
+    MinusClampedEXT,
+    ContrastEXT,
+    InvertOvgEXT,
+    RedEXT,
+    GreenEXT,
+    BlueEXT
+};
+
+enum class frontFace
+{
+    CounterClockwise,
+    Clockwise
+};
+
+
 
 struct bufferUsage
 {
@@ -227,6 +338,46 @@ struct bufferUsage
     };
 };
 
+struct shaderStageFlags
+{
+    using value = u32;
+    enum bits : value
+    {
+#if API==VK
+        Vertex = (value)vk::ShaderStageFlagBits::eVertex,
+        TessellationControl = (value)vk::ShaderStageFlagBits::eTessellationControl,
+        TessellationEvaluation = (value)vk::ShaderStageFlagBits::eTessellationEvaluation,
+        Geometry = (value)vk::ShaderStageFlagBits::eGeometry,
+        Fragment = (value)vk::ShaderStageFlagBits::eFragment,
+        Compute = (value)vk::ShaderStageFlagBits::eCompute,
+        AllGraphics = (value)vk::ShaderStageFlagBits::eAllGraphics,
+        All = (value)vk::ShaderStageFlagBits::eAll,
+        RaygenKHR = (value)vk::ShaderStageFlagBits::eRaygenKHR,
+        AnyHitKHR = (value)vk::ShaderStageFlagBits::eAnyHitKHR,
+        ClosestHitKHR = (value)vk::ShaderStageFlagBits::eClosestHitKHR,
+        MissKHR = (value)vk::ShaderStageFlagBits::eMissKHR,
+        IntersectionKHR = (value)vk::ShaderStageFlagBits::eIntersectionKHR,
+        CallableKHR = (value)vk::ShaderStageFlagBits::eCallableKHR,
+        RaygenNV = (value)vk::ShaderStageFlagBits::eRaygenNV,
+        AnyHitNV = (value)vk::ShaderStageFlagBits::eAnyHitNV,
+        ClosestHitNV = (value)vk::ShaderStageFlagBits::eClosestHitNV,
+        MissNV = (value)vk::ShaderStageFlagBits::eMissNV,
+        IntersectionNV = (value)vk::ShaderStageFlagBits::eIntersectionNV,
+        CallableNV = (value)vk::ShaderStageFlagBits::eCallableNV,
+        TaskNV = (value)vk::ShaderStageFlagBits::eTaskNV,
+        MeshNV = (value)vk::ShaderStageFlagBits::eMeshNV,
+        TaskEXT = (value)vk::ShaderStageFlagBits::eTaskEXT,
+        MeshEXT = (value)vk::ShaderStageFlagBits::eMeshEXT,
+        SubpassShadingHUAWEI = (value)vk::ShaderStageFlagBits::eSubpassShadingHUAWEI,
+        ClusterCullingHUAWEI = (value)vk::ShaderStageFlagBits::eClusterCullingHUAWEI
+#elif API==GL
+
+#elif API==D3D12
+
+#endif
+    };
+};
+
 struct imageUsage
 {
     using value = u32;
@@ -248,7 +399,21 @@ struct imageUsage
     };
 };
 
-
+struct cullMode
+{
+    using value = u32;
+    enum bits : value
+    {
+#if API==VK
+        None = (value) vk::CullModeFlagBits::eNone,
+        Front = (value) vk::CullModeFlagBits::eFront,
+        Back = (value) vk::CullModeFlagBits::eBack,
+        FrontAndBack = (value) vk::CullModeFlagBits::eFrontAndBack
+#elif API==GL
+#elif API==D3D12
+#endif
+    };
+};
 
 struct extent2D
 {

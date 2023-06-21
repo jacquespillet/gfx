@@ -1,8 +1,9 @@
 #pragma once
-
-#include "Types.h"
 #include <vector>
 #include <functional>
+
+#include "Types.h"
+#include "Pipeline.h"
 #include "ResourceManager.h"
 
 namespace app
@@ -60,7 +61,10 @@ struct context
     bufferHandle CreateVertexBuffer(f32 *Values, sz Count);
     bufferHandle CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage MemoryUsage);
 
-    pipelineHandle CreatePipeline(const char* FileName);
+    // pipelineHandle CreatePipelineFromFile(const char* FileName);
+    pipelineHandle CreatePipelineFromFile(const char *FileName); 
+    pipelineHandle CreatePipeline(const pipelineCreation &PipelineCreation);
+
     imageHandle CreateImage(u32 Width, u32 Height, format Format, u8 *Pixels);
 
     renderPassHandle GetDefaultRenderPass();
