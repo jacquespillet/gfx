@@ -50,7 +50,7 @@ int main()
 	// Create a command buffer and swap chain
 	gfx::commandBuffer *CommandBuffer = GfxContext->CreateCommandBuffer();
 	gfx::swapchain *Swapchain = GfxContext->CreateSwapchain(Width, Height);
-
+	
 
 	// Create a vertex buffer with triangle data
 	float vertices[] = {
@@ -61,7 +61,7 @@ int main()
 
 	gfx::bufferHandle vertexBuffer = GfxContext->CreateVertexBuffer(vertices, sizeof(vertices));
 
-    gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.shader");
+    gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json");
 	
 #if 0
 	gfx::renderPassHandle RenderPass = GfxContext->GetDefaultRenderPass();

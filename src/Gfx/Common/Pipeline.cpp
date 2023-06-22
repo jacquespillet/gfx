@@ -181,6 +181,10 @@ blendOperation GetBlendOp( const std::string op ) {
 void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCreation, std::string &ParentPath)
 {
     using json = nlohmann::json;
+    
+    std::string Name;
+    PipelineJSON["name"].get_to(Name);
+    PipelineCreation.Name = AllocateCString(Name);
 
     json Shaders = PipelineJSON["shaders"];
     if(!Shaders.is_null())
@@ -357,33 +361,7 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
         }
     }
 
-    //TODO
-    // json RenderPass = PipelineJSON["render_pass"];
-    // if(RenderPass.is_string())
-    // {
-    //     std::string Name;
-    //     RenderPass.get_to(Name);
-
-    //     frameGraphNode *Node = FrameGraph->GetNode(Name.c_str());
-
-    //     if(Node)
-    //     {
-    //         if(Name == "swapchain")
-    //         {
-    //             PipelineCreation.RenderPass = device::Get()->GetSwapchainOutput();
-    //         }
-    //         else
-    //         {
-    //             const renderPass *RenderPass = device::Get()->GetRenderPass(Node->_RenderPass);
-    //             PipelineCreation.RenderPass = RenderPass->_Output;
-    //         }
-    //     }
-    //     else
-    //     {
-    //         printf("No render pass, defaulting to swapchain\n");
-    //         PipelineCreation.RenderPass = device::Get()->GetSwapchainOutput();
-    //     }
-    // }
+    PipelineCreation.RenderPass = context::Get()->SwapchainOutput;
 }
 
 
@@ -441,20 +419,7 @@ pipelineHandle context::CreatePipelineFromFile(const char *FileName)
     }
     for(u32 i=0; i<PipelineCreations.size(); i++)
     {
-        // const pipelineCreation &PassCreation = Creation.PipelineCreations[i];
-        // if(PassCreation.Name != nullptr)
-        // {
-        //     std::string CacheFile = std::string(PassCreation.Name) + ".pipelineCache";
-        //     Pass.Pipeline = _Device->CreatePipeline(PassCreation, CacheFile.c_str());
-        // }
-        // else
-        // {
-            // struct pass
-            // {
-
-            // }
-        // }
-        pipelineHandle pipeline = context::Get()->CreatePipeline(PipelineCreations[i]);
+        pipelineHandle pipeline = this->CreatePipeline(PipelineCreations[i]);
         return pipeline;
     }
 }    

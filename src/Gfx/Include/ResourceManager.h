@@ -106,7 +106,12 @@ protected:
 struct resourceManager
 {
     void Init();
+    void InitApiSpecific();
     resourcePool Buffers;
     resourcePool Images;
+    resourcePool Pipelines;
+    resourcePool Shaders;
+
+    void *ApiData;
 };
 }

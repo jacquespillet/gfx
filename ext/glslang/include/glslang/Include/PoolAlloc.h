@@ -37,7 +37,7 @@
 #ifndef _POOLALLOC_INCLUDED_
 #define _POOLALLOC_INCLUDED_
 
-#ifndef NDEBUG
+#ifdef _DEBUG
 #  define GUARD_BLOCKS  // define to enable guard block sanity checking
 #endif
 
@@ -74,7 +74,7 @@ namespace glslang {
 
 class TAllocation {
 public:
-    TAllocation(size_t size, unsigned char* mem, TAllocation* prev = nullptr) :
+    TAllocation(size_t size, unsigned char* mem, TAllocation* prev = 0) :
         size(size), mem(mem), prevAlloc(prev) {
         // Allocations are bracketed:
         //    [allocationHeader][initialGuardBlock][userData][finalGuardBlock]
@@ -171,7 +171,7 @@ public:
     void popAll();
 
     //
-    // Call allocate() to actually acquire memory.  Returns nullptr if no memory
+    // Call allocate() to actually acquire memory.  Returns 0 if no memory
     // available, otherwise a properly aligned pointer to 'numBytes' of memory.
     //
     void* allocate(size_t numBytes);
@@ -189,7 +189,7 @@ protected:
     struct tHeader {
         tHeader(tHeader* nextPage, size_t pageCount) :
 #ifdef GUARD_BLOCKS
-        lastAllocation(nullptr),
+        lastAllocation(0),
 #endif
         nextPage(nextPage), pageCount(pageCount) { }
 
@@ -304,9 +304,8 @@ public:
     size_type max_size() const { return static_cast<size_type>(-1) / sizeof(T); }
     size_type max_size(int size) const { return static_cast<size_type>(-1) / size; }
 
+    void setAllocator(TPoolAllocator* a) { allocator = *a; }
     TPoolAllocator& getAllocator() const { return allocator; }
-
-    pool_allocator select_on_container_copy_construction() const { return pool_allocator{}; }
 
 protected:
     pool_allocator& operator=(const pool_allocator&) { return *this; }

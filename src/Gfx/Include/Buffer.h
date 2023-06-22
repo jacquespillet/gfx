@@ -23,8 +23,8 @@ struct stageBuffer
 {
     struct allocation
     {
-        u32 _Size;
-        u32 _Offset;
+        u32 Size;
+        u32 Offset;
     };
 
     buffer *Buffer;

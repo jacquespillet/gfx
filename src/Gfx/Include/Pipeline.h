@@ -118,25 +118,6 @@ struct depthStencilCreation
 };
 
 
-// struct renderPassOutput
-// {
-//     vk::Format ColorFormats[MaxImageOutputs];
-//     vk::ImageLayout ColorFinalLayouts[MaxImageOutputs];
-//     renderPassOperation::values ColorOperations[MaxImageOutputs];
-
-//     vk::Format DepthStencilFormat;
-//     vk::ImageLayout DepthStencilFinalLayout;
-
-//     u32 NumColorFormats=0;
-
-//     renderPassOperation::values DepthOperation = renderPassOperation::DontCare;
-//     renderPassOperation::values StencilOperation = renderPassOperation::DontCare;
-
-//     void Reset();
-//     renderPassOutput &Depth(vk::Format Format, vk::ImageLayout Layout);
-//     renderPassOutput &Color(vk::Format Format, vk::ImageLayout Layout, renderPassOperation::values Operation);
-//     renderPassOutput &SetDepthStencilOperation(renderPassOperation::values DepthOperation, renderPassOperation::values StencilOperation);
-// };
 
 
 struct shaderStage
@@ -220,22 +201,36 @@ struct rasterizationCreation
     fillMode::values Fill = fillMode::Solid;
 };
 
+struct renderPassOutput
+{
+    format ColorFormats[MaxImageOutputs];
+    imageLayout ColorFinalLayouts[MaxImageOutputs];
+    renderPassOperation::values ColorOperations[MaxImageOutputs];
+
+    format DepthStencilFormat;
+    imageLayout DepthStencilFinalLayout;
+
+    u32 NumColorFormats=0;
+
+    renderPassOperation::values DepthOperation = renderPassOperation::DontCare;
+    renderPassOperation::values StencilOperation = renderPassOperation::DontCare;
+
+    void Reset();
+    renderPassOutput &Depth(format Format, imageLayout Layout);
+    renderPassOutput &Color(format Format, imageLayout Layout, renderPassOperation::values Operation);
+    renderPassOutput &SetDepthStencilOperation(renderPassOperation::values DepthOperation, renderPassOperation::values StencilOperation);
+};
+
 struct pipelineCreation
 {
     vertexInputCreation VertexInput;
     depthStencilCreation DepthStencil;
-    // renderPassOutput RenderPass;
+    renderPassOutput RenderPass;
     shaderStateCreation Shaders;
     blendStateCreation BlendState;
     rasterizationCreation Rasterization;
 
-    // resourceHandle DescriptorSetLayout[MaxDescriptorSetLayouts];
-    
-    // u32 NumActiveLayouts=0;
-
     const char *Name;
-
-    // pipelineCreation &AddDescriptorSetLayout(resourceHandle Handle);
 };
 
 struct graphicsPipeline
@@ -252,6 +247,18 @@ blendOperation GetBlendOp( const std::string op );
 
 void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCreation, std::string &ParentPath);
 
+struct pipeline
+{
+    shaderStateHandle ShaderState;
+ 
+    depthStencilCreation DepthStencil;
+    blendStateCreation  BlendState;
+    rasterizationCreation Rasterization;
+    
+    b8 GraphicsPipeline=true;
+
+    void *ApiData;
+};
 
 
 }

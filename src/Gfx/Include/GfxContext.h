@@ -61,7 +61,12 @@ struct context
     bufferHandle CreateVertexBuffer(f32 *Values, sz Count);
     bufferHandle CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage MemoryUsage);
 
-    // pipelineHandle CreatePipelineFromFile(const char* FileName);
+    //TODO: return a technique struct with multiple passes and pipelines
+    // struct technique
+    // {
+    //     std::vector<pipelineHandle> Passes;
+    // }
+    
     pipelineHandle CreatePipelineFromFile(const char *FileName); 
     pipelineHandle CreatePipeline(const pipelineCreation &PipelineCreation);
 
@@ -80,5 +85,7 @@ struct context
     void *ApiContextData;
 
     resourceManager ResourceManager;
+
+    renderPassOutput SwapchainOutput;
 };
 }

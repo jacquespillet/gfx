@@ -44,6 +44,57 @@ vk::ImageAspectFlags ImageFormatToImageAspect(format Format)
     }
 }
 
+vk::ShaderStageFlagBits ShaderStageToNative(shaderStageFlags::bits Stage)
+{
+    return (vk::ShaderStageFlagBits)Stage;
+}
+
+vk::BlendFactor BlendFactorToNative(blendFactor Factor)
+{
+    return BlendFactorTable[(uint32_t)Factor];
+}
+
+vk::BlendOp BlendOpToNative(blendOperation Op)
+{
+    return BlendOpTable[(uint32_t)Op];
+}
+
+vk::CompareOp CompareOpToNative(compareOperation Op)
+{
+    return CompareOpTable[(uint32_t)Op];
+}
+
+vk::CullModeFlags CullModeToNative(cullMode::bits CullMode)
+{
+    return (vk::CullModeFlags)CullMode;
+}
+
+
+vk::FrontFace FrontFaceToNative(frontFace Face )
+{
+    return FrontFaceTable[(uint32_t)Face];
+}
+
+
+vk::ImageLayout ImageLayoutToNative(imageLayout ImageLayout )
+{
+    return ImageLayoutTable[(uint32_t)ImageLayout];
+}
+
+imageLayout ImageLayoutFromNative(const vk::ImageLayout &VkImageLayout)
+{
+    for(u64 i=0; i<std::size(ImageLayoutTable); i++)
+    {
+        if(ImageLayoutTable[i] == VkImageLayout)
+        {
+            return (imageLayout)i;
+        }
+    }
+    assert(false);
+    return (imageLayout)0;    
+}
+
+
 }
 
 #endif

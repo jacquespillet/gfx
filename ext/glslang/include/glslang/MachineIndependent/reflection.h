@@ -33,7 +33,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 
-#if !defined(GLSLANG_WEB)
+#ifndef GLSLANG_WEB
 
 #ifndef _REFLECTION_INCLUDED
 #define _REFLECTION_INCLUDED
@@ -152,20 +152,6 @@ public:
     // see getIndex(const char*)
     int getIndex(const TString& name) const { return getIndex(name.c_str()); }
 
-
-    // for mapping any name to its index (only pipe input/output names)
-    int getPipeIOIndex(const char* name, const bool inOrOut) const
-    {
-        TNameToIndex::const_iterator it = inOrOut ? pipeInNameToIndex.find(name) : pipeOutNameToIndex.find(name);
-        if (it == (inOrOut ? pipeInNameToIndex.end() : pipeOutNameToIndex.end()))
-            return -1;
-        else
-            return it->second;
-    }
-
-    // see gePipeIOIndex(const char*, const bool)
-    int getPipeIOIndex(const TString& name, const bool inOrOut) const { return getPipeIOIndex(name.c_str(), inOrOut); }
-
     // Thread local size
     unsigned getLocalSize(int dim) const { return dim <= 2 ? localSize[dim] : 0; }
 
@@ -203,8 +189,6 @@ protected:
 
     TObjectReflection badReflection; // return for queries of -1 or generally out of range; has expected descriptions with in it for this
     TNameToIndex nameToIndex;        // maps names to indexes; can hold all types of data: uniform/buffer and which function names have been processed
-    TNameToIndex pipeInNameToIndex;  // maps pipe in names to indexes, this is a fix to seperate pipe I/O from uniforms and buffers.
-    TNameToIndex pipeOutNameToIndex; // maps pipe out names to indexes, this is a fix to seperate pipe I/O from uniforms and buffers.
     TMapIndexToReflection indexToUniform;
     TMapIndexToReflection indexToUniformBlock;
     TMapIndexToReflection indexToBufferVariable;
@@ -220,4 +204,4 @@ protected:
 
 #endif // _REFLECTION_INCLUDED
 
-#endif // !GLSLANG_WEB
+#endif // GLSLANG_WEB

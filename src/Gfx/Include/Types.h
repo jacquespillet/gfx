@@ -28,6 +28,13 @@ typedef uint32_t bufferHandle;
 typedef uint32_t pipelineHandle;
 typedef uint32_t renderPassHandle;
 typedef uint32_t imageHandle;
+
+#if API==VK
+typedef uint32_t shaderStateHandle;
+typedef uint32_t descriptorSetLayoutHandle;
+
+#endif
+
 static const u32 InvalidHandle = 0xffffffff;
 
 
@@ -303,6 +310,40 @@ enum class frontFace
 {
     CounterClockwise,
     Clockwise
+};
+
+enum class imageLayout
+{
+    Undefined,
+    General,
+    ColorAttachmentOptimal,
+    DepthStencilAttachmentOptimal,
+    DepthStencilReadOnlyOptimal,
+    ShaderReadOnlyOptimal,
+    TransferSrcOptimal,
+    TransferDstOptimal,
+    Preinitialized,
+    DepthReadOnlyStencilAttachmentOptimal,
+    DepthAttachmentStencilReadOnlyOptimal,
+    DepthAttachmentOptimal,
+    DepthReadOnlyOptimal,
+    StencilAttachmentOptimal,
+    StencilReadOnlyOptimal,
+    ReadOnlyOptimal,
+    AttachmentOptimal,
+    PresentSrcKHR,
+    VideoDecodeDstKHR,
+    VideoDecodeSrcKHR,
+    VideoDecodeDpbKHR,
+    SharedPresentKHR,
+    ShadingRateOptimalNV,
+    FragmentDensityMapOptimalEXT,
+    DepthAttachmentOptimalKHR,
+    DepthReadOnlyOptimalKHR,
+    StencilAttachmentOptimalKHR,
+    StencilReadOnlyOptimalKHR,
+    ReadOnlyOptimalKHR,
+    AttachmentOptimalKHR,
 };
 
 

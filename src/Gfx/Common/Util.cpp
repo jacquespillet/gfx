@@ -81,5 +81,48 @@ std::string ReadShaderFile(const char * FileName)
     return FullSource;
 }    
 
+b8 FileExists(const char *FileName)
+{
+	if (FileName == nullptr) return false;
+    std::ifstream File(FileName);
+    if(!File.is_open())
+    {
+        return false;
+    }
+
+    return true;
+}
+
+
+fileContent ReadFileBinary(const char *FileName)
+{
+    fileContent Result = {};
+    std::ifstream File(FileName, std::ios::binary);
+    if(!File.is_open())
+    {
+        return Result;
+    }
+    File.seekg(0, std::ios::end);
+    Result.Size = File.tellg();
+    File.seekg(0, std::ios::beg);
+    Result.Data = new u8[Result.Size];
+    File.read((char*)Result.Data, Result.Size);
+    File.close();
+    return Result;
+}
+
+void WriteFileBinary(const char *FileName, u8 *Data, sz Size)
+{
+    fileContent Result = {};
+    std::ofstream File(FileName, std::ios::binary);
+    if(!File.is_open())
+    {
+        return;
+    }
+    File.write((char*)Data, Size);
+    File.close();
+}
+
+
 
 }

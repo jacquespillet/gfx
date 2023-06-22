@@ -13,6 +13,7 @@
 #include "../Include/Swapchain.h"
 #include "../Include/Buffer.h"
 #include "../Include/Pipeline.h"
+#include "../Include/Shader.h"
 #include "../Common/Util.h"
 #include "VkMapping.h"
 #include "VkImage.h"
@@ -20,9 +21,12 @@
 #include "VkGfxContext.h"
 #include "VkSwapchain.h"
 #include "VkBuffer.h"
+#include "VkShader.h"
 #include "VkMemoryAllocation.h"
 #include "VkUtil.h"
 #include "VkCommon.h"
+#include "VkPipeline.h"
+#include "VkResourceManager.h"
 
 
 namespace gfx
@@ -246,6 +250,7 @@ context* context::Initialize(context::initializeInfo &InitializeInfo, app::windo
     //Get surface format
     auto SurfaceFormats = VkData->PhysicalDevice.getSurfaceFormatsKHR(VkData->Surface);
     VkData->SurfaceFormat = SurfaceFormats.front();
+    Singleton->SwapchainOutput.Reset();
     for(const auto &SurfaceFormat : SurfaceFormats)
     {
         if(SurfaceFormat.format == vk::Format::eR8G8B8A8Unorm || SurfaceFormat.format == vk::Format::eB8G8R8A8Unorm)
@@ -253,6 +258,10 @@ context* context::Initialize(context::initializeInfo &InitializeInfo, app::windo
             VkData->SurfaceFormat = SurfaceFormat;
         }
     }
+    
+    Singleton->SwapchainOutput.Color(FormatFromNative(VkData->SurfaceFormat.format), imageLayout::PresentSrcKHR, renderPassOperation::Clear);
+    Singleton->SwapchainOutput.Depth(format::D32_SFLOAT, imageLayout::DepthStencilAttachmentOptimal);
+    Singleton->SwapchainOutput.SetDepthStencilOperation(renderPassOperation::Clear, renderPassOperation::Clear);
     InitializeInfo.InfoCallback("Selected Surface format " + vk::to_string(VkData->SurfaceFormat.format));
 
 
@@ -359,6 +368,8 @@ context* context::Initialize(context::initializeInfo &InitializeInfo, app::windo
 
     InitializeInfo.InfoCallback("Initialization Finished");    
 
+
+
     return Singleton;
 }
 
@@ -398,12 +409,12 @@ bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count)
 
     auto VertexAllocation = StageBuffer->Submit((uint8_t*)Values, (u32)Count * sizeof(f32));
 
-    Buffer->Init(VertexAllocation._Size, gfx::bufferUsage::VertexBuffer | gfx::bufferUsage::TransferDestination, gfx::memoryUsage::GpuOnly);
+    Buffer->Init(VertexAllocation.Size, gfx::bufferUsage::VertexBuffer | gfx::bufferUsage::TransferDestination, gfx::memoryUsage::GpuOnly);
 
     CommandBuffer->CopyBuffer(
-        gfx::bufferInfo {StageBuffer->Buffer, VertexAllocation._Offset},
+        gfx::bufferInfo {StageBuffer->Buffer, VertexAllocation.Offset},
         gfx::bufferInfo {Buffer, 0},
-        VertexAllocation._Size
+        VertexAllocation.Size
     );
     
     StageBuffer->Flush();
@@ -474,9 +485,524 @@ void context::SubmitCommandBufferImmediate(commandBuffer *CommandBuffer)
     VkData->Device.resetFences(VkData->ImmediateFence);
 }
 
+
+shaderStateHandle CreateShaderState(const shaderStateCreation &Creation)
+{
+    shaderStateHandle Handle = InvalidHandle;
+    if(Creation.StagesCount == 0 || Creation.Stages == nullptr) 
+    {
+        printf("Error creating shader state\n");
+        return Handle;
+    }
+    context *Context = context::Get();
+    GET_CONTEXT(VkData, Context);
+
+    Handle = Context->ResourceManager.Shaders.ObtainResource();
+    if(Handle == InvalidHandle)
+    {
+        return Handle;
+    }
+
+    u32 CompiledShaders=0;
+    
+    shader *ShaderState = (shader*)Context->ResourceManager.Shaders.GetResource(Handle);
+    ShaderState->ApiData = new vkShaderData();
+    vkShaderData *VkShaderData = (vkShaderData*)ShaderState->ApiData;
+
+    ShaderState->GraphicsPipeline = true;
+    ShaderState->ActiveShaders=0;
+    VkShaderData->SpirvParseResults= {};
+    for(CompiledShaders = 0; CompiledShaders < Creation.StagesCount; CompiledShaders++)
+    {
+        const shaderStage &ShaderStage = Creation.Stages[CompiledShaders];
+        if(ShaderStage.Stage == shaderStageFlags::Compute)
+        {
+            ShaderState->GraphicsPipeline=false;
+        }
+
+        vk::ShaderModuleCreateInfo ShaderCreateInfo;
+        if(Creation.SpvInput)
+        {
+            ShaderCreateInfo.codeSize = ShaderStage.CodeSize;
+            ShaderCreateInfo.pCode = reinterpret_cast< const u32* >(ShaderStage.Code);
+        }
+        else
+        {
+            ShaderCreateInfo = CompileShader(ShaderStage.Code, ShaderStage.CodeSize, ShaderStage.Stage, Creation.Name);
+        }
+
+        delete ShaderStage.Code;
+
+        vk::PipelineShaderStageCreateInfo &ShaderStageCreateInfo = VkShaderData->ShaderStageCreateInfo[CompiledShaders];
+        memset(&ShaderStageCreateInfo, 0, sizeof(vk::PipelineShaderStageCreateInfo));
+        ShaderStageCreateInfo = vk::PipelineShaderStageCreateInfo();
+        ShaderStageCreateInfo.setPName("main") .setStage(ShaderStageToNative(ShaderStage.Stage));
+
+        VkShaderData->ShaderStageCreateInfo[CompiledShaders].module = VkData->Device.createShaderModule(ShaderCreateInfo);
+
+        ParseSpirv((void*)((char*)ShaderCreateInfo.pCode), ShaderCreateInfo.codeSize, VkShaderData->SpirvParseResults);
+
+        delete ShaderCreateInfo.pCode;
+    }
+
+    ShaderState->ActiveShaders = CompiledShaders;
+    ShaderState->Name = Creation.Name;
+
+    return Handle;
+}
+
+
+descriptorSetLayoutHandle CreateDescriptorSetLayout(const descriptorSetLayoutCreation &Creation)
+{
+    context *Context = context::Get();
+    GET_CONTEXT(VkData, Context);
+
+    vkResourceManagerData *VkResourceManager = (vkResourceManagerData*)Context->ResourceManager.ApiData;
+
+    descriptorSetLayoutHandle Handle = VkResourceManager->DescriptorSetLayouts.ObtainResource(); 
+    if(Handle == InvalidHandle)
+    {
+        return Handle;
+    }
+
+    descriptorSetLayout *DescriptorSetLayout = (descriptorSetLayout *)VkResourceManager->DescriptorSetLayouts.GetResource(Handle);
+
+    u16 MaxBinding=0;
+    for(u32 i=0; i<Creation.NumBindings; i++)
+    {
+        const descriptorSetLayoutCreation::binding &Binding = Creation.Bindings[i];
+        MaxBinding = std::max(MaxBinding, Binding.Start);
+    }    
+    MaxBinding +=1;
+
+    DescriptorSetLayout->BindingCount = (u16)Creation.NumBindings;
+    u8 *Memory = new u8[(sizeof(vk::DescriptorSetLayoutBinding) + sizeof(descriptorBinding)) * Creation.NumBindings + (sizeof(u8) * MaxBinding)];
+    DescriptorSetLayout->Bindings = (descriptorBinding*)Memory;
+    DescriptorSetLayout->BindingNativeHandle = (vk::DescriptorSetLayoutBinding*)(Memory + sizeof(descriptorBinding) * Creation.NumBindings);
+    DescriptorSetLayout->IndexToBinding = (u8*)(DescriptorSetLayout->BindingNativeHandle + Creation.NumBindings); 
+    DescriptorSetLayout->Handle = Handle;
+    DescriptorSetLayout->SetIndex = u16(Creation.SetIndex);
+    DescriptorSetLayout->Bindless = Creation.Bindless ? 1 : 0;
+
+
+
+    u32 UsedBindings = 0;
+    for(u32 R = 0; R < Creation.NumBindings; ++R)
+    {
+        descriptorBinding &Binding = DescriptorSetLayout->Bindings[R];
+        const descriptorSetLayoutCreation::binding &InputBinding = Creation.Bindings[R];
+        Binding.Start = InputBinding.Start == UINT16_MAX ? (u16)R : InputBinding.Start;
+        Binding.Count = InputBinding.Count;
+        Binding.Type = InputBinding.Type;
+        Binding.Name = InputBinding.Name;
+
+        DescriptorSetLayout->IndexToBinding[Binding.Start] = R;
+
+        vk::DescriptorSetLayoutBinding &VkBinding = DescriptorSetLayout->BindingNativeHandle[UsedBindings];
+        ++UsedBindings;
+
+        VkBinding.binding = Binding.Start;
+        VkBinding.descriptorType = InputBinding.Type;
+        VkBinding.descriptorType = VkBinding.descriptorType == vk::DescriptorType::eUniformBuffer ? vk::DescriptorType::eUniformBufferDynamic : VkBinding.descriptorType;
+        VkBinding.descriptorCount = InputBinding.Count;
+
+        VkBinding.stageFlags = vk::ShaderStageFlagBits::eAll;
+        VkBinding.pImmutableSamplers = nullptr; 
+    }
+
+    vk::DescriptorSetLayoutCreateInfo DescriptorSetLayoutCreateInfo;
+    DescriptorSetLayoutCreateInfo.setBindingCount(UsedBindings)
+                                 .setPBindings(DescriptorSetLayout->BindingNativeHandle);
+
+    
+    DescriptorSetLayout->NativeHandle = VkData->Device.createDescriptorSetLayout(DescriptorSetLayoutCreateInfo);
+    
+
+    return Handle;
+}
+
+vk::RenderPass CreateRenderPass(vkData *VkData, const renderPassOutput &Output)
+{
+
+    vk::AttachmentDescription ColorAttachments[8] = {};
+    vk::AttachmentReference ColorAttachmentsRefs[8] = {};
+
+    vk::AttachmentLoadOp DepthOp, StencilOp;
+    vk::ImageLayout DepthInitialLayout;
+
+    switch (Output.DepthOperation)
+    {
+    case renderPassOperation::Load:
+        DepthOp= vk::AttachmentLoadOp::eLoad;
+        DepthInitialLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+        break;
+    case renderPassOperation::Clear:
+        DepthOp= vk::AttachmentLoadOp::eClear;
+        DepthInitialLayout = vk::ImageLayout::eUndefined;
+        break;
+    default:
+        DepthOp= vk::AttachmentLoadOp::eDontCare;
+        DepthInitialLayout = vk::ImageLayout::eUndefined;
+        break;
+    }
+
+    switch (Output.StencilOperation)
+    {
+    case renderPassOperation::Load:
+        StencilOp= vk::AttachmentLoadOp::eLoad;
+        break;
+    case renderPassOperation::Clear:
+        StencilOp= vk::AttachmentLoadOp::eClear;
+        break;
+    default:
+        StencilOp= vk::AttachmentLoadOp::eDontCare;
+        break;
+    }
+
+    u32 C = 0;
+    for(; C < Output.NumColorFormats; ++C)
+    {
+        vk::AttachmentLoadOp ColorLoadOp;
+        vk::ImageLayout ColorInitialLayout;
+
+        switch (Output.ColorOperations[C])
+        {
+        case renderPassOperation::Load:
+            ColorLoadOp= vk::AttachmentLoadOp::eLoad;
+            ColorInitialLayout = vk::ImageLayout::eColorAttachmentOptimal;
+            break;
+        case renderPassOperation::Clear:
+            ColorLoadOp= vk::AttachmentLoadOp::eClear;
+            ColorInitialLayout = vk::ImageLayout::eUndefined;
+            break;
+        default:
+            ColorLoadOp= vk::AttachmentLoadOp::eDontCare;
+            ColorInitialLayout = vk::ImageLayout::eUndefined;
+            break;
+        }
+
+        vk::AttachmentDescription &ColorAttachment = ColorAttachments[C];
+        ColorAttachment.setFormat(FormatToNative(Output.ColorFormats[C]))
+                       .setSamples(vk::SampleCountFlagBits::e1)
+                       .setLoadOp(ColorLoadOp)
+                       .setStoreOp(vk::AttachmentStoreOp::eStore)
+                       .setStencilLoadOp(StencilOp)
+                       .setStencilStoreOp(vk::AttachmentStoreOp::eStore)
+                       .setInitialLayout(ColorInitialLayout)
+                       .setFinalLayout(ImageLayoutToNative(Output.ColorFinalLayouts[C]));
+
+        vk::AttachmentReference &Ref = ColorAttachmentsRefs[C];
+        Ref.attachment = C;
+        Ref.layout = vk::ImageLayout::eColorAttachmentOptimal;
+    }
+
+
+    vk::AttachmentDescription DepthAttachment{};
+    vk::AttachmentReference DepthRef{};
+    if(Output.DepthStencilFormat != format::UNDEFINED)
+    {
+        DepthAttachment.setFormat(FormatToNative(Output.DepthStencilFormat))
+                        .setSamples(vk::SampleCountFlagBits::e1)
+                        .setLoadOp(DepthOp)
+                        .setStoreOp(vk::AttachmentStoreOp::eStore)
+                        .setStencilLoadOp(StencilOp)
+                        .setStencilStoreOp(vk::AttachmentStoreOp::eStore)
+                        .setInitialLayout(DepthInitialLayout)
+                        .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+        DepthRef.attachment = C;
+        DepthRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+    }
+
+    vk::SubpassDescription Subpass = {};
+    Subpass.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
+
+    vk::AttachmentDescription Attachments[MaxImageOutputs + 1]{};
+    
+    for(u32 ActiveAttachments=0; ActiveAttachments < Output.NumColorFormats; ++ActiveAttachments)
+    {
+        Attachments[ActiveAttachments] = ColorAttachments[ActiveAttachments];
+    }
+    Subpass.setColorAttachmentCount(Output.NumColorFormats)
+           .setPColorAttachments(ColorAttachmentsRefs)
+           .setPDepthStencilAttachment(nullptr);
+
+    u32 DepthStencilCount=0;
+    if(Output.DepthStencilFormat != format::UNDEFINED)
+    {
+        Attachments[Subpass.colorAttachmentCount] = DepthAttachment;
+        Subpass.setPDepthStencilAttachment(&DepthRef);
+        DepthStencilCount=1;
+    }
+
+    vk::RenderPassCreateInfo RenderPassCreateInfo;
+    RenderPassCreateInfo.setAttachmentCount(Output.NumColorFormats + DepthStencilCount)
+                        .setPAttachments(Attachments)
+                        .setSubpassCount(1)
+                        .setPSubpasses(&Subpass);
+    
+    vk::RenderPass RenderPass = VkData->Device.createRenderPass(RenderPassCreateInfo);
+
+    return RenderPass;    
+}
+
+vk::RenderPass vkData::GetRenderPass(const renderPassOutput &Output, std::string Name)
+{
+    if(RenderPassCache.find(Name) != RenderPassCache.end())
+    {
+        return RenderPassCache[Name];
+    }
+    
+    vk::RenderPass RenderPass =  CreateRenderPass(this, Output);
+    RenderPassCache[Name] = RenderPass;
+}
+
 pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 {
-    return InvalidHandle;
+    GET_CONTEXT(VkData, this);
+
+//Pipeline cache
+#if 0
+    vk::PipelineCache PipelineCache;
+    vk::PipelineCacheCreateInfo PipelineCacheCreateInfo;
+
+    const char *PipelineCachePath = PipelineCreation.Name;
+    b8 CacheExists = FileExists(PipelineCachePath);
+    if(PipelineCachePath != nullptr && CacheExists)
+    {
+        fileContent PipelineCacheFile = ReadFileBinary(PipelineCachePath);
+        vk::PipelineCacheHeaderVersionOne *CacheHeader = (vk::PipelineCacheHeaderVersionOne*)PipelineCacheFile.Data;
+
+        if(CacheHeader->deviceID == VkData->PhysicalDeviceProperties.deviceID && 
+           CacheHeader->vendorID == VkData->PhysicalDeviceProperties.vendorID &&
+           memcmp(CacheHeader->pipelineCacheUUID, VkData->PhysicalDeviceProperties.pipelineCacheUUID, VK_UUID_SIZE) == 0)
+        {
+            PipelineCacheCreateInfo.setInitialDataSize(PipelineCacheFile.Size).setPInitialData(PipelineCacheFile.Data);
+        }
+        else
+        {
+            CacheExists=false;
+        }
+
+        PipelineCache = VkData->Device.createPipelineCache(PipelineCacheCreateInfo);
+        delete PipelineCacheFile.Data;
+    }
+    else
+    {
+        PipelineCache = VkData->Device.createPipelineCache(PipelineCacheCreateInfo);
+    }
+#endif
+
+    pipelineHandle Handle = ResourceManager.Pipelines.ObtainResource();
+    if(Handle == InvalidHandle)
+    {
+        return Handle;
+    }
+
+    shaderStateHandle ShaderState = CreateShaderState(PipelineCreation.Shaders);
+    if(ShaderState == InvalidHandle)
+    {
+        ResourceManager.Pipelines.ReleaseResource(Handle);
+        Handle = InvalidHandle;
+        return Handle;
+    }
+
+    pipeline *Pipeline = (pipeline*)ResourceManager.Pipelines.GetResource(Handle);
+    Pipeline->ApiData = new vkPipelineData();
+    vkPipelineData *VkPipelineData = (vkPipelineData*)Pipeline->ApiData;
+
+    shader *ShaderStateData = (shader*) ResourceManager.Shaders.GetResource(ShaderState);
+    vkShaderData *VkShaderData = (vkShaderData*)ShaderStateData->ApiData;
+
+    Pipeline->ShaderState = ShaderState;
+    vk::DescriptorSetLayout Layouts[MaxDescriptorSetLayouts];
+
+    u32 NumActiveLayouts = VkShaderData->SpirvParseResults.SetCount;
+    for(sz i=0; i<NumActiveLayouts; i++)
+    {
+        VkPipelineData->DescriptorSetLayoutHandles[i] = CreateDescriptorSetLayout(VkShaderData->SpirvParseResults.Sets[i]);
+        
+        vkResourceManagerData *VkResourceManagerData = (vkResourceManagerData*)ResourceManager.ApiData;
+        VkPipelineData->DescriptorSetLayouts[i] = (descriptorSetLayout*)VkResourceManagerData->DescriptorSetLayouts.GetResource(VkPipelineData->DescriptorSetLayoutHandles[i]);
+        Layouts[i] = VkPipelineData->DescriptorSetLayouts[i]->NativeHandle;
+    }
+
+    vk::PipelineLayoutCreateInfo PipelineLayoutCreate;
+    PipelineLayoutCreate.setPSetLayouts(Layouts)
+                        .setSetLayoutCount(NumActiveLayouts);
+
+    VkPipelineData->PipelineLayout = VkData->Device.createPipelineLayout(PipelineLayoutCreate);
+    VkPipelineData->NumActiveLayouts = NumActiveLayouts;
+
+    if(ShaderStateData->GraphicsPipeline)
+    {
+        vk::GraphicsPipelineCreateInfo PipelineCreateInfo;
+
+        PipelineCreateInfo.setPStages(VkShaderData->ShaderStageCreateInfo)
+                          .setStageCount(ShaderStateData->ActiveShaders)
+                          .setLayout(VkPipelineData->PipelineLayout);
+
+        vk::PipelineVertexInputStateCreateInfo VertexInputInfo;
+        
+        vk::VertexInputAttributeDescription VertexAttributes[8];
+        if(PipelineCreation.VertexInput.NumVertexAttributes)
+        {
+            for(u32 i=0; i<PipelineCreation.VertexInput.NumVertexAttributes; i++)
+            {
+                const vertexAttribute &VertexAttribute = PipelineCreation.VertexInput.VertexAttributes[i];
+                VertexAttributes[i] = vk::VertexInputAttributeDescription(VertexAttribute.Location, VertexAttribute.Binding, ToVkVertexFormat(VertexAttribute.Format), VertexAttribute.Offset);
+            }
+            VertexInputInfo.setVertexAttributeDescriptionCount(PipelineCreation.VertexInput.NumVertexAttributes)
+                           .setPVertexAttributeDescriptions(VertexAttributes);
+        }
+        else VertexInputInfo.setVertexAttributeDescriptionCount(0) .setPVertexAttributeDescriptions(nullptr);
+        
+        vk::VertexInputBindingDescription VertexBindings[8];
+        if(PipelineCreation.VertexInput.NumVertexStreams)
+        {
+            VertexInputInfo.setVertexBindingDescriptionCount(PipelineCreation.VertexInput.NumVertexStreams);
+
+            for(u32 i=0; i<PipelineCreation.VertexInput.NumVertexStreams; i++)
+            {
+                const vertexStream &VertexStream = PipelineCreation.VertexInput.VertexStreams[i];
+                vk::VertexInputRate VertexRate = VertexStream.InputRate == vertexInputRate::PerVertex ? vk::VertexInputRate::eVertex : vk::VertexInputRate::eInstance;
+                VertexBindings[i] = vk::VertexInputBindingDescription(VertexStream.Binding, VertexStream.Stride, VertexRate);
+            }
+            VertexInputInfo.setPVertexBindingDescriptions(VertexBindings);
+        }
+        else VertexInputInfo.setVertexBindingDescriptionCount(0).setVertexBindingDescriptions(nullptr);
+
+        PipelineCreateInfo.setPVertexInputState(&VertexInputInfo);
+
+        vk::PipelineInputAssemblyStateCreateInfo InputAssemblyCreateInfo;
+        InputAssemblyCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList)
+                               .setPrimitiveRestartEnable(VK_FALSE);
+        PipelineCreateInfo.setPInputAssemblyState(&InputAssemblyCreateInfo);
+
+        vk::PipelineColorBlendAttachmentState ColorBlendAttachment[8];
+        if(PipelineCreation.BlendState.ActiveStates)
+        {
+            for(sz i=0; i<PipelineCreation.BlendState.ActiveStates; i++)
+            {
+                const blendState &BlendState = PipelineCreation.BlendState.BlendStates[i];
+
+                ColorBlendAttachment[i].colorWriteMask = vk::ColorComponentFlagBits::eR |  vk::ColorComponentFlagBits::eG |  vk::ColorComponentFlagBits::eB |  vk::ColorComponentFlagBits::eA;
+                ColorBlendAttachment[i].blendEnable = BlendState.BlendEnabled ? VK_TRUE : VK_FALSE;
+                ColorBlendAttachment[i].srcColorBlendFactor = BlendFactorToNative(BlendState.SourceColor);
+                ColorBlendAttachment[i].dstColorBlendFactor = BlendFactorToNative(BlendState.DestinationColor);
+                ColorBlendAttachment[i].colorBlendOp = BlendOpToNative(BlendState.ColorOp);
+
+                if(BlendState.SeparateBlend)
+                {
+                    ColorBlendAttachment[i].srcAlphaBlendFactor = BlendFactorToNative(BlendState.SourceAlpha);
+                    ColorBlendAttachment[i].dstAlphaBlendFactor = BlendFactorToNative(BlendState.DestinationAlpha);
+                    ColorBlendAttachment[i].alphaBlendOp = BlendOpToNative(BlendState.AlphaOp);
+                }
+                else{
+                    ColorBlendAttachment[i].srcAlphaBlendFactor = BlendFactorToNative(BlendState.SourceColor);
+                    ColorBlendAttachment[i].dstAlphaBlendFactor = BlendFactorToNative(BlendState.DestinationColor);
+                    ColorBlendAttachment[i].alphaBlendOp = BlendOpToNative(BlendState.ColorOp);
+                }
+            }
+        }
+        else
+        {
+            // for(u32 i=0; i<PipelineCreation.RenderPass.NumColorFormats; i++)
+            // {
+            //     ColorBlendAttachment[i] = vk::PipelineColorBlendAttachmentState();
+            //     ColorBlendAttachment[i].blendEnable = VK_FALSE;
+            //     ColorBlendAttachment[i].srcColorBlendFactor = vk::BlendFactor::eOne;
+            //     ColorBlendAttachment[i].dstColorBlendFactor = vk::BlendFactor::eZero;
+            //     ColorBlendAttachment[i].colorWriteMask = vk::ColorComponentFlagBits::eR |  vk::ColorComponentFlagBits::eG |  vk::ColorComponentFlagBits::eB |  vk::ColorComponentFlagBits::eA;
+            // }
+        }
+
+        vk::PipelineColorBlendStateCreateInfo ColorBlending;
+        ColorBlending.setLogicOp(vk::LogicOp::eCopy)
+                     .setAttachmentCount(PipelineCreation.BlendState.ActiveStates)
+                    //  .setAttachmentCount(PipelineCreation.BlendState.ActiveStates ? PipelineCreation.BlendState.ActiveStates : PipelineCreation.RenderPass.NumColorFormats)
+                     .setPAttachments(ColorBlendAttachment)
+                     .setBlendConstants({0,0,0,0});
+        PipelineCreateInfo.setPColorBlendState(&ColorBlending);
+
+
+        vk::PipelineDepthStencilStateCreateInfo DepthStencil;
+        DepthStencil.setDepthWriteEnable(PipelineCreation.DepthStencil.DepthWriteEnable ? true : false)
+                    .setStencilTestEnable(PipelineCreation.DepthStencil.StencilEnable ? true : false)
+                    .setDepthTestEnable(PipelineCreation.DepthStencil.DepthEnable ? true : false)
+                    .setDepthCompareOp(CompareOpToNative(PipelineCreation.DepthStencil.DepthComparison));
+        PipelineCreateInfo.setPDepthStencilState(&DepthStencil);
+
+
+        vk::PipelineMultisampleStateCreateInfo MultisampleState;
+        MultisampleState.setSampleShadingEnable(VK_FALSE)
+                        .setRasterizationSamples(vk::SampleCountFlagBits::e1)
+                        .setMinSampleShading(1.0f)
+                        .setPSampleMask(nullptr)
+                        .setAlphaToCoverageEnable(VK_FALSE)
+                        .setAlphaToOneEnable(VK_FALSE);
+        PipelineCreateInfo.setPMultisampleState(&MultisampleState);
+
+        vk::PipelineRasterizationStateCreateInfo Rasterizer;
+        Rasterizer.setDepthClampEnable(VK_FALSE)
+                  .setRasterizerDiscardEnable(VK_FALSE)
+                  .setPolygonMode(vk::PolygonMode::eFill)
+                  .setLineWidth(1)
+                  .setCullMode(CullModeToNative(PipelineCreation.Rasterization.CullMode))
+                  .setFrontFace(FrontFaceToNative(PipelineCreation.Rasterization.FrontFace))
+                  .setDepthBiasEnable(VK_FALSE)
+                  .setDepthBiasConstantFactor(0.0f)
+                  .setDepthBiasClamp(0.0f)
+                  .setDepthBiasSlopeFactor(0.0f);
+        PipelineCreateInfo.setPRasterizationState(&Rasterizer);
+
+        vk::Viewport Viewport;
+        Viewport.x = 0;
+        Viewport.y = 0;
+        Viewport.width = (float)VkData->SurfaceExtent.width;
+        Viewport.height = (float)VkData->SurfaceExtent.height;
+        Viewport.minDepth = 0;
+        Viewport.maxDepth = 1;
+
+        vk::Rect2D Scissor;
+        Scissor.offset = vk::Offset2D(0,0);
+        Scissor.extent = vk::Extent2D(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height);
+
+        vk::PipelineViewportStateCreateInfo ViewportState;
+        ViewportState.setViewportCount(1)
+                     .setPViewports(&Viewport)
+                     .setScissorCount(1)
+                     .setPScissors(&Scissor);
+        PipelineCreateInfo.setPViewportState(&ViewportState);
+
+        PipelineCreateInfo.setRenderPass(VkData->GetRenderPass(PipelineCreation.RenderPass, PipelineCreation.Name));
+
+        vk::DynamicState DynamicStates[] = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
+        vk::PipelineDynamicStateCreateInfo DynamicState;
+        DynamicState.setDynamicStateCount(2)
+                    .setPDynamicStates(DynamicStates);
+        PipelineCreateInfo.setPDynamicState(&DynamicState);
+
+        VkPipelineData->NativeHandle = VkData->Device.createGraphicsPipeline(VK_NULL_HANDLE, PipelineCreateInfo).value;
+        VkPipelineData->BindPoint = vk::PipelineBindPoint::eGraphics;
+    }
+    else
+    {
+        vk::ComputePipelineCreateInfo ComputePipelineCreateInfo;
+        ComputePipelineCreateInfo.setStage(VkShaderData->ShaderStageCreateInfo[0])
+                                 .setLayout(VkPipelineData->PipelineLayout);
+        VkPipelineData->NativeHandle = VkData->Device.createComputePipeline(VK_NULL_HANDLE, ComputePipelineCreateInfo).value;
+        VkPipelineData->BindPoint = vk::PipelineBindPoint::eCompute;
+    }
+
+    // if(PipelineCachePath != nullptr && !CacheExists)
+    // {
+    //     std::vector<u8> CacheData = VkData->Device.getPipelineCacheData(PipelineCache);
+    //     WriteFileBinary(PipelineCachePath, CacheData.data(), CacheData.size() * sizeof(u8));
+    // }
+
+    // VkData->Device.destroyPipelineCache(PipelineCache);
+    return Handle;
 }
 
 }

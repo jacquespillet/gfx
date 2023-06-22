@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include "../Include/Types.h"
+#include "../Include/Pipeline.h"
 
 namespace gfx
 {
@@ -156,8 +157,164 @@ static vk::Format FormatTable[] =
 format FormatFromNative(const vk::Format &VkFormat);
 vk::Format &FormatToNative(format Format);
 
+vk::ShaderStageFlagBits ShaderStageToNative(shaderStageFlags::bits Stage);
 
 vk::ImageAspectFlags ImageFormatToImageAspect(format Format);
+
+static vk::Format ToVkVertexFormat( vertexComponentFormat::values Value ) {
+    static vk::Format Mapping[ vertexComponentFormat::Count ] = { vk::Format::eR32Sfloat, vk::Format::eR32G32Sfloat, vk::Format::eR32G32B32Sfloat, vk::Format::eR32G32B32A32Sfloat, /*MAT4 TODO*/vk::Format::eR32G32B32A32Sfloat,
+                                                                          vk::Format::eR8Sint, vk::Format::eR8G8B8A8Snorm, vk::Format::eR8Uint, vk::Format::eR8G8B8A8Uint, vk::Format::eR16G16Sint, vk::Format::eR16G16Snorm,
+                                                                          vk::Format::eR16G16B16A16Sint, vk::Format::eR16G16B16A16Snorm, vk::Format::eR32Uint, vk::Format::eR32G32Uint, vk::Format::eR32G32B32A32Uint };
+    return Mapping[ Value ];
+}
+
+
+
+static vk::BlendFactor BlendFactorTable[] = 
+{
+    vk::BlendFactor::eZero,
+    vk::BlendFactor::eOne,
+    vk::BlendFactor::eSrcColor,
+    vk::BlendFactor::eOneMinusSrcColor,
+    vk::BlendFactor::eDstColor,
+    vk::BlendFactor::eOneMinusDstColor,
+    vk::BlendFactor::eSrcAlpha,
+    vk::BlendFactor::eOneMinusSrcAlpha,
+    vk::BlendFactor::eDstAlpha,
+    vk::BlendFactor::eOneMinusDstAlpha,
+    vk::BlendFactor::eConstantColor,
+    vk::BlendFactor::eOneMinusConstantColor,
+    vk::BlendFactor::eConstantAlpha,
+    vk::BlendFactor::eOneMinusConstantAlpha,
+    vk::BlendFactor::eSrcAlphaSaturate,
+    vk::BlendFactor::eSrc1Color,
+    vk::BlendFactor::eOneMinusSrc1Color,
+    vk::BlendFactor::eSrc1Alpha,
+    vk::BlendFactor::eOneMinusSrc1Alpha
+};
+
+vk::BlendFactor BlendFactorToNative(blendFactor Factor);
+
+static vk::BlendOp BlendOpTable[] = 
+{
+    vk::BlendOp::eAdd,
+    vk::BlendOp::eSubtract,
+    vk::BlendOp::eReverseSubtract,
+    vk::BlendOp::eMin,
+    vk::BlendOp::eMax,
+    vk::BlendOp::eZeroEXT,
+    vk::BlendOp::eSrcEXT,
+    vk::BlendOp::eDstEXT,
+    vk::BlendOp::eSrcOverEXT,
+    vk::BlendOp::eDstOverEXT,
+    vk::BlendOp::eSrcInEXT,
+    vk::BlendOp::eDstInEXT,
+    vk::BlendOp::eSrcOutEXT,
+    vk::BlendOp::eDstOutEXT,
+    vk::BlendOp::eSrcAtopEXT,
+    vk::BlendOp::eDstAtopEXT,
+    vk::BlendOp::eXorEXT,
+    vk::BlendOp::eMultiplyEXT,
+    vk::BlendOp::eScreenEXT,
+    vk::BlendOp::eOverlayEXT,
+    vk::BlendOp::eDarkenEXT,
+    vk::BlendOp::eLightenEXT,
+    vk::BlendOp::eColordodgeEXT,
+    vk::BlendOp::eColorburnEXT,
+    vk::BlendOp::eHardlightEXT,
+    vk::BlendOp::eSoftlightEXT,
+    vk::BlendOp::eDifferenceEXT,
+    vk::BlendOp::eExclusionEXT,
+    vk::BlendOp::eInvertEXT,
+    vk::BlendOp::eInvertRgbEXT,
+    vk::BlendOp::eLineardodgeEXT,
+    vk::BlendOp::eLinearburnEXT,
+    vk::BlendOp::eVividlightEXT,
+    vk::BlendOp::eLinearlightEXT,
+    vk::BlendOp::ePinlightEXT,
+    vk::BlendOp::eHardmixEXT,
+    vk::BlendOp::eHslHueEXT,
+    vk::BlendOp::eHslSaturationEXT,
+    vk::BlendOp::eHslColorEXT,
+    vk::BlendOp::eHslLuminosityEXT,
+    vk::BlendOp::ePlusEXT,
+    vk::BlendOp::ePlusClampedEXT,
+    vk::BlendOp::ePlusClampedAlphaEXT,
+    vk::BlendOp::ePlusDarkerEXT,
+    vk::BlendOp::eMinusEXT,
+    vk::BlendOp::eMinusClampedEXT,
+    vk::BlendOp::eContrastEXT,
+    vk::BlendOp::eInvertOvgEXT,
+    vk::BlendOp::eRedEXT,
+    vk::BlendOp::eGreenEXT,
+    vk::BlendOp::eBlueEXT
+};
+
+vk::BlendOp BlendOpToNative(blendOperation Op);
+
+static vk::CompareOp CompareOpTable[] = 
+{    
+    vk::CompareOp::eNever,
+    vk::CompareOp::eLess,
+    vk::CompareOp::eEqual,
+    vk::CompareOp::eLessOrEqual,
+    vk::CompareOp::eGreater,
+    vk::CompareOp::eNotEqual,
+    vk::CompareOp::eGreaterOrEqual,
+    vk::CompareOp::eAlways
+};
+
+vk::CompareOp CompareOpToNative(compareOperation Op);
+
+vk::CullModeFlags CullModeToNative(cullMode::bits CullMode);
+
+static vk::FrontFace FrontFaceTable[] = 
+{    
+    vk::FrontFace::eCounterClockwise,
+    vk::FrontFace::eClockwise
+};
+
+vk::FrontFace FrontFaceToNative(frontFace Face );
+
+
+static vk::ImageLayout ImageLayoutTable[] = 
+{
+    vk::ImageLayout::eUndefined,
+    vk::ImageLayout::eGeneral,
+    vk::ImageLayout::eColorAttachmentOptimal,
+    vk::ImageLayout::eDepthStencilAttachmentOptimal,
+    vk::ImageLayout::eDepthStencilReadOnlyOptimal,
+    vk::ImageLayout::eShaderReadOnlyOptimal,
+    vk::ImageLayout::eTransferSrcOptimal,
+    vk::ImageLayout::eTransferDstOptimal,
+    vk::ImageLayout::ePreinitialized,
+    vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimal,
+    vk::ImageLayout::eDepthAttachmentStencilReadOnlyOptimal,
+    vk::ImageLayout::eDepthAttachmentOptimal,
+    vk::ImageLayout::eDepthReadOnlyOptimal,
+    vk::ImageLayout::eStencilAttachmentOptimal,
+    vk::ImageLayout::eStencilReadOnlyOptimal,
+    vk::ImageLayout::eReadOnlyOptimal,
+    vk::ImageLayout::eAttachmentOptimal,
+    vk::ImageLayout::ePresentSrcKHR,
+    vk::ImageLayout::eVideoDecodeDstKHR,
+    vk::ImageLayout::eVideoDecodeSrcKHR,
+    vk::ImageLayout::eVideoDecodeDpbKHR,
+    vk::ImageLayout::eSharedPresentKHR,
+    vk::ImageLayout::eShadingRateOptimalNV,
+    vk::ImageLayout::eFragmentDensityMapOptimalEXT,
+    vk::ImageLayout::eDepthAttachmentOptimalKHR,
+    vk::ImageLayout::eDepthReadOnlyOptimalKHR,
+    vk::ImageLayout::eStencilAttachmentOptimalKHR,
+    vk::ImageLayout::eStencilReadOnlyOptimalKHR,
+    vk::ImageLayout::eReadOnlyOptimalKHR,
+    vk::ImageLayout::eAttachmentOptimalKHR    
+};
+
+
+vk::ImageLayout ImageLayoutToNative(imageLayout ImageLayout );
+
+imageLayout ImageLayoutFromNative(const vk::ImageLayout &VkImageLayout);
 
 }
 

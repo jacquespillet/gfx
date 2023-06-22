@@ -7,8 +7,16 @@
 
 #include <vulkan/vulkan.hpp>
 #include <vk_mem_alloc.h>
+#include <unordered_map>
+#include <string>
+
 namespace gfx
 {
+#
+struct vkConstants
+{
+    static const u8 MaxDescriptorsPerSet = 16;
+};
 
 struct vkData
 {
@@ -44,6 +52,10 @@ struct vkData
     stageBuffer StageBuffer;
 
     vk::Extent2D SurfaceExtent;
+
+    std::unordered_map<std::string, vk::RenderPass> RenderPassCache;
+
+    vk::RenderPass GetRenderPass(const renderPassOutput &Output, std::string Name);
 };
 
 }

@@ -99,15 +99,15 @@ link_directories(${VMA_LIB_DIR})
 # include_directories(${WYHASH_INC_DIR})
 
 # glslang
-set(GLSLANG_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang/include/glslang)
+set(GLSLANG_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang/include)
 set(GLSLANG_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang/lib)
 include_directories(${GLSLANG_INC_DIR})
 link_directories(${GLSLANG_LIB_DIR})
 
-# # spirv_reflect
-# set(SPIRVREFLECT_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/spirv-reflect)
-# set(SPIRVREFLECT_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ext/spirv-reflect/spirv_reflect.c)
-# include_directories(${SPIRVREFLECT_INC_DIR})
+# spirv_reflect
+set(SPIRVREFLECT_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/spirv-reflect)
+set(SPIRVREFLECT_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ext/spirv-reflect/spirv_reflect.c)
+include_directories(${SPIRVREFLECT_INC_DIR})
 
 # # tlsf
 # set(TLSF_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/tlsf)
@@ -133,28 +133,34 @@ set(sourceCode
         src/Gfx/VK/VkMapping.cpp
         src/Gfx/VK/VkImage.cpp
         src/Gfx/VK/VkMemoryAllocation.cpp
+        src/Gfx/VK/VkResourceManager.cpp
+        src/Gfx/VK/VkPipeline.cpp
+        src/Gfx/VK/VkShader.cpp
         
         src/App/Window.cpp
 
 
         ${VOLK_SOURCE}
+        ${SPIRVREFLECT_SOURCE}
 )
-                
+
 add_executable(Main ${sourceCode})
 target_link_libraries(Main glfw3)
 target_link_libraries(Main vulkan-1)
 target_link_libraries(Main debug VulkanMemoryAllocatord optimized VulkanMemoryAllocator)
 target_link_libraries(Main 
-                        debug OSDependentd.lib optimized OSDependent.lib
-                        debug SPIRVd.lib optimized SPIRV.lib
-                        debug glslangd.lib optimized glslang.lib
-                        debug MachineIndependentd.lib optimized MachineIndependent.lib
-                        debug SPVRemapperd.lib optimized SPVRemapper.lib
-                        debug GenericCodeGend.lib optimized GenericCodeGen.lib
-                        debug glslang-default-resource-limitsd.lib optimized glslang-default-resource-limits.lib
-                        debug HLSLd.lib optimized HLSL.lib
-                        debug OGLCompilerd.lib optimized OGLCompiler.lib
+                        ${GLSLANG_LIB_DIR}/OSDependentd.lib
+                        ${GLSLANG_LIB_DIR}/SPIRVd.lib
+                        ${GLSLANG_LIB_DIR}/glslangd.lib
+                        ${GLSLANG_LIB_DIR}/MachineIndependentd.lib
+                        ${GLSLANG_LIB_DIR}/SPVRemapperd.lib
+                        ${GLSLANG_LIB_DIR}/GenericCodeGend.lib
+                        ${GLSLANG_LIB_DIR}/glslang-default-resource-limitsd.lib
+                        ${GLSLANG_LIB_DIR}/HLSLd.lib
+                        ${GLSLANG_LIB_DIR}/OGLCompilerd.lib
                         )
+set_property(TARGET Main PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
+
 install(TARGETS Main
         RUNTIME
         DESTINATION bin)
