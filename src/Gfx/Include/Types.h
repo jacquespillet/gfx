@@ -26,8 +26,8 @@ typedef bool b8;
 
 typedef uint32_t bufferHandle;
 typedef uint32_t pipelineHandle;
-typedef uint32_t renderPassHandle;
 typedef uint32_t imageHandle;
+typedef uint32_t renderPassHandle;
 
 #if API==VK
 typedef uint32_t shaderStateHandle;

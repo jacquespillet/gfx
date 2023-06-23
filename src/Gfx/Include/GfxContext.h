@@ -25,7 +25,7 @@ struct context
     struct initializeInfo
     {
         s32 MajorVersion = 1;
-        s32 MinorVersion = 0;
+        s32 MinorVersion = 2;
         std::function<void(const std::string&)> ErrorCallback = DefaultCallback;
         std::function<void(const std::string&)> InfoCallback = DefaultCallback;
 

@@ -3,6 +3,7 @@
 #include "../Include/Image.h"
 #include "../Include/Pipeline.h"
 #include "../Include/Shader.h"
+#include "../Include/RenderPass.h"
 
 namespace gfx
 {
@@ -12,6 +13,7 @@ void resourceManager::Init()
 	Images.Init(2048, sizeof(image));
 	Pipelines.Init(2048, sizeof(pipeline));
 	Shaders.Init(2048, sizeof(shader));
+	RenderPasses.Init(2048, sizeof(renderPass));
 
 	InitApiSpecific();
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "RenderTarget.h"
+#include "RenderPass.h"
 #include "Types.h"
 
 namespace gfx

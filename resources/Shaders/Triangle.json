@@ -14,7 +14,7 @@
 					"stream_rate" : "Vertex"
 				}
 			],
-			"render_pass" : "TrianglePass",
+			"render_pass" : "Swapchain",
 			"depth" : {
 				"write" : true,
 				"test" : "less_or_equal"

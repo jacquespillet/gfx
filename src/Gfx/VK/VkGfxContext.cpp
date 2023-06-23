@@ -14,6 +14,7 @@
 #include "../Include/Buffer.h"
 #include "../Include/Pipeline.h"
 #include "../Include/Shader.h"
+#include "../Include/RenderPass.h"
 #include "../Common/Util.h"
 #include "VkMapping.h"
 #include "VkImage.h"
@@ -24,6 +25,7 @@
 #include "VkShader.h"
 #include "VkMemoryAllocation.h"
 #include "VkUtil.h"
+#include "VkRenderPass.h"
 #include "VkCommon.h"
 #include "VkPipeline.h"
 #include "VkResourceManager.h"
@@ -262,6 +264,8 @@ context* context::Initialize(context::initializeInfo &InitializeInfo, app::windo
     Singleton->SwapchainOutput.Color(FormatFromNative(VkData->SurfaceFormat.format), imageLayout::PresentSrcKHR, renderPassOperation::Clear);
     Singleton->SwapchainOutput.Depth(format::D32_SFLOAT, imageLayout::DepthStencilAttachmentOptimal);
     Singleton->SwapchainOutput.SetDepthStencilOperation(renderPassOperation::Clear, renderPassOperation::Clear);
+    Singleton->SwapchainOutput.Name = "Swapchain";
+    
     InitializeInfo.InfoCallback("Selected Surface format " + vk::to_string(VkData->SurfaceFormat.format));
 
 
@@ -311,6 +315,9 @@ context* context::Initialize(context::initializeInfo &InitializeInfo, app::windo
     VkData->DeviceQueue = VkData->Device.getQueue(VkData->QueueFamilyIndex, 0);
 
     InitializeInfo.InfoCallback("Created device and queues");
+
+
+    VkData->GetRenderPass(Singleton->SwapchainOutput, "Swapchain");
 
     //Initialize dynamic dispatch loader
     VkData->DynamicLoader.init(VkData->Instance, VkData->Device);
@@ -367,7 +374,6 @@ context* context::Initialize(context::initializeInfo &InitializeInfo, app::windo
     // VkData->VirtualFrames.Init(InitializeInfo.VirtualFrameCount, InitializeInfo.MaxStageBufferSize);
 
     InitializeInfo.InfoCallback("Initialization Finished");    
-
 
 
     return Singleton;
@@ -746,15 +752,30 @@ vk::RenderPass CreateRenderPass(vkData *VkData, const renderPassOutput &Output)
     return RenderPass;    
 }
 
-vk::RenderPass vkData::GetRenderPass(const renderPassOutput &Output, std::string Name)
+renderPass *vkData::GetRenderPass(const renderPassOutput &Output, std::string Name)
 {
     if(RenderPassCache.find(Name) != RenderPassCache.end())
     {
-        return RenderPassCache[Name];
+        renderPass *RenderPass = (renderPass*) context::Get()->ResourceManager.RenderPasses.GetResource(RenderPassCache[Name]);
+        return RenderPass;
+    }
+
+    renderPassHandle RenderPassHandle = context::Get()->ResourceManager.RenderPasses.ObtainResource();
+    if(RenderPassHandle == InvalidHandle)
+    {
+        assert(false);
+        return {};
     }
     
-    vk::RenderPass RenderPass =  CreateRenderPass(this, Output);
-    RenderPassCache[Name] = RenderPass;
+    renderPass *RenderPass = (renderPass*) context::Get()->ResourceManager.RenderPasses.GetResource(RenderPassHandle);
+    RenderPass->Name = Name;
+    RenderPass->ApiData = new vkRenderPassData();
+    vkRenderPassData *VkRenderPassData = (vkRenderPassData*)RenderPass->ApiData;
+    VkRenderPassData->NativeHandle =  CreateRenderPass(this, Output);
+
+
+    RenderPassCache[Name] = RenderPassHandle;
+    return RenderPass;
 }
 
 pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
@@ -907,20 +928,20 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         }
         else
         {
-            // for(u32 i=0; i<PipelineCreation.RenderPass.NumColorFormats; i++)
-            // {
-            //     ColorBlendAttachment[i] = vk::PipelineColorBlendAttachmentState();
-            //     ColorBlendAttachment[i].blendEnable = VK_FALSE;
-            //     ColorBlendAttachment[i].srcColorBlendFactor = vk::BlendFactor::eOne;
-            //     ColorBlendAttachment[i].dstColorBlendFactor = vk::BlendFactor::eZero;
-            //     ColorBlendAttachment[i].colorWriteMask = vk::ColorComponentFlagBits::eR |  vk::ColorComponentFlagBits::eG |  vk::ColorComponentFlagBits::eB |  vk::ColorComponentFlagBits::eA;
-            // }
+            for(u32 i=0; i<PipelineCreation.RenderPass.NumColorFormats; i++)
+            {
+                ColorBlendAttachment[i] = vk::PipelineColorBlendAttachmentState();
+                ColorBlendAttachment[i].blendEnable = VK_FALSE;
+                ColorBlendAttachment[i].srcColorBlendFactor = vk::BlendFactor::eOne;
+                ColorBlendAttachment[i].dstColorBlendFactor = vk::BlendFactor::eZero;
+                ColorBlendAttachment[i].colorWriteMask = vk::ColorComponentFlagBits::eR |  vk::ColorComponentFlagBits::eG |  vk::ColorComponentFlagBits::eB |  vk::ColorComponentFlagBits::eA;
+            }
         }
 
         vk::PipelineColorBlendStateCreateInfo ColorBlending;
         ColorBlending.setLogicOp(vk::LogicOp::eCopy)
-                     .setAttachmentCount(PipelineCreation.BlendState.ActiveStates)
-                    //  .setAttachmentCount(PipelineCreation.BlendState.ActiveStates ? PipelineCreation.BlendState.ActiveStates : PipelineCreation.RenderPass.NumColorFormats)
+                     //.setAttachmentCount(PipelineCreation.BlendState.ActiveStates)
+                      .setAttachmentCount(PipelineCreation.BlendState.ActiveStates ? PipelineCreation.BlendState.ActiveStates : PipelineCreation.RenderPass.NumColorFormats)
                      .setPAttachments(ColorBlendAttachment)
                      .setBlendConstants({0,0,0,0});
         PipelineCreateInfo.setPColorBlendState(&ColorBlending);
@@ -975,7 +996,9 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
                      .setPScissors(&Scissor);
         PipelineCreateInfo.setPViewportState(&ViewportState);
 
-        PipelineCreateInfo.setRenderPass(VkData->GetRenderPass(PipelineCreation.RenderPass, PipelineCreation.Name));
+        renderPass *RenderPass = VkData->GetRenderPass(PipelineCreation.RenderPass, std::string(PipelineCreation.RenderPass.Name));
+        vkRenderPassData *VkRenderPassData = (vkRenderPassData*)RenderPass->ApiData;
+        PipelineCreateInfo.setRenderPass(VkRenderPassData->NativeHandle);
 
         vk::DynamicState DynamicStates[] = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
         vk::PipelineDynamicStateCreateInfo DynamicState;
@@ -1004,6 +1027,13 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     // VkData->Device.destroyPipelineCache(PipelineCache);
     return Handle;
 }
+
+renderPassHandle context::GetDefaultRenderPass()
+{
+    GET_CONTEXT(VkData, this);
+    return VkData->RenderPassCache["Swapchain"];
+}
+
 
 }
 

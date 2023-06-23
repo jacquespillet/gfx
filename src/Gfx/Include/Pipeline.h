@@ -215,6 +215,8 @@ struct renderPassOutput
     renderPassOperation::values DepthOperation = renderPassOperation::DontCare;
     renderPassOperation::values StencilOperation = renderPassOperation::DontCare;
 
+    const char *Name;
+
     void Reset();
     renderPassOutput &Depth(format Format, imageLayout Layout);
     renderPassOutput &Color(format Format, imageLayout Layout, renderPassOperation::values Operation);

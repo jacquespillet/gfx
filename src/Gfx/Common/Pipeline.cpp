@@ -361,7 +361,26 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
         }
     }
 
-    PipelineCreation.RenderPass = context::Get()->SwapchainOutput;
+    //TODO: Other than swapchain
+    json RenderPass = PipelineJSON["render_pass"];
+    if(RenderPass.is_string())
+    {
+        std::string Name;
+        RenderPass.get_to(Name);
+        if(Name == "Swapchain")
+        {
+            PipelineCreation.RenderPass = context::Get()->SwapchainOutput;
+        }
+        else
+        {
+            // const renderPass *RenderPass = device::Get()->GetRenderPass(Node->_RenderPass);
+            // PipelineCreation._RenderPass = RenderPass->_Output;
+        }
+    } 
+    else
+    {
+        PipelineCreation.RenderPass = context::Get()->SwapchainOutput;
+    }   
 }
 
 

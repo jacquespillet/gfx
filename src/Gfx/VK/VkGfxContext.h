@@ -12,7 +12,7 @@
 
 namespace gfx
 {
-#
+
 struct vkConstants
 {
     static const u8 MaxDescriptorsPerSet = 16;
@@ -53,9 +53,9 @@ struct vkData
 
     vk::Extent2D SurfaceExtent;
 
-    std::unordered_map<std::string, vk::RenderPass> RenderPassCache;
+    std::unordered_map<std::string, renderPassHandle> RenderPassCache;
 
-    vk::RenderPass GetRenderPass(const renderPassOutput &Output, std::string Name);
+    renderPass *GetRenderPass(const renderPassOutput &Output, std::string Name);
 };
 
 }

@@ -63,12 +63,12 @@ int main()
 
     gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json");
 	
-#if 0
-	gfx::renderPassHandle RenderPass = GfxContext->GetDefaultRenderPass();
+	gfx::renderPassHandle SwapchainPass = GfxContext->GetDefaultRenderPass();
 	// Set other pipeline configuration parameters as needed
 
 	while(!Window.ShouldClose())
 	{
+#if 0
 		// Set up the render state
 		
 		// Begin recording commands into the command buffer
@@ -94,13 +94,14 @@ int main()
 
 		// Present the rendered frame
 		Swapchain->Present();
+#endif
 	}
 
 	// Clean up and release resources
-	GfxContext->DestroyCommandBuffer(CommandBuffer);
-	GfxContext->DestroySwapchain(Swapchain);
+	// GfxContext->DestroyCommandBuffer(CommandBuffer);
+	// GfxContext->DestroySwapchain(Swapchain);
 
 	delete GfxContext;
-#endif
+
 	return 0;
 }
