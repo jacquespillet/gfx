@@ -111,7 +111,7 @@ std::optional<uint32_t> DetermineQueueFamilyIndex(const vk::Instance &_Instance,
     return {};
 }
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL ValidationLayerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT Severity, VkDebugUtilsMessageTypeFlagsEXT Type, const VkDebugUtilsMessengerCallbackDataEXT *pCallBackData, std::shared_ptr<void> pUserData)
+static VKAPI_ATTR VkBool32 VKAPI_CALL ValidationLayerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT Severity, VkDebugUtilsMessageTypeFlagsEXT Type, const VkDebugUtilsMessengerCallbackDataEXT *pCallBackData, void *pUserData)
 {
     std::cout << pCallBackData->pMessage << std::endl;
 
