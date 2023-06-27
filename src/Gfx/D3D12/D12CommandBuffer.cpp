@@ -3,10 +3,12 @@
 #include "../Include/GfxContext.h"
 #include "../Include/Swapchain.h"
 #include "../Include/CommandBuffer.h"
+#include "../Include/Framebuffer.h"
 #include "../Include/Buffer.h"
 #include "../Include/Pipeline.h"
 #include "D12Pipeline.h"
 #include "D12Buffer.h"
+#include "D12Framebuffer.h"
 
 #include <d3dx12.h>
 
@@ -36,27 +38,54 @@ void commandBuffer::Begin()
 
 
 
-void commandBuffer::BeginPass(renderPassHandle RenderPass, framebufferHandle Framebuffer)
+//TODO
+//Everything comes from the framebuffer handle here
+//There isn't really a concept of render pass in dx 12. 
+//We manipulate the rendertargets directly (Framebuffers)
+//The swapchain framebuffer object will contain the descriptor heaps for depth and color
+
+//We don't want to be refering to the swapchain in this code, it must be independant
+//struct framebuffer
+//  ID3D12Resource : ColorRenderTarget
+//  DescriptorHeap : ColorDH
+//  int : ColorOffset
+//  int : descriptorIncrementSize
+//
+//  ID3D12Resource : DepthRenderTarget
+//  DescriptorHeap : DepthDH
+//  int : DepthOffset
+//  int : DepthdescriptorIncrementSize
+void commandBuffer::BeginPass(renderPassHandle RenderPass, framebufferHandle FramebufferHandle)
 {
     d3d12CommandBufferData *D12CommandBufferData = (d3d12CommandBufferData*)this->ApiData;
 
     d3d12SwapchainData *D12SwapchainData = (d3d12SwapchainData*)context::Get()->Swapchain->ApiData;
-    // Indicate that the back buffer will be used as a render target.
-    D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12SwapchainData->RenderTargets[D12SwapchainData->FrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
-    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(D12SwapchainData->RenderTargetViewHeap->GetCPUDescriptorHandleForHeapStart(), D12SwapchainData->FrameIndex, D12SwapchainData->RTVDescriptorSize);
-    D12CommandBufferData->CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);    
+    framebuffer *Framebuffer = (framebuffer*) context::Get()->ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+    std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(Framebuffer->ApiData);
+    D12CommandBufferData->CurrentFramebuffer = Framebuffer;
+
+    D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12FramebufferData->RenderTargets[D12SwapchainData->GetFrameIndex()].Get() , D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(D12FramebufferData->RenderTargetViewHeap->GetCPUDescriptorHandleForHeapStart(), D12SwapchainData->GetFrameIndex(), D12FramebufferData->RTVDescriptorSize);
     
+    D12CommandBufferData->CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);    
     D12CommandBufferData->CommandList->ClearRenderTargetView(rtvHandle, D12CommandBufferData->ClearColor, 0, nullptr);    
     // D12CommandBufferData->CommandList->ClearDepthStencilView(rtvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, D12CommandBufferData->ClearDepth, D12CommandBufferData->ClearStencil, 0, nullptr);
 }
 
 void commandBuffer::EndPass()
 {
+    
     d3d12CommandBufferData *D12CommandBufferData = (d3d12CommandBufferData*)ApiData;
+    std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(D12CommandBufferData->CurrentFramebuffer->ApiData);
+
     d3d12SwapchainData *D12SwapchainData = (d3d12SwapchainData*)context::Get()->Swapchain->ApiData;
+    
+    //Keep a reference to the framebuffer in this
+    //Use it to transition instead of referring to swapchain
+
     // Indicate that the back buffer will now be used to present.
-    D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12SwapchainData->RenderTargets[D12SwapchainData->FrameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+    D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12FramebufferData->RenderTargets[D12SwapchainData->GetFrameIndex()].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 }
 
 void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)

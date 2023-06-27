@@ -10,6 +10,13 @@
 #include "Gfx/Api.h"  
 #include "App/App.h"
 
+//TODO
+//In Context : 
+	//Create a framebuffer object
+	//Put depth buffer inside
+//In CommandBuffer : 
+//	Use the framebuffer object for beginPass and endPass
+
 void WindowErrorCallback(const std::string &errorMessage)
 {
     std::cout << "Window Error : " << errorMessage << std::endl;

@@ -1,4 +1,4 @@
-#if GFX_API == GFX_D3D12
+// #if GFX_API == GFX_D3D12
 
 #include "../../App/App.h"
 #include "../Include/GfxContext.h"
@@ -8,6 +8,7 @@
 #include "../Include/Buffer.h"
 #include "../Include/Pipeline.h"
 #include "../Include/Shader.h"
+#include "../Include/Framebuffer.h"
 #include "../Include/RenderPass.h"
 #include "../Include/Framebuffer.h"
 #include "../Include/Memory.h"
@@ -17,6 +18,7 @@
 #include "D12Swapchain.h"
 #include "D12Buffer.h"
 #include "D12Pipeline.h"
+#include "D12Framebuffer.h"
 
 #include <iostream>
 
@@ -28,7 +30,6 @@ using namespace Microsoft::WRL;
 #include <DirectXMath.h>
 #include <d3dcompiler.h>
 using namespace DirectX;
-
 
 
 namespace gfx
@@ -159,13 +160,24 @@ context* context::Initialize(initializeInfo &InitializeInfo, app::window &Window
 
 swapchain *context::CreateSwapchain(u32 Width, u32 Height)
 {
-    GET_CONTEXT(D12Data, this);
+    GET_CONTEXT(D12Data, this);    
     swapchain *Swapchain = (swapchain*)AllocateMemory(sizeof(swapchain));
     Swapchain->Width = Width;
     Swapchain->Height = Height;
     // Swapchain->ApiData = (d3d12SwapchainData*) AllocateMemory(sizeof(d3d12SwapchainData));
     Swapchain->ApiData = new d3d12SwapchainData();
     d3d12SwapchainData *D12SwapchainData = (d3d12SwapchainData*)Swapchain->ApiData;
+
+
+    D12SwapchainData->FramebufferHandle = ResourceManager.Framebuffers.ObtainResource();
+    if(D12SwapchainData->FramebufferHandle == InvalidHandle)
+    {
+        assert(false);
+        return nullptr;
+    }
+    framebuffer *Framebuffer = (framebuffer*)ResourceManager.Framebuffers.GetResource(D12SwapchainData->FramebufferHandle);
+    Framebuffer->ApiData = std::make_shared<d3d12FramebufferData>();
+    std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(Framebuffer->ApiData);
 
 
     // Describe and create the swap chain.
@@ -193,9 +205,17 @@ swapchain *context::CreateSwapchain(u32 Width, u32 Height)
     // This sample does not support fullscreen transitions.
     ThrowIfFailed(D12Data->Factory->MakeWindowAssociation(Window->GetNativeWindow(), DXGI_MWA_NO_ALT_ENTER));
 
-    ThrowIfFailed(swapChain.As(&D12SwapchainData->SwapChain));
-    D12SwapchainData->FrameIndex = D12SwapchainData->SwapChain->GetCurrentBackBufferIndex();
+    //TODO
+    //Here we create a framebuffer object
+    //  It contains all the descriptor heap, size etc.. for each attachment
+    //  Create depth buffer too
+    //  We don't store the resources in the swapchain
     
+
+    ThrowIfFailed(swapChain.As(&D12SwapchainData->SwapChain));
+    
+    D12SwapchainData->SetFrameIndex(D12SwapchainData->SwapChain->GetCurrentBackBufferIndex());
+    D12FramebufferData->dummy = 12345;  
     // Create descriptor heaps.
     {
         // Describe and create a render target view (RTV) descriptor heap.
@@ -203,10 +223,21 @@ swapchain *context::CreateSwapchain(u32 Width, u32 Height)
         rtvHeapDesc.NumDescriptors = d3d12SwapchainData::FrameCount;
         rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
         rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-        ThrowIfFailed(D12Data->Device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&D12SwapchainData->RenderTargetViewHeap)));
-
-        D12SwapchainData->RTVDescriptorSize = D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+        ThrowIfFailed(D12Data->Device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&D12FramebufferData->RenderTargetViewHeap)));
+        D12FramebufferData->RTVDescriptorSize = D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+        D12FramebufferData->RenderTargetsCount = rtvHeapDesc.NumDescriptors;
     }
+
+    
+    // Create a RTV for each frame.
+    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(D12FramebufferData->RenderTargetViewHeap->GetCPUDescriptorHandleForHeapStart());
+    for (UINT n = 0; n < d3d12SwapchainData::FrameCount; n++)
+    {
+        ThrowIfFailed(D12SwapchainData->SwapChain->GetBuffer(n, IID_PPV_ARGS(&D12FramebufferData->RenderTargets[n])));
+        D12Data->Device->CreateRenderTargetView(D12FramebufferData->RenderTargets[n].Get(), nullptr, rtvHandle);
+        rtvHandle.Offset(1, D12FramebufferData->RTVDescriptorSize);
+    }    
+
     this->Swapchain = Swapchain;
     
     D12Data->VirtualFrames.Init();
@@ -377,4 +408,4 @@ void context::Cleanup()
 
 }
 
-#endif
+// #endif
