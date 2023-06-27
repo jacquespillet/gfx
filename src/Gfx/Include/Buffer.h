@@ -30,6 +30,8 @@ struct stageBuffer
     buffer *Buffer;
     u32 CurrentOffset;
 
+    stageBuffer();
+    stageBuffer(size_t ByteSize);
     void Init(size_t ByteSize);
     allocation Submit(const uint8_t *Data, u32 ByteSize);
     void Flush();

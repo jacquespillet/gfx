@@ -49,9 +49,14 @@ struct context
     static context *Get();
     static context* Initialize(initializeInfo &InitializeInfo, app::window &Window);
 
+    void StartFrame();
+    void EndFrame();
+    void Present();
+
     commandBuffer *CreateCommandBuffer();   
     
-    commandBuffer *GetCommandBuffer();
+    commandBuffer *GetImmediateCommandBuffer();
+    commandBuffer *GetCurrentFrameCommandBuffer();
     stageBuffer *GetStageBuffer();
     
     swapchain *CreateSwapchain(u32 Width, u32 Height);
@@ -87,5 +92,7 @@ struct context
     resourceManager ResourceManager;
 
     renderPassOutput SwapchainOutput;
+
+    swapchain *Swapchain;
 };
 }

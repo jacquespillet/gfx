@@ -28,5 +28,6 @@ struct vkImageData
 vk::ImageSubresourceRange GetDefaultImageSubresourceRange(const image &Image);
 
 image *CreateImage(vk::Image VkImage, u32 Width, u32 Height, format Format);
+image *CreateEmptyImage(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage);
 
 }

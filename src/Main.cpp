@@ -47,8 +47,8 @@ int main()
     ContextInitialize.InfoCallback = InfoCallback;
 	gfx::context *GfxContext = gfx::context::Initialize(ContextInitialize, Window);
 
-	// Create a command buffer and swap chain
-	gfx::commandBuffer *CommandBuffer = GfxContext->CreateCommandBuffer();
+	//Get the current frame command buffer
+
 	gfx::swapchain *Swapchain = GfxContext->CreateSwapchain(Width, Height);
 	
 
@@ -68,33 +68,40 @@ int main()
 
 	while(!Window.ShouldClose())
 	{
-#if 0
+		Window.PollEvents();
+		
+		GfxContext->StartFrame();
+
 		// Set up the render state
+		gfx::commandBuffer *CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();
 		
 		// Begin recording commands into the command buffer
 		CommandBuffer->Begin();
-		CommandBuffer->BeginPass(RenderPass);
+
+		CommandBuffer->ClearColor(0.5f, 0.0f, 0.8f, 1.0f);
+		CommandBuffer->ClearDepthStencil(1.0f, 0.0f);
+		
+		CommandBuffer->BeginPass(SwapchainPass);
+		
+#if 0
 
 		CommandBuffer->BindGraphicsPipeline(PipelineHandle);
 		CommandBuffer->BindVertexBuffer(vertexBuffer);
 		CommandBuffer->SetViewport(0, 0, 800, 600);
 
 		// Render the triangle
-		CommandBuffer->ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		CommandBuffer->ClearBuffers(gfx::clearBufferType::Color);
-		CommandBuffer->DrawTriangles(0, 3);
+		CommandBuffer->DrawTriangles(0, 3); 
 
 
+
+#endif
 		CommandBuffer->EndPass();
-		// End recording commands
-		CommandBuffer->End();
 
-		// Submit the command buffer to the graphics API for execution
-		GfxContext->SubmitCommandBuffer(CommandBuffer);
+		// Submit the current frame command buffer to the graphics API for execution
+		GfxContext->EndFrame();
 
 		// Present the rendered frame
-		Swapchain->Present();
-#endif
+		GfxContext->Present();
 	}
 
 	// Clean up and release resources

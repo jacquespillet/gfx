@@ -93,6 +93,12 @@ void buffer::CopyData(const uint8_t *Data, size_t ByteSize, size_t Offset)
         std::memcpy((void*)(this->MappedData + Offset), (const void*)Data, ByteSize);
     }    
 }
+
+stageBuffer::stageBuffer(){}
+stageBuffer::stageBuffer(sz Size)
+{
+    Init(Size);
+}
     
 
 void stageBuffer::Init(sz Size)

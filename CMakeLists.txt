@@ -136,6 +136,7 @@ set(sourceCode
         src/Gfx/VK/VkResourceManager.cpp
         src/Gfx/VK/VkPipeline.cpp
         src/Gfx/VK/VkShader.cpp
+        src/Gfx/VK/VkVirtualFrames.cpp
         
         src/App/Window.cpp
 

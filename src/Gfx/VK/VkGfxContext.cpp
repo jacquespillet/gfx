@@ -41,6 +41,66 @@ context *context::Get()
     return Singleton;
 }
 
+
+
+bool GetSupportedDepthFormat(vk::PhysicalDevice PhysicalDevice, format *DepthFormat)
+{
+    std::vector<format> DepthFormats = {
+        format::D32_SFLOAT_S8_UINT,
+        format::D32_SFLOAT,
+        format::D24_UNORM_S8_UINT,
+        format::D16_UNORM_S8_UINT,
+        format::D16_UNORM_S8_UINT
+    };
+
+    for(auto &Format : DepthFormats)
+    {
+        vk::FormatProperties FormatProperties = PhysicalDevice.getFormatProperties(FormatToNative(Format));
+        
+        if(FormatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
+        {
+            *DepthFormat = Format;
+            return true;
+        }
+    }
+    return false;
+}
+
+std::vector<vk::Framebuffer> CreateFramebuffer(std::vector<image*> *ColorImages, image *DepthStencilImage, vk::RenderPass RenderPass)
+{
+    int Width = ColorImages->at(0)->Extent.Width;
+    int Height = ColorImages->at(0)->Extent.Height;
+    
+    std::vector<vk::Framebuffer> Handles;
+
+    Handles.resize(ColorImages->size());
+    for (size_t i = 0; i < Handles.size(); i++)
+    {
+        vkImageData *VkColorImage = (vkImageData*)ColorImages->at(i)->ApiData;
+        vkImageData *VkDepthImage = (vkImageData*)DepthStencilImage->ApiData;
+        std::vector<vk::ImageView> Attachments = 
+        {
+            VkColorImage->DefaultImageViews.NativeView,
+            VkDepthImage->DefaultImageViews.NativeView,
+        };
+
+
+        vk::FramebufferCreateInfo FramebufferCreateInfo;
+        FramebufferCreateInfo.setRenderPass(RenderPass)
+                            .setAttachments(Attachments)
+                            .setWidth(ColorImages->at(i)->Extent.Width)
+                            .setHeight(ColorImages->at(i)->Extent.Height)
+                            .setLayers(1);
+        
+        auto Context = context::Get();
+        GET_CONTEXT(VkData, Context);
+        Handles[i] = VkData->Device.createFramebuffer(FramebufferCreateInfo);
+    }
+
+    return Handles;
+}
+
+
 swapchain *context::CreateSwapchain(u32 Width, u32 Height)
 {
     GET_CONTEXT(VkData, this);
@@ -94,6 +154,9 @@ swapchain *context::CreateSwapchain(u32 Width, u32 Height)
     VkSwapchainData->SwapchainImages.clear();
     VkSwapchainData->SwapchainImages.reserve(VkData->PresentImageCount);
     VkSwapchainData->SwapchainImageUsages.assign(VkData->PresentImageCount, imageUsage::UNKNOWN);
+    renderPassHandle SwapchainPassHandle = GetDefaultRenderPass();
+    renderPass *SwapchainPass = (renderPass *)ResourceManager.RenderPasses.GetResource(SwapchainPassHandle);
+    vkRenderPassData *VkSwapchainPass = (vkRenderPassData*)SwapchainPass->ApiData;
 
     //Initialize texture representations of swapchain images
     for(u32 i=0; i<VkData->PresentImageCount; i++)
@@ -103,6 +166,12 @@ swapchain *context::CreateSwapchain(u32 Width, u32 Height)
         );
     }
 
+    format DepthFormat;
+    bool FoundDepthFormat = GetSupportedDepthFormat(VkData->PhysicalDevice, &DepthFormat);
+    image* DepthStencil = CreateEmptyImage(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
+    VkSwapchainData->Framebuffers = CreateFramebuffer(&VkSwapchainData->SwapchainImages, DepthStencil, VkSwapchainPass->NativeHandle);
+
+    this->Swapchain = Swapchain;
     return Swapchain;
 }
 
@@ -162,13 +231,25 @@ swapchain *context::RecreateSwapchain(u32 Width, u32 Height, swapchain *OldSwapc
     VkSwapchainData->SwapchainImages.reserve(VkData->PresentImageCount);
     VkSwapchainData->SwapchainImageUsages.assign(VkData->PresentImageCount, imageUsage::UNKNOWN);
 
+    renderPassHandle SwapchainPassHandle = GetDefaultRenderPass();
+    renderPass *SwapchainPass = (renderPass *)ResourceManager.RenderPasses.GetResource(SwapchainPassHandle);
+    vkRenderPassData *VkSwapchainPass = (vkRenderPassData*)SwapchainPass->ApiData;
+
     //Initialize texture representations of swapchain images
     for(u32 i=0; i<VkData->PresentImageCount; i++)
     {
         VkSwapchainData->SwapchainImages.push_back(
             gfx::CreateImage(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format))
         );
+
     }
+    format DepthFormat;
+    bool FoundDepthFormat = GetSupportedDepthFormat(VkData->PhysicalDevice, &DepthFormat);
+    image *DepthStencil = CreateEmptyImage(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
+    VkSwapchainData->Framebuffers = CreateFramebuffer(&VkSwapchainData->SwapchainImages, DepthStencil, VkSwapchainPass->NativeHandle);
+
+    this->Swapchain = OldSwapchain;
+    return OldSwapchain;
 }
 
 
@@ -261,8 +342,9 @@ context* context::Initialize(context::initializeInfo &InitializeInfo, app::windo
         }
     }
     
+    format DepthFormat; GetSupportedDepthFormat(VkData->PhysicalDevice, &DepthFormat);
     Singleton->SwapchainOutput.Color(FormatFromNative(VkData->SurfaceFormat.format), imageLayout::PresentSrcKHR, renderPassOperation::Clear);
-    Singleton->SwapchainOutput.Depth(format::D32_SFLOAT, imageLayout::DepthStencilAttachmentOptimal);
+    Singleton->SwapchainOutput.Depth(DepthFormat, imageLayout::DepthStencilAttachmentOptimal);
     Singleton->SwapchainOutput.SetDepthStencilOperation(renderPassOperation::Clear, renderPassOperation::Clear);
     Singleton->SwapchainOutput.Name = "Swapchain";
     
@@ -305,7 +387,7 @@ context* context::Initialize(context::initializeInfo &InitializeInfo, app::windo
     DescriptorIndexingFeatures.descriptorBindingStorageTexelBufferUpdateAfterBind = true;
 
 
-    vk::DeviceCreateInfo DeviceCreateInfo;
+    vk::DeviceCreateInfo DeviceCreateInfo = {};
     DeviceCreateInfo.setQueueCreateInfos(DeviceQueueCreateInfo)
                     .setPEnabledExtensionNames(DeviceExtensions)
                     //.setPNext(&DescriptorIndexingFeatures)
@@ -371,8 +453,7 @@ context* context::Initialize(context::initializeInfo &InitializeInfo, app::windo
     // VkData->DescriptorCache.Init();
     
     //Initialize virtual frames
-    // VkData->VirtualFrames.Init(InitializeInfo.VirtualFrameCount, InitializeInfo.MaxStageBufferSize);
-
+    VkData->VirtualFrames.Init(InitializeInfo.VirtualFrameCount, InitializeInfo.MaxStageBufferSize);
     InitializeInfo.InfoCallback("Initialization Finished");    
 
 
@@ -409,7 +490,7 @@ bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count)
     auto VulkanContext = context::Get();
     
     auto StageBuffer = VulkanContext->GetStageBuffer();
-    auto CommandBuffer = VulkanContext->GetCommandBuffer();
+    auto CommandBuffer = VulkanContext->GetImmediateCommandBuffer();
 
     CommandBuffer->Begin();
 
@@ -466,10 +547,34 @@ stageBuffer context::CreateStageBuffer(sz Size)
     return Result;
 }
 
-commandBuffer *context::GetCommandBuffer()
+void context::StartFrame()
+{
+    GET_CONTEXT(VkData, this);
+    VkData->VirtualFrames.StartFrame();
+}
+
+void context::EndFrame()
+{
+    GET_CONTEXT(VkData, this);
+    VkData->VirtualFrames.EndFrame();
+}
+
+void context::Present()
+{
+    GET_CONTEXT(VkData, this);
+    VkData->VirtualFrames.Present();
+}
+
+commandBuffer *context::GetImmediateCommandBuffer()
 {
     GET_CONTEXT(VkData, this);
     return VkData->ImmediateCommandBuffer;
+}
+
+commandBuffer *context::GetCurrentFrameCommandBuffer()
+{
+    GET_CONTEXT(VkData, this);
+    return VkData->VirtualFrames.GetCurrentFrame().Commands;
 }
 
 stageBuffer *context::GetStageBuffer()
@@ -479,6 +584,19 @@ stageBuffer *context::GetStageBuffer()
 }
 
 void context::SubmitCommandBufferImmediate(commandBuffer *CommandBuffer)
+{
+    GET_CONTEXT(VkData, this);
+    vkCommandBufferData *VkCommandBufferData = (vkCommandBufferData*)CommandBuffer->ApiData;
+
+    vk::SubmitInfo SubmitInfo;
+    SubmitInfo.setCommandBuffers(VkCommandBufferData->Handle);
+    VkData->DeviceQueue.submit(SubmitInfo, VkData->ImmediateFence);
+    auto WaitResult = VkData->Device.waitForFences(VkData->ImmediateFence, false, UINT64_MAX);
+    assert(WaitResult == vk::Result::eSuccess);
+    VkData->Device.resetFences(VkData->ImmediateFence);
+}
+
+void context::SubmitCommandBuffer(commandBuffer *CommandBuffer)
 {
     GET_CONTEXT(VkData, this);
     vkCommandBufferData *VkCommandBufferData = (vkCommandBufferData*)CommandBuffer->ApiData;

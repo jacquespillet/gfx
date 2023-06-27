@@ -44,6 +44,96 @@ vk::ImageAspectFlags ImageFormatToImageAspect(format Format)
     }
 }
 
+
+
+vk::ImageLayout ImageUsageToImageLayout(imageUsage::bits Usage)
+{
+    switch (Usage)
+    {
+    case imageUsage::UNKNOWN:
+        return vk::ImageLayout::eUndefined;
+    case imageUsage::TRANSFER_SOURCE:
+        return vk::ImageLayout::eTransferSrcOptimal;
+    case imageUsage::TRANSFER_DESTINATION:
+        return vk::ImageLayout::eTransferDstOptimal;
+    case imageUsage::SHADER_READ:
+        return vk::ImageLayout::eShaderReadOnlyOptimal;
+    case imageUsage::STORAGE:
+        return vk::ImageLayout::eGeneral;
+    case imageUsage::COLOR_ATTACHMENT:
+        return vk::ImageLayout::eColorAttachmentOptimal;
+    case imageUsage::DEPTH_STENCIL_ATTACHMENT:
+        return vk::ImageLayout::eDepthStencilAttachmentOptimal;
+    case imageUsage::INPUT_ATTACHMENT:
+        return vk::ImageLayout::eAttachmentOptimalKHR; // TODO: is it ok?
+    case imageUsage::FRAGNENT_SHADING_RATE_ATTACHMENT:
+        return vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR;
+    default:
+        assert(false);
+        return vk::ImageLayout::eUndefined;
+    }    
+}
+
+
+
+vk::AccessFlags ImageUsageToAccessFlags(imageUsage::bits Usage)
+{
+    switch (Usage)
+    {
+    case imageUsage::UNKNOWN:
+        return vk::AccessFlags{ };
+    case imageUsage::TRANSFER_SOURCE:
+        return vk::AccessFlagBits::eTransferRead;
+    case imageUsage::TRANSFER_DESTINATION:
+        return vk::AccessFlagBits::eTransferWrite;
+    case imageUsage::SHADER_READ:
+        return vk::AccessFlagBits::eShaderRead;
+    case imageUsage::STORAGE:
+        return vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite; // TODO: what if storage is not read or write?
+    case imageUsage::COLOR_ATTACHMENT:
+        return vk::AccessFlagBits::eColorAttachmentWrite;
+    case imageUsage::DEPTH_STENCIL_ATTACHMENT:
+        return vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+    case imageUsage::INPUT_ATTACHMENT:
+        return vk::AccessFlagBits::eInputAttachmentRead;
+    case imageUsage::FRAGNENT_SHADING_RATE_ATTACHMENT:
+        return vk::AccessFlagBits::eFragmentShadingRateAttachmentReadKHR;
+    default:
+        assert(false);
+        return vk::AccessFlags{ };
+    }    
+}
+
+
+vk::PipelineStageFlags ImageUsageToPipelineStage(imageUsage::bits Usage)
+{
+    switch (Usage)
+    {
+    case imageUsage::UNKNOWN:
+        return vk::PipelineStageFlagBits::eTopOfPipe;
+    case imageUsage::TRANSFER_SOURCE:
+        return vk::PipelineStageFlagBits::eTransfer;
+    case imageUsage::TRANSFER_DESTINATION:
+        return vk::PipelineStageFlagBits::eTransfer;
+    case imageUsage::SHADER_READ:
+        return vk::PipelineStageFlagBits::eFragmentShader; // TODO: whats for vertex shader reads?
+    case imageUsage::STORAGE:
+        return vk::PipelineStageFlagBits::eFragmentShader; // TODO: whats for vertex shader reads?
+    case imageUsage::COLOR_ATTACHMENT:
+        return vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    case imageUsage::DEPTH_STENCIL_ATTACHMENT:
+        return vk::PipelineStageFlagBits::eEarlyFragmentTests; // TODO: whats for late fragment test?
+    case imageUsage::INPUT_ATTACHMENT:
+        return vk::PipelineStageFlagBits::eFragmentShader; // TODO: check if at least works
+    case imageUsage::FRAGNENT_SHADING_RATE_ATTACHMENT:
+        return vk::PipelineStageFlagBits::eFragmentShadingRateAttachmentKHR;
+    default:
+        assert(false);
+        return vk::PipelineStageFlags{ };
+    }    
+}
+
+
 vk::ShaderStageFlagBits ShaderStageToNative(shaderStageFlags::bits Stage)
 {
     return (vk::ShaderStageFlagBits)Stage;

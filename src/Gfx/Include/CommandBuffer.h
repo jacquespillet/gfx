@@ -21,7 +21,7 @@ struct commandBuffer
     void BindVertexBuffer(bufferHandle Buffer);
     void SetViewport(f32 X, f32 Y, f32 Width, f32 Height);
     void ClearColor(f32 R, f32 G,f32 B,f32 A);
-    void ClearBuffers(clearBufferType Type);
+    void ClearDepthStencil(f32 Depth, f32 Stencil);
     void DrawTriangles(uint32_t Start, uint32_t Count);
     
     void CopyBuffer(const bufferInfo &Source, const bufferInfo &Destination, size_t ByteSize);

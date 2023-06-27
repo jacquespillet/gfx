@@ -3,6 +3,7 @@
 #include "../Include/CommandBuffer.h"
 #include "../Include/Image.h"
 #include "../Include/Buffer.h"
+#include "vkVirtualFrames.h"
 #include "VkMapping.h"
 
 #include <vulkan/vulkan.hpp>
@@ -53,9 +54,14 @@ struct vkData
 
     vk::Extent2D SurfaceExtent;
 
+    virtualFrameProvider VirtualFrames;
+
     std::unordered_map<std::string, renderPassHandle> RenderPassCache;
 
     renderPass *GetRenderPass(const renderPassOutput &Output, std::string Name);
+    
 };
+
+stageBuffer CreateVkStageBuffer(sz Size);
 
 }

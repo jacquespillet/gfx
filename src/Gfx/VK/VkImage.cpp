@@ -3,6 +3,7 @@
 #include "../Include/GfxContext.h"
 #include "VkGfxContext.h"
 #include "VkCommon.h"
+#include "VkMemoryAllocation.h"
 namespace gfx
 {
 
@@ -20,6 +21,46 @@ image *CreateImage(vk::Image VkImage, u32 Width, u32 Height, format Format)
     ImageData->InitViews(*Image, VkImage, Format);
 
     return Image;
+}
+
+
+
+
+
+image *CreateEmptyImage(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage)
+{
+    image *Image = new image();
+    Image->ApiData = new vkImageData();
+    vkImageData *VkImageData = (vkImageData*)Image->ApiData;
+    
+    Image->MipLevelCount = 1;
+    Image->LayerCount = 1;
+    Image->Format = Format;
+    Image->Extent.Width = Width;
+    Image->Extent.Height = Height;
+    
+
+    vk::ImageCreateInfo ImageCreateInfo;
+    ImageCreateInfo.setImageType(vk::ImageType::e2D)
+                    .setFormat(FormatToNative(Format))
+                    .setExtent(vk::Extent3D(Width, Height, 1))
+                    .setSamples(vk::SampleCountFlagBits::e1)
+                    .setMipLevels(Image->MipLevelCount)
+                    .setArrayLayers(Image->LayerCount)
+                    .setTiling(vk::ImageTiling::eOptimal)
+                    .setUsage((vk::ImageUsageFlags)ImageUsage)
+                    .setSharingMode(vk::SharingMode::eExclusive)
+                    .setInitialLayout(vk::ImageLayout::eUndefined);
+
+    // if(Options & imageOptions::CUBEMAP)
+    // {
+    //     ImageCreateInfo.setFlags(vk::ImageCreateFlagBits::eCubeCompatible);
+    // }                       
+
+    VkImageData->Allocation = gfx::AllocateImage(ImageCreateInfo, MemoryUsage, &VkImageData->Handle);
+    VkImageData->InitViews(*Image, VkImageData->Handle,  Format);
+
+    return Image;    
 }
 
 vk::ImageSubresourceRange GetDefaultImageSubresourceRange(const image &Image)
