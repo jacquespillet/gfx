@@ -100,6 +100,9 @@ void virtualFramesProvider::EndFrame()
     d3d12Data *D12Data = (d3d12Data*)context::Get()->ApiContextData;
     d3d12CommandBufferData *D12CommandBuffer = (d3d12CommandBufferData*)CommandBuffer->ApiData;
     d3d12SwapchainData *D12SwapchainData = (d3d12SwapchainData *)context::Get()->Swapchain->ApiData;
+
+    ThrowIfFailed(D12CommandBuffer->CommandList->Close());
+    
     // Execute the command list.
     ID3D12CommandList* ppCommandLists[] = { D12CommandBuffer->CommandList };
     D12Data->CommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);

@@ -30,17 +30,33 @@ commandBuffer *CreateD3D12CommandBuffer(ComPtr<ID3D12CommandAllocator> CommandAl
 
 void commandBuffer::Begin()
 {   
+    d3d12CommandBufferData *D12CommandBufferData = (d3d12CommandBufferData*)this->ApiData;
+    ThrowIfFailed(D12CommandBufferData->CommandList->Reset(D12CommandBufferData->CommandAllocator, nullptr));
 }
 
 
 
 void commandBuffer::BeginPass(renderPassHandle RenderPass, framebufferHandle Framebuffer)
 {
+    d3d12CommandBufferData *D12CommandBufferData = (d3d12CommandBufferData*)this->ApiData;
+
+    d3d12SwapchainData *D12SwapchainData = (d3d12SwapchainData*)context::Get()->Swapchain->ApiData;
+    // Indicate that the back buffer will be used as a render target.
+    D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12SwapchainData->RenderTargets[D12SwapchainData->FrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(D12SwapchainData->RenderTargetViewHeap->GetCPUDescriptorHandleForHeapStart(), D12SwapchainData->FrameIndex, D12SwapchainData->RTVDescriptorSize);
+    D12CommandBufferData->CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);    
     
+    D12CommandBufferData->CommandList->ClearRenderTargetView(rtvHandle, D12CommandBufferData->ClearColor, 0, nullptr);    
+    // D12CommandBufferData->CommandList->ClearDepthStencilView(rtvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, D12CommandBufferData->ClearDepth, D12CommandBufferData->ClearStencil, 0, nullptr);
 }
+
 void commandBuffer::EndPass()
 {
-    
+    d3d12CommandBufferData *D12CommandBufferData = (d3d12CommandBufferData*)ApiData;
+    d3d12SwapchainData *D12SwapchainData = (d3d12SwapchainData*)context::Get()->Swapchain->ApiData;
+    // Indicate that the back buffer will now be used to present.
+    D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12SwapchainData->RenderTargets[D12SwapchainData->FrameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 }
 
 void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
@@ -50,25 +66,10 @@ void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
     pipeline *Pipeline = (pipeline*)context::Get()->ResourceManager.Pipelines.GetResource(PipelineHandle);
     d3d12PipelineData *D12PipelineData = (d3d12PipelineData*)Pipeline->ApiData;
 
-    ThrowIfFailed(D12CommandBufferData->CommandList->Reset(D12CommandBufferData->CommandAllocator, D12PipelineData->PipelineState.Get()));
-
-    CD3DX12_VIEWPORT m_viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, (float)context::Get()->Swapchain->Width, (float)context::Get()->Swapchain->Height);
-    CD3DX12_RECT m_scissorRect = CD3DX12_RECT(0, 0, (LONG)context::Get()->Swapchain->Width, (LONG)context::Get()->Swapchain->Height);
 
     // Set necessary state.
+    D12CommandBufferData->CommandList->SetPipelineState(D12PipelineData->PipelineState.Get());
     D12CommandBufferData->CommandList->SetGraphicsRootSignature(D12PipelineData->RootSignature.Get());
-    D12CommandBufferData->CommandList->RSSetViewports(1, &m_viewport);
-    D12CommandBufferData->CommandList->RSSetScissorRects(1, &m_scissorRect);
-
-    d3d12SwapchainData *D12SwapchainData = (d3d12SwapchainData*)context::Get()->Swapchain->ApiData;
-    // Indicate that the back buffer will be used as a render target.
-    D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12SwapchainData->RenderTargets[D12SwapchainData->FrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-
-    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(D12SwapchainData->RenderTargetViewHeap->GetCPUDescriptorHandleForHeapStart(), D12SwapchainData->FrameIndex, D12SwapchainData->RTVDescriptorSize);
-    D12CommandBufferData->CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);    
-    
-    const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    D12CommandBufferData->CommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 }
 
 void commandBuffer::BindVertexBuffer(bufferHandle BufferHandle)
@@ -81,37 +82,42 @@ void commandBuffer::BindVertexBuffer(bufferHandle BufferHandle)
     // Record commands.
     D12CommandBufferData->CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     D12CommandBufferData->CommandList->IASetVertexBuffers(0, 1, &D12BufferData->BufferView);
-    D12CommandBufferData->CommandList->DrawInstanced(3, 1, 0, 0);
-
-    d3d12SwapchainData *D12SwapchainData = (d3d12SwapchainData*)context::Get()->Swapchain->ApiData;
-    // Indicate that the back buffer will now be used to present.
-    D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12SwapchainData->RenderTargets[D12SwapchainData->FrameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
-
-    ThrowIfFailed(D12CommandBufferData->CommandList->Close());
 }
 
 void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height)
 {
-
+    d3d12CommandBufferData *D12CommandBufferData = (d3d12CommandBufferData*)ApiData;
+    CD3DX12_VIEWPORT Viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, (float)context::Get()->Swapchain->Width, (float)context::Get()->Swapchain->Height);
+    D12CommandBufferData->CommandList->RSSetViewports(1, &Viewport);
 }
 
 void commandBuffer::SetScissor(s32 X, s32 Y, u32 Width, u32 Height)
 {
-
+    d3d12CommandBufferData *D12CommandBufferData = (d3d12CommandBufferData*)ApiData;
+    CD3DX12_RECT Scissor = CD3DX12_RECT(0, 0, (LONG)context::Get()->Swapchain->Width, (LONG)context::Get()->Swapchain->Height);
+    D12CommandBufferData->CommandList->RSSetScissorRects(1, &Scissor);
 }
 
 void commandBuffer::ClearColor(f32 R, f32 G,f32 B,f32 A)
 {
-
+    d3d12CommandBufferData *D12CommandBufferData = (d3d12CommandBufferData*)this->ApiData;
+    D12CommandBufferData->ClearColor[0] = R;
+    D12CommandBufferData->ClearColor[1] = G;
+    D12CommandBufferData->ClearColor[2] = B;
+    D12CommandBufferData->ClearColor[3] = A;
 }
 
 void commandBuffer::ClearDepthStencil(f32 Depth, f32 Stencil)
 {
-
+    d3d12CommandBufferData *D12CommandBufferData = (d3d12CommandBufferData*)this->ApiData;
+    D12CommandBufferData->ClearDepth = Depth;
+    D12CommandBufferData->ClearStencil = (u8)Stencil;
 }
 
 void commandBuffer::DrawTriangles(uint32_t Start, uint32_t Count)
 {
+    d3d12CommandBufferData *D12CommandBufferData = (d3d12CommandBufferData*)this->ApiData;
+    D12CommandBufferData->CommandList->DrawInstanced(3, 1, 0, 0);
 
 }
 
