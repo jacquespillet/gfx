@@ -26,23 +26,23 @@ void heapAllocator::Init(sz Size)
     printf("Created Heap Allocator of size %llu \n", this->_MaxSize);
 }
 
-void *heapAllocator::Allocate(sz Size, sz Alignment)
+void* heapAllocator::Allocate(sz Size, sz Alignment)
 {
-    void *AllocatedMemory = (Alignment==1) ? tlsf_malloc(_TlsfHandle, Size) : tlsf_memalign(_TlsfHandle, Alignment, Size);
+    void* AllocatedMemory = (Alignment==1) ? tlsf_malloc(_TlsfHandle, Size) : tlsf_memalign(_TlsfHandle, Alignment, Size);
     sz ActualSize = tlsf_block_size(AllocatedMemory);
     _AllocatedSize += ActualSize;
 
     return AllocatedMemory; 
 }
 
-void heapAllocator::Deallocate(void *Pointer)
+void heapAllocator::Deallocate(void* Pointer)
 {
     sz ActualSize = tlsf_block_size(Pointer);
     _AllocatedSize -= ActualSize;
     tlsf_free(_TlsfHandle, Pointer);
 }
 
-void ExitWalker(void *Ptr, sz Size, s32 Used, void *User)
+void ExitWalker(void* Ptr, sz Size, s32 Used, void* User)
 {
     memoryStatistics *Stats = (memoryStatistics*)User;
     Stats->Add(Used ? Size : 0);
@@ -111,7 +111,7 @@ sz MemoryAlign(sz Size, sz Alignment)
     return (Size + AlignmentMask) & ~AlignmentMask;
 }
 
-void *AllocateMemory(sz Size)
+void* AllocateMemory(sz Size)
 {
     return memory::Get()->GetSystemAllocator()->Allocate(Size, 1);
 }

@@ -1,6 +1,6 @@
 #pragma once
 #include "Types.h"
-
+#include <memory>
 namespace gfx
 {
 struct buffer
@@ -9,7 +9,7 @@ struct buffer
     u32 Size;
     u8 *MappedData;
     
-    void *ApiData;
+    std::shared_ptr<void> ApiData;
 
     void Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryUsage);
     void CopyData(const uint8_t *Data, size_t ByteSize, size_t Offset);

@@ -6,7 +6,7 @@
 #include <json.hpp>
 #include <regex>
 #include "../Common/Util.h"
-
+#include <memory>
 
 // 	// Create a shader program
 // 	ShaderHandle vertexShader = GfxContext->CreateShader("vertex_shader.glsl", ShaderType::Vertex);
@@ -257,7 +257,7 @@ struct pipeline
     
     b8 GraphicsPipeline=true;
 
-    void *ApiData;
+    std::shared_ptr<void> ApiData;
 };
 
 

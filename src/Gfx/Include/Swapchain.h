@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 
 namespace gfx
 {
@@ -8,6 +9,6 @@ struct swapchain
 
     uint32_t Width, Height;
     
-    void *ApiData;
+    std::shared_ptr<void> ApiData;
 };
 }

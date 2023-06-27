@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include "../Include/Memory.h"
 #include <assert.h>
-
+#include <memory>
 namespace gfx
 {
 struct buffer;
@@ -116,6 +116,6 @@ struct resourceManager
     resourcePool RenderPasses;
     resourcePool Framebuffers;
 
-    void *ApiData;
+    std::shared_ptr<void> ApiData;
 };
 }

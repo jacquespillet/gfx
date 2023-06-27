@@ -15,9 +15,9 @@ namespace gfx
 void virtualFramesProvider::Init()
 {
     context *Context = context::Get();
-    d3d12Data *D12Data = (d3d12Data*)Context->ApiContextData;
+    std::shared_ptr<d3d12Data> D12Data = std::static_pointer_cast<d3d12Data>(Context->ApiContextData);
     swapchain *Swapchain = Context->Swapchain;
-    d3d12SwapchainData *D12SwapchainData = (d3d12SwapchainData*)Swapchain->ApiData;
+    std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
 
     // Create frame resources.
     {
@@ -55,9 +55,9 @@ void virtualFramesProvider::Init()
 void virtualFramesProvider::WaitForPreviousFrame()
 {
     context *Context = context::Get();
-    d3d12Data *D12Data = (d3d12Data*)Context->ApiContextData;
+    std::shared_ptr<d3d12Data> D12Data = std::static_pointer_cast<d3d12Data>(Context->ApiContextData);
     swapchain *Swapchain = Context->Swapchain;
-    d3d12SwapchainData *D12SwapchainData = (d3d12SwapchainData*)Swapchain->ApiData;
+    std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
 
 
     // Schedule a Signal command in the queue.
@@ -75,7 +75,7 @@ void virtualFramesProvider::StartFrame()
 {
     context *Context = context::Get();
     swapchain *Swapchain = Context->Swapchain;
-    d3d12SwapchainData *D12SwapchainData = (d3d12SwapchainData*)Swapchain->ApiData;
+    std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
 
     // Command list allocators can only be reset when the associated 
     // command lists have finished execution on the GPU; apps should use 
@@ -83,7 +83,7 @@ void virtualFramesProvider::StartFrame()
     ThrowIfFailed(CommandAllocators[D12SwapchainData->GetFrameIndex()]->Reset());
 
 
-    ((d3d12CommandBufferData*)CommandBuffer->ApiData)->CommandAllocator = CommandAllocators[D12SwapchainData->GetFrameIndex()].Get();
+    (std::static_pointer_cast<d3d12CommandBufferData>(CommandBuffer->ApiData))->CommandAllocator = CommandAllocators[D12SwapchainData->GetFrameIndex()].Get();
     
     // // However, when ExecuteCommandList() is called on a particular command 
     // // list, that command list can then be reset at any time and must be before 
@@ -93,9 +93,9 @@ void virtualFramesProvider::StartFrame()
 
 void virtualFramesProvider::EndFrame()
 {
-    d3d12Data *D12Data = (d3d12Data*)context::Get()->ApiContextData;
-    d3d12CommandBufferData *D12CommandBuffer = (d3d12CommandBufferData*)CommandBuffer->ApiData;
-    d3d12SwapchainData *D12SwapchainData = (d3d12SwapchainData *)context::Get()->Swapchain->ApiData;
+    std::shared_ptr<d3d12Data> D12Data = std::static_pointer_cast<d3d12Data>(context::Get()->ApiContextData);
+    std::shared_ptr<d3d12CommandBufferData> D12CommandBuffer = std::static_pointer_cast<d3d12CommandBufferData>(CommandBuffer->ApiData);
+    std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(context::Get()->Swapchain->ApiData);
 
     ThrowIfFailed(D12CommandBuffer->CommandList->Close());
     

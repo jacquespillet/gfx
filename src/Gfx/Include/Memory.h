@@ -16,12 +16,12 @@ class heapAllocator
 {
 public:
     void Init(sz Size);
-    void *Allocate(sz Size, sz Alignment);
-    void Deallocate(void *Pointer);
+    void* Allocate(sz Size, sz Alignment);
+    void Deallocate(void* Pointer);
     void Destroy();
 private:
-    void *_TlsfHandle;
-    void *_Memory;
+    void* _TlsfHandle;
+    void* _Memory;
 
     sz _AllocatedSize;
     sz _MaxSize;
@@ -64,6 +64,6 @@ private:
 
 sz MemoryAlign(sz Size, sz Alignment);
 
-void *AllocateMemory(sz Size);
+void* AllocateMemory(sz Size);
 
 }

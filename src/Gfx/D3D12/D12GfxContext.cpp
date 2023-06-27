@@ -35,11 +35,11 @@ using namespace DirectX;
 namespace gfx
 {
 
-context* context::Singleton= nullptr;
+std::shared_ptr<context> context::Singleton = {};
 
 context *context::Get()
 {
-    return Singleton;
+    return Singleton.get();
 }
 
 
@@ -109,15 +109,15 @@ void GetHardwareAdapter(
     *ppAdapter = adapter.Detach();
 }
 
-context* context::Initialize(initializeInfo &InitializeInfo, app::window &Window)
+std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app::window &Window)
 {
     if(Singleton==nullptr){
-        Singleton = (context*)AllocateMemory(sizeof(context));
+        Singleton = std::make_shared<context>();
     }
 
     Singleton->ResourceManager.Init();
     //TODO : Use AllocateMemory here !
-    Singleton->ApiContextData = new d3d12Data();
+    Singleton->ApiContextData = std::make_shared<d3d12Data>();
     GET_CONTEXT(D12Data, Singleton);
     
     Singleton->Window = &Window;
@@ -165,8 +165,8 @@ swapchain *context::CreateSwapchain(u32 Width, u32 Height)
     Swapchain->Width = Width;
     Swapchain->Height = Height;
     // Swapchain->ApiData = (d3d12SwapchainData*) AllocateMemory(sizeof(d3d12SwapchainData));
-    Swapchain->ApiData = new d3d12SwapchainData();
-    d3d12SwapchainData *D12SwapchainData = (d3d12SwapchainData*)Swapchain->ApiData;
+    Swapchain->ApiData = std::make_shared<d3d12SwapchainData>();
+    std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
 
 
     D12SwapchainData->FramebufferHandle = ResourceManager.Framebuffers.ObtainResource();
@@ -264,8 +264,8 @@ bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count)
     
     Buffer->Name = "";
     //Buffer->ApiData = AllocateMemory(sizeof(d3d12BufferData));
-    Buffer->ApiData = new d3d12BufferData();
-    d3d12BufferData *D12BufferData = (d3d12BufferData*)Buffer->ApiData;
+    Buffer->ApiData = std::make_shared<d3d12BufferData>();
+    std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);
     *D12BufferData = d3d12BufferData();
 
     // Define the geometry for a triangle.
@@ -313,9 +313,8 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         return Handle;
     }
     pipeline *Pipeline = (pipeline*)ResourceManager.Pipelines.GetResource(Handle);
-    // Pipeline->ApiData = (d3d12PipelineData*)AllocateMemory(sizeof(d3d12PipelineData));
-    Pipeline->ApiData = new d3d12PipelineData();
-    d3d12PipelineData *D12PipelineData = (d3d12PipelineData*)Pipeline->ApiData;
+    Pipeline->ApiData = std::make_shared<d3d12PipelineData>();
+    std::shared_ptr<d3d12PipelineData> D12PipelineData = std::static_pointer_cast<d3d12PipelineData>(Pipeline->ApiData);
 
     GET_CONTEXT(D12Data, this);
 
@@ -365,6 +364,8 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         psoDesc.SampleDesc.Count = 1;
         ThrowIfFailed(D12Data->Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&D12PipelineData->PipelineState)));
     }    
+
+    return Handle;
 }
 
 renderPassHandle context::GetDefaultRenderPass()

@@ -1,6 +1,6 @@
 #pragma once
 #include "Types.h"
-
+#include <memory>
 namespace gfx
 {
 
@@ -10,7 +10,7 @@ struct shader
     u32 ActiveShaders=0;
     const char *Name=nullptr;
 
-    void *ApiData;
+    std::shared_ptr<void> ApiData;
 };
 
 }

@@ -3,7 +3,7 @@
 #include <windows.h>
 
 #define GET_CONTEXT(data, context) \
-    d3d12Data *data = (d3d12Data*)context->ApiContextData; \
+    std::shared_ptr<d3d12Data> data = std::static_pointer_cast<d3d12Data>(context->ApiContextData); \
 
 namespace gfx
 {

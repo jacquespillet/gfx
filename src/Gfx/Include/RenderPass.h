@@ -1,10 +1,10 @@
 #pragma once
-
+#include <memory>
 namespace gfx
 {
 struct renderPass
 {  
-    void *ApiData;
+    std::shared_ptr<void> ApiData;
     std::string Name;
 };
 }

@@ -5,6 +5,7 @@
 #include "Types.h"
 #include "Pipeline.h"
 #include "ResourceManager.h"
+#include <memory>
 
 namespace app
 {
@@ -43,13 +44,13 @@ struct context
         b8 Debug=true;    
     };
 
-    static context* Singleton;
+    static std::shared_ptr<context> Singleton;
 
     app::window *Window;
 
 
     static context *Get();
-    static context* Initialize(initializeInfo &InitializeInfo, app::window &Window);
+    static std::shared_ptr<context> Initialize(initializeInfo &InitializeInfo, app::window &Window);
 
     void StartFrame();
     void EndFrame();
@@ -91,7 +92,7 @@ struct context
 
     void Cleanup();
 
-    void *ApiContextData;
+    std::shared_ptr<void> ApiContextData;
 
     resourceManager ResourceManager;
 

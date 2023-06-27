@@ -41,7 +41,7 @@ u8 *MapMemory(VmaAllocation Allocation)
 {
     
     vkData *VkData =(vkData *)context::Get()->ApiContextData;
-    void *Memory = nullptr;
+    void* Memory = nullptr;
     vmaMapMemory(VkData->Allocator, Allocation, &Memory);
     return (u8*)Memory;
     

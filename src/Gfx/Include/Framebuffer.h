@@ -10,6 +10,6 @@ namespace gfx
 {
 struct framebuffer
 {
-    std::shared_ptr<void> ApiData;
+    std::shared_ptr<void>  ApiData;
 };  
 }

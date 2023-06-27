@@ -56,7 +56,7 @@ int main()
 	ContextInitialize.Extensions = Window.GetRequiredExtensions();
 	ContextInitialize.ErrorCallback = ErrorCallback;
     ContextInitialize.InfoCallback = InfoCallback;
-	gfx::context *GfxContext = gfx::context::Initialize(ContextInitialize, Window);
+	std::shared_ptr<gfx::context> GfxContext = gfx::context::Initialize(ContextInitialize, Window);
 
 	//Get the current frame command buffer
 	gfx::swapchain *Swapchain = GfxContext->CreateSwapchain(Width, Height);
@@ -112,7 +112,6 @@ int main()
 	// GfxContext->DestroySwapchain(Swapchain);
 
 	GfxContext->Cleanup();
-	delete GfxContext;
 
 	gfx::memory *Memory = gfx::memory::Get();
 	Memory->Destroy();
