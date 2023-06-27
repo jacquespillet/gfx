@@ -17,7 +17,7 @@ set(API ${API_D3D12})
 add_definitions(-DGL=${API_GL})
 add_definitions(-DVK=${API_VK})
 add_definitions(-DD3D12=${API_D3D12})
-add_definitions(-DAPI=${API_VK})
+add_definitions(-DAPI=${API})
 # include_directories("common/")
 
 ################################################
@@ -94,15 +94,12 @@ set(VULKAN_BIN_DIR $ENV{VULKAN_SDK}/Bin)
 include_directories(${VULKAN_INC_DIR})
 link_directories(${VULKAN_LIB_DIR})
 
+if(${API} EQUAL ${API_VK})
 # Vma
 set(VMA_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/vma/include)
 set(VMA_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/vma/lib)
 include_directories(${VMA_INC_DIR})
 link_directories(${VMA_LIB_DIR})
-
-# # Vma
-# set(WYHASH_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/wyhash)
-# include_directories(${WYHASH_INC_DIR})
 
 # glslang
 set(GLSLANG_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang/include)
@@ -114,6 +111,12 @@ link_directories(${GLSLANG_LIB_DIR})
 set(SPIRVREFLECT_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/spirv-reflect)
 set(SPIRVREFLECT_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ext/spirv-reflect/spirv_reflect.c)
 include_directories(${SPIRVREFLECT_INC_DIR})
+endif()
+
+# # Vma
+# set(WYHASH_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/wyhash)
+# include_directories(${WYHASH_INC_DIR})
+
 
 # # tlsf
 # set(TLSF_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/tlsf)
@@ -143,6 +146,11 @@ set(vkCode
         src/Gfx/VK/VkPipeline.cpp
         src/Gfx/VK/VkShader.cpp
         src/Gfx/VK/VkVirtualFrames.cpp
+)
+
+set(d3d12Code
+        src/Gfx/D3D12/D12ResourceManager.cpp
+        src/Gfx/D3D12/D12GfxContext.cpp
 )
 
 set(commonCode
@@ -187,6 +195,8 @@ endif()
 
 add_executable(Main ${sourceCode})
 target_link_libraries(Main glfw3)
+
+if(${API} EQUAL ${API_VK})
 target_link_libraries(Main vulkan-1)
 target_link_libraries(Main debug VulkanMemoryAllocatord optimized VulkanMemoryAllocator)
 target_link_libraries(Main 
@@ -200,6 +210,8 @@ target_link_libraries(Main
                         ${GLSLANG_LIB_DIR}/HLSLd.lib
                         ${GLSLANG_LIB_DIR}/OGLCompilerd.lib
                         )
+endif()
+
 set_property(TARGET Main PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
 
 install(TARGETS Main

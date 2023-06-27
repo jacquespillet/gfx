@@ -8,7 +8,7 @@
 #endif
 
 
-namespace gfx
+namespace gfx  
 {
 
 typedef uint8_t u8;
@@ -415,6 +415,32 @@ struct shaderStageFlags
 #elif API==GL
 
 #elif API==D3D12
+        Vertex,
+        TessellationControl,
+        TessellationEvaluation,
+        Geometry,
+        Fragment,
+        Compute,
+        AllGraphics,
+        All,
+        RaygenKHR,
+        AnyHitKHR,
+        ClosestHitKHR,
+        MissKHR,
+        IntersectionKHR,
+        CallableKHR,
+        RaygenNV,
+        AnyHitNV,
+        ClosestHitNV,
+        MissNV,
+        IntersectionNV,
+        CallableNV,
+        TaskNV,
+        MeshNV,
+        TaskEXT,
+        MeshEXT,
+        SubpassShadingHUAWEI,
+        ClusterCullingHUAWEI
 
 #endif
     };
@@ -453,6 +479,10 @@ struct cullMode
         FrontAndBack = (value) vk::CullModeFlagBits::eFrontAndBack
 #elif API==GL
 #elif API==D3D12
+        None,
+        Front,
+        Back,
+        FrontAndBack
 #endif
     };
 };

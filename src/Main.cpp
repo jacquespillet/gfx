@@ -7,8 +7,10 @@
 // #endif
 #include <iostream>
 
+#if 0
 #include "Gfx/Api.h"  
 #include "App/App.h"
+#endif
 
 void WindowErrorCallback(const std::string &errorMessage)
 {
@@ -27,6 +29,7 @@ void InfoCallback(const std::string &message)
 
 int main()
 {	
+#if 0
     uint32_t Width = 1280;
     uint32_t Height = 720;
 	
@@ -110,6 +113,6 @@ int main()
 	Memory->Destroy();
     delete Memory;
 
-
+#endif
 	return 0;
 }
