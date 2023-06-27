@@ -974,7 +974,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     shader *ShaderStateData = (shader*) ResourceManager.Shaders.GetResource(ShaderState);
     vkShaderData *VkShaderData = (vkShaderData*)ShaderStateData->ApiData;
 
-    Pipeline->ShaderState = ShaderState;
+    VkPipelineData->ShaderState = ShaderState;
     vk::DescriptorSetLayout Layouts[MaxDescriptorSetLayouts];
 
     u32 NumActiveLayouts = VkShaderData->SpirvParseResults.SetCount;

@@ -12,12 +12,12 @@ add_compile_definitions(_GLFW_WIN32 GLFW_EXPOSE_NATIVE_WIN32 VK_USE_PLATFORM_WIN
 set(API_GL 0)
 set(API_VK 1)
 set(API_D3D12 2)
+set(API ${API_D3D12})
+
 add_definitions(-DGL=${API_GL})
 add_definitions(-DVK=${API_VK})
 add_definitions(-DD3D12=${API_D3D12})
-
 add_definitions(-DAPI=${API_VK})
-
 # include_directories("common/")
 
 ################################################
@@ -126,14 +126,13 @@ include_directories(${SPIRVREFLECT_INC_DIR})
 ##########      Test              ##############
 ################################################
 
-set(sourceCode
-        src/Main.cpp
+set(extCode    
+        ${TLSF_SOURCE}
+        ${VOLK_SOURCE}
+        ${SPIRVREFLECT_SOURCE}
+)
 
-        src/Gfx/Common/ResourceManager.cpp
-        src/Gfx/Common/Pipeline.cpp
-        src/Gfx/Common/Util.cpp
-        src/Gfx/Common/Memory.cpp
-
+set(vkCode
         src/Gfx/VK/VkGfxContext.cpp
         src/Gfx/VK/VkCommandBuffer.cpp
         src/Gfx/VK/VkBuffer.cpp
@@ -144,13 +143,47 @@ set(sourceCode
         src/Gfx/VK/VkPipeline.cpp
         src/Gfx/VK/VkShader.cpp
         src/Gfx/VK/VkVirtualFrames.cpp
-        
-        src/App/Window.cpp
-
-        ${TLSF_SOURCE}
-        ${VOLK_SOURCE}
-        ${SPIRVREFLECT_SOURCE}
 )
+
+set(commonCode
+        src/Gfx/Common/ResourceManager.cpp
+        src/Gfx/Common/Pipeline.cpp
+        src/Gfx/Common/Util.cpp
+        src/Gfx/Common/Memory.cpp
+)
+set(appCode
+        src/App/Window.cpp
+)
+
+set(sourceCode
+        src/Main.cpp
+)
+
+set (sourceCode
+        ${sourceCode}
+        ${extCode}
+        ${commonCode}
+        ${appCode}
+)
+
+if(${API} EQUAL ${API_VK})
+set (sourceCode
+        ${sourceCode}
+        ${vkCode}
+)
+elseif(${API} EQUAL ${API_D3D12})
+set (sourceCode
+        ${sourceCode}
+        ${d3d12Code}
+)
+elseif(${API} EQUAL ${API_GL})
+set (sourceCode
+        ${sourceCode}
+        ${glCode}
+)
+endif()
+
+
 
 add_executable(Main ${sourceCode})
 target_link_libraries(Main glfw3)

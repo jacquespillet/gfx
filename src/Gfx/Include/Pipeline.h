@@ -251,8 +251,6 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
 
 struct pipeline
 {
-    shaderStateHandle ShaderState;
- 
     depthStencilCreation DepthStencil;
     blendStateCreation  BlendState;
     rasterizationCreation Rasterization;

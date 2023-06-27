@@ -2,6 +2,7 @@
 #include "Types.h"
 #include <unordered_map>
 #include "../Include/Memory.h"
+#include <assert.h>
 
 namespace gfx
 {

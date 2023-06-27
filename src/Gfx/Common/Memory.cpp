@@ -1,6 +1,8 @@
 #include "../Include/Memory.h"
 #include "tlsf.h"
 #include <stdio.h>
+#include <cstdlib>
+#include <assert.h>
 
 namespace gfx
 {

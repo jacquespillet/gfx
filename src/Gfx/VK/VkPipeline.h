@@ -33,6 +33,8 @@ struct descriptorSetLayout
 
 struct vkPipelineData
 {
+    shaderStateHandle ShaderState;
+ 
     pipelineHandle Handle;
 
     vk::Pipeline NativeHandle;
