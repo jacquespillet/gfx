@@ -21,7 +21,7 @@ VmaMemoryUsage MemoryUsageToNative(memoryUsage Usage)
 
 VmaAllocation AllocateBuffer(const vk::BufferCreateInfo &BufferCreateInfo, memoryUsage Usage, vk::Buffer *Buffer)
 {
-    vkData *VkData =(vkData *)context::Get()->ApiContextData;
+    std::shared_ptr<vkData> VkData =std::static_pointer_cast<vkData>(context::Get()->ApiContextData);
 
     VmaAllocation Allocation = {};
     VmaAllocationCreateInfo AllocationCreateInfo = {};
@@ -32,7 +32,7 @@ VmaAllocation AllocateBuffer(const vk::BufferCreateInfo &BufferCreateInfo, memor
 
 void DeallocateBuffer(const vk::Buffer &Buffer, VmaAllocation Allocation)
 {
-    vkData *VkData =(vkData *)context::Get()->ApiContextData;
+    std::shared_ptr<vkData> VkData =std::static_pointer_cast<vkData>(context::Get()->ApiContextData);
     vmaDestroyBuffer(VkData->Allocator, Buffer, Allocation);
 }
 
@@ -40,7 +40,7 @@ void DeallocateBuffer(const vk::Buffer &Buffer, VmaAllocation Allocation)
 u8 *MapMemory(VmaAllocation Allocation)
 {
     
-    vkData *VkData =(vkData *)context::Get()->ApiContextData;
+    std::shared_ptr<vkData> VkData =std::static_pointer_cast<vkData>(context::Get()->ApiContextData);
     void* Memory = nullptr;
     vmaMapMemory(VkData->Allocator, Allocation, &Memory);
     return (u8*)Memory;
@@ -49,19 +49,19 @@ u8 *MapMemory(VmaAllocation Allocation)
 
 void UnmapMemory(VmaAllocation Allocation)
 {
-    vkData *VkData =(vkData *)context::Get()->ApiContextData;
+    std::shared_ptr<vkData> VkData =std::static_pointer_cast<vkData>(context::Get()->ApiContextData);
     vmaUnmapMemory(VkData->Allocator, Allocation);
 }
 
 void FlushMemory(VmaAllocation Allocation, size_t ByteSize, size_t Offset)
 {
-    vkData *VkData =(vkData *)context::Get()->ApiContextData;
+    std::shared_ptr<vkData> VkData =std::static_pointer_cast<vkData>(context::Get()->ApiContextData);
     vmaFlushAllocation(VkData->Allocator, Allocation, Offset, ByteSize);
 }
 
 VmaAllocation AllocateImage(const vk::ImageCreateInfo &ImageCreateInfo, memoryUsage Usage, vk::Image *Image)
 {
-    vkData *VkData =(vkData *)context::Get()->ApiContextData;
+    std::shared_ptr<vkData> VkData =std::static_pointer_cast<vkData>(context::Get()->ApiContextData);
     VmaAllocation Allocation = {};
     VmaAllocationCreateInfo AllocationInfo = {};
     AllocationInfo.usage = MemoryUsageToNative(Usage);

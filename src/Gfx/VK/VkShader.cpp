@@ -60,7 +60,7 @@ EShLanguage GetShaderType(shaderStageFlags::bits Stage)
 vk::ShaderModuleCreateInfo CompileShader(const char *Code, u32 CodeSize, shaderStageFlags::bits Stage, const char *Name)
 {
     context *Context = context::Get();
-    vkData *Data = (vkData*)Context->ApiContextData;
+    std::shared_ptr<vkData> Data = std::static_pointer_cast<vkData>(Context->ApiContextData);
     
     vk::ShaderModuleCreateInfo ShaderModule;
     std::vector<u32> ByteCode;

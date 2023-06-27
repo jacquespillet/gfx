@@ -1,5 +1,3 @@
-// #if GFX_API == GFX_D3D12
-
 #include "../../App/App.h"
 #include "../Include/GfxContext.h"
 #include "../Include/Image.h"
@@ -408,5 +406,3 @@ void context::Cleanup()
 }
 
 }
-
-// #endif

@@ -13,13 +13,13 @@ image *CreateImage(vk::Image VkImage, u32 Width, u32 Height, format Format)
 {
     image *Image = (image*)AllocateMemory(sizeof(image));
     *Image = image();
-    Image->ApiData = (vkImageData*)AllocateMemory(sizeof(vkImageData));
+    Image->ApiData = std::make_shared<vkImageData>();
 
     Image->Extent.Width = Width;
     Image->Extent.Height = Height;
     Image->Format = Format;
 
-    vkImageData *ImageData = (vkImageData*)Image->ApiData;
+    std::shared_ptr<vkImageData> ImageData = std::static_pointer_cast<vkImageData>(Image->ApiData);
     ImageData->Allocation = {};
     ImageData->InitViews(*Image, VkImage, Format);
 
@@ -34,8 +34,8 @@ image *CreateEmptyImage(u32 Width, u32 Height, format Format, imageUsage::value 
 {
     image *Image = (image*)AllocateMemory(sizeof(image));
     *Image = image();
-    Image->ApiData = (vkImageData*)AllocateMemory(sizeof(vkImageData));
-    vkImageData *VkImageData = (vkImageData*)Image->ApiData;
+    Image->ApiData = std::make_shared<vkImageData>();
+    std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(Image->ApiData);
     
     Image->MipLevelCount = 1;
     Image->LayerCount = 1;

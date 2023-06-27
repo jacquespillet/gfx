@@ -1,4 +1,4 @@
 #pragma once
 
 #define GET_CONTEXT(data, context) \
-    vkData *data = (vkData*)context->ApiContextData; \
+    std::shared_ptr<vkData> data = std::static_pointer_cast<vkData>(context->ApiContextData); \

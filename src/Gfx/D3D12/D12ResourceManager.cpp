@@ -1,4 +1,3 @@
-#if GFX_API==GFX_D3D12
 #include "../Include/Memory.h"
 #include "../Include/GfxContext.h"
 
@@ -12,5 +11,3 @@ namespace gfx
         // VkResourceManagerData->DescriptorSetLayouts.Init(2048, sizeof(descriptorSetLayout));
     }
 }
-
-#endif

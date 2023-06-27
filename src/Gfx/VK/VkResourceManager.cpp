@@ -7,8 +7,8 @@ namespace gfx
 {
     void resourceManager::InitApiSpecific()
     {
-        ApiData = (vkResourceManagerData*)AllocateMemory(sizeof(vkResourceManagerData)); 
-        vkResourceManagerData *VkResourceManagerData = (vkResourceManagerData*)ApiData;
+        ApiData = std::make_shared<vkResourceManagerData>();
+        std::shared_ptr<vkResourceManagerData> VkResourceManagerData = std::static_pointer_cast<vkResourceManagerData>(ApiData);
         
         VkResourceManagerData->DescriptorSetLayouts.Init(2048, sizeof(descriptorSetLayout));
     }

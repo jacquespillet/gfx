@@ -1,4 +1,3 @@
-#if GFX_API == GFX_D3D12
 #include "D12CommandBuffer.h"
 #include "../Include/GfxContext.h"
 #include "../Include/Swapchain.h"
@@ -148,5 +147,3 @@ void commandBuffer::DrawTriangles(uint32_t Start, uint32_t Count)
 
 
 }
-
-#endif

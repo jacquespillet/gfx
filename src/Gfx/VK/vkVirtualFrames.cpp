@@ -11,7 +11,7 @@ namespace gfx
 void virtualFrameProvider::Init(u64 FrameCount, u64 StageBufferSize)
 {
     auto Context = context::Get();
-    vkData *VkData = (vkData*)Context->ApiContextData;
+    std::shared_ptr<vkData> VkData = std::static_pointer_cast<vkData>(Context->ApiContextData);
 
     this->VirtualFrames.reserve(FrameCount);
 
@@ -50,9 +50,9 @@ u32 virtualFrameProvider::GetPresentImageIndex()
 void virtualFrameProvider::StartFrame()
 {
     auto Context = context::Get();
-    vkData *VkData = (vkData*)Context->ApiContextData;
+    std::shared_ptr<vkData> VkData = std::static_pointer_cast<vkData>(Context->ApiContextData);
     swapchain *Swapchain = Context->Swapchain;
-    vkSwapchainData *VkSwapchainData = (vkSwapchainData*)Swapchain->ApiData;
+    std::shared_ptr<vkSwapchainData> VkSwapchainData = std::static_pointer_cast<vkSwapchainData>(Swapchain->ApiData);
 
     auto AcquireNextImage = VkData->Device.acquireNextImageKHR(VkSwapchainData->Handle, UINT64_MAX, VkData->ImageAvailableSemaphore);
     assert(AcquireNextImage.result == vk::Result::eSuccess || AcquireNextImage.result == vk::Result::eSuboptimalKHR);
@@ -75,14 +75,14 @@ void virtualFrameProvider::EndFrame()
     auto &Frame = this->GetCurrentFrame();
 
     auto Context = context::Get();
-    vkData *VkData = (vkData*)Context->ApiContextData;
+    std::shared_ptr<vkData> VkData = std::static_pointer_cast<vkData>(Context->ApiContextData);
     swapchain *Swapchain = Context->Swapchain;
-    vkSwapchainData *VkSwapchainData = (vkSwapchainData*)Swapchain->ApiData;
+    std::shared_ptr<vkSwapchainData> VkSwapchainData = std::static_pointer_cast<vkSwapchainData>(Swapchain->ApiData);
 
 
     auto LastPresentImageUsage = VkSwapchainData->SwapchainImageUsages[this->PresentImageIndex];
     image *PresentImage = VkSwapchainData->AcquireSwapchainImage(this->PresentImageIndex, imageUsage::UNKNOWN);
-    vkImageData *VkImageData = (vkImageData*)PresentImage->ApiData;
+    std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(PresentImage->ApiData);
 
     auto SubresourceRange = GetDefaultImageSubresourceRange(*PresentImage);
 
@@ -96,7 +96,7 @@ void virtualFrameProvider::EndFrame()
                                     .setImage(VkImageData->Handle)
                                     .setSubresourceRange(SubresourceRange);
 
-    vkCommandBufferData *VkCommandBufferData = (vkCommandBufferData*)Frame.Commands->ApiData;
+    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(Frame.Commands->ApiData);
 
     VkCommandBufferData->Handle.pipelineBarrier(
         ImageUsageToPipelineStage(LastPresentImageUsage),
@@ -129,9 +129,9 @@ void virtualFrameProvider::Present()
 {
     
     auto Context = context::Get();
-    vkData *VkData = (vkData*)Context->ApiContextData;
+    std::shared_ptr<vkData> VkData = std::static_pointer_cast<vkData>(Context->ApiContextData);
     swapchain *Swapchain = Context->Swapchain;
-    vkSwapchainData *VkSwapchainData = (vkSwapchainData*)Swapchain->ApiData;
+    std::shared_ptr<vkSwapchainData> VkSwapchainData = std::static_pointer_cast<vkSwapchainData>(Swapchain->ApiData);
 
     vk::PresentInfoKHR PresentInfo;
     PresentInfo.setWaitSemaphores(VkData->RenderingFinishedSemaphore)

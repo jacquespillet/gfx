@@ -1,4 +1,3 @@
-#if GFX_API == GFX_D3D12
 #include "D12VirtualFrames.h"
 
 #include "../Include/GfxContext.h"
@@ -126,5 +125,3 @@ void virtualFramesProvider::EndFrame()
 }
 
 }
-
-#endif

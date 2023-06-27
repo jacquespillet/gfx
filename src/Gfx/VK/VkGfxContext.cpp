@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <optional>
 #include <iostream>
+#include <memory>
 #include <algorithm>
 #include <glslang/Public/ShaderLang.h>
 
@@ -37,12 +38,13 @@
 namespace gfx
 {
 
-context* context::Singleton= nullptr;
+std::shared_ptr<context> context::Singleton = {};
 
 context *context::Get()
 {
-    return Singleton;
+    return Singleton.get();
 }
+
 
 bool GetSupportedDepthFormat(vk::PhysicalDevice PhysicalDevice, format *DepthFormat)
 {
@@ -76,8 +78,8 @@ framebufferHandle* CreateFramebuffer(image **ColorImages, image *DepthStencilIma
 
     for (size_t i = 0; i < ImagesCount; i++)
     {
-        vkImageData *VkColorImage = (vkImageData*)ColorImages[i]->ApiData;
-        vkImageData *VkDepthImage = (vkImageData*)DepthStencilImage->ApiData;
+        std::shared_ptr<vkImageData> VkColorImage = std::static_pointer_cast<vkImageData>(ColorImages[i]->ApiData);
+        std::shared_ptr<vkImageData> VkDepthImage = std::static_pointer_cast<vkImageData>(DepthStencilImage->ApiData);
         std::vector<vk::ImageView> Attachments = 
         {
             VkColorImage->DefaultImageViews.NativeView,
@@ -102,8 +104,8 @@ framebufferHandle* CreateFramebuffer(image **ColorImages, image *DepthStencilIma
             return {};
         }
         framebuffer *Framebuffer = (framebuffer*)Context->ResourceManager.Framebuffers.GetResource(FramebufferHandle);
-        Framebuffer->ApiData = (vkFramebufferData*)AllocateMemory(sizeof(vkFramebufferData));
-        vkFramebufferData* VkFramebufferData = (vkFramebufferData*)Framebuffer->ApiData;
+        Framebuffer->ApiData = std::make_shared<vkFramebufferData>();
+        std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
         VkFramebufferData->Handle = VkData->Device.createFramebuffer(FramebufferCreateInfo);
 
         Handles[i] = FramebufferHandle;
@@ -119,8 +121,8 @@ swapchain *context::CreateSwapchain(u32 Width, u32 Height)
 
     swapchain *Swapchain = (swapchain*)AllocateMemory(sizeof(swapchain));
 
-    Swapchain->ApiData = (vkSwapchainData*) AllocateMemory(sizeof(vkSwapchainData));
-    vkSwapchainData *VkSwapchainData = (vkSwapchainData*)Swapchain->ApiData;
+    Swapchain->ApiData = std::make_shared<vkSwapchainData>();
+    std::shared_ptr<vkSwapchainData> VkSwapchainData = std::static_pointer_cast<vkSwapchainData>(Swapchain->ApiData);
     *VkSwapchainData = {};
 
     VkData->Device.waitIdle();
@@ -172,7 +174,7 @@ swapchain *context::CreateSwapchain(u32 Width, u32 Height)
     }
     renderPassHandle SwapchainPassHandle = GetDefaultRenderPass();
     renderPass *SwapchainPass = (renderPass *)ResourceManager.RenderPasses.GetResource(SwapchainPassHandle);
-    vkRenderPassData *VkSwapchainPass = (vkRenderPassData*)SwapchainPass->ApiData;
+    std::shared_ptr<vkRenderPassData> VkSwapchainPass = std::static_pointer_cast<vkRenderPassData>(SwapchainPass->ApiData);
 
     //Initialize texture representations of swapchain images
     for(u32 i=0; i<VkData->PresentImageCount; i++)
@@ -198,7 +200,7 @@ swapchain *context::RecreateSwapchain(u32 Width, u32 Height, swapchain *OldSwapc
     assert(OldSwapchain);
     assert(OldSwapchain->ApiData);
 
-    vkSwapchainData *VkSwapchainData = (vkSwapchainData*)OldSwapchain->ApiData;
+    std::shared_ptr<vkSwapchainData> VkSwapchainData = std::static_pointer_cast<vkSwapchainData>(OldSwapchain->ApiData);
 
     VkData->Device.waitIdle();
 
@@ -251,7 +253,7 @@ swapchain *context::RecreateSwapchain(u32 Width, u32 Height, swapchain *OldSwapc
 
     renderPassHandle SwapchainPassHandle = GetDefaultRenderPass();
     renderPass *SwapchainPass = (renderPass *)ResourceManager.RenderPasses.GetResource(SwapchainPassHandle);
-    vkRenderPassData *VkSwapchainPass = (vkRenderPassData*)SwapchainPass->ApiData;
+    std::shared_ptr<vkRenderPassData> VkSwapchainPass = std::static_pointer_cast<vkRenderPassData>(SwapchainPass->ApiData);
 
     //Initialize texture representations of swapchain images
     for(u32 i=0; i<VkData->PresentImageCount; i++)
@@ -270,20 +272,20 @@ swapchain *context::RecreateSwapchain(u32 Width, u32 Height, swapchain *OldSwapc
 }
 
 
-context* context::Initialize(context::initializeInfo &InitializeInfo, app::window &Window)
+std::shared_ptr<context> context::Initialize(context::initializeInfo &InitializeInfo, app::window &Window)
 {
     if(Singleton==nullptr){
-        Singleton = (context*)AllocateMemory(sizeof(context));
+        Singleton = std::make_shared<context>();
     }
 
     Singleton->ResourceManager.Init();
 
     //TODO : Use AllocateMemory here !
-    Singleton->ApiContextData = new vkData();
+    Singleton->ApiContextData = std::make_shared<vkData>();
     Singleton->Window = &Window;
     // Singleton->ApiContextData = (vkData*) AllocateMemory(sizeof(vkData));
     GET_CONTEXT(VkData, Singleton);
-    CreateInstance(InitializeInfo, VkData);
+    CreateInstance(InitializeInfo, VkData.get());
     
       
     VkSurfaceKHR Surface;
@@ -503,8 +505,8 @@ bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count)
     buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(Handle);
     
     Buffer->Name = "";
-    Buffer->ApiData = AllocateMemory(sizeof(vkBufferData));
-    vkBufferData *VkBufferData = (vkBufferData*)Buffer->ApiData;
+    Buffer->ApiData = std::make_shared<vkBufferData>();
+    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
     *VkBufferData = vkBufferData();
 
     auto VulkanContext = context::Get();
@@ -541,8 +543,8 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage
         return Handle;
     }
     buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(Handle);
-    Buffer->ApiData = (vkBufferData*)AllocateMemory(sizeof(vkBufferData));
-    vkBufferData *VkBufferData = (vkBufferData*)Buffer->ApiData;
+    Buffer->ApiData = std::make_shared<vkBufferData>();
+    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
     *VkBufferData = vkBufferData(); 
     
     constexpr std::array BufferQueueFamilyIndices = {(u32)0};
@@ -607,7 +609,7 @@ stageBuffer *context::GetStageBuffer()
 void context::SubmitCommandBufferImmediate(commandBuffer *CommandBuffer)
 {
     GET_CONTEXT(VkData, this);
-    vkCommandBufferData *VkCommandBufferData = (vkCommandBufferData*)CommandBuffer->ApiData;
+    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(CommandBuffer->ApiData);
 
     vk::SubmitInfo SubmitInfo;
     SubmitInfo.setCommandBuffers(VkCommandBufferData->Handle);
@@ -620,7 +622,7 @@ void context::SubmitCommandBufferImmediate(commandBuffer *CommandBuffer)
 void context::SubmitCommandBuffer(commandBuffer *CommandBuffer)
 {
     GET_CONTEXT(VkData, this);
-    vkCommandBufferData *VkCommandBufferData = (vkCommandBufferData*)CommandBuffer->ApiData;
+    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(CommandBuffer->ApiData);
 
     vk::SubmitInfo SubmitInfo;
     SubmitInfo.setCommandBuffers(VkCommandBufferData->Handle);
@@ -651,9 +653,8 @@ shaderStateHandle CreateShaderState(const shaderStateCreation &Creation)
     u32 CompiledShaders=0;
     
     shader *ShaderState = (shader*)Context->ResourceManager.Shaders.GetResource(Handle);
-    ShaderState->ApiData = (vkShaderData*)AllocateMemory(sizeof(vkShaderData));
-    vkShaderData *VkShaderData = (vkShaderData*)ShaderState->ApiData;
-    *VkShaderData = vkShaderData();
+    ShaderState->ApiData = std::make_shared<vkShaderData>();
+    std::shared_ptr<vkShaderData> VkShaderData = std::static_pointer_cast<vkShaderData>(ShaderState->ApiData);
 
     ShaderState->GraphicsPipeline = true;
     ShaderState->ActiveShaders=0;
@@ -703,7 +704,7 @@ descriptorSetLayoutHandle CreateDescriptorSetLayout(const descriptorSetLayoutCre
     context *Context = context::Get();
     GET_CONTEXT(VkData, Context);
 
-    vkResourceManagerData *VkResourceManager = (vkResourceManagerData*)Context->ResourceManager.ApiData;
+    std::shared_ptr<vkResourceManagerData> VkResourceManager = std::static_pointer_cast<vkResourceManagerData>(Context->ResourceManager.ApiData);
 
     descriptorSetLayoutHandle Handle = VkResourceManager->DescriptorSetLayouts.ObtainResource(); 
     if(Handle == InvalidHandle)
@@ -909,8 +910,8 @@ renderPass *vkData::GetRenderPass(const renderPassOutput &Output, std::string Na
     
     renderPass *RenderPass = (renderPass*) context::Get()->ResourceManager.RenderPasses.GetResource(RenderPassHandle);
     RenderPass->Name = Name;
-    RenderPass->ApiData = (vkRenderPassData*) AllocateMemory(sizeof(vkRenderPassData));
-    vkRenderPassData *VkRenderPassData = (vkRenderPassData*)RenderPass->ApiData;
+    RenderPass->ApiData = std::make_shared<vkRenderPassData>();
+    std::shared_ptr<vkRenderPassData> VkRenderPassData = std::static_pointer_cast<vkRenderPassData>(RenderPass->ApiData);
     VkRenderPassData->NativeHandle =  CreateRenderPass(this, Output);
 
 
@@ -969,11 +970,11 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     }
 
     pipeline *Pipeline = (pipeline*)ResourceManager.Pipelines.GetResource(Handle);
-    Pipeline->ApiData = (vkPipelineData*)AllocateMemory(sizeof(vkPipelineData));
-    vkPipelineData *VkPipelineData = (vkPipelineData*)Pipeline->ApiData;
+    Pipeline->ApiData = std::make_shared<vkPipelineData>();
+    std::shared_ptr<vkPipelineData> VkPipelineData = std::static_pointer_cast<vkPipelineData>(Pipeline->ApiData);
 
     shader *ShaderStateData = (shader*) ResourceManager.Shaders.GetResource(ShaderState);
-    vkShaderData *VkShaderData = (vkShaderData*)ShaderStateData->ApiData;
+    std::shared_ptr<vkShaderData> VkShaderData = std::static_pointer_cast<vkShaderData>(ShaderStateData->ApiData);
 
     VkPipelineData->ShaderState = ShaderState;
     vk::DescriptorSetLayout Layouts[MaxDescriptorSetLayouts];
@@ -983,7 +984,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     {
         VkPipelineData->DescriptorSetLayoutHandles[i] = CreateDescriptorSetLayout(VkShaderData->SpirvParseResults.Sets[i]);
         
-        vkResourceManagerData *VkResourceManagerData = (vkResourceManagerData*)ResourceManager.ApiData;
+        std::shared_ptr<vkResourceManagerData> VkResourceManagerData = std::static_pointer_cast<vkResourceManagerData>(ResourceManager.ApiData);
         VkPipelineData->DescriptorSetLayouts[i] = (descriptorSetLayout*)VkResourceManagerData->DescriptorSetLayouts.GetResource(VkPipelineData->DescriptorSetLayoutHandles[i]);
         Layouts[i] = VkPipelineData->DescriptorSetLayouts[i]->NativeHandle;
     }
@@ -1137,7 +1138,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         PipelineCreateInfo.setPViewportState(&ViewportState);
 
         renderPass *RenderPass = VkData->GetRenderPass(PipelineCreation.RenderPass, std::string(PipelineCreation.RenderPass.Name));
-        vkRenderPassData *VkRenderPassData = (vkRenderPassData*)RenderPass->ApiData;
+        std::shared_ptr<vkRenderPassData> VkRenderPassData = std::static_pointer_cast<vkRenderPassData>(RenderPass->ApiData);
         PipelineCreateInfo.setRenderPass(VkRenderPassData->NativeHandle);
 
         vk::DynamicState DynamicStates[] = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
@@ -1176,7 +1177,7 @@ renderPassHandle context::GetDefaultRenderPass()
 
 framebufferHandle context::GetSwapchainFramebuffer()
 {
-    vkSwapchainData *VkSwapchainData = (vkSwapchainData*)Swapchain->ApiData;
+    std::shared_ptr<vkSwapchainData> VkSwapchainData = std::static_pointer_cast<vkSwapchainData>(Swapchain->ApiData);
     framebufferHandle Framebuffer = VkSwapchainData->Framebuffers[VkSwapchainData->CurrentIndex];
     return Framebuffer;
 }

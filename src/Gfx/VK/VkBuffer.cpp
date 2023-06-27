@@ -1,4 +1,6 @@
 #if GFX_API==GFX_VK
+#include <memory>
+
 #include "VkBuffer.h"
 #include "../Include/Buffer.h"
 #include "VkMemoryAllocation.h"
@@ -9,7 +11,7 @@ namespace gfx
 
 vk::Buffer GetBufferHandle(buffer *Buffer)
 {
-    vkBufferData *VkBufferData = (vkBufferData*)Buffer->ApiData;
+    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
     return VkBufferData->Handle;
 }
 
@@ -28,13 +30,13 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
                     .setQueueFamilyIndices(BufferQueueFamilyIndices);
 
     //Allocate with vma
-    vkBufferData *VkBufferData = (vkBufferData*)this->ApiData;
+    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(this->ApiData);
     VkBufferData->Allocation = gfx::AllocateBuffer(BufferCreateInfo, MemoryUsage, &VkBufferData->Handle);    
 }
 
 u8 *buffer::MapMemory()
 {
-    vkBufferData *VkBufferData = (vkBufferData*)this->ApiData;
+    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(this->ApiData);
 
     //If unmapped, map it
     if(this->MappedData == nullptr)
@@ -47,7 +49,7 @@ u8 *buffer::MapMemory()
 
 void buffer::UnmapMemory()
 {
-    vkBufferData *VkBufferData = (vkBufferData*)this->ApiData;
+    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(this->ApiData);
     //Unmap and reset pointer
     gfx::UnmapMemory(VkBufferData->Allocation);
     this->MappedData=nullptr;
@@ -56,14 +58,14 @@ void buffer::UnmapMemory()
 
 void buffer::FlushMemory(size_t ByteSize, size_t Offset)
 {
-    vkBufferData *VkBufferData = (vkBufferData*)this->ApiData;
+    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(this->ApiData);
     gfx::FlushMemory(VkBufferData->Allocation, ByteSize, Offset);
 }
 
 
 void buffer::Destroy()
 {
-    vkBufferData *VkBufferData = (vkBufferData*)this->ApiData;
+    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(this->ApiData);
     if(VkBufferData->Handle)
     {
         if(this->MappedData != nullptr)
