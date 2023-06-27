@@ -1,5 +1,6 @@
 #include "../Include/Pipeline.h"
 #include "../Include/GfxContext.h"
+#include "../Include/Memory.h"
 #include "Util.h"
 
 namespace gfx
@@ -15,7 +16,8 @@ void ShaderConcatenate(std::string &FileName, std::string &Code, std::string &Pa
 
 const char *AllocateCString(std::string Str)
 {
-    char *Result =new char[Str.size() + 1];
+
+    char *Result = (char*)AllocateMemory(Str.size() + 1);
     memcpy((void*)Result, Str.data(), Str.size());
     Result[Str.size()] = '\0';
     return Result;
@@ -62,7 +64,9 @@ shaderStateCreation &shaderStateCreation::AddStage(const char *FileName, shaderS
 {
     
     std::string CodeStr = ReadShaderFile(FileName).c_str();
-    char *Code = new char[CodeStr.size() + 1];
+    char *Code = (char*)AllocateMemory(CodeStr.size() + 1);
+
+
     strcpy(Code, CodeStr.c_str());
 
     Stages[StagesCount].Code = Code;   

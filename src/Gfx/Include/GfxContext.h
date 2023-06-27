@@ -87,6 +87,8 @@ struct context
     void DestroyCommandBuffer(commandBuffer* Handle);
     void DestroySwapchain(swapchain *Swapchain);
 
+    void Cleanup();
+
     void *ApiContextData;
 
     resourceManager ResourceManager;

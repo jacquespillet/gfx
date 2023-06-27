@@ -16,6 +16,7 @@
 #include "../Include/Shader.h"
 #include "../Include/RenderPass.h"
 #include "../Include/Framebuffer.h"
+#include "../Include/Memory.h"
 #include "../Common/Util.h"
 #include "VkMapping.h"
 #include "VkImage.h"
@@ -43,8 +44,6 @@ context *context::Get()
     return Singleton;
 }
 
-
-
 bool GetSupportedDepthFormat(vk::PhysicalDevice PhysicalDevice, format *DepthFormat)
 {
     std::vector<format> DepthFormats = {
@@ -68,17 +67,16 @@ bool GetSupportedDepthFormat(vk::PhysicalDevice PhysicalDevice, format *DepthFor
     return false;
 }
 
-std::vector<framebufferHandle> CreateFramebuffer(std::vector<image*> *ColorImages, image *DepthStencilImage, vk::RenderPass RenderPass)
+framebufferHandle* CreateFramebuffer(image **ColorImages, image *DepthStencilImage, vk::RenderPass RenderPass, sz ImagesCount)
 {
-    int Width = ColorImages->at(0)->Extent.Width;
-    int Height = ColorImages->at(0)->Extent.Height;
+    int Width = ColorImages[0]->Extent.Width;
+    int Height = ColorImages[0]->Extent.Height;
     
-    std::vector<framebufferHandle> Handles;
+    framebufferHandle *Handles = (framebufferHandle*)AllocateMemory(ImagesCount * sizeof(framebufferHandle));
 
-    Handles.resize(ColorImages->size());
-    for (size_t i = 0; i < Handles.size(); i++)
+    for (size_t i = 0; i < ImagesCount; i++)
     {
-        vkImageData *VkColorImage = (vkImageData*)ColorImages->at(i)->ApiData;
+        vkImageData *VkColorImage = (vkImageData*)ColorImages[i]->ApiData;
         vkImageData *VkDepthImage = (vkImageData*)DepthStencilImage->ApiData;
         std::vector<vk::ImageView> Attachments = 
         {
@@ -90,8 +88,8 @@ std::vector<framebufferHandle> CreateFramebuffer(std::vector<image*> *ColorImage
         vk::FramebufferCreateInfo FramebufferCreateInfo;
         FramebufferCreateInfo.setRenderPass(RenderPass)
                             .setAttachments(Attachments)
-                            .setWidth(ColorImages->at(i)->Extent.Width)
-                            .setHeight(ColorImages->at(i)->Extent.Height)
+                            .setWidth(ColorImages[i]->Extent.Width)
+                            .setHeight(ColorImages[i]->Extent.Height)
                             .setLayers(1);
         
         auto Context = context::Get();
@@ -104,7 +102,7 @@ std::vector<framebufferHandle> CreateFramebuffer(std::vector<image*> *ColorImage
             return {};
         }
         framebuffer *Framebuffer = (framebuffer*)Context->ResourceManager.Framebuffers.GetResource(FramebufferHandle);
-        Framebuffer->ApiData = new vkFramebufferData();
+        Framebuffer->ApiData = (vkFramebufferData*)AllocateMemory(sizeof(vkFramebufferData));
         vkFramebufferData* VkFramebufferData = (vkFramebufferData*)Framebuffer->ApiData;
         VkFramebufferData->Handle = VkData->Device.createFramebuffer(FramebufferCreateInfo);
 
@@ -119,10 +117,11 @@ swapchain *context::CreateSwapchain(u32 Width, u32 Height)
 {
     GET_CONTEXT(VkData, this);
 
-    swapchain *Swapchain = new swapchain();
+    swapchain *Swapchain = (swapchain*)AllocateMemory(sizeof(swapchain));
 
-    Swapchain->ApiData = new vkSwapchainData();
+    Swapchain->ApiData = (vkSwapchainData*) AllocateMemory(sizeof(vkSwapchainData));
     vkSwapchainData *VkSwapchainData = (vkSwapchainData*)Swapchain->ApiData;
+    *VkSwapchainData = {};
 
     VkData->Device.waitIdle();
 
@@ -131,7 +130,7 @@ swapchain *context::CreateSwapchain(u32 Width, u32 Height)
     VkData->SurfaceExtent = vk::Extent2D(
         std::clamp(Width, SurfaceCapabilities.minImageExtent.width, SurfaceCapabilities.maxImageExtent.width),
         std::clamp(Height, SurfaceCapabilities.minImageExtent.height, SurfaceCapabilities.maxImageExtent.height)
-    );
+    );  
 
     //Disable rendering if surface size is 0
     if(VkData->SurfaceExtent == vk::Extent2D(0,0))
@@ -165,9 +164,12 @@ swapchain *context::CreateSwapchain(u32 Width, u32 Height)
 
     //reinitialize internal buffers
     VkData->PresentImageCount = (u32)SwapchainImages.size();
-    VkSwapchainData->SwapchainImages.clear();
-    VkSwapchainData->SwapchainImages.reserve(VkData->PresentImageCount);
-    VkSwapchainData->SwapchainImageUsages.assign(VkData->PresentImageCount, imageUsage::UNKNOWN);
+    VkSwapchainData->SwapchainImages = (image**) AllocateMemory(VkData->PresentImageCount * sizeof(image*));
+    VkSwapchainData->SwapchainImageUsages = (imageUsage::bits*) AllocateMemory(VkData->PresentImageCount * sizeof(imageUsage::bits));
+    for (size_t i = 0; i < VkData->PresentImageCount; i++)
+    {
+        VkSwapchainData->SwapchainImageUsages[i] = imageUsage::UNKNOWN;
+    }
     renderPassHandle SwapchainPassHandle = GetDefaultRenderPass();
     renderPass *SwapchainPass = (renderPass *)ResourceManager.RenderPasses.GetResource(SwapchainPassHandle);
     vkRenderPassData *VkSwapchainPass = (vkRenderPassData*)SwapchainPass->ApiData;
@@ -175,15 +177,14 @@ swapchain *context::CreateSwapchain(u32 Width, u32 Height)
     //Initialize texture representations of swapchain images
     for(u32 i=0; i<VkData->PresentImageCount; i++)
     {
-        VkSwapchainData->SwapchainImages.push_back(
-            gfx::CreateImage(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format))
-        );
+        VkSwapchainData->SwapchainImages[i] = 
+            gfx::CreateImage(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format));
     }
 
     format DepthFormat;
     bool FoundDepthFormat = GetSupportedDepthFormat(VkData->PhysicalDevice, &DepthFormat);
     image* DepthStencil = CreateEmptyImage(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
-    VkSwapchainData->Framebuffers = CreateFramebuffer(&VkSwapchainData->SwapchainImages, DepthStencil, VkSwapchainPass->NativeHandle);
+    VkSwapchainData->Framebuffers = CreateFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, VkSwapchainPass->NativeHandle, VkData->PresentImageCount);
 
     this->Swapchain = Swapchain;
     return Swapchain;
@@ -239,11 +240,14 @@ swapchain *context::RecreateSwapchain(u32 Width, u32 Height, swapchain *OldSwapc
     }
     auto SwapchainImages = VkData->Device.getSwapchainImagesKHR(VkSwapchainData->Handle);
 
-    //reinitialize internal buffers
+     //reinitialize internal buffers
     VkData->PresentImageCount = (u32)SwapchainImages.size();
-    VkSwapchainData->SwapchainImages.clear();
-    VkSwapchainData->SwapchainImages.reserve(VkData->PresentImageCount);
-    VkSwapchainData->SwapchainImageUsages.assign(VkData->PresentImageCount, imageUsage::UNKNOWN);
+    VkSwapchainData->SwapchainImages = (image**) AllocateMemory(VkData->PresentImageCount * sizeof(image*));
+    VkSwapchainData->SwapchainImageUsages = (imageUsage::bits*) AllocateMemory(VkData->PresentImageCount * sizeof(imageUsage::bits));
+    for (size_t i = 0; i < VkData->PresentImageCount; i++)
+    {
+        VkSwapchainData->SwapchainImageUsages[i] = imageUsage::UNKNOWN;
+    }
 
     renderPassHandle SwapchainPassHandle = GetDefaultRenderPass();
     renderPass *SwapchainPass = (renderPass *)ResourceManager.RenderPasses.GetResource(SwapchainPassHandle);
@@ -252,15 +256,14 @@ swapchain *context::RecreateSwapchain(u32 Width, u32 Height, swapchain *OldSwapc
     //Initialize texture representations of swapchain images
     for(u32 i=0; i<VkData->PresentImageCount; i++)
     {
-        VkSwapchainData->SwapchainImages.push_back(
-            gfx::CreateImage(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format))
-        );
-
+        VkSwapchainData->SwapchainImages[i] = 
+            gfx::CreateImage(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format));
     }
+
     format DepthFormat;
     bool FoundDepthFormat = GetSupportedDepthFormat(VkData->PhysicalDevice, &DepthFormat);
     image *DepthStencil = CreateEmptyImage(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
-    VkSwapchainData->Framebuffers = CreateFramebuffer(&VkSwapchainData->SwapchainImages, DepthStencil, VkSwapchainPass->NativeHandle);
+    VkSwapchainData->Framebuffers = CreateFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, VkSwapchainPass->NativeHandle, VkData->PresentImageCount);
 
     this->Swapchain = OldSwapchain;
     return OldSwapchain;
@@ -270,16 +273,18 @@ swapchain *context::RecreateSwapchain(u32 Width, u32 Height, swapchain *OldSwapc
 context* context::Initialize(context::initializeInfo &InitializeInfo, app::window &Window)
 {
     if(Singleton==nullptr){
-        Singleton = new context();
+        Singleton = (context*)AllocateMemory(sizeof(context));
     }
 
     Singleton->ResourceManager.Init();
 
+    //TODO : Use AllocateMemory here !
     Singleton->ApiContextData = new vkData();
+    // Singleton->ApiContextData = (vkData*) AllocateMemory(sizeof(vkData));
     GET_CONTEXT(VkData, Singleton);
     CreateInstance(InitializeInfo, VkData);
     
-    
+      
     VkSurfaceKHR Surface;
     vk::Result Result = (vk::Result)glfwCreateWindowSurface(VkData->Instance, Window.GetHandle(), nullptr, &Surface);
 
@@ -497,9 +502,9 @@ bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count)
     buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(Handle);
     
     Buffer->Name = "";
-    Buffer->ApiData = new vkBufferData();
+    Buffer->ApiData = AllocateMemory(sizeof(vkBufferData));
     vkBufferData *VkBufferData = (vkBufferData*)Buffer->ApiData;
-    
+    *VkBufferData = vkBufferData();
 
     auto VulkanContext = context::Get();
     
@@ -511,7 +516,7 @@ bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count)
     auto VertexAllocation = StageBuffer->Submit((uint8_t*)Values, (u32)Count * sizeof(f32));
 
     Buffer->Init(VertexAllocation.Size, gfx::bufferUsage::VertexBuffer | gfx::bufferUsage::TransferDestination, gfx::memoryUsage::GpuOnly);
-
+  
     CommandBuffer->CopyBuffer(
         gfx::bufferInfo {StageBuffer->Buffer, VertexAllocation.Offset},
         gfx::bufferInfo {Buffer, 0},
@@ -535,8 +540,9 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage
         return Handle;
     }
     buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(Handle);
-    Buffer->ApiData = new vkBufferData();
+    Buffer->ApiData = (vkBufferData*)AllocateMemory(sizeof(vkBufferData));
     vkBufferData *VkBufferData = (vkBufferData*)Buffer->ApiData;
+    *VkBufferData = vkBufferData(); 
     
     constexpr std::array BufferQueueFamilyIndices = {(u32)0};
 
@@ -644,8 +650,9 @@ shaderStateHandle CreateShaderState(const shaderStateCreation &Creation)
     u32 CompiledShaders=0;
     
     shader *ShaderState = (shader*)Context->ResourceManager.Shaders.GetResource(Handle);
-    ShaderState->ApiData = new vkShaderData();
+    ShaderState->ApiData = (vkShaderData*)AllocateMemory(sizeof(vkShaderData));
     vkShaderData *VkShaderData = (vkShaderData*)ShaderState->ApiData;
+    *VkShaderData = vkShaderData();
 
     ShaderState->GraphicsPipeline = true;
     ShaderState->ActiveShaders=0;
@@ -669,7 +676,7 @@ shaderStateHandle CreateShaderState(const shaderStateCreation &Creation)
             ShaderCreateInfo = CompileShader(ShaderStage.Code, ShaderStage.CodeSize, ShaderStage.Stage, Creation.Name);
         }
 
-        delete ShaderStage.Code;
+        // delete ShaderStage.Code;
 
         vk::PipelineShaderStageCreateInfo &ShaderStageCreateInfo = VkShaderData->ShaderStageCreateInfo[CompiledShaders];
         memset(&ShaderStageCreateInfo, 0, sizeof(vk::PipelineShaderStageCreateInfo));
@@ -680,7 +687,7 @@ shaderStateHandle CreateShaderState(const shaderStateCreation &Creation)
 
         ParseSpirv((void*)((char*)ShaderCreateInfo.pCode), ShaderCreateInfo.codeSize, VkShaderData->SpirvParseResults);
 
-        delete ShaderCreateInfo.pCode;
+        // delete ShaderCreateInfo.pCode;
     }
 
     ShaderState->ActiveShaders = CompiledShaders;
@@ -714,7 +721,7 @@ descriptorSetLayoutHandle CreateDescriptorSetLayout(const descriptorSetLayoutCre
     MaxBinding +=1;
 
     DescriptorSetLayout->BindingCount = (u16)Creation.NumBindings;
-    u8 *Memory = new u8[(sizeof(vk::DescriptorSetLayoutBinding) + sizeof(descriptorBinding)) * Creation.NumBindings + (sizeof(u8) * MaxBinding)];
+    u8 *Memory = (u8*)AllocateMemory((sizeof(vk::DescriptorSetLayoutBinding) + sizeof(descriptorBinding)) * Creation.NumBindings + (sizeof(u8) * MaxBinding));
     DescriptorSetLayout->Bindings = (descriptorBinding*)Memory;
     DescriptorSetLayout->BindingNativeHandle = (vk::DescriptorSetLayoutBinding*)(Memory + sizeof(descriptorBinding) * Creation.NumBindings);
     DescriptorSetLayout->IndexToBinding = (u8*)(DescriptorSetLayout->BindingNativeHandle + Creation.NumBindings); 
@@ -901,7 +908,7 @@ renderPass *vkData::GetRenderPass(const renderPassOutput &Output, std::string Na
     
     renderPass *RenderPass = (renderPass*) context::Get()->ResourceManager.RenderPasses.GetResource(RenderPassHandle);
     RenderPass->Name = Name;
-    RenderPass->ApiData = new vkRenderPassData();
+    RenderPass->ApiData = (vkRenderPassData*) AllocateMemory(sizeof(vkRenderPassData));
     vkRenderPassData *VkRenderPassData = (vkRenderPassData*)RenderPass->ApiData;
     VkRenderPassData->NativeHandle =  CreateRenderPass(this, Output);
 
@@ -938,7 +945,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         }
 
         PipelineCache = VkData->Device.createPipelineCache(PipelineCacheCreateInfo);
-        delete PipelineCacheFile.Data;
+        // delete PipelineCacheFile.Data;
     }
     else
     {
@@ -961,7 +968,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     }
 
     pipeline *Pipeline = (pipeline*)ResourceManager.Pipelines.GetResource(Handle);
-    Pipeline->ApiData = new vkPipelineData();
+    Pipeline->ApiData = (vkPipelineData*)AllocateMemory(sizeof(vkPipelineData));
     vkPipelineData *VkPipelineData = (vkPipelineData*)Pipeline->ApiData;
 
     shader *ShaderStateData = (shader*) ResourceManager.Shaders.GetResource(ShaderState);
@@ -1171,6 +1178,11 @@ framebufferHandle context::GetSwapchainFramebuffer()
     vkSwapchainData *VkSwapchainData = (vkSwapchainData*)Swapchain->ApiData;
     framebufferHandle Framebuffer = VkSwapchainData->Framebuffers[VkSwapchainData->CurrentIndex];
     return Framebuffer;
+}
+
+void context::Cleanup()
+{
+
 }
 
 

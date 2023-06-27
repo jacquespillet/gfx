@@ -1,6 +1,7 @@
 #if API == VK
 #include "VkImage.h"
 #include "../Include/GfxContext.h"
+#include "../Include/Memory.h"
 #include "VkGfxContext.h"
 #include "VkCommon.h"
 #include "VkMemoryAllocation.h"
@@ -10,8 +11,10 @@ namespace gfx
 
 image *CreateImage(vk::Image VkImage, u32 Width, u32 Height, format Format)
 {
-    image *Image = new image();
-    Image->ApiData = new vkImageData();
+    image *Image = (image*)AllocateMemory(sizeof(image));
+    *Image = image();
+    Image->ApiData = (vkImageData*)AllocateMemory(sizeof(vkImageData));
+
     Image->Extent.Width = Width;
     Image->Extent.Height = Height;
     Image->Format = Format;
@@ -29,8 +32,9 @@ image *CreateImage(vk::Image VkImage, u32 Width, u32 Height, format Format)
 
 image *CreateEmptyImage(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage)
 {
-    image *Image = new image();
-    Image->ApiData = new vkImageData();
+    image *Image = (image*)AllocateMemory(sizeof(image));
+    *Image = image();
+    Image->ApiData = (vkImageData*)AllocateMemory(sizeof(vkImageData));
     vkImageData *VkImageData = (vkImageData*)Image->ApiData;
     
     Image->MipLevelCount = 1;

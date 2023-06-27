@@ -1,6 +1,7 @@
 #include "Util.h"
 #include <fstream>
 #include "../Include/Types.h"
+#include "../Include/Memory.h"
 
 namespace gfx
 {
@@ -105,7 +106,7 @@ fileContent ReadFileBinary(const char *FileName)
     File.seekg(0, std::ios::end);
     Result.Size = File.tellg();
     File.seekg(0, std::ios::beg);
-    Result.Data = new u8[Result.Size];
+    Result.Data = (u8*)AllocateMemory(Result.Size);
     File.read((char*)Result.Data, Result.Size);
     File.close();
     return Result;

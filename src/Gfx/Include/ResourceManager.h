@@ -1,6 +1,7 @@
 #pragma once
 #include "Types.h"
 #include <unordered_map>
+#include "../Include/Memory.h"
 
 namespace gfx
 {
@@ -17,7 +18,7 @@ public:
 
         //Allocate the memory
         sz AllocationSize = PoolSize * (ResourceSize + sizeof(u32));
-        _Memory = new u8[AllocationSize];
+        _Memory = (u8*)AllocateMemory(AllocationSize);
         memset(_Memory, 0, AllocationSize);
 
         //

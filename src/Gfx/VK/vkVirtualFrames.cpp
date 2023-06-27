@@ -30,7 +30,7 @@ void virtualFrameProvider::Init(u64 FrameCount, u64 StageBufferSize)
         
         this->VirtualFrames.push_back({
             CreateVkCommandBuffer(CommandBuffers[i]),
-            stageBuffer(StageBufferSize),
+            stageBuffer(StageBufferSize),  
             Fence
         });
     }    
@@ -81,7 +81,7 @@ void virtualFrameProvider::EndFrame()
 
 
     auto LastPresentImageUsage = VkSwapchainData->SwapchainImageUsages[this->PresentImageIndex];
-    auto PresentImage = VkSwapchainData->AcquireSwapchainImage(this->PresentImageIndex, imageUsage::UNKNOWN);
+    image *PresentImage = VkSwapchainData->AcquireSwapchainImage(this->PresentImageIndex, imageUsage::UNKNOWN);
     vkImageData *VkImageData = (vkImageData*)PresentImage->ApiData;
 
     auto SubresourceRange = GetDefaultImageSubresourceRange(*PresentImage);

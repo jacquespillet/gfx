@@ -29,7 +29,9 @@ int main()
 {	
     uint32_t Width = 1280;
     uint32_t Height = 720;
-
+	
+	gfx::memory::Get()->Init();
+    
     app::windowCreateOptions WindowCreateOptions;
     WindowCreateOptions.Position = app::v2f(300, 100);
     WindowCreateOptions.Size = app::v2f(Width, Height);
@@ -101,7 +103,13 @@ int main()
 	// GfxContext->DestroyCommandBuffer(CommandBuffer);
 	// GfxContext->DestroySwapchain(Swapchain);
 
+	GfxContext->Cleanup();
 	delete GfxContext;
+
+	gfx::memory *Memory = gfx::memory::Get();
+	Memory->Destroy();
+    delete Memory;
+
 
 	return 0;
 }

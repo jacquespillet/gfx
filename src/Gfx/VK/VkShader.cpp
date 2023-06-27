@@ -1,5 +1,6 @@
 #if API==VK
 #include "VkShader.h"
+#include "../Include/Memory.h"
 
 namespace gfx
 {
@@ -97,7 +98,7 @@ vk::ShaderModuleCreateInfo CompileShader(const char *Code, u32 CodeSize, shaderS
         auto Intermediate = Program.getIntermediate(Type);
         glslang::GlslangToSpv(*Intermediate, ByteCode);
 
-        u32 *C = new u32[ByteCode.size() * sizeof(u32)];
+        u32 *C = (u32*)AllocateMemory(ByteCode.size() * sizeof(u32));
         memcpy(C, ByteCode.data(), ByteCode.size() * sizeof(u32));
         ShaderModule.setPCode(C).setCodeSize(ByteCode.size() * sizeof(u32));
     }    

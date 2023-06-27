@@ -81,6 +81,12 @@ include_directories(${JSON_INC_DIR})
 # set(VOLK_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ext/volk_local/volk/volk.c)
 # include_directories(${VOLK_INC_DIR})
 
+# tlsf
+set(TLSF_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/tlsf)
+set(TLSF_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ext/tlsf/tlsf.c)
+include_directories(${TLSF_INC_DIR})
+
+
 # Vulkan
 set(VULKAN_LIB_DIR $ENV{VULKAN_SDK}/Lib)
 set(VULKAN_INC_DIR $ENV{VULKAN_SDK}/Include)
@@ -126,6 +132,7 @@ set(sourceCode
         src/Gfx/Common/ResourceManager.cpp
         src/Gfx/Common/Pipeline.cpp
         src/Gfx/Common/Util.cpp
+        src/Gfx/Common/Memory.cpp
 
         src/Gfx/VK/VkGfxContext.cpp
         src/Gfx/VK/VkCommandBuffer.cpp
@@ -140,7 +147,7 @@ set(sourceCode
         
         src/App/Window.cpp
 
-
+        ${TLSF_SOURCE}
         ${VOLK_SOURCE}
         ${SPIRVREFLECT_SOURCE}
 )
