@@ -1,4 +1,4 @@
-#if API==VK
+#if GFX_API==GFX_VK
 #include "../Include/GfxContext.h"
 #include "../Include/Buffer.h"
 #include "../Include/Swapchain.h"

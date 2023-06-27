@@ -1,4 +1,4 @@
-#if API==VK
+#if GFX_API==GFX_VK
 #include "../Include/Pipeline.h"
 namespace gfx
 {

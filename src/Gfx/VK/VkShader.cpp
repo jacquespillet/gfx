@@ -1,4 +1,4 @@
-#if API==VK
+#if GFX_API==GFX_VK
 #include "VkShader.h"
 #include "../Include/Memory.h"
 

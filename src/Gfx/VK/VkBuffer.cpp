@@ -1,4 +1,4 @@
-#if API==VK
+#if GFX_API==GFX_VK
 #include "VkBuffer.h"
 #include "../Include/Buffer.h"
 #include "VkMemoryAllocation.h"

@@ -10,14 +10,14 @@ window::window(const windowCreateOptions &WindowCreateOptions)
         WindowCreateOptions.ErrorCallback("GLFW Context initialization failed");
         return;
     }
-#if API == VK
+#if GFX_API == GFX_VK
     if(glfwVulkanSupported() != GLFW_TRUE)
     {
         WindowCreateOptions.ErrorCallback("Vulkan not supported");
         return;
     }
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-#else if API == GL
+#elif GFX_API == GFX_GL
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, WindowCreateOptions.VersionMajor);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, WindowCreateOptions.VersionMinor);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -36,7 +36,7 @@ window::window(const windowCreateOptions &WindowCreateOptions)
         return;
     }
 
-#if API == GL
+#if GFX_API == GFX_GL
     glfwMakeContextCurrent(this->Handle);
     glfwSwapInterval(1);
 #endif
@@ -70,7 +70,7 @@ void window::PollEvents() const
 
 void window::CheckErrors() const
 {
-#if API == GL
+#if GFX_API == GFX_GL
     GLenum err;
     while((err = glGetError()) != GL_NO_ERROR)
     {
@@ -90,7 +90,7 @@ void window::CheckErrors() const
 
 void window::Present()
 {
-#if API == GL
+#if GFX_API == GFX_GL
     glfwSwapBuffers(this->Handle);
 #endif
 }
@@ -102,7 +102,7 @@ GLFWwindow *window::GetHandle()
 
 std::vector<const char *> window::GetRequiredExtensions()
 {
-#if API == VK
+#if GFX_API == GFX_VK
     uint32_t ExtensionsCount=0;
     const char **Extensions = glfwGetRequiredInstanceExtensions(&ExtensionsCount);
     return std::vector<const char *>(Extensions, Extensions + ExtensionsCount);
@@ -112,6 +112,10 @@ std::vector<const char *> window::GetRequiredExtensions()
 #endif
 }
 
-
+HWND window::GetNativeWindow()
+{
+    HWND NativeWindow = glfwGetWin32Window(GetHandle());
+    return NativeWindow;
+}
 
 }

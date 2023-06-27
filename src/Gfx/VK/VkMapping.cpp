@@ -1,4 +1,4 @@
-#if API == VK
+#if GFX_API == GFX_VK
 #include "VkMapping.h"
 
 namespace gfx

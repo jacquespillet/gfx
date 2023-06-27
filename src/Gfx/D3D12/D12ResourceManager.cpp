@@ -1,4 +1,4 @@
-#if API==D3D12
+#if GFX_API==GFX_D3D12
 #include "../Include/Memory.h"
 #include "../Include/GfxContext.h"
 

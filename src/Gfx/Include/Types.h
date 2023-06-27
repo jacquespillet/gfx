@@ -1,7 +1,7 @@
 #pragma once
 #include "stdint.h"
 
-#if API==VK
+#if GFX_API==GFX_VK
 #include <vulkan/vulkan.hpp>
 #elif API==GL
 #elif API==D3D12
@@ -30,7 +30,7 @@ typedef uint32_t imageHandle;
 typedef uint32_t renderPassHandle;
 typedef uint32_t framebufferHandle;
 
-#if API==VK
+#if GFX_API==GFX_VK
 typedef uint32_t shaderStateHandle;
 typedef uint32_t descriptorSetLayoutHandle;
 
@@ -354,7 +354,7 @@ struct bufferUsage
     using value = u32;
     enum Bits : value
     {
-#if API==VK
+#if GFX_API==GFX_VK
         UNKNOWN = (value)vk::BufferUsageFlags{ },
         TransferSource = (value)vk::BufferUsageFlagBits::eTransferSrc,
         TransferDestination = (value)vk::BufferUsageFlagBits::eTransferDst,
@@ -385,7 +385,7 @@ struct shaderStageFlags
     using value = u32;
     enum bits : value
     {
-#if API==VK
+#if GFX_API==GFX_VK
         Vertex = (value)vk::ShaderStageFlagBits::eVertex,
         TessellationControl = (value)vk::ShaderStageFlagBits::eTessellationControl,
         TessellationEvaluation = (value)vk::ShaderStageFlagBits::eTessellationEvaluation,
@@ -412,9 +412,9 @@ struct shaderStageFlags
         MeshEXT = (value)vk::ShaderStageFlagBits::eMeshEXT,
         SubpassShadingHUAWEI = (value)vk::ShaderStageFlagBits::eSubpassShadingHUAWEI,
         ClusterCullingHUAWEI = (value)vk::ShaderStageFlagBits::eClusterCullingHUAWEI
-#elif API==GL
+#elif GFX_API==GFX_GL
 
-#elif API==D3D12
+#elif GFX_API==GFX_D3D12
         Vertex,
         TessellationControl,
         TessellationEvaluation,
@@ -451,7 +451,7 @@ struct imageUsage
     using value = u32;
     enum bits : value
     {
-#if API==VK
+#if GFX_API==GFX_VK
         UNKNOWN = (value) vk::ImageUsageFlagBits(),
         TRANSFER_SOURCE = (value)vk::ImageUsageFlagBits::eTransferSrc,
         TRANSFER_DESTINATION = (value)vk::ImageUsageFlagBits::eTransferDst,
@@ -461,8 +461,8 @@ struct imageUsage
         DEPTH_STENCIL_ATTACHMENT = (value)vk::ImageUsageFlagBits::eDepthStencilAttachment,
         INPUT_ATTACHMENT = (value)vk::ImageUsageFlagBits::eInputAttachment,
         FRAGNENT_SHADING_RATE_ATTACHMENT = (value)vk::ImageUsageFlagBits::eFragmentShadingRateAttachmentKHR,
-#elif API==GL
-#elif API==D3D12
+#elif GFX_API==GFX_GL
+#elif GFX_API==GFX_D3D12
 #endif
     };
 };
@@ -472,13 +472,13 @@ struct cullMode
     using value = u32;
     enum bits : value
     {
-#if API==VK
+#if GFX_API==GFX_VK
         None = (value) vk::CullModeFlagBits::eNone,
         Front = (value) vk::CullModeFlagBits::eFront,
         Back = (value) vk::CullModeFlagBits::eBack,
         FrontAndBack = (value) vk::CullModeFlagBits::eFrontAndBack
-#elif API==GL
-#elif API==D3D12
+#elif GFX_API==GFX_GL
+#elif GFX_API==GFX_D3D12
         None,
         Front,
         Back,

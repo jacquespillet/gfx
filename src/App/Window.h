@@ -1,17 +1,23 @@
 #pragma once
 
+
+#include <windows.h>
+
 #include <functional>
 #include <vector>
 
-#if API == GL
+#if GFX_API == GFX_GL
 #include <GL/glew.h>
 #endif
 
-#if API == VK
+#if GFX_API == GFX_VK
 #define GLFW_INCLUDE_VULKAN
 #endif
 
+#define GLFW_EXPOSE_NATIVE_WIN32 1
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
+
 #include "Types.h"
 
 class GLFWwindow;
@@ -195,6 +201,8 @@ public:
     std::vector<const char *> GetRequiredExtensions();
  
     GLFWwindow *GetHandle();
+
+    HWND GetNativeWindow();
 private:
     GLFWwindow *Handle=nullptr;
 };

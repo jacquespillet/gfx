@@ -1,4 +1,4 @@
-#if API == VK
+#if GFX_API == GFX_VK
 #include "VkImage.h"
 #include "../Include/GfxContext.h"
 #include "../Include/Memory.h"
