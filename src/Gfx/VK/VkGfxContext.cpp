@@ -15,6 +15,7 @@
 #include "../Include/Pipeline.h"
 #include "../Include/Shader.h"
 #include "../Include/RenderPass.h"
+#include "../Include/Framebuffer.h"
 #include "../Common/Util.h"
 #include "VkMapping.h"
 #include "VkImage.h"
@@ -29,6 +30,7 @@
 #include "VkCommon.h"
 #include "VkPipeline.h"
 #include "VkResourceManager.h"
+#include "VkFramebuffer.h"
 
 
 namespace gfx
@@ -66,12 +68,12 @@ bool GetSupportedDepthFormat(vk::PhysicalDevice PhysicalDevice, format *DepthFor
     return false;
 }
 
-std::vector<vk::Framebuffer> CreateFramebuffer(std::vector<image*> *ColorImages, image *DepthStencilImage, vk::RenderPass RenderPass)
+std::vector<framebufferHandle> CreateFramebuffer(std::vector<image*> *ColorImages, image *DepthStencilImage, vk::RenderPass RenderPass)
 {
     int Width = ColorImages->at(0)->Extent.Width;
     int Height = ColorImages->at(0)->Extent.Height;
     
-    std::vector<vk::Framebuffer> Handles;
+    std::vector<framebufferHandle> Handles;
 
     Handles.resize(ColorImages->size());
     for (size_t i = 0; i < Handles.size(); i++)
@@ -94,7 +96,19 @@ std::vector<vk::Framebuffer> CreateFramebuffer(std::vector<image*> *ColorImages,
         
         auto Context = context::Get();
         GET_CONTEXT(VkData, Context);
-        Handles[i] = VkData->Device.createFramebuffer(FramebufferCreateInfo);
+
+        framebufferHandle FramebufferHandle = Context->ResourceManager.Framebuffers.ObtainResource();
+        if(FramebufferHandle == InvalidHandle)
+        {
+            assert(false);
+            return {};
+        }
+        framebuffer *Framebuffer = (framebuffer*)Context->ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+        Framebuffer->ApiData = new vkFramebufferData();
+        vkFramebufferData* VkFramebufferData = (vkFramebufferData*)Framebuffer->ApiData;
+        VkFramebufferData->Handle = VkData->Device.createFramebuffer(FramebufferCreateInfo);
+
+        Handles[i] = FramebufferHandle;
     }
 
     return Handles;
@@ -1150,6 +1164,13 @@ renderPassHandle context::GetDefaultRenderPass()
 {
     GET_CONTEXT(VkData, this);
     return VkData->RenderPassCache["Swapchain"];
+}
+
+framebufferHandle context::GetSwapchainFramebuffer()
+{
+    vkSwapchainData *VkSwapchainData = (vkSwapchainData*)Swapchain->ApiData;
+    framebufferHandle Framebuffer = VkSwapchainData->Framebuffers[VkSwapchainData->CurrentIndex];
+    return Framebuffer;
 }
 
 

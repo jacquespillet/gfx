@@ -4,6 +4,7 @@
 #include "../Include/Pipeline.h"
 #include "../Include/Shader.h"
 #include "../Include/RenderPass.h"
+#include "../Include/Framebuffer.h"
 
 namespace gfx
 {
@@ -14,6 +15,7 @@ void resourceManager::Init()
 	Pipelines.Init(2048, sizeof(pipeline));
 	Shaders.Init(2048, sizeof(shader));
 	RenderPasses.Init(2048, sizeof(renderPass));
+	Framebuffers.Init(2048, sizeof(framebuffer));
 
 	InitApiSpecific();
 }

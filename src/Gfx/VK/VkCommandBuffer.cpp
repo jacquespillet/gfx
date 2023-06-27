@@ -2,11 +2,14 @@
 #include "../Include/GfxContext.h"
 #include "../Include/Buffer.h"
 #include "../Include/Swapchain.h"
+#include "../Include/Framebuffer.h"
 #include "VkGfxContext.h"
 #include "VkSwapchain.h"
 #include "VkCommandBuffer.h"
 #include "VkBuffer.h"
 #include "VkRenderPass.h"
+#include "VkPipeline.h"
+#include "VkFramebuffer.h"
 namespace gfx
 {
 
@@ -30,16 +33,16 @@ void commandBuffer::Begin()
     VkCommandBufferData->Handle.begin(CommandBufferBeginInfo);
 }
 
-void commandBuffer::BeginPass(renderPassHandle RenderPassHandle)
+void commandBuffer::BeginPass(renderPassHandle RenderPassHandle, framebufferHandle FramebufferHandle)
 {
     context *Context = context::Get();
     GET_CONTEXT(VkData, Context);
 
     vkCommandBufferData *VkCommandBufferData = (vkCommandBufferData*)this->ApiData;
 
-    swapchain *Swapchain = Context->Swapchain;
-    vkSwapchainData *VkSwapchainData = (vkSwapchainData*)Swapchain->ApiData;
-    vk::Framebuffer Framebuffer = VkSwapchainData->Framebuffers[VkSwapchainData->CurrentIndex];
+    framebuffer *Framebuffer = (framebuffer*) Context->ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+    vkFramebufferData *VkFramebufferData = (vkFramebufferData*)Framebuffer->ApiData;
+    vk::Framebuffer VkFramebufferHandle = VkFramebufferData->Handle;
 
     renderPass *RenderPass = (renderPass*) Context->ResourceManager.RenderPasses.GetResource(RenderPassHandle);
     vkRenderPassData *VkRenderPassData = (vkRenderPassData*)RenderPass->ApiData;
@@ -53,10 +56,51 @@ void commandBuffer::BeginPass(renderPassHandle RenderPassHandle)
     RenderPassBegin.setRenderPass(VkRenderPassHandle)
                    .setClearValues(VkCommandBufferData->Clears)
                    .setRenderArea(RenderArea)
-                   .setFramebuffer(Framebuffer);
+                   .setFramebuffer(VkFramebufferHandle);
 
     vk::CommandBuffer CommandBuffer = ((vkCommandBufferData*)this->ApiData)->Handle;
     CommandBuffer.beginRenderPass(RenderPassBegin, vk::SubpassContents::eInline);
+}
+
+void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
+{
+    pipeline *Pipeline = (pipeline*)context::Get()->ResourceManager.Pipelines.GetResource(PipelineHandle);
+    vkPipelineData *VkPipeline = (vkPipelineData*)Pipeline->ApiData;
+
+    vk::CommandBuffer CommandBuffer = ((vkCommandBufferData*)this->ApiData)->Handle;
+    CommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, VkPipeline->NativeHandle);
+}
+
+void commandBuffer::BindVertexBuffer(bufferHandle BufferHandle)
+{
+    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
+    vkBufferData *VkBuffer = (vkBufferData*)Buffer->ApiData;
+
+    u64 Offsets[] = {0};
+
+    vk::CommandBuffer CommandBuffer = ((vkCommandBufferData*)this->ApiData)->Handle;
+    CommandBuffer.bindVertexBuffers(0, 1, &VkBuffer->Handle, Offsets);
+}
+
+void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height)
+{
+    vk::CommandBuffer CommandBuffer = ((vkCommandBufferData*)this->ApiData)->Handle;
+    vk::Viewport Viewport(X, Y, Width, Height, 0, 1);
+    CommandBuffer.setViewport(0, Viewport);
+}
+
+void commandBuffer::SetScissor(s32 OffsetX, s32 OffsetY, u32 Width, u32 Height)
+{
+    vk::CommandBuffer CommandBuffer = ((vkCommandBufferData*)this->ApiData)->Handle;
+    vk::Rect2D Scissor({OffsetX,OffsetY}, {Width, Height});
+    CommandBuffer.setScissor(0, Scissor);
+}
+
+
+void commandBuffer::DrawTriangles(uint32_t Start, uint32_t Count)
+{
+    vk::CommandBuffer CommandBuffer = ((vkCommandBufferData*)this->ApiData)->Handle;
+    CommandBuffer.draw(Count, 1, Start, 0);
 }
 
 void commandBuffer::EndPass()

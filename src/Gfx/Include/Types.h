@@ -28,6 +28,7 @@ typedef uint32_t bufferHandle;
 typedef uint32_t pipelineHandle;
 typedef uint32_t imageHandle;
 typedef uint32_t renderPassHandle;
+typedef uint32_t framebufferHandle;
 
 #if API==VK
 typedef uint32_t shaderStateHandle;

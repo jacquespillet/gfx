@@ -112,6 +112,7 @@ struct resourceManager
     resourcePool Pipelines;
     resourcePool Shaders;
     resourcePool RenderPasses;
+    resourcePool Framebuffers;
 
     void *ApiData;
 };

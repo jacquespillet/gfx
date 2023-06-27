@@ -81,20 +81,13 @@ int main()
 		CommandBuffer->ClearColor(0.5f, 0.0f, 0.8f, 1.0f);
 		CommandBuffer->ClearDepthStencil(1.0f, 0.0f);
 		
-		CommandBuffer->BeginPass(SwapchainPass);
+		CommandBuffer->BeginPass(SwapchainPass, GfxContext->GetSwapchainFramebuffer());
 		
-#if 0
-
 		CommandBuffer->BindGraphicsPipeline(PipelineHandle);
 		CommandBuffer->BindVertexBuffer(vertexBuffer);
-		CommandBuffer->SetViewport(0, 0, 800, 600);
-
-		// Render the triangle
+		CommandBuffer->SetViewport(0, 0, Width, Height);
+		CommandBuffer->SetScissor(0, 0, Width, Height);
 		CommandBuffer->DrawTriangles(0, 3); 
-
-
-
-#endif
 		CommandBuffer->EndPass();
 
 		// Submit the current frame command buffer to the graphics API for execution

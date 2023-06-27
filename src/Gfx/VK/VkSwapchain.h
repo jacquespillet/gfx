@@ -12,7 +12,7 @@ struct vkSwapchainData
     vk::SwapchainKHR Handle;
     std::vector<image*> SwapchainImages;
     std::vector<imageUsage::bits> SwapchainImageUsages;
-    std::vector<vk::Framebuffer> Framebuffers;
+    std::vector<framebufferHandle> Framebuffers;
 
     uint32_t CurrentIndex=0;
     

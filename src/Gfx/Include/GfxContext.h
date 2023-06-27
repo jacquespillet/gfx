@@ -71,13 +71,13 @@ struct context
     // {
     //     std::vector<pipelineHandle> Passes;
     // }
-    
     pipelineHandle CreatePipelineFromFile(const char *FileName); 
     pipelineHandle CreatePipeline(const pipelineCreation &PipelineCreation);
 
     imageHandle CreateImage(u32 Width, u32 Height, format Format, u8 *Pixels);
 
     renderPassHandle GetDefaultRenderPass();
+    framebufferHandle GetSwapchainFramebuffer();
     
     pipeline *GetPipeline(pipelineHandle Handle);   
 
