@@ -7,15 +7,14 @@
 // #endif
 #include <iostream>
 
-#if 0
 #include "Gfx/Api.h"  
-#endif
 #include "App/App.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 // DirectX 12 specific headers.
 
+#if 0
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
@@ -23,11 +22,12 @@
 #include <combaseapi.h>
 #include <d3dx12.h>
 #include <DirectXMath.h>
-
-// #include <d3dx12.h>
+using namespace DirectX;
 #include <wrl.h>
 using namespace Microsoft::WRL;
-using namespace DirectX;
+#endif
+
+// #include <d3dx12.h>
 
 void WindowErrorCallback(const std::string &errorMessage)
 {
@@ -44,6 +44,7 @@ void InfoCallback(const std::string &message)
     std::cout << " Info : " << message << std::endl;
 }
 
+#if 0
 struct d3d12Sample
 {
     ComPtr<ID3D12Device> m_device;
@@ -157,7 +158,7 @@ inline void ThrowIfFailed(HRESULT hr)
 //Equivalent to Context::Initialize
 void InitializeContext()
 {
-UINT dxgiFactoryFlags = 0;
+    UINT dxgiFactoryFlags = 0;
 
     // Enable the debug layer (requires the Graphics Tools "optional feature").
     // NOTE: Enabling the debug layer after device creation will invalidate the active device.
@@ -247,7 +248,6 @@ void CreateSwapchain()
             ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocators[n])));
         }
     }
-
 }
 
 //Equivalent to load vertex buffer
@@ -401,6 +401,8 @@ void PopulateCommandList()
     // However, when ExecuteCommandList() is called on a particular command 
     // list, that command list can then be reset at any time and must be before 
     // re-recording.
+
+    //BIND PIPELINE
     ThrowIfFailed(m_commandList->Reset(m_commandAllocators[m_frameIndex].Get(), m_pipelineState.Get()));
 
     // Set necessary state.
@@ -467,14 +469,15 @@ void OnRender()
 
 
 };
+#endif
 
 int main()
 {	
+#if 0
     uint32_t Width = 1280;
     uint32_t Height = 720;
 	
-	// gfx::memory::Get()->Init();
-    
+	
     app::windowCreateOptions WindowCreateOptions;
     WindowCreateOptions.Position = app::v2f(300, 100);
     WindowCreateOptions.Size = app::v2f(Width, Height);
@@ -504,9 +507,23 @@ int main()
         Window.PollEvents();
         Sample.OnRender();
     }
-#if 0
+#else
+    gfx::memory::Get()->Init();
+    
 	// Create the appropriate graphics API object based on runtime configuration
+    uint32_t Width = 1280;
+    uint32_t Height = 720;
 	
+	// gfx::memory::Get()->Init();
+    
+    app::windowCreateOptions WindowCreateOptions;
+    WindowCreateOptions.Position = app::v2f(300, 100);
+    WindowCreateOptions.Size = app::v2f(Width, Height);
+    WindowCreateOptions.ErrorCallback = WindowErrorCallback;
+    WindowCreateOptions.VersionMajor = 1;
+    WindowCreateOptions.VersionMinor = 0;
+    app::window Window(WindowCreateOptions);
+
 	// Initialize the graphics API
 	gfx::context::initializeInfo ContextInitialize;
 	ContextInitialize.Extensions = Window.GetRequiredExtensions();
@@ -515,7 +532,6 @@ int main()
 	gfx::context *GfxContext = gfx::context::Initialize(ContextInitialize, Window);
 
 	//Get the current frame command buffer
-
 	gfx::swapchain *Swapchain = GfxContext->CreateSwapchain(Width, Height);
 	
 
@@ -529,9 +545,9 @@ int main()
 	gfx::bufferHandle vertexBuffer = GfxContext->CreateVertexBuffer(vertices, sizeof(vertices));
 
     gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json");
-	
+    
 	gfx::renderPassHandle SwapchainPass = GfxContext->GetDefaultRenderPass();
-	// Set other pipeline configuration parameters as needed
+    // Set other pipeline configuration parameters as needed
 
 	while(!Window.ShouldClose())
 	{
@@ -574,6 +590,7 @@ int main()
 	gfx::memory *Memory = gfx::memory::Get();
 	Memory->Destroy();
     delete Memory;
+
 
 #endif
 	return 0;

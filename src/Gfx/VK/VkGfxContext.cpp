@@ -280,6 +280,7 @@ context* context::Initialize(context::initializeInfo &InitializeInfo, app::windo
 
     //TODO : Use AllocateMemory here !
     Singleton->ApiContextData = new vkData();
+    Singleton->Window = &Window;
     // Singleton->ApiContextData = (vkData*) AllocateMemory(sizeof(vkData));
     GET_CONTEXT(VkData, Singleton);
     CreateInstance(InitializeInfo, VkData);

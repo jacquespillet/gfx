@@ -45,6 +45,8 @@ struct context
 
     static context* Singleton;
 
+    app::window *Window;
+
 
     static context *Get();
     static context* Initialize(initializeInfo &InitializeInfo, app::window &Window);

@@ -158,6 +158,8 @@ set(vkCode
 set(d3d12Code
         src/Gfx/D3D12/D12ResourceManager.cpp
         src/Gfx/D3D12/D12GfxContext.cpp
+        src/Gfx/D3D12/D12VirtualFrames.cpp
+        src/Gfx/D3D12/D12CommandBuffer.cpp
 )
 
 set(commonCode
