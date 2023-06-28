@@ -21,8 +21,6 @@ struct d3d12FramebufferData
     ComPtr<ID3D12DescriptorHeap> RenderTargetViewHeap = {};
     u32 RTVDescriptorSize=0;
     ComPtr<ID3D12Resource> RenderTargets[2] = {};
-
-    int dummy=0;
 };
 
 }

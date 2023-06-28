@@ -114,7 +114,6 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
     }
 
     Singleton->ResourceManager.Init();
-    //TODO : Use AllocateMemory here !
     Singleton->ApiContextData = std::make_shared<d3d12Data>();
     GET_CONTEXT(D12Data, Singleton);
     
@@ -156,13 +155,12 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
     return Singleton;
 }
 
-swapchain *context::CreateSwapchain(u32 Width, u32 Height)
+std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
 {
     GET_CONTEXT(D12Data, this);    
-    swapchain *Swapchain = (swapchain*)AllocateMemory(sizeof(swapchain));
+    std::shared_ptr<swapchain> Swapchain = std::make_shared<swapchain>();
     Swapchain->Width = Width;
     Swapchain->Height = Height;
-    // Swapchain->ApiData = (d3d12SwapchainData*) AllocateMemory(sizeof(d3d12SwapchainData));
     Swapchain->ApiData = std::make_shared<d3d12SwapchainData>();
     std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
 
@@ -213,7 +211,6 @@ swapchain *context::CreateSwapchain(u32 Width, u32 Height)
     ThrowIfFailed(swapChain.As(&D12SwapchainData->SwapChain));
     
     D12SwapchainData->SetFrameIndex(D12SwapchainData->SwapChain->GetCurrentBackBufferIndex());
-    D12FramebufferData->dummy = 12345;  
     // Create descriptor heaps.
     {
         // Describe and create a render target view (RTV) descriptor heap.
@@ -261,7 +258,6 @@ bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count)
     buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(Handle);
     
     Buffer->Name = "";
-    //Buffer->ApiData = AllocateMemory(sizeof(d3d12BufferData));
     Buffer->ApiData = std::make_shared<d3d12BufferData>();
     std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);
     *D12BufferData = d3d12BufferData();
@@ -378,7 +374,7 @@ framebufferHandle context::GetSwapchainFramebuffer()
 
 
 
-commandBuffer *context::GetCurrentFrameCommandBuffer()
+std::shared_ptr<commandBuffer> context::GetCurrentFrameCommandBuffer()
 {
     GET_CONTEXT(D12Data, this);
     return D12Data->VirtualFrames.CommandBuffer;

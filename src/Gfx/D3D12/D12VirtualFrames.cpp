@@ -15,7 +15,7 @@ void virtualFramesProvider::Init()
 {
     context *Context = context::Get();
     std::shared_ptr<d3d12Data> D12Data = std::static_pointer_cast<d3d12Data>(Context->ApiContextData);
-    swapchain *Swapchain = Context->Swapchain;
+    std::shared_ptr<swapchain> Swapchain = Context->Swapchain;
     std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
 
     // Create frame resources.
@@ -55,7 +55,7 @@ void virtualFramesProvider::WaitForPreviousFrame()
 {
     context *Context = context::Get();
     std::shared_ptr<d3d12Data> D12Data = std::static_pointer_cast<d3d12Data>(Context->ApiContextData);
-    swapchain *Swapchain = Context->Swapchain;
+    std::shared_ptr<swapchain> Swapchain = Context->Swapchain;
     std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
 
 
@@ -73,7 +73,7 @@ void virtualFramesProvider::WaitForPreviousFrame()
 void virtualFramesProvider::StartFrame()
 {
     context *Context = context::Get();
-    swapchain *Swapchain = Context->Swapchain;
+    std::shared_ptr<swapchain> Swapchain = Context->Swapchain;
     std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
 
     // Command list allocators can only be reset when the associated 

@@ -14,9 +14,9 @@
 namespace gfx
 {
     
-commandBuffer *CreateD3D12CommandBuffer(ComPtr<ID3D12CommandAllocator> CommandAllocator)
+std::shared_ptr<commandBuffer> CreateD3D12CommandBuffer(ComPtr<ID3D12CommandAllocator> CommandAllocator)
 {
-    commandBuffer *CommandBuffer = (commandBuffer*)AllocateMemory(sizeof(commandBuffer));
+    std::shared_ptr<commandBuffer> CommandBuffer = std::make_shared<commandBuffer>();
     CommandBuffer->ApiData = std::make_shared<d3d12CommandBufferData>();
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(CommandBuffer->ApiData);
     D12CommandBufferData->CommandAllocator = CommandAllocator.Get();

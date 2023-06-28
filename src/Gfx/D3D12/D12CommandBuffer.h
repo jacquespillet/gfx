@@ -24,5 +24,5 @@ struct d3d12CommandBufferData
     framebuffer *CurrentFramebuffer=nullptr;
 };
 
-commandBuffer *CreateD3D12CommandBuffer(ComPtr<ID3D12CommandAllocator> CommandAllocator);
+std::shared_ptr<commandBuffer> CreateD3D12CommandBuffer(ComPtr<ID3D12CommandAllocator> CommandAllocator);
 }

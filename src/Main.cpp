@@ -11,11 +11,14 @@
 #include "App/App.h"
 
 //TODO
-//In Context : 
-	//Create a framebuffer object
-	//Put depth buffer inside
-//In CommandBuffer : 
-//	Use the framebuffer object for beginPass and endPass
+//Put depth buffer in framebuffer
+//Parse pipeline to use it
+//Parse vertex buffer properly
+//Implement buffer struct
+//Implement image struct
+//Implement stage buffer struct
+//Implement shader struct
+//Use the same shader?
 
 void WindowErrorCallback(const std::string &errorMessage)
 {
@@ -59,7 +62,7 @@ int main()
 	std::shared_ptr<gfx::context> GfxContext = gfx::context::Initialize(ContextInitialize, Window);
 
 	//Get the current frame command buffer
-	gfx::swapchain *Swapchain = GfxContext->CreateSwapchain(Width, Height);
+	std::shared_ptr<gfx::swapchain> Swapchain = GfxContext->CreateSwapchain(Width, Height);
 	
 
 	// Create a vertex buffer with triangle data
@@ -74,7 +77,6 @@ int main()
     gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json");
     
 	gfx::renderPassHandle SwapchainPass = GfxContext->GetDefaultRenderPass();
-    // Set other pipeline configuration parameters as needed
 
 	while(!Window.ShouldClose())
 	{
@@ -83,7 +85,7 @@ int main()
 		GfxContext->StartFrame();
 
 		// Set up the render state
-		gfx::commandBuffer *CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();
+		std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();
 		
 		// Begin recording commands into the command buffer
 		CommandBuffer->Begin();

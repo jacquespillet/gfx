@@ -17,7 +17,7 @@ struct virtualFramesProvider
     ComPtr<ID3D12Fence> Fence;
     HANDLE FenceEvent;
 
-    commandBuffer *CommandBuffer;
+    std::shared_ptr<commandBuffer> CommandBuffer;
     ComPtr<ID3D12GraphicsCommandList> CommandList;
 };
 }
