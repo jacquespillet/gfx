@@ -161,6 +161,7 @@ set(d3d12Code
         src/Gfx/D3D12/D12VirtualFrames.cpp
         src/Gfx/D3D12/D12CommandBuffer.cpp
         src/Gfx/D3D12/D12Framebuffer.cpp
+        src/Gfx/D3D12/D12Mapping.cpp
 )
 
 set(commonCode

@@ -66,7 +66,7 @@ struct context
     std::shared_ptr<swapchain> RecreateSwapchain(u32 Width, u32 Height, swapchain *OldSwapchain);
 
     stageBuffer CreateStageBuffer(sz Size);
-    bufferHandle CreateVertexBuffer(f32 *Values, sz Count);
+    bufferHandle CreateVertexBuffer(f32 *Values, sz Count, sz Stride);
     bufferHandle CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage MemoryUsage);
 
     //TODO: return a technique struct with multiple passes and pipelines

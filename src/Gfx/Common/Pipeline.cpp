@@ -243,6 +243,7 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
         PipelineCreation.VertexInput.NumVertexAttributes =0;
         PipelineCreation.VertexInput.NumVertexStreams =0;
 
+        s32 SemanticIndex=0;
         for(sz i=0; i<VertexInputs.size(); i++)
         {
             vertexAttribute VertexAttribute{};
@@ -251,7 +252,6 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
             VertexAttribute.Location = (u16) VertexInput.value("attribute_location", 0u);
             VertexAttribute.Binding = (u16) VertexInput.value("attribute_binding", 0u);
             VertexAttribute.Offset = VertexInput.value("attribute_offset", 0u);
-
             json AttributeFormat = VertexInput["attribute_format"];
             if(AttributeFormat.is_string())
             {
@@ -267,6 +267,7 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
                     }
                 }
             }
+            VertexAttribute.SemanticIndex = SemanticIndex++;
             PipelineCreation.VertexInput.AddVertexAttribute(VertexAttribute);
 
 

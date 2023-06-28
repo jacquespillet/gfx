@@ -72,6 +72,7 @@ struct vertexAttribute
     u16 Location=0;
     u16 Binding=0;
     u32 Offset=0;
+    u32 SemanticIndex=0;
     vertexComponentFormat::values Format = vertexComponentFormat::Count;
 };
 

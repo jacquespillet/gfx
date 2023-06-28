@@ -11,8 +11,6 @@
 #include "App/App.h"
 
 //TODO
-//Parse pipeline to use it
-//Parse vertex buffer properly
 //Implement buffer struct
 //Implement image struct
 //Implement stage buffer struct
@@ -65,15 +63,20 @@ int main()
 	
 
 	// Create a vertex buffer with triangle data
-	float vertices[] = {
-    	-0.5f, -0.5f, 0.0f,
-    	0.5f, -0.5f, 0.0f,
-    	0.0f, 0.5f, 0.0f
-	};
+	// float vertices[] = {
+    // 	-0.5f, -0.5f, 0.0f,
+    // 	0.5f, -0.5f, 0.0f,
+    // 	0.0f, 0.5f, 0.0f
+	// };
+    float vertices[] =
+    {
+        0.0f, 0.25f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+        0.25f, -0.25f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+        -0.25f, -0.25f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f
+    };
+	gfx::bufferHandle vertexBuffer = GfxContext->CreateVertexBuffer(vertices, sizeof(vertices), 7 * sizeof(float));
 
-	gfx::bufferHandle vertexBuffer = GfxContext->CreateVertexBuffer(vertices, sizeof(vertices));
-
-    gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json");
+    gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipelineFromFile("resources/Shaders/TriangleD12.json");
     
 	gfx::renderPassHandle SwapchainPass = GfxContext->GetDefaultRenderPass();
 

@@ -17,6 +17,7 @@
 #include "D12Buffer.h"
 #include "D12Pipeline.h"
 #include "D12Framebuffer.h"
+#include "D12Mapping.h"
 
 #include <iostream>
 
@@ -227,13 +228,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     return Swapchain;
 }
 
-struct Vertex
-{
-    XMFLOAT3 position;
-    XMFLOAT4 color;
-};
-
-bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count)
+bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count, sz Stride)
 {
     GET_CONTEXT(D12Data, this);
     bufferHandle Handle = ResourceManager.Buffers.ObtainResource();
@@ -247,17 +242,6 @@ bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count)
     Buffer->Name = "";
     Buffer->ApiData = std::make_shared<d3d12BufferData>();
     std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);
-    *D12BufferData = d3d12BufferData();
-
-    // Define the geometry for a triangle.
-    Vertex triangleVertices[] =
-    {
-        { { 0.0f, 0.25f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-        { { 0.25f, -0.25f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-        { { -0.25f, -0.25f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } }
-    };
-
-    const UINT vertexBufferSize = sizeof(triangleVertices);
 
     // Note: using upload heaps to transfer static data like vert buffers is not 
     // recommended. Every time the GPU needs it, the upload heap will be marshalled 
@@ -266,7 +250,7 @@ bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count)
     ThrowIfFailed(D12Data->Device->CreateCommittedResource(
         &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
         D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
+        &CD3DX12_RESOURCE_DESC::Buffer(Count),
         D3D12_RESOURCE_STATE_GENERIC_READ,
         nullptr,
         IID_PPV_ARGS(&D12BufferData->Handle)));
@@ -275,13 +259,13 @@ bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count)
     UINT8* pVertexDataBegin;
     CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
     ThrowIfFailed(D12BufferData->Handle->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-    memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
+    memcpy(pVertexDataBegin, Values, Count);
     D12BufferData->Handle->Unmap(0, nullptr);
 
     // Initialize the vertex buffer view.
     D12BufferData->BufferView.BufferLocation = D12BufferData->Handle->GetGPUVirtualAddress();
-    D12BufferData->BufferView.StrideInBytes = sizeof(Vertex);
-    D12BufferData->BufferView.SizeInBytes = vertexBufferSize;   
+    D12BufferData->BufferView.StrideInBytes = Stride;
+    D12BufferData->BufferView.SizeInBytes = Count;   
     
     return Handle;
 }
@@ -299,6 +283,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 
     GET_CONTEXT(D12Data, this);
 
+    //TODO: Deal with descriptors here
     // Create an empty root signature.
     {
         CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
@@ -318,19 +303,31 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         // Enable better shader debugging with the graphics debugging tools.
         UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 
-        ThrowIfFailed(D3DCompileFromFile(L"resources/Shaders/shaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-        ThrowIfFailed(D3DCompileFromFile(L"resources/Shaders/shaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
-
+        ThrowIfFailed(D3DCompile(PipelineCreation.Shaders.Stages[0].Code, PipelineCreation.Shaders.Stages[0].CodeSize, nullptr, nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
+        ThrowIfFailed(D3DCompile(PipelineCreation.Shaders.Stages[1].Code, PipelineCreation.Shaders.Stages[1].CodeSize, nullptr, nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+        
         // Define the vertex input layout.
-        D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
+        std::vector<D3D12_INPUT_ELEMENT_DESC> InputElementDescriptors(PipelineCreation.VertexInput.NumVertexAttributes);        
+        u32 Offset=0;
+        for(sz i=0; i<PipelineCreation.VertexInput.NumVertexAttributes; i++)
         {
-            { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-            { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-        };
+            InputElementDescriptors[i] = 
+            {
+                SemanticFromAttrib(PipelineCreation.VertexInput.VertexAttributes[i].Format),
+                PipelineCreation.VertexInput.VertexAttributes[i].SemanticIndex,
+                AttribFormatToNative(PipelineCreation.VertexInput.VertexAttributes[i].Format),
+                0, //??????????
+                Offset,
+                VertexInputRateToNative(PipelineCreation.VertexInput.VertexStreams[i].InputRate),
+                0
+            };
+            Offset += PipelineCreation.VertexInput.VertexStreams[i].Stride;
+        }
 
+        //TODO: Add all pipelineCreation elements in here
         // Describe and create the graphics pipeline state object (PSO).
         D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-        psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
+        psoDesc.InputLayout = { InputElementDescriptors.data(), (u32)InputElementDescriptors.size() };
         psoDesc.pRootSignature = D12PipelineData->RootSignature.Get();
         psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
         psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
