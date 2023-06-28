@@ -90,8 +90,12 @@ struct context
     void DestroyCommandBuffer(commandBuffer* Handle);
     void DestroySwapchain(swapchain *Swapchain);
 
+    void DestroyPipeline(pipelineHandle Pipeline);
+    void DestroyBuffer(bufferHandle Buffer);
+
     void Cleanup();
     void DestroySwapchain();
+    void WaitIdle();
 
     std::shared_ptr<void> ApiContextData;
 

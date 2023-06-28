@@ -669,7 +669,6 @@ shaderStateHandle CreateShaderState(const shaderStateCreation &Creation)
             ShaderCreateInfo = CompileShader(ShaderStage.Code, ShaderStage.CodeSize, ShaderStage.Stage, Creation.Name);
         }
 
-        // delete ShaderStage.Code;
 
         vk::PipelineShaderStageCreateInfo &ShaderStageCreateInfo = VkShaderData->ShaderStageCreateInfo[CompiledShaders];
         memset(&ShaderStageCreateInfo, 0, sizeof(vk::PipelineShaderStageCreateInfo));
@@ -680,7 +679,7 @@ shaderStateHandle CreateShaderState(const shaderStateCreation &Creation)
 
         ParseSpirv((void*)((char*)ShaderCreateInfo.pCode), ShaderCreateInfo.codeSize, VkShaderData->SpirvParseResults);
 
-        // delete ShaderCreateInfo.pCode;
+        DeallocateMemory((void*)ShaderCreateInfo.pCode);
     }
 
     ShaderState->ActiveShaders = CompiledShaders;
@@ -1174,6 +1173,42 @@ framebufferHandle context::GetSwapchainFramebuffer()
     return Framebuffer;
 }
 
+void context::DestroyPipeline(pipelineHandle PipelineHandle)
+{
+    GET_CONTEXT(VkData, this);
+    
+    pipeline *Pipeline = (pipeline *) ResourceManager.Pipelines.GetResource(PipelineHandle);
+    std::shared_ptr<vkPipelineData> VkPipelineData = std::static_pointer_cast<vkPipelineData>(Pipeline->ApiData);
+    
+    
+    shader *Shader = (shader *) ResourceManager.Shaders.GetResource(VkPipelineData->ShaderState);
+    std::shared_ptr<vkShaderData> VkShaderData = std::static_pointer_cast<vkShaderData>(Shader->ApiData);
+    for (size_t i = 0; i < Shader->ActiveShaders; i++)
+    {
+        VkData->Device.destroyShaderModule(VkShaderData->ShaderStageCreateInfo[i].module);
+    }
+    ResourceManager.Shaders.ReleaseResource(VkPipelineData->ShaderState);
+    
+    
+
+    VkData->Device.destroyPipeline(VkPipelineData->NativeHandle);
+    VkData->Device.destroyPipelineLayout(VkPipelineData->PipelineLayout);
+    ResourceManager.Pipelines.ReleaseResource(PipelineHandle);
+
+    
+
+}
+
+void context::DestroyBuffer(bufferHandle BufferHandle)
+{
+    GET_CONTEXT(VkData, this);
+
+    buffer *Buffer = (buffer *) ResourceManager.Buffers.GetResource(BufferHandle);
+    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
+    vmaDestroyBuffer(VkData->Allocator, VkBufferData->Handle, VkBufferData->Allocation);
+    ResourceManager.Buffers.ReleaseResource(BufferHandle);
+}
+
 void context::DestroySwapchain()
 {
     GET_CONTEXT(VkData, this);
@@ -1198,6 +1233,12 @@ void context::DestroySwapchain()
     }
     VkData->Device.destroySwapchainKHR(VkSwapchainData->Handle);
 
+}
+
+void context::WaitIdle()
+{
+    GET_CONTEXT(VkData, this);
+    VkData->Device.waitIdle();
 }
 
 void context::Cleanup()
