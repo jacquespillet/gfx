@@ -65,5 +65,6 @@ private:
 sz MemoryAlign(sz Size, sz Alignment);
 
 void* AllocateMemory(sz Size);
+void DeallocateMemory(void *Ptr);
 
 }

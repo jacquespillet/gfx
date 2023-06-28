@@ -51,27 +51,27 @@ int main()
     ContextInitialize.InfoCallback = InfoCallback;
 	std::shared_ptr<gfx::context> GfxContext = gfx::context::Initialize(ContextInitialize, Window);
 
-	//Get the current frame command buffer
+	// //Get the current frame command buffer
 	std::shared_ptr<gfx::swapchain> Swapchain = GfxContext->CreateSwapchain(Width, Height);
 	
 
-	// Create a vertex buffer with triangle data
-	// float vertices[] = {
-    // 	-0.5f, -0.5f, 0.0f,
-    // 	0.5f, -0.5f, 0.0f,
-    // 	0.0f, 0.5f, 0.0f
-	// };
-    float vertices[] =
-    {
-        0.0f, 0.25f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-        0.25f, -0.25f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-        -0.25f, -0.25f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f
-    };
-	gfx::bufferHandle vertexBuffer = GfxContext->CreateVertexBuffer(vertices, sizeof(vertices), 7 * sizeof(float));
+	// // Create a vertex buffer with triangle data
+	// // float vertices[] = {
+    // // 	-0.5f, -0.5f, 0.0f,
+    // // 	0.5f, -0.5f, 0.0f,
+    // // 	0.0f, 0.5f, 0.0f
+	// // };
+    // float vertices[] =
+    // {
+    //     0.0f, 0.25f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+    //     0.25f, -0.25f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+    //     -0.25f, -0.25f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f
+    // };
+	// gfx::bufferHandle vertexBuffer = GfxContext->CreateVertexBuffer(vertices, sizeof(vertices), 7 * sizeof(float));
 
-    gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json");
+    // gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json");
     
-	gfx::renderPassHandle SwapchainPass = GfxContext->GetDefaultRenderPass();
+	// gfx::renderPassHandle SwapchainPass = GfxContext->GetDefaultRenderPass();
 
 	// while(!Window.ShouldClose())
 	// {
@@ -108,11 +108,15 @@ int main()
 	// GfxContext->DestroyCommandBuffer(CommandBuffer);
 	// GfxContext->DestroySwapchain(Swapchain);
 
+	GfxContext->DestroySwapchain();
 	GfxContext->Cleanup();
-
 	gfx::memory *Memory = gfx::memory::Get();
 	Memory->Destroy();
     delete Memory;
 
+
+	system("pause");
+
+	//TODO: Investigate crash here ?
 	return 0;
 }

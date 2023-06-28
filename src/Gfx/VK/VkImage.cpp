@@ -9,39 +9,33 @@ namespace gfx
 {
 
 
-image *CreateImage(vk::Image VkImage, u32 Width, u32 Height, format Format)
+image::image(vk::Image VkImage, u32 Width, u32 Height, format Format)
 {
-    image *Image = (image*)AllocateMemory(sizeof(image));
-    *Image = image();
-    Image->ApiData = std::make_shared<vkImageData>();
+    ApiData = std::make_shared<vkImageData>();
 
-    Image->Extent.Width = Width;
-    Image->Extent.Height = Height;
-    Image->Format = Format;
+    Extent.Width = Width;
+    Extent.Height = Height;
+    Format = Format;
 
-    std::shared_ptr<vkImageData> ImageData = std::static_pointer_cast<vkImageData>(Image->ApiData);
+    std::shared_ptr<vkImageData> ImageData = std::static_pointer_cast<vkImageData>(ApiData);
     ImageData->Allocation = {};
-    ImageData->InitViews(*Image, VkImage, Format);
-
-    return Image;
+    ImageData->InitViews(*this, VkImage, Format);
 }
 
 
 
 
 
-image *CreateEmptyImage(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage)
+image::image(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage)
 {
-    image *Image = (image*)AllocateMemory(sizeof(image));
-    *Image = image();
-    Image->ApiData = std::make_shared<vkImageData>();
-    std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(Image->ApiData);
+    ApiData = std::make_shared<vkImageData>();
+    std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(ApiData);
     
-    Image->MipLevelCount = 1;
-    Image->LayerCount = 1;
-    Image->Format = Format;
-    Image->Extent.Width = Width;
-    Image->Extent.Height = Height;
+    this->MipLevelCount = 1;
+    this->LayerCount = 1;
+    this->Format = Format;
+    this->Extent.Width = Width;
+    this->Extent.Height = Height;
     
 
     vk::ImageCreateInfo ImageCreateInfo;
@@ -49,8 +43,8 @@ image *CreateEmptyImage(u32 Width, u32 Height, format Format, imageUsage::value 
                     .setFormat(FormatToNative(Format))
                     .setExtent(vk::Extent3D(Width, Height, 1))
                     .setSamples(vk::SampleCountFlagBits::e1)
-                    .setMipLevels(Image->MipLevelCount)
-                    .setArrayLayers(Image->LayerCount)
+                    .setMipLevels(MipLevelCount)
+                    .setArrayLayers(LayerCount)
                     .setTiling(vk::ImageTiling::eOptimal)
                     .setUsage((vk::ImageUsageFlags)ImageUsage)
                     .setSharingMode(vk::SharingMode::eExclusive)
@@ -62,9 +56,7 @@ image *CreateEmptyImage(u32 Width, u32 Height, format Format, imageUsage::value 
     // }                       
 
     VkImageData->Allocation = gfx::AllocateImage(ImageCreateInfo, MemoryUsage, &VkImageData->Handle);
-    VkImageData->InitViews(*Image, VkImageData->Handle,  Format);
-
-    return Image;    
+    VkImageData->InitViews(*this, VkImageData->Handle,  Format);
 }
 
 vk::ImageSubresourceRange GetDefaultImageSubresourceRange(const image &Image)
@@ -109,6 +101,7 @@ void vkImageData::InitViews(const image &Image, const vk::Image &VkImage, format
     {
         ImageViewCreateInfo.setSubresourceRange(DepthSubresourceRange);
         this->DefaultImageViews.DepthOnlyView = VkData->Device.createImageView(ImageViewCreateInfo);
+        this->DefaultImageViews.DepthOnlyViewSet=true;
     }
 
     //If stencil image,
@@ -118,7 +111,23 @@ void vkImageData::InitViews(const image &Image, const vk::Image &VkImage, format
     {
         ImageViewCreateInfo.setSubresourceRange(StencilSubresourceRange);
         this->DefaultImageViews.StencilOnlyView = VkData->Device.createImageView(ImageViewCreateInfo);
+        this->DefaultImageViews.StencilOnlyViewSet=true;
     }    
+}
+
+void image::Destroy()
+{
+    GET_CONTEXT(VkData, context::Get());
+    std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(ApiData);
+
+    VkData->Device.destroyImageView(VkImageData->DefaultImageViews.NativeView);
+    if(VkImageData->DefaultImageViews.DepthOnlyViewSet)
+        VkData->Device.destroyImageView(VkImageData->DefaultImageViews.DepthOnlyView);
+    if(VkImageData->DefaultImageViews.StencilOnlyViewSet)
+        VkData->Device.destroyImageView(VkImageData->DefaultImageViews.StencilOnlyView);
+    
+    vmaDestroyImage(VkData->Allocator, VkImageData->Handle, VkImageData->Allocation);
+
 }
 
 }

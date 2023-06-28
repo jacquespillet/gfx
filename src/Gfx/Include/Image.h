@@ -12,5 +12,9 @@ struct image
     extent2D Extent;
 
     std::shared_ptr<void> ApiData;
+
+    image (u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage);
+    image(vk::Image VkImage, u32 Width, u32 Height, format Format);
+    void Destroy();
 };
 }

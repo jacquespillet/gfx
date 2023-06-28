@@ -3,8 +3,9 @@
 
 #include "VkBuffer.h"
 #include "../Include/Buffer.h"
-#include "VkMemoryAllocation.h"
 #include "../Include/GfxContext.h"
+#include "VkMemoryAllocation.h"
+#include "VkGfxContext.h"
 
 namespace gfx
 {
@@ -101,23 +102,28 @@ stageBuffer::stageBuffer(sz Size)
 {
     Init(Size);
 }
-    
+buffer *stageBuffer::GetBuffer()
+{
+    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
+    return Buffer;
+}
 
 void stageBuffer::Init(sz Size)
 {
-    bufferHandle Handle = context::Get()->CreateBuffer(Size, bufferUsage::TransferSource, memoryUsage::CpuToGpu);    
-    this->Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(Handle);
+    BufferHandle = context::Get()->CreateBuffer(Size, bufferUsage::TransferSource, memoryUsage::CpuToGpu);    
+    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
     this->CurrentOffset=0;
-    this->Buffer->MapMemory();
+    Buffer->MapMemory();
 }
 
 stageBuffer::allocation stageBuffer::Submit(const uint8_t *Data, u32 ByteSize)
 {
-    assert(this->CurrentOffset + ByteSize <= this->Buffer->Size);
+    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
+    assert(this->CurrentOffset + ByteSize <= Buffer->Size);
 
     if(Data != nullptr)
     {
-        this->Buffer->CopyData(Data, ByteSize, this->CurrentOffset);
+        Buffer->CopyData(Data, ByteSize, this->CurrentOffset);
     }
 
     this->CurrentOffset += ByteSize;
@@ -127,7 +133,8 @@ stageBuffer::allocation stageBuffer::Submit(const uint8_t *Data, u32 ByteSize)
 
 void stageBuffer::Flush()
 {
-    this->Buffer->FlushMemory(this->CurrentOffset, 0);
+    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
+    Buffer->FlushMemory(this->CurrentOffset, 0);
 }
 
 void stageBuffer::Reset()
@@ -135,6 +142,13 @@ void stageBuffer::Reset()
     this->CurrentOffset=0;
 }
 
+void stageBuffer::Destroy()
+{
+    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
+    Buffer->Destroy();
+    GET_CONTEXT(VkData, context::Get());
+    context::Get()->ResourceManager.Buffers.ReleaseResource(BufferHandle);
+}
 
 }
 #endif

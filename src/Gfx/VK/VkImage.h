@@ -11,6 +11,8 @@ struct imageViews
     vk::ImageView NativeView;
     vk::ImageView DepthOnlyView;
     vk::ImageView StencilOnlyView;
+    b8 DepthOnlyViewSet=false;
+    b8 StencilOnlyViewSet=false;
 };
 
 struct vkImageData
@@ -27,7 +29,5 @@ struct vkImageData
 
 vk::ImageSubresourceRange GetDefaultImageSubresourceRange(const image &Image);
 
-image *CreateImage(vk::Image VkImage, u32 Width, u32 Height, format Format);
-image *CreateEmptyImage(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage);
 
 }

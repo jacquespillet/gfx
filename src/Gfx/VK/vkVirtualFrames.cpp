@@ -81,7 +81,7 @@ void virtualFrameProvider::EndFrame()
 
 
     auto LastPresentImageUsage = VkSwapchainData->SwapchainImageUsages[this->PresentImageIndex];
-    image *PresentImage = VkSwapchainData->AcquireSwapchainImage(this->PresentImageIndex, imageUsage::UNKNOWN);
+    std::shared_ptr<image> PresentImage = VkSwapchainData->AcquireSwapchainImage(this->PresentImageIndex, imageUsage::UNKNOWN);
     std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(PresentImage->ApiData);
 
     auto SubresourceRange = GetDefaultImageSubresourceRange(*PresentImage);
@@ -143,6 +143,20 @@ void virtualFrameProvider::Present()
 
     this->CurrentFrame = (this->CurrentFrame + 1) % this->VirtualFrames.size();
     this->IsFrameRunning=false;    
+}
+
+void virtualFrameProvider::Destroy()
+{
+    auto Context = context::Get();
+    std::shared_ptr<vkData> VkData = std::static_pointer_cast<vkData>(Context->ApiContextData);
+
+    for (size_t i = 0; i < VirtualFrames.size(); i++)
+    {
+        VkData->Device.freeCommandBuffers(VkData->CommandPool, {std::static_pointer_cast<vkCommandBufferData>(VirtualFrames[i].Commands->ApiData)->Handle});
+        VirtualFrames[i].StagingBuffer.Destroy();
+        VkData->Device.destroyFence(VirtualFrames[i].CommandQueueFence);
+    }
+    
 }
 
 }

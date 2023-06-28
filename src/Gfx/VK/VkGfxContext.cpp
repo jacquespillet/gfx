@@ -69,13 +69,11 @@ bool GetSupportedDepthFormat(vk::PhysicalDevice PhysicalDevice, format *DepthFor
     return false;
 }
 
-framebufferHandle* CreateFramebuffer(image **ColorImages, image *DepthStencilImage, vk::RenderPass RenderPass, sz ImagesCount)
+void CreateFramebuffer(std::shared_ptr<image> *ColorImages, std::shared_ptr<image> DepthStencilImage, vk::RenderPass RenderPass, sz ImagesCount, vkSwapchainData *VkSwapchainData)
 {
     int Width = ColorImages[0]->Extent.Width;
     int Height = ColorImages[0]->Extent.Height;
     
-    framebufferHandle *Handles = (framebufferHandle*)AllocateMemory(ImagesCount * sizeof(framebufferHandle));
-
     for (size_t i = 0; i < ImagesCount; i++)
     {
         std::shared_ptr<vkImageData> VkColorImage = std::static_pointer_cast<vkImageData>(ColorImages[i]->ApiData);
@@ -101,17 +99,17 @@ framebufferHandle* CreateFramebuffer(image **ColorImages, image *DepthStencilIma
         if(FramebufferHandle == InvalidHandle)
         {
             assert(false);
-            return {};
+            return;
         }
         framebuffer *Framebuffer = (framebuffer*)Context->ResourceManager.Framebuffers.GetResource(FramebufferHandle);
         Framebuffer->ApiData = std::make_shared<vkFramebufferData>();
         std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
+        VkFramebufferData->DepthStencilImage = DepthStencilImage;
+        VkFramebufferData->ColorImages = ColorImages;
         VkFramebufferData->Handle = VkData->Device.createFramebuffer(FramebufferCreateInfo);
 
-        Handles[i] = FramebufferHandle;
+        VkSwapchainData->Framebuffers[i] = FramebufferHandle;
     }
-
-    return Handles;
 }
 
 
@@ -140,7 +138,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
         VkData->SurfaceExtent = vk::Extent2D(1,1);
         return nullptr;
     }
-
+    VkSwapchainData->ImageCount = VkData->PresentImageCount;
     //Create a swapchain
     vk::SwapchainCreateInfoKHR SwapchainCreateInfo;
     SwapchainCreateInfo.setSurface(VkData->Surface)
@@ -166,8 +164,6 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
 
     //reinitialize internal buffers
     VkData->PresentImageCount = (u32)SwapchainImages.size();
-    VkSwapchainData->SwapchainImages = (image**) AllocateMemory(VkData->PresentImageCount * sizeof(image*));
-    VkSwapchainData->SwapchainImageUsages = (imageUsage::bits*) AllocateMemory(VkData->PresentImageCount * sizeof(imageUsage::bits));
     for (size_t i = 0; i < VkData->PresentImageCount; i++)
     {
         VkSwapchainData->SwapchainImageUsages[i] = imageUsage::UNKNOWN;
@@ -180,13 +176,13 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     for(u32 i=0; i<VkData->PresentImageCount; i++)
     {
         VkSwapchainData->SwapchainImages[i] = 
-            gfx::CreateImage(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format));
+            std::make_shared<image>(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format));
     }
 
     format DepthFormat;
     bool FoundDepthFormat = GetSupportedDepthFormat(VkData->PhysicalDevice, &DepthFormat);
-    image* DepthStencil = CreateEmptyImage(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
-    VkSwapchainData->Framebuffers = CreateFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, VkSwapchainPass->NativeHandle, VkData->PresentImageCount);
+    std::shared_ptr<image> DepthStencil = std::make_shared<image>(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
+    CreateFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, VkSwapchainPass->NativeHandle, VkData->PresentImageCount, VkSwapchainData.get());
 
     return Swapchain;
 }
@@ -243,8 +239,6 @@ std::shared_ptr<swapchain> context::RecreateSwapchain(u32 Width, u32 Height, std
 
      //reinitialize internal buffers
     VkData->PresentImageCount = (u32)SwapchainImages.size();
-    VkSwapchainData->SwapchainImages = (image**) AllocateMemory(VkData->PresentImageCount * sizeof(image*));
-    VkSwapchainData->SwapchainImageUsages = (imageUsage::bits*) AllocateMemory(VkData->PresentImageCount * sizeof(imageUsage::bits));
     for (size_t i = 0; i < VkData->PresentImageCount; i++)
     {
         VkSwapchainData->SwapchainImageUsages[i] = imageUsage::UNKNOWN;
@@ -258,13 +252,13 @@ std::shared_ptr<swapchain> context::RecreateSwapchain(u32 Width, u32 Height, std
     for(u32 i=0; i<VkData->PresentImageCount; i++)
     {
         VkSwapchainData->SwapchainImages[i] = 
-            gfx::CreateImage(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format));
+            std::make_shared<image>(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format));
     }
 
     format DepthFormat;
     bool FoundDepthFormat = GetSupportedDepthFormat(VkData->PhysicalDevice, &DepthFormat);
-    image *DepthStencil = CreateEmptyImage(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
-    VkSwapchainData->Framebuffers = CreateFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, VkSwapchainPass->NativeHandle, VkData->PresentImageCount);
+    std::shared_ptr<image> DepthStencil = std::make_shared<image>(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
+    CreateFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, VkSwapchainPass->NativeHandle, VkData->PresentImageCount,VkSwapchainData.get());
 
     Swapchain = OldSwapchain;
     return OldSwapchain;
@@ -279,10 +273,8 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
 
     Singleton->ResourceManager.Init();
 
-    //TODO : Use AllocateMemory here !
     Singleton->ApiContextData = std::make_shared<vkData>();
     Singleton->Window = &Window;
-    // Singleton->ApiContextData = (vkData*) AllocateMemory(sizeof(vkData));
     GET_CONTEXT(VkData, Singleton);
     CreateInstance(InitializeInfo, VkData.get());
     
@@ -520,7 +512,7 @@ bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count, sz Stride)
     Buffer->Init(VertexAllocation.Size, gfx::bufferUsage::VertexBuffer | gfx::bufferUsage::TransferDestination, gfx::memoryUsage::GpuOnly);
   
     CommandBuffer->CopyBuffer(
-        gfx::bufferInfo {StageBuffer->Buffer, VertexAllocation.Offset},
+        gfx::bufferInfo {StageBuffer->GetBuffer(), VertexAllocation.Offset},
         gfx::bufferInfo {Buffer, 0},
         VertexAllocation.Size
     );
@@ -1182,9 +1174,67 @@ framebufferHandle context::GetSwapchainFramebuffer()
     return Framebuffer;
 }
 
+void context::DestroySwapchain()
+{
+    GET_CONTEXT(VkData, this);
+    
+    std::shared_ptr<vkSwapchainData> VkSwapchainData = std::static_pointer_cast<vkSwapchainData>(Swapchain->ApiData);
+    
+    // //Destroy Framebuffers
+    for (sz i = 0; i <VkSwapchainData->ImageCount; i++)
+    {
+        framebuffer *Framebuffer = (framebuffer*)ResourceManager.Framebuffers.GetResource(VkSwapchainData->Framebuffers[i]);
+        std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
+        VkData->Device.destroyFramebuffer(VkFramebufferData->Handle);
+        ResourceManager.Framebuffers.ReleaseResource(VkSwapchainData->Framebuffers[i]);
+        
+        std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(VkSwapchainData->SwapchainImages[i]->ApiData);
+        VkData->Device.destroyImageView(VkImageData->DefaultImageViews.NativeView);
+
+        if(i==0) //Only 1 depth buffer
+        {
+            VkFramebufferData->DepthStencilImage->Destroy();
+        }        
+    }
+    VkData->Device.destroySwapchainKHR(VkSwapchainData->Handle);
+
+}
+
 void context::Cleanup()
 {
+    GET_CONTEXT(VkData, this);
 
+
+    VkData->StageBuffer.Destroy();
+    VkData->VirtualFrames.Destroy();
+    
+    for(auto RenderPassHandle : VkData->RenderPassCache)
+    {
+        renderPass *RenderPass = (renderPass *) ResourceManager.RenderPasses.GetResource(RenderPassHandle.second);
+        VkData->Device.destroyRenderPass(std::static_pointer_cast<vkRenderPassData>(RenderPass->ApiData)->NativeHandle);
+        ResourceManager.RenderPasses.ReleaseResource(RenderPassHandle.second);
+    }
+
+    ResourceManager.Destroy();
+    
+    
+    VkData->Device.freeCommandBuffers(VkData->CommandPool,  {std::static_pointer_cast<vkCommandBufferData>(VkData->ImmediateCommandBuffer->ApiData)->Handle});
+
+    VkData->Device.destroyCommandPool(VkData->CommandPool);
+
+    VkData->Device.destroySemaphore(VkData->ImageAvailableSemaphore);
+    VkData->Device.destroySemaphore(VkData->RenderingFinishedSemaphore);
+    VkData->Device.destroyFence(VkData->ImmediateFence);
+
+    glslang::FinalizeProcess();
+
+    vmaDestroyAllocator(VkData->Allocator);
+    
+    //VkData->Instance.destroyDebugUtilsMessengerEXT(VkData->DebugUtilsMessenger, nullptr, VkData->DynamicLoader);
+    
+    VkData->Device.destroy();
+    VkData->Instance.destroySurfaceKHR(VkData->Surface);
+    VkData->Instance.destroy();
 }
 
 

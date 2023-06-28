@@ -12,6 +12,12 @@ namespace gfx
         
         VkResourceManagerData->DescriptorSetLayouts.Init(2048, sizeof(descriptorSetLayout));
     }
+    
+    void resourceManager::DestroyApiSpecific()
+    {
+        std::shared_ptr<vkResourceManagerData> VkResourceManagerData = std::static_pointer_cast<vkResourceManagerData>(ApiData);
+        VkResourceManagerData->DescriptorSetLayouts.Destroy();
+    }
 }
 
 #endif

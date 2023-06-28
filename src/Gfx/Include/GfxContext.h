@@ -91,6 +91,7 @@ struct context
     void DestroySwapchain(swapchain *Swapchain);
 
     void Cleanup();
+    void DestroySwapchain();
 
     std::shared_ptr<void> ApiContextData;
 

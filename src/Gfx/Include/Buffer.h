@@ -27,7 +27,7 @@ struct stageBuffer
         u32 Offset;
     };
 
-    buffer *Buffer;
+    bufferHandle BufferHandle;
     u32 CurrentOffset;
 
     stageBuffer();
@@ -36,6 +36,8 @@ struct stageBuffer
     allocation Submit(const uint8_t *Data, u32 ByteSize);
     void Flush();
     void Reset();
+    void Destroy();
+    buffer *GetBuffer();
 };
 
 }

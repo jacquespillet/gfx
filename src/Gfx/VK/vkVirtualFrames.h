@@ -25,6 +25,8 @@ public:
     void StartFrame();
     void EndFrame();
     void Present();
+
+    void Destroy();
     
     std::vector<virtualFrame> VirtualFrames;
 

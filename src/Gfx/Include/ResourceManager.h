@@ -90,7 +90,7 @@ public:
 
         assert(_UsedIndices==0);
 
-        delete _Memory;
+        DeallocateMemory(_Memory);
     }
 
     
@@ -109,6 +109,8 @@ struct resourceManager
 {
     void Init();
     void InitApiSpecific();
+    void Destroy();
+    void DestroyApiSpecific();
     resourcePool Buffers;
     resourcePool Images;
     resourcePool Pipelines;

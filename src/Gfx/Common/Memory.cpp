@@ -116,4 +116,9 @@ void* AllocateMemory(sz Size)
     return memory::Get()->GetSystemAllocator()->Allocate(Size, 1);
 }
 
+void DeallocateMemory(void *Ptr)
+{
+    memory::Get()->GetSystemAllocator()->Deallocate(Ptr);
+}
+
 }

@@ -19,4 +19,16 @@ void resourceManager::Init()
 
 	InitApiSpecific();
 }
+
+void resourceManager::Destroy()
+{
+    Buffers.Destroy();
+	Images.Destroy();
+	Pipelines.Destroy();
+	Shaders.Destroy();
+	RenderPasses.Destroy();
+	Framebuffers.Destroy();
+
+	DestroyApiSpecific();
+}
 }
