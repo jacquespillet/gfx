@@ -11,9 +11,7 @@
 #include "App/App.h"
 
 //TODO
-//Implement buffer struct
 //Implement image struct
-//Implement stage buffer struct
 //Implement shader struct
 //Use the same shader?
 

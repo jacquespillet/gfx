@@ -36,6 +36,39 @@ void commandBuffer::Begin()
 }
 
 
+ID3D12Resource *GetBufferHandle(buffer *Buffer)
+{
+    std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);
+    return D12BufferData->Handle.Get();
+}
+void commandBuffer::CopyBuffer(const bufferInfo &Source, const bufferInfo &Destination, size_t ByteSize)
+{
+    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
+    
+    assert(Source.Resource->Size >= Source.Offset + ByteSize);
+    assert(Destination.Resource->Size >= Destination.Offset + ByteSize);
+
+    ID3D12Resource *SourceHandle = GetBufferHandle(Source.Resource);
+    ID3D12Resource *DestHandle = GetBufferHandle(Destination.Resource);
+
+    std::shared_ptr<d3d12BufferData> D12SourceHandle = std::static_pointer_cast<d3d12BufferData>(Source.Resource->ApiData);
+    std::shared_ptr<d3d12BufferData> D12DestinationHandle = std::static_pointer_cast<d3d12BufferData>(Destination.Resource->ApiData);
+    
+    D3D12_RESOURCE_STATES SourceInitialState = D12SourceHandle->ResourceState;
+    D3D12_RESOURCE_STATES DestinationInitialState = D12DestinationHandle->ResourceState;
+
+    b8 TransitionSource = (SourceInitialState != D3D12_RESOURCE_STATE_COPY_SOURCE) && (D12SourceHandle->HeapType != D3D12_HEAP_TYPE_READBACK) && (D12SourceHandle->HeapType != D3D12_HEAP_TYPE_UPLOAD);
+    b8 TransitionDestination = (DestinationInitialState != D3D12_RESOURCE_STATE_COPY_DEST) && (D12DestinationHandle->HeapType != D3D12_HEAP_TYPE_READBACK) && (D12DestinationHandle->HeapType != D3D12_HEAP_TYPE_UPLOAD);
+
+    if(TransitionSource) D12SourceHandle->Transition(D12CommandBufferData->CommandList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    if(TransitionDestination) D12DestinationHandle->Transition(D12CommandBufferData->CommandList, D3D12_RESOURCE_STATE_COPY_DEST);
+    // Copy the contents of the source buffer to the destination buffer
+    D12CommandBufferData->CommandList->CopyBufferRegion(DestHandle, Destination.Offset, SourceHandle, Source.Offset, ByteSize);
+
+    // Create a resource barrier to transition the destination buffer back to its original state
+    if(TransitionSource) D12SourceHandle->Transition(D12CommandBufferData->CommandList, SourceInitialState);
+    if(TransitionDestination) D12DestinationHandle->Transition(D12CommandBufferData->CommandList, DestinationInitialState);
+}
 
 //Everything comes from the framebuffer handle here
 //There isn't really a concept of render pass in dx 12. 
@@ -126,7 +159,12 @@ void commandBuffer::DrawTriangles(uint32_t Start, uint32_t Count)
 {
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
     D12CommandBufferData->CommandList->DrawInstanced(3, 1, 0, 0);
+}
 
+void commandBuffer::End()
+{
+    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
+    ThrowIfFailed(D12CommandBufferData->CommandList->Close());
 }
 
 

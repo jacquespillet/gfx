@@ -18,6 +18,7 @@
 #include "D12Pipeline.h"
 #include "D12Framebuffer.h"
 #include "D12Mapping.h"
+#include "D12CommandBuffer.h"
 
 #include <iostream>
 
@@ -152,9 +153,38 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
 
     ThrowIfFailed(D12Data->Device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&D12Data->CommandQueue))); 
 
+    ThrowIfFailed(D12Data->Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&D12Data->ImmediateCommandAllocator)));
+    D12Data->ImmediateCommandBuffer = CreateD3D12CommandBuffer(D12Data->ImmediateCommandAllocator);
+
+    D12Data->StageBuffer = Singleton->CreateStageBuffer(InitializeInfo.MaxStageBufferSize);
+
 
     return Singleton;
 }
+
+
+stageBuffer context::CreateStageBuffer(sz Size)
+{
+    stageBuffer Result;
+    Result.Init(Size);
+    return Result;
+}
+
+bufferHandle context::CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage MemoryUsage)
+{
+    bufferHandle Handle = ResourceManager.Buffers.ObtainResource();
+    if(Handle == InvalidHandle)
+    {
+        return Handle;
+    }
+    buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(Handle);
+    Buffer->ApiData = std::make_shared<d3d12BufferData>();
+    std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);
+    
+    Buffer->Init(Size, Usage, MemoryUsage);
+    return Handle;
+}
+
 
 std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
 {
@@ -228,7 +258,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     return Swapchain;
 }
 
-bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count, sz Stride)
+bufferHandle context::CreateVertexBuffer(f32 *Values, sz ByteSize, sz Stride)
 {
     GET_CONTEXT(D12Data, this);
     bufferHandle Handle = ResourceManager.Buffers.ObtainResource();
@@ -237,37 +267,46 @@ bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count, sz Stride)
         return Handle;
     }
 
+    //Create vertex buffer
     buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(Handle);
-    
+    Buffer->Init(ByteSize, bufferUsage::VertexBuffer, memoryUsage::GpuOnly);
     Buffer->Name = "";
-    Buffer->ApiData = std::make_shared<d3d12BufferData>();
-    std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);
+    std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);    
 
-    // Note: using upload heaps to transfer static data like vert buffers is not 
-    // recommended. Every time the GPU needs it, the upload heap will be marshalled 
-    // over. Please read up on Default Heap usage. An upload heap is used here for 
-    // code simplicity and because there are very few verts to actually transfer.
-    ThrowIfFailed(D12Data->Device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-        D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(Count),
-        D3D12_RESOURCE_STATE_GENERIC_READ,
-        nullptr,
-        IID_PPV_ARGS(&D12BufferData->Handle)));
-
-    // Copy the triangle data to the vertex buffer.
-    UINT8* pVertexDataBegin;
-    CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
-    ThrowIfFailed(D12BufferData->Handle->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-    memcpy(pVertexDataBegin, Values, Count);
-    D12BufferData->Handle->Unmap(0, nullptr);
+    //Copy data to stage buffer
+    D12Data->ImmediateCommandBuffer->Begin();
+    auto VertexAllocation = D12Data->StageBuffer.Submit((uint8_t*)Values, (u32)ByteSize);
+    
+    //Copy stage buffer to vertex buffer
+    D12Data->ImmediateCommandBuffer->CopyBuffer(
+        bufferInfo {D12Data->StageBuffer.Buffer, VertexAllocation.Offset},
+        bufferInfo {Buffer, 0},
+        VertexAllocation.Size
+    );
+    
+    //Submit command buffer
+    D12Data->StageBuffer.Flush();
+    D12Data->ImmediateCommandBuffer->End();
+    SubmitCommandBufferImmediate(D12Data->ImmediateCommandBuffer.get());
+    D12Data->StageBuffer.Reset(); 
 
     // Initialize the vertex buffer view.
     D12BufferData->BufferView.BufferLocation = D12BufferData->Handle->GetGPUVirtualAddress();
     D12BufferData->BufferView.StrideInBytes = Stride;
-    D12BufferData->BufferView.SizeInBytes = Count;   
+    D12BufferData->BufferView.SizeInBytes = ByteSize;   
     
     return Handle;
+}
+
+
+void context::SubmitCommandBufferImmediate(commandBuffer *CommandBuffer)
+{
+    GET_CONTEXT(D12Data, this);
+    std::shared_ptr<d3d12CommandBufferData> D12CommandData = std::static_pointer_cast<d3d12CommandBufferData>(CommandBuffer->ApiData);
+
+    // Execute the initialization commands.
+	ID3D12CommandList* CommandLists[] = { D12CommandData->CommandList };
+	D12Data->CommandQueue->ExecuteCommandLists(1, CommandLists);
 }
 
 pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)

@@ -3,8 +3,9 @@
 
 #if GFX_API==GFX_VK
 #include <vulkan/vulkan.hpp>
-#elif API==GL
-#elif API==D3D12
+#elif GFX_API==GFX_GL
+#elif GFX_API==GFX_D3D12
+#include <d3d12.h>
 #endif
 
 
@@ -372,10 +373,26 @@ struct bufferUsage
         AccelerationStructureBuildInputReadonly = (value)vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR,
         AccelerationStructureStorage = (value)vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR,
         ShaderBindingTable = (value)vk::BufferUsageFlagBits::eShaderBindingTableKHR,
-#elif API==GL
+#elif GFX_API==GFX_GL
 
-#elif API==D3D12
-
+#elif GFX_API==GFX_D3D12
+        UNKNOWN,
+        TransferSource = D3D12_RESOURCE_STATE_COPY_SOURCE,
+        TransferDestination = D3D12_RESOURCE_STATE_COPY_DEST,
+        UniformTexelBuffer = D3D12_HEAP_TYPE_DEFAULT,
+        StorageTexelBuffer = D3D12_HEAP_TYPE_DEFAULT,
+        UniformBuffer = D3D12_HEAP_TYPE_DEFAULT,
+        StorageBuffer = D3D12_HEAP_TYPE_DEFAULT,
+        IndexBuffer = D3D12_RESOURCE_STATE_INDEX_BUFFER,
+        VertexBuffer = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
+        IndirectBuffer = D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
+        ShaderDeviceAddress = D3D12_HEAP_TYPE_DEFAULT,
+        TransformFeedbackBuffer = D3D12_HEAP_TYPE_DEFAULT,
+        TransformFeedbackCounterBuffer = D3D12_HEAP_TYPE_DEFAULT,
+        ConditionalRendering = D3D12_HEAP_TYPE_DEFAULT,
+        AccelerationStructureBuildInputReadonly = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
+        AccelerationStructureStorage = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
+        ShaderBindingTable = D3D12_HEAP_TYPE_DEFAULT,
 #endif
     };
 };

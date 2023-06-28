@@ -116,6 +116,7 @@ void commandBuffer::End()
     VkCommandBufferData->Handle.end();
 }
 
+
 void commandBuffer::CopyBuffer(const bufferInfo &Source, const bufferInfo &Destination, size_t ByteSize)
 {
     std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);

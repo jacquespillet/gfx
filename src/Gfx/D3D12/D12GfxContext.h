@@ -1,4 +1,5 @@
 #pragma once
+#include "../Include/Buffer.h"
 
 #include <wrl.h>
 using namespace Microsoft::WRL;
@@ -15,6 +16,11 @@ struct d3d12Data
     ComPtr<ID3D12Device> Device;
     ComPtr<ID3D12CommandQueue> CommandQueue;
     virtualFramesProvider VirtualFrames;
+
+    std::shared_ptr<commandBuffer> ImmediateCommandBuffer;
+    ComPtr<ID3D12CommandAllocator> ImmediateCommandAllocator;
+    
+    stageBuffer StageBuffer;
 };
 
 }
