@@ -196,6 +196,16 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
         for(sz i=0; i<Shaders.size(); i++)
         {
             json ShaderStage = Shaders[i];
+            
+            ShaderStage["language"].get_to(Name);
+            if((GFX_API == GFX_VK || GFX_API == GFX_GL) && Name != "GLSL")
+            {
+                continue;
+            }
+            if(GFX_API == GFX_D3D12 && Name != "HLSL")
+            {
+                continue;
+            }
 
             std::string Name;
             std::string Code;
@@ -209,7 +219,6 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
                     ShaderConcatenate(Name, Code, ParentPath);
                 }
             }
-
 
             ShaderStage["shader"].get_to(Name);
             ShaderConcatenate(Name, Code, ParentPath);
@@ -237,11 +246,46 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
         }
     }
 
+    //TODO: 
+    //We can calculate the stride of the stream and the offsets of the attributes instead of setting them in the json
+    
+    json VertexStreams = PipelineJSON["vertex_streams"];
+    if(VertexStreams.is_array())
+    {
+        PipelineCreation.VertexInput.NumVertexStreams=0;
+        for(sz i=0; i<VertexStreams.size(); i++)
+        {
+            json VertexStreamJson = VertexStreams[i];
+            vertexStream VertexStream{};
+            VertexStream.Binding = (u16) VertexStreamJson.value("stream_binding", 0);
+            VertexStream.Stride = (u16) VertexStreamJson.value("stream_stride", 0);
+
+            json StreamRate = VertexStreamJson["stream_rate"];
+            if(StreamRate.is_string())
+            {
+                std::string Name;
+                StreamRate.get_to(Name);
+                if(Name == "Vertex")
+                {
+                    VertexStream.InputRate = vertexInputRate::PerVertex;
+                }
+                else if(Name == "Instance")
+                {
+                    VertexStream.InputRate = vertexInputRate::PerInstance;
+                }
+                else
+                {
+                    assert(false);
+                }
+            }
+            PipelineCreation.VertexInput.AddVertexStream(VertexStream);        
+        }
+    }
+    
     json VertexInputs = PipelineJSON["vertex_input"];
     if(VertexInputs.is_array())
     {
         PipelineCreation.VertexInput.NumVertexAttributes =0;
-        PipelineCreation.VertexInput.NumVertexStreams =0;
 
         s32 SemanticIndex=0;
         for(sz i=0; i<VertexInputs.size(); i++)
@@ -269,32 +313,6 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
             }
             VertexAttribute.SemanticIndex = SemanticIndex++;
             PipelineCreation.VertexInput.AddVertexAttribute(VertexAttribute);
-
-
-            vertexStream VertexStream{};
-            VertexStream.Binding = (u16) VertexInput.value("stream_binding", 0);
-            VertexStream.Stride = (u16) VertexInput.value("stream_stride", 0);
-
-            json StreamRate = VertexInput["stream_rate"];
-            if(StreamRate.is_string())
-            {
-                std::string Name;
-                StreamRate.get_to(Name);
-
-                if(Name == "Vertex")
-                {
-                    VertexStream.InputRate = vertexInputRate::PerVertex;
-                }
-                else if(Name == "Instance")
-                {
-                    VertexStream.InputRate = vertexInputRate::PerInstance;
-                }
-                else
-                {
-                    assert(false);
-                }
-            }
-            PipelineCreation.VertexInput.AddVertexStream(VertexStream);
         }
     }
 

@@ -51,7 +51,7 @@ void virtualFrameProvider::StartFrame()
 {
     auto Context = context::Get();
     std::shared_ptr<vkData> VkData = std::static_pointer_cast<vkData>(Context->ApiContextData);
-    swapchain *Swapchain = Context->Swapchain;
+    std::shared_ptr<swapchain> Swapchain = Context->Swapchain;
     std::shared_ptr<vkSwapchainData> VkSwapchainData = std::static_pointer_cast<vkSwapchainData>(Swapchain->ApiData);
 
     auto AcquireNextImage = VkData->Device.acquireNextImageKHR(VkSwapchainData->Handle, UINT64_MAX, VkData->ImageAvailableSemaphore);
@@ -76,7 +76,7 @@ void virtualFrameProvider::EndFrame()
 
     auto Context = context::Get();
     std::shared_ptr<vkData> VkData = std::static_pointer_cast<vkData>(Context->ApiContextData);
-    swapchain *Swapchain = Context->Swapchain;
+    std::shared_ptr<swapchain> Swapchain = Context->Swapchain;
     std::shared_ptr<vkSwapchainData> VkSwapchainData = std::static_pointer_cast<vkSwapchainData>(Swapchain->ApiData);
 
 
@@ -130,7 +130,7 @@ void virtualFrameProvider::Present()
     
     auto Context = context::Get();
     std::shared_ptr<vkData> VkData = std::static_pointer_cast<vkData>(Context->ApiContextData);
-    swapchain *Swapchain = Context->Swapchain;
+    std::shared_ptr<swapchain> Swapchain = Context->Swapchain;
     std::shared_ptr<vkSwapchainData> VkSwapchainData = std::static_pointer_cast<vkSwapchainData>(Swapchain->ApiData);
 
     vk::PresentInfoKHR PresentInfo;

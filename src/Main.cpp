@@ -10,11 +10,6 @@
 #include "Gfx/Api.h"  
 #include "App/App.h"
 
-//TODO
-//Implement image struct
-//Implement shader struct
-//Use the same shader?
-
 void WindowErrorCallback(const std::string &errorMessage)
 {
     std::cout << "Window Error : " << errorMessage << std::endl;
@@ -74,40 +69,40 @@ int main()
     };
 	gfx::bufferHandle vertexBuffer = GfxContext->CreateVertexBuffer(vertices, sizeof(vertices), 7 * sizeof(float));
 
-    gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipelineFromFile("resources/Shaders/TriangleD12.json");
+    gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json");
     
 	gfx::renderPassHandle SwapchainPass = GfxContext->GetDefaultRenderPass();
 
-	while(!Window.ShouldClose())
-	{
-		Window.PollEvents();
+	// while(!Window.ShouldClose())
+	// {
+	// 	Window.PollEvents();
 		
-		GfxContext->StartFrame();
+	// 	GfxContext->StartFrame();
 
-		// Set up the render state
-		std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();
+	// 	// Set up the render state
+	// 	std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();
 		
-		// Begin recording commands into the command buffer
-		CommandBuffer->Begin();
+	// 	// Begin recording commands into the command buffer
+	// 	CommandBuffer->Begin();
 
-		CommandBuffer->ClearColor(0.5f, 0.0f, 0.8f, 1.0f);
-		CommandBuffer->ClearDepthStencil(1.0f, 0.0f);
+	// 	CommandBuffer->ClearColor(0.5f, 0.0f, 0.8f, 1.0f);
+	// 	CommandBuffer->ClearDepthStencil(1.0f, 0.0f);
 		
-		CommandBuffer->BeginPass(SwapchainPass, GfxContext->GetSwapchainFramebuffer());
-		CommandBuffer->SetViewport(0, 0, Width, Height);
-		CommandBuffer->SetScissor(0, 0, Width, Height);
+	// 	CommandBuffer->BeginPass(SwapchainPass, GfxContext->GetSwapchainFramebuffer());
+	// 	CommandBuffer->SetViewport(0, 0, Width, Height);
+	// 	CommandBuffer->SetScissor(0, 0, Width, Height);
 		
-		CommandBuffer->BindGraphicsPipeline(PipelineHandle);
-		CommandBuffer->BindVertexBuffer(vertexBuffer);
-		CommandBuffer->DrawTriangles(0, 3); 
-		CommandBuffer->EndPass();
+	// 	CommandBuffer->BindGraphicsPipeline(PipelineHandle);
+	// 	CommandBuffer->BindVertexBuffer(vertexBuffer);
+	// 	CommandBuffer->DrawTriangles(0, 3); 
+	// 	CommandBuffer->EndPass();
 
-		// Submit the current frame command buffer to the graphics API for execution
-		GfxContext->EndFrame();
+	// 	// Submit the current frame command buffer to the graphics API for execution
+	// 	GfxContext->EndFrame();
 
-		// Present the rendered frame
-		GfxContext->Present();
-	}
+	// 	// Present the rendered frame
+	// 	GfxContext->Present();
+	// }
 
 	// Clean up and release resources
 	// GfxContext->DestroyCommandBuffer(CommandBuffer);

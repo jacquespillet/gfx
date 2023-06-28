@@ -11,6 +11,6 @@ struct vkCommandBufferData
     vk::ClearValue Clears[2];
 };
 
-commandBuffer *CreateVkCommandBuffer(vk::CommandBuffer VkCommandBuffer);
+std::shared_ptr<commandBuffer> CreateVkCommandBuffer(vk::CommandBuffer VkCommandBuffer);
 
 }

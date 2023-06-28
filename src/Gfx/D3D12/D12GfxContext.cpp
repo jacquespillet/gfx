@@ -336,16 +336,14 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 
     // Create the pipeline state, which includes compiling and loading shaders.
     {
-        ComPtr<ID3DBlob> vertexShader;
-        ComPtr<ID3DBlob> pixelShader;
-
         // Enable better shader debugging with the graphics debugging tools.
         UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 
-        ThrowIfFailed(D3DCompile(PipelineCreation.Shaders.Stages[0].Code, PipelineCreation.Shaders.Stages[0].CodeSize, nullptr, nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-        ThrowIfFailed(D3DCompile(PipelineCreation.Shaders.Stages[1].Code, PipelineCreation.Shaders.Stages[1].CodeSize, nullptr, nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+        ThrowIfFailed(D3DCompile(PipelineCreation.Shaders.Stages[0].Code, PipelineCreation.Shaders.Stages[0].CodeSize, nullptr, nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &D12PipelineData->vertexShader, nullptr));
+        ThrowIfFailed(D3DCompile(PipelineCreation.Shaders.Stages[1].Code, PipelineCreation.Shaders.Stages[1].CodeSize, nullptr, nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &D12PipelineData->pixelShader, nullptr));
         
         // Define the vertex input layout.
+        //TODO: Add ability to have multiple vertex streams
         std::vector<D3D12_INPUT_ELEMENT_DESC> InputElementDescriptors(PipelineCreation.VertexInput.NumVertexAttributes);        
         u32 Offset=0;
         for(sz i=0; i<PipelineCreation.VertexInput.NumVertexAttributes; i++)
@@ -368,8 +366,8 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
         psoDesc.InputLayout = { InputElementDescriptors.data(), (u32)InputElementDescriptors.size() };
         psoDesc.pRootSignature = D12PipelineData->RootSignature.Get();
-        psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
-        psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
+        psoDesc.VS = CD3DX12_SHADER_BYTECODE(D12PipelineData->vertexShader.Get());
+        psoDesc.PS = CD3DX12_SHADER_BYTECODE(D12PipelineData->pixelShader.Get());
         psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
         psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
         psoDesc.DepthStencilState.DepthEnable = FALSE;

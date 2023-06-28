@@ -4,6 +4,7 @@
 #include "../Include/Buffer.h"
 
 #include <vulkan/vulkan.hpp>
+#include <memory>
 
 namespace gfx
 {
@@ -12,7 +13,7 @@ class virtualFrameProvider
 private:
     struct virtualFrame
     {
-        commandBuffer *Commands;
+        std::shared_ptr<commandBuffer> Commands;
         stageBuffer StagingBuffer;
         vk::Fence CommandQueueFence;
     };

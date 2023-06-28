@@ -14,9 +14,9 @@
 namespace gfx
 {
 
-commandBuffer *CreateVkCommandBuffer(vk::CommandBuffer VkCommandBuffer)
+std::shared_ptr<commandBuffer> CreateVkCommandBuffer(vk::CommandBuffer VkCommandBuffer)
 {
-    commandBuffer *CommandBuffer = (commandBuffer*)AllocateMemory(sizeof(commandBuffer));
+    std::shared_ptr<commandBuffer>  CommandBuffer = std::make_shared<commandBuffer>();
     CommandBuffer->ApiData = std::make_shared<vkCommandBufferData>();
     std::shared_ptr<vkCommandBufferData> VkData = std::static_pointer_cast<vkCommandBufferData>(CommandBuffer->ApiData);
     VkData->Handle = VkCommandBuffer;

@@ -48,7 +48,7 @@ struct vkData
     vk::Fence ImmediateFence;
 
     vk::CommandPool CommandPool;
-    commandBuffer *ImmediateCommandBuffer {};
+    std::shared_ptr<commandBuffer> ImmediateCommandBuffer {};
 
     stageBuffer StageBuffer;
 

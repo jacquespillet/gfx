@@ -115,11 +115,11 @@ framebufferHandle* CreateFramebuffer(image **ColorImages, image *DepthStencilIma
 }
 
 
-swapchain *context::CreateSwapchain(u32 Width, u32 Height)
+std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
 {
     GET_CONTEXT(VkData, this);
 
-    swapchain *Swapchain = (swapchain*)AllocateMemory(sizeof(swapchain));
+    Swapchain = std::make_shared<swapchain>();
 
     Swapchain->ApiData = std::make_shared<vkSwapchainData>();
     std::shared_ptr<vkSwapchainData> VkSwapchainData = std::static_pointer_cast<vkSwapchainData>(Swapchain->ApiData);
@@ -188,12 +188,11 @@ swapchain *context::CreateSwapchain(u32 Width, u32 Height)
     image* DepthStencil = CreateEmptyImage(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
     VkSwapchainData->Framebuffers = CreateFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, VkSwapchainPass->NativeHandle, VkData->PresentImageCount);
 
-    this->Swapchain = Swapchain;
     return Swapchain;
 }
 
 
-swapchain *context::RecreateSwapchain(u32 Width, u32 Height, swapchain *OldSwapchain)
+std::shared_ptr<swapchain> context::RecreateSwapchain(u32 Width, u32 Height, std::shared_ptr<swapchain> OldSwapchain)
 {
     GET_CONTEXT(VkData, this);
 
@@ -267,7 +266,7 @@ swapchain *context::RecreateSwapchain(u32 Width, u32 Height, swapchain *OldSwapc
     image *DepthStencil = CreateEmptyImage(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
     VkSwapchainData->Framebuffers = CreateFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, VkSwapchainPass->NativeHandle, VkData->PresentImageCount);
 
-    this->Swapchain = OldSwapchain;
+    Swapchain = OldSwapchain;
     return OldSwapchain;
 }
 
@@ -482,7 +481,7 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
     return Singleton;
 }
 
-commandBuffer *context::CreateCommandBuffer()
+std::shared_ptr<commandBuffer> context::CreateCommandBuffer()
 {
     GET_CONTEXT(VkData, this);
     vk::CommandBufferAllocateInfo CommandBufferAllocateInfo;
@@ -490,11 +489,11 @@ commandBuffer *context::CreateCommandBuffer()
                              .setCommandPool(VkData->CommandPool)
                              .setCommandBufferCount(1);
     
-    commandBuffer *CommandBuffer = CreateVkCommandBuffer(VkData->Device.allocateCommandBuffers(CommandBufferAllocateInfo).front());
+    std::shared_ptr<commandBuffer> CommandBuffer = CreateVkCommandBuffer(VkData->Device.allocateCommandBuffers(CommandBufferAllocateInfo).front());
     return CommandBuffer;
 }
 
-bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count)
+bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count, sz Stride)
 {
     bufferHandle Handle = ResourceManager.Buffers.ObtainResource();
     if(Handle == InvalidHandle)
@@ -591,10 +590,10 @@ void context::Present()
 commandBuffer *context::GetImmediateCommandBuffer()
 {
     GET_CONTEXT(VkData, this);
-    return VkData->ImmediateCommandBuffer;
+    return VkData->ImmediateCommandBuffer.get();
 }
 
-commandBuffer *context::GetCurrentFrameCommandBuffer()
+std::shared_ptr<commandBuffer> context::GetCurrentFrameCommandBuffer()
 {
     GET_CONTEXT(VkData, this);
     return VkData->VirtualFrames.GetCurrentFrame().Commands;
@@ -1020,6 +1019,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         else VertexInputInfo.setVertexAttributeDescriptionCount(0) .setPVertexAttributeDescriptions(nullptr);
         
         vk::VertexInputBindingDescription VertexBindings[8];
+
         if(PipelineCreation.VertexInput.NumVertexStreams)
         {
             VertexInputInfo.setVertexBindingDescriptionCount(PipelineCreation.VertexInput.NumVertexStreams);
@@ -1033,7 +1033,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
             VertexInputInfo.setPVertexBindingDescriptions(VertexBindings);
         }
         else VertexInputInfo.setVertexBindingDescriptionCount(0).setVertexBindingDescriptions(nullptr);
-
+        
         PipelineCreateInfo.setPVertexInputState(&VertexInputInfo);
 
         vk::PipelineInputAssemblyStateCreateInfo InputAssemblyCreateInfo;

@@ -56,14 +56,14 @@ struct context
     void EndFrame();
     void Present();
 
-    commandBuffer *CreateCommandBuffer();   
+    std::shared_ptr<commandBuffer> CreateCommandBuffer();   
     
     commandBuffer *GetImmediateCommandBuffer();
     std::shared_ptr<commandBuffer> GetCurrentFrameCommandBuffer();
     stageBuffer *GetStageBuffer();
     
     std::shared_ptr<swapchain> CreateSwapchain(u32 Width, u32 Height);
-    std::shared_ptr<swapchain> RecreateSwapchain(u32 Width, u32 Height, swapchain *OldSwapchain);
+    std::shared_ptr<swapchain> RecreateSwapchain(u32 Width, u32 Height, std::shared_ptr<swapchain> OldSwapchain);
 
     stageBuffer CreateStageBuffer(sz Size);
     bufferHandle CreateVertexBuffer(f32 *Values, sz Count, sz Stride);
