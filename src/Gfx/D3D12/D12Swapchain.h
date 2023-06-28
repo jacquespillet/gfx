@@ -15,6 +15,8 @@ struct d3d12SwapchainData
     static const u32 FrameCount = 2;
     ComPtr<IDXGISwapChain3> SwapChain;    
     framebufferHandle FramebufferHandle;
+    ComPtr<ID3D12Resource> Buffers[FrameCount] = {};
+
 
     u32 GetFrameIndex()
     {

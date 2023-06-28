@@ -10,6 +10,8 @@ namespace gfx
 {
 struct framebuffer
 {
+    u32 Width, Height;
+    
     std::shared_ptr<void>  ApiData;
 };  
 }

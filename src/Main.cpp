@@ -11,7 +11,6 @@
 #include "App/App.h"
 
 //TODO
-//Put depth buffer in framebuffer
 //Parse pipeline to use it
 //Parse vertex buffer properly
 //Implement buffer struct

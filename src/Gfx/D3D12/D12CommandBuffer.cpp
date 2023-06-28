@@ -37,23 +37,10 @@ void commandBuffer::Begin()
 
 
 
-//TODO
 //Everything comes from the framebuffer handle here
 //There isn't really a concept of render pass in dx 12. 
 //We manipulate the rendertargets directly (Framebuffers)
 //The swapchain framebuffer object will contain the descriptor heaps for depth and color
-
-//We don't want to be refering to the swapchain in this code, it must be independant
-//struct framebuffer
-//  ID3D12Resource : ColorRenderTarget
-//  DescriptorHeap : ColorDH
-//  int : ColorOffset
-//  int : descriptorIncrementSize
-//
-//  ID3D12Resource : DepthRenderTarget
-//  DescriptorHeap : DepthDH
-//  int : DepthOffset
-//  int : DepthdescriptorIncrementSize
 void commandBuffer::BeginPass(renderPassHandle RenderPass, framebufferHandle FramebufferHandle)
 {
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
@@ -65,9 +52,9 @@ void commandBuffer::BeginPass(renderPassHandle RenderPass, framebufferHandle Fra
     D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12FramebufferData->RenderTargets[D12FramebufferData->CurrentTarget].Get() , D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
     CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(D12FramebufferData->RenderTargetViewHeap->GetCPUDescriptorHandleForHeapStart(), D12FramebufferData->CurrentTarget, D12FramebufferData->RTVDescriptorSize);
     
-    D12CommandBufferData->CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);    
+    D12CommandBufferData->CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &D12FramebufferData->DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart());    
     D12CommandBufferData->CommandList->ClearRenderTargetView(rtvHandle, D12CommandBufferData->ClearColor, 0, nullptr);    
-    // D12CommandBufferData->CommandList->ClearDepthStencilView(rtvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, D12CommandBufferData->ClearDepth, D12CommandBufferData->ClearStencil, 0, nullptr);
+    D12CommandBufferData->CommandList->ClearDepthStencilView(D12FramebufferData->DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, D12CommandBufferData->ClearDepth, D12CommandBufferData->ClearStencil, 0, nullptr);
 }
 
 void commandBuffer::EndPass()

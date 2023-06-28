@@ -172,6 +172,8 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
         return nullptr;
     }
     framebuffer *Framebuffer = (framebuffer*)ResourceManager.Framebuffers.GetResource(D12SwapchainData->FramebufferHandle);
+    Framebuffer->Width = Width;
+    Framebuffer->Height = Height;
     Framebuffer->ApiData = std::make_shared<d3d12FramebufferData>();
     std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(Framebuffer->ApiData);
 
@@ -200,38 +202,23 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
 
     // This sample does not support fullscreen transitions.
     ThrowIfFailed(D12Data->Factory->MakeWindowAssociation(Window->GetNativeWindow(), DXGI_MWA_NO_ALT_ENTER));
-
+    ThrowIfFailed(swapChain.As(&D12SwapchainData->SwapChain));
+    D12SwapchainData->SetFrameIndex(D12SwapchainData->SwapChain->GetCurrentBackBufferIndex());
+    
+    //Retrieve buffers of the swapchain and store them
+    for (UINT n = 0; n < d3d12SwapchainData::FrameCount; n++)
+    {
+        ThrowIfFailed(D12SwapchainData->SwapChain->GetBuffer(n, IID_PPV_ARGS(&D12SwapchainData->Buffers[n])));
+    }
     //TODO
     //Here we create a framebuffer object
     //  It contains all the descriptor heap, size etc.. for each attachment
     //  Create depth buffer too
     //  We don't store the resources in the swapchain
-    
-
-    ThrowIfFailed(swapChain.As(&D12SwapchainData->SwapChain));
-    
-    D12SwapchainData->SetFrameIndex(D12SwapchainData->SwapChain->GetCurrentBackBufferIndex());
-    // Create descriptor heaps.
-    {
-        // Describe and create a render target view (RTV) descriptor heap.
-        D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-        rtvHeapDesc.NumDescriptors = d3d12SwapchainData::FrameCount;
-        rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-        rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-        ThrowIfFailed(D12Data->Device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&D12FramebufferData->RenderTargetViewHeap)));
-        D12FramebufferData->RTVDescriptorSize = D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-        D12FramebufferData->RenderTargetsCount = rtvHeapDesc.NumDescriptors;
-    }
-
-    
-    // Create a RTV for each frame.
-    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(D12FramebufferData->RenderTargetViewHeap->GetCPUDescriptorHandleForHeapStart());
-    for (UINT n = 0; n < d3d12SwapchainData::FrameCount; n++)
-    {
-        ThrowIfFailed(D12SwapchainData->SwapChain->GetBuffer(n, IID_PPV_ARGS(&D12FramebufferData->RenderTargets[n])));
-        D12Data->Device->CreateRenderTargetView(D12FramebufferData->RenderTargets[n].Get(), nullptr, rtvHandle);
-        rtvHandle.Offset(1, D12FramebufferData->RTVDescriptorSize);
-    }    
+    D12FramebufferData->RenderTargetsCount = d3d12SwapchainData::FrameCount;
+    D12FramebufferData->CreateHeaps();
+    D12FramebufferData->SetRenderTargets(D12SwapchainData->Buffers);
+    D12FramebufferData->CreateDepthBuffer(Width, Height);
 
     this->Swapchain = Swapchain;
     
