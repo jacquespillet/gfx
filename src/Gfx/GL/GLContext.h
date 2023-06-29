@@ -8,6 +8,8 @@ struct glData
     void CheckErrors();
 
     std::shared_ptr<commandBuffer> CommandBuffer;
+
+    framebufferHandle SwapchainFramebuffer;
 };
 
 }

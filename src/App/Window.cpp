@@ -5,6 +5,8 @@ namespace app
 
 window::window(const windowCreateOptions &WindowCreateOptions)
 {
+    this->Width = WindowCreateOptions.Size.x;
+    this->Height = WindowCreateOptions.Size.y;
     if(glfwInit() != GLFW_TRUE)
     {
         WindowCreateOptions.ErrorCallback("GLFW Context initialization failed");

@@ -56,7 +56,7 @@ int main()
     ContextInitialize.InfoCallback = InfoCallback;
 	std::shared_ptr<gfx::context> GfxContext = gfx::context::Initialize(ContextInitialize, Window);
 
-	// //Get the current frame command buffer
+	//TODO : Do we really need that ? May as well create it in the context initialization...
 	std::shared_ptr<gfx::swapchain> Swapchain = GfxContext->CreateSwapchain(Width, Height);
 	
 
@@ -93,7 +93,6 @@ int main()
 		// Set up the render state
 		std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();
 
-#if 0
 		// Begin recording commands into the command buffer
 		CommandBuffer->Begin();
 
@@ -108,16 +107,8 @@ int main()
 		CommandBuffer->BindVertexBuffer(VertexBuffer);
 		CommandBuffer->DrawTriangles(0, 3); 
 		CommandBuffer->EndPass();
+		
 		GfxContext->EndFrame();
-#else
-		CommandBuffer->BindVertexBuffer(VertexBuffer);
-		CommandBuffer->BindGraphicsPipeline(PipelineHandle);
-		CommandBuffer->DrawTriangles(0, 3); 
-		GfxContext->EndFrame();
-
-#endif
-
-		// Submit the current frame command buffer to the graphics API for execution
 
 		// Present the rendered frame
 		GfxContext->Present();

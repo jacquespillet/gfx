@@ -198,6 +198,8 @@ public:
     void CheckErrors() const;
     void Present();
 
+    u32 Width, Height;
+
     std::vector<const char *> GetRequiredExtensions();
  
     GLFWwindow *GetHandle();

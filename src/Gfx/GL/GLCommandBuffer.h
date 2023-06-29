@@ -27,23 +27,46 @@ struct command
     commandFunction CommandFunction;
     union
     {
-        struct
+        struct framebufferState
         {
             framebufferHandle FramebufferHandle;
         } BeginPass;
         
-        struct
+        struct vertexBufferState
         {
             bufferHandle VertexBufferHandle;
         } BindVertexBuffer;
         
-        struct
+        struct drawTrianglesState
         {
             u32 Start;
             u32 Count;
         } DrawTriangles;
         
-        struct
+        struct viewportState
+        {
+            f32 StartX;
+            f32 StartY;
+            f32 Width;
+            f32 Height;
+        } Viewport;
+        
+        struct scissorState
+        {
+            s32 StartX;
+            s32 StartY;
+            u32 Width;
+            u32 Height;
+        } Scissor;
+        
+        struct clearState
+        {
+            f32 ClearColor[4];
+            f32 ClearDepth;
+            u8 ClearStencil;
+        } Clear;
+
+        struct graphicsPipelineState
         {
             pipelineHandle Pipeline;
         } BindGraphicsPipeline;
@@ -54,7 +77,9 @@ struct command
 struct glCommandBuffer
 {
     std::vector<command> Commands;
-    bool IsRecording=false;
+    b8 IsRecording=false;
+
+    
 };
 
 }

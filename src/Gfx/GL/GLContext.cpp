@@ -17,6 +17,7 @@
 #include "GLCommon.h"
 #include "GLBuffer.h"
 #include "GLMapping.h"
+#include "GLFramebuffer.h"
 
 #include <GL/glew.h>
 
@@ -89,7 +90,7 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
 
     GLData->CommandBuffer = std::make_shared<commandBuffer>();
     GLData->CommandBuffer->Initialize();
-    
+
     return Singleton;
 }
 
@@ -109,7 +110,25 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
 
 std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
 {
-    GET_CONTEXT(D12Data, this);    
+    GET_CONTEXT(GLData, this);    
+    
+    //Create Framebuffer
+    GLData->SwapchainFramebuffer = Singleton->ResourceManager.Framebuffers.ObtainResource();
+    if(GLData->SwapchainFramebuffer == InvalidHandle)
+    {
+        assert(false);
+    }
+    framebuffer *SwapchainFramebuffer = (framebuffer*)Singleton->ResourceManager.Framebuffers.GetResource(GLData->SwapchainFramebuffer);
+    SwapchainFramebuffer->ApiData = std::make_shared<glFramebufferData>();
+    std::shared_ptr<glFramebufferData> GLFramebufferData = std::static_pointer_cast<glFramebufferData>(SwapchainFramebuffer->ApiData);
+    
+    GLint FramebufferHandle;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &FramebufferHandle);
+
+    GLFramebufferData->Handle = (GLuint)FramebufferHandle;
+    SwapchainFramebuffer->Width = Width;
+    SwapchainFramebuffer->Height = Height;
+
     std::shared_ptr<swapchain> Swapchain = std::make_shared<swapchain>();
     Swapchain->Width = Width;
     Swapchain->Height = Height;
@@ -169,8 +188,12 @@ std::shared_ptr<commandBuffer> context::GetCurrentFrameCommandBuffer()
 
 framebufferHandle context::GetSwapchainFramebuffer()
 {
-    //TODO : Return the actual swapchain framebuffer
-    return 0;
+    GET_CONTEXT(GLData, this);
+
+    framebuffer *SwapchainFramebuffer = (framebuffer*)Singleton->ResourceManager.Framebuffers.GetResource(GLData->SwapchainFramebuffer);
+    SwapchainFramebuffer->ApiData = std::make_shared<glFramebufferData>();
+    std::shared_ptr<glFramebufferData> GLFramebufferData = std::static_pointer_cast<glFramebufferData>(SwapchainFramebuffer->ApiData);
+    return GLFramebufferData->Handle;
 }
 
 void context::StartFrame()
