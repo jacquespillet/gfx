@@ -485,7 +485,7 @@ std::shared_ptr<commandBuffer> context::CreateCommandBuffer()
     return CommandBuffer;
 }
 
-bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count, sz Stride)
+bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count, sz Stride, const std::vector<vertexInputAttribute> &Attributes)
 {
     bufferHandle Handle = ResourceManager.Buffers.ObtainResource();
     if(Handle == InvalidHandle)

@@ -258,7 +258,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     return Swapchain;
 }
 
-bufferHandle context::CreateVertexBuffer(f32 *Values, sz ByteSize, sz Stride)
+bufferHandle context::CreateVertexBuffer(f32 *Values, sz ByteSize, sz Stride, const std::vector<vertexInputAttribute> &Attributes)
 {
     GET_CONTEXT(D12Data, this);
     bufferHandle Handle = ResourceManager.Buffers.ObtainResource();
