@@ -13,7 +13,7 @@ add_compile_definitions(_GLFW_WIN32 GLFW_EXPOSE_NATIVE_WIN32 VK_USE_PLATFORM_WIN
 set(GFX_API_GL 0)
 set(GFX_API_VK 1)
 set(GFX_API_D3D12 2)
-set(GFX_API ${GFX_API_VK})
+set(GFX_API ${GFX_API_GL})
 
 add_definitions(-DGFX_GL=${GFX_API_GL})
 add_definitions(-DGFX_VK=${GFX_API_VK})
@@ -71,11 +71,11 @@ include_directories(${JSON_INC_DIR})
 # link_directories(${ASSIMP_LIB_DIR})
 
 # # Glew
-# set(GLEW_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/include)
-# set(GLEW_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib)
-# set(GLEW_DLL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/bin)
-# include_directories(${GLEW_INC_DIR})
-# link_directories(${GLEW_LIB_DIR})
+set(GLEW_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/include)
+set(GLEW_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/Release/x64)
+set(GLEW_DLL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/bin/Release/x64)
+include_directories(${GLEW_INC_DIR})
+link_directories(${GLEW_LIB_DIR})
 
 # volk
 # set(VOLK_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/volk_local/)
@@ -165,6 +165,11 @@ set(d3d12Code
         src/Gfx/D3D12/D12Buffer.cpp
 )
 
+set(glCode
+        src/Gfx/GL/GLContext.cpp
+        src/Gfx/GL/GLResourceManager.cpp
+)
+        
 set(commonCode
         src/Gfx/Common/ResourceManager.cpp
         src/Gfx/Common/Pipeline.cpp
@@ -205,29 +210,39 @@ endif()
 
 
 
+Message(${sourceCode})
 add_executable(Main ${sourceCode})
 target_link_libraries(Main glfw3)
 
 if(${GFX_API} EQUAL ${GFX_API_VK})
-target_link_libraries(Main vulkan-1)
-target_link_libraries(Main debug VulkanMemoryAllocatord optimized VulkanMemoryAllocator)
-target_link_libraries(Main 
-${GLSLANG_LIB_DIR}/OSDependentd.lib
-${GLSLANG_LIB_DIR}/SPIRVd.lib
-${GLSLANG_LIB_DIR}/glslangd.lib
-${GLSLANG_LIB_DIR}/MachineIndependentd.lib
-${GLSLANG_LIB_DIR}/SPVRemapperd.lib
-${GLSLANG_LIB_DIR}/GenericCodeGend.lib
-${GLSLANG_LIB_DIR}/glslang-default-resource-limitsd.lib
-${GLSLANG_LIB_DIR}/HLSLd.lib
-${GLSLANG_LIB_DIR}/OGLCompilerd.lib
-)
+        target_link_libraries(Main vulkan-1)
+        target_link_libraries(Main debug VulkanMemoryAllocatord optimized VulkanMemoryAllocator)
+        target_link_libraries(Main 
+        ${GLSLANG_LIB_DIR}/OSDependentd.lib
+        ${GLSLANG_LIB_DIR}/SPIRVd.lib
+        ${GLSLANG_LIB_DIR}/glslangd.lib
+        ${GLSLANG_LIB_DIR}/MachineIndependentd.lib
+        ${GLSLANG_LIB_DIR}/SPVRemapperd.lib
+        ${GLSLANG_LIB_DIR}/GenericCodeGend.lib
+        ${GLSLANG_LIB_DIR}/glslang-default-resource-limitsd.lib
+        ${GLSLANG_LIB_DIR}/HLSLd.lib
+        ${GLSLANG_LIB_DIR}/OGLCompilerd.lib
+        )
 endif()
 
 if(${GFX_API} EQUAL ${GFX_API_D3D12})
-target_link_libraries(Main D3D12.lib)
-target_link_libraries(Main DXGI.lib)
-target_link_libraries(Main D3DCompiler.lib)
+        target_link_libraries(Main D3D12.lib)
+        target_link_libraries(Main DXGI.lib)
+        target_link_libraries(Main D3DCompiler.lib)
+endif()
+
+if(${GFX_API} EQUAL ${GFX_API_GL})
+        target_link_libraries(Main glew32)
+        target_link_libraries(Main opengl32)
+        install(FILES ${GLEW_DLL_DIR}/glew32.dll
+                DESTINATION bin
+        )
+
 endif()
 
 set_property(TARGET Main PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")

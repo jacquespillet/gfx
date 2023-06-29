@@ -10,4 +10,8 @@ namespace gfx
         
         // VkResourceManagerData->DescriptorSetLayouts.Init(2048, sizeof(descriptorSetLayout));
     }
+
+    void resourceManager::DestroyApiSpecific()
+    {
+    }
 }

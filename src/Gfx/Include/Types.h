@@ -430,7 +430,32 @@ struct shaderStageFlags
         SubpassShadingHUAWEI = (value)vk::ShaderStageFlagBits::eSubpassShadingHUAWEI,
         ClusterCullingHUAWEI = (value)vk::ShaderStageFlagBits::eClusterCullingHUAWEI
 #elif GFX_API==GFX_GL
-
+        Vertex,
+        TessellationControl,
+        TessellationEvaluation,
+        Geometry,
+        Fragment,
+        Compute,
+        AllGraphics,
+        All,
+        RaygenKHR,
+        AnyHitKHR,
+        ClosestHitKHR,
+        MissKHR,
+        IntersectionKHR,
+        CallableKHR,
+        RaygenNV,
+        AnyHitNV,
+        ClosestHitNV,
+        MissNV,
+        IntersectionNV,
+        CallableNV,
+        TaskNV,
+        MeshNV,
+        TaskEXT,
+        MeshEXT,
+        SubpassShadingHUAWEI,
+        ClusterCullingHUAWEI
 #elif GFX_API==GFX_D3D12
         Vertex,
         TessellationControl,
@@ -458,7 +483,6 @@ struct shaderStageFlags
         MeshEXT,
         SubpassShadingHUAWEI,
         ClusterCullingHUAWEI
-
 #endif
     };
 };
@@ -495,6 +519,10 @@ struct cullMode
         Back = (value) vk::CullModeFlagBits::eBack,
         FrontAndBack = (value) vk::CullModeFlagBits::eFrontAndBack
 #elif GFX_API==GFX_GL
+        None,
+        Front,
+        Back,
+        FrontAndBack
 #elif GFX_API==GFX_D3D12
         None,
         Front,

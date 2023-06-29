@@ -279,7 +279,7 @@ bufferHandle context::CreateVertexBuffer(f32 *Values, sz ByteSize, sz Stride)
     
     //Copy stage buffer to vertex buffer
     D12Data->ImmediateCommandBuffer->CopyBuffer(
-        bufferInfo {D12Data->StageBuffer.Buffer, VertexAllocation.Offset},
+        bufferInfo {D12Data->StageBuffer.GetBuffer(), VertexAllocation.Offset},
         bufferInfo {Buffer, 0},
         VertexAllocation.Size
     );
@@ -354,9 +354,10 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
                 PipelineCreation.VertexInput.VertexAttributes[i].SemanticIndex,
                 AttribFormatToNative(PipelineCreation.VertexInput.VertexAttributes[i].Format),
                 0, //??????????
-                Offset,
-                VertexInputRateToNative(PipelineCreation.VertexInput.VertexStreams[i].InputRate),
-                0
+                PipelineCreation.VertexInput.VertexAttributes[i].Offset,
+                //VertexInputRateToNative(PipelineCreation.VertexInput.VertexStreams[i].InputRate), 
+                D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+                0 
             };
             Offset += PipelineCreation.VertexInput.VertexStreams[i].Stride;
         }
@@ -417,6 +418,27 @@ void context::StartFrame()
     GET_CONTEXT(D12Data, this);
     D12Data->VirtualFrames.StartFrame();
 }
+
+void context::DestroyPipeline(pipelineHandle PipelineHandle)
+{
+
+}
+void context::DestroyBuffer(bufferHandle BufferHandle)
+{
+
+}
+void context::DestroySwapchain()
+{
+
+}
+
+void context::WaitIdle()
+{
+    GET_CONTEXT(D12Data, this);
+    D12Data->VirtualFrames.WaitForPreviousFrame();
+    CloseHandle(D12Data->VirtualFrames.FenceEvent);
+}
+
 void context::Cleanup()
 {
 
