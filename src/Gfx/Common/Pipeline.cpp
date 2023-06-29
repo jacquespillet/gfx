@@ -198,7 +198,11 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
             json ShaderStage = Shaders[i];
             
             ShaderStage["language"].get_to(Name);
-            if((GFX_API == GFX_VK || GFX_API == GFX_GL) && Name != "GLSL")
+            if((GFX_API == GFX_VK) && Name != "GLSL(VK)")
+            {
+                continue;
+            }
+            if((GFX_API == GFX_GL) && Name != "GLSL")
             {
                 continue;
             }

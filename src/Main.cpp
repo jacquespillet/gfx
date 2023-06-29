@@ -55,7 +55,6 @@ int main()
 	ContextInitialize.ErrorCallback = ErrorCallback;
     ContextInitialize.InfoCallback = InfoCallback;
 	std::shared_ptr<gfx::context> GfxContext = gfx::context::Initialize(ContextInitialize, Window);
-#if 0
 
 	// //Get the current frame command buffer
 	std::shared_ptr<gfx::swapchain> Swapchain = GfxContext->CreateSwapchain(Width, Height);
@@ -73,7 +72,13 @@ int main()
         0.25f, -0.25f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
         -0.25f, -0.25f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f
     };
-	gfx::bufferHandle VertexBuffer = GfxContext->CreateVertexBuffer(vertices, sizeof(vertices), 7 * sizeof(float));
+	
+	std::vector<gfx::vertexInputAttribute> Attributes = 
+	{
+		{sizeof(float), 3, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION},
+		{sizeof(float), 4, gfx::vertexAttributeType::Float, true, gfx::attributeSemantic::COLOR}
+	};
+	gfx::bufferHandle VertexBuffer = GfxContext->CreateVertexBuffer(vertices, sizeof(vertices), 7 * sizeof(float), Attributes);
 
     gfx::pipelineHandle PipelineHandle = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json");
     
@@ -81,50 +86,57 @@ int main()
 
 	while(!Window.ShouldClose())
 	{
-	Window.PollEvents();
-	
-	GfxContext->StartFrame();
+		Window.PollEvents();
+		
+		GfxContext->StartFrame();
 
-	// Set up the render state
-	std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();
-	
-	// Begin recording commands into the command buffer
-	CommandBuffer->Begin();
+		// Set up the render state
+		std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();
 
-	CommandBuffer->ClearColor(0.5f, 0.0f, 0.8f, 1.0f);
-	CommandBuffer->ClearDepthStencil(1.0f, 0.0f);
-	
-	CommandBuffer->BeginPass(SwapchainPass, GfxContext->GetSwapchainFramebuffer());
-	CommandBuffer->SetViewport(0, 0, Width, Height);
-	CommandBuffer->SetScissor(0, 0, Width, Height);
-	
-	CommandBuffer->BindGraphicsPipeline(PipelineHandle);
-	CommandBuffer->BindVertexBuffer(VertexBuffer);
-	CommandBuffer->DrawTriangles(0, 3); 
-	CommandBuffer->EndPass();
+#if 0
+		// Begin recording commands into the command buffer
+		CommandBuffer->Begin();
 
-	// Submit the current frame command buffer to the graphics API for execution
-	GfxContext->EndFrame();
+		CommandBuffer->ClearColor(0.5f, 0.0f, 0.8f, 1.0f);
+		CommandBuffer->ClearDepthStencil(1.0f, 0.0f);
+		
+		CommandBuffer->BeginPass(SwapchainPass, GfxContext->GetSwapchainFramebuffer());
+		CommandBuffer->SetViewport(0, 0, Width, Height);
+		CommandBuffer->SetScissor(0, 0, Width, Height);
+		
+		CommandBuffer->BindGraphicsPipeline(PipelineHandle);
+		CommandBuffer->BindVertexBuffer(VertexBuffer);
+		CommandBuffer->DrawTriangles(0, 3); 
+		CommandBuffer->EndPass();
+		GfxContext->EndFrame();
+#else
+		CommandBuffer->BindVertexBuffer(VertexBuffer);
+		CommandBuffer->BindGraphicsPipeline(PipelineHandle);
+		CommandBuffer->DrawTriangles(0, 3); 
+		GfxContext->EndFrame();
 
-	// Present the rendered frame
-	GfxContext->Present();
+#endif
+
+		// Submit the current frame command buffer to the graphics API for execution
+
+		// Present the rendered frame
+		GfxContext->Present();
 	}
 
 
-	GfxContext->WaitIdle();
-	GfxContext->DestroyPipeline(PipelineHandle);
-	GfxContext->DestroyBuffer(VertexBuffer);
+	// GfxContext->WaitIdle();
+	// GfxContext->DestroyPipeline(PipelineHandle);
+	// GfxContext->DestroyBuffer(VertexBuffer);
 
+	// GfxContext->DestroySwapchain();
+	// GfxContext->Cleanup();
 
-	GfxContext->DestroySwapchain();
-	GfxContext->Cleanup();
 	gfx::memory *Memory = gfx::memory::Get();
 	Memory->Destroy();
     delete Memory;
 
 
 	system("pause");
-#endif
 	//TODO: Investigate crash here ?
 	return 0;
 }

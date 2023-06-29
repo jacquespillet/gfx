@@ -2,6 +2,7 @@
 #include <vector>
 #include <functional>
 
+#include "VertexInput.h"
 #include "Types.h"
 #include "Pipeline.h"
 #include "ResourceManager.h"
@@ -66,7 +67,7 @@ struct context
     std::shared_ptr<swapchain> RecreateSwapchain(u32 Width, u32 Height, std::shared_ptr<swapchain> OldSwapchain);
 
     stageBuffer CreateStageBuffer(sz Size);
-    bufferHandle CreateVertexBuffer(f32 *Values, sz Count, sz Stride);
+    bufferHandle CreateVertexBuffer(f32 *Values, sz Count, sz Stride, const std::vector<vertexInputAttribute> &Attributes);
     bufferHandle CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage MemoryUsage);
 
     //TODO: return a technique struct with multiple passes and pipelines

@@ -168,6 +168,10 @@ set(d3d12Code
 set(glCode
         src/Gfx/GL/GLContext.cpp
         src/Gfx/GL/GLResourceManager.cpp
+        src/Gfx/GL/GLBuffer.cpp
+        src/Gfx/GL/GLMapping.cpp
+        src/Gfx/GL/GLShader.cpp
+        src/Gfx/GL/GLCommandBuffer.cpp
 )
         
 set(commonCode

@@ -4,6 +4,7 @@
 #if GFX_API==GFX_VK
 #include <vulkan/vulkan.hpp>
 #elif GFX_API==GFX_GL
+#include <GL/glew.h>
 #elif GFX_API==GFX_D3D12
 #include <d3d12.h>
 #endif
@@ -374,7 +375,23 @@ struct bufferUsage
         AccelerationStructureStorage = (value)vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR,
         ShaderBindingTable = (value)vk::BufferUsageFlagBits::eShaderBindingTableKHR,
 #elif GFX_API==GFX_GL
-
+        UNKNOWN,
+        TransferSource,
+        TransferDestination,
+        UniformTexelBuffer,
+        StorageTexelBuffer,
+        UniformBuffer,
+        StorageBuffer,
+        IndexBuffer,
+        VertexBuffer,
+        IndirectBuffer,
+        ShaderDeviceAddress,
+        TransformFeedbackBuffer,
+        TransformFeedbackCounterBuffer,
+        ConditionalRendering,
+        AccelerationStructureBuildInputReadonly,
+        AccelerationStructureStorage,
+        ShaderBindingTable
 #elif GFX_API==GFX_D3D12
         UNKNOWN,
         TransferSource = D3D12_RESOURCE_STATE_COPY_SOURCE,
@@ -430,12 +447,12 @@ struct shaderStageFlags
         SubpassShadingHUAWEI = (value)vk::ShaderStageFlagBits::eSubpassShadingHUAWEI,
         ClusterCullingHUAWEI = (value)vk::ShaderStageFlagBits::eClusterCullingHUAWEI
 #elif GFX_API==GFX_GL
-        Vertex,
-        TessellationControl,
-        TessellationEvaluation,
-        Geometry,
-        Fragment,
-        Compute,
+        Vertex =  GL_VERTEX_SHADER,
+        TessellationControl =  GL_TESS_CONTROL_SHADER,
+        TessellationEvaluation =  GL_TESS_EVALUATION_SHADER,
+        Geometry = GL_GEOMETRY_SHADER,
+        Fragment = GL_FRAGMENT_SHADER,
+        Compute = GL_COMPUTE_SHADER,
         AllGraphics,
         All,
         RaygenKHR,
