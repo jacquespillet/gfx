@@ -485,6 +485,11 @@ std::shared_ptr<commandBuffer> context::CreateCommandBuffer()
     return CommandBuffer;
 }
 
+void context::OnResize(u32 NewWidth, u32 NewHeight)
+{
+    RecreateSwapchain(NewWidth, NewHeight, Swapchain);
+}
+
 bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count, sz Stride, const std::vector<vertexInputAttribute> &Attributes)
 {
     bufferHandle Handle = ResourceManager.Buffers.ObtainResource();

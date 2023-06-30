@@ -258,6 +258,11 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     return Handle;
 }
 
+void context::OnResize(u32 NewWidth, u32 NewHeight)
+{
+    
+}
+
 // renderPassHandle context::GetDefaultRenderPass()
 // {
 //     return 0;

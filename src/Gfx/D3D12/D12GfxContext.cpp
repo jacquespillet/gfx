@@ -402,6 +402,12 @@ std::shared_ptr<commandBuffer> context::GetCurrentFrameCommandBuffer()
     return D12Data->VirtualFrames.CommandBuffer;
 }
 
+void context::OnResize(u32 NewWidth, u32 NewHeight)
+{
+    //TODO:
+    //Does it just work ? idk
+}
+
 void context::Present()
 {
 

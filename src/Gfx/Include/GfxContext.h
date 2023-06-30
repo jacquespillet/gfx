@@ -98,6 +98,8 @@ struct context
     void DestroySwapchain();
     void WaitIdle();
 
+    void OnResize(u32 newWidth, u32 NewHeight);
+
     std::shared_ptr<void> ApiContextData;
 
     resourceManager ResourceManager;
