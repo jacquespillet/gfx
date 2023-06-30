@@ -17,31 +17,37 @@ void uniformGroup::Update()
     std::shared_ptr<vkUniformData> VkUniformData = std::static_pointer_cast<vkUniformData>(this->ApiData);
 
     
-    std::vector<vk::WriteDescriptorSet> DescriptorWrites(Uniforms.size());
-    std::vector<vk::DescriptorBufferInfo> DescriptorBuffers(Uniforms.size());
 
-    for(sz i=0; i<Uniforms.size(); i++)
+    for(auto &Binding : Bindings)
     {
-        DescriptorWrites[i].setDstSet(VkUniformData->DescriptorSet)
-                            .setDstBinding(this->Binding)
-                            .setDstArrayElement(0)
-                            .setDescriptorCount(1);
+        pipelineHandle PipelineHandle = Binding.first;
 
-        switch (Uniforms[i].Type)
+        std::vector<vk::WriteDescriptorSet> DescriptorWrites(Uniforms.size());
+        std::vector<vk::DescriptorBufferInfo> DescriptorBuffers(Uniforms.size());
+        for(sz i=0; i<Uniforms.size(); i++)
         {
-        case uniformType::Buffer :
-            std::shared_ptr<buffer> Buffer = std::static_pointer_cast<buffer>(Uniforms[i].Resource);
-            std::shared_ptr<vkBufferData> VKBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
-            vk::DescriptorBufferInfo DescriptorBufferInfo(VKBuffer->Handle, Uniforms[i].Binding, Buffer->Size);
+            DescriptorWrites[i].setDstSet(VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSet)
+                                .setDstBinding(Binding.second)
+                                .setDstArrayElement(0)
+                                .setDescriptorCount(1);
 
-            DescriptorWrites[i].setDescriptorType(vk::DescriptorType::eUniformBuffer);
-            DescriptorBuffers[i] = vk::DescriptorBufferInfo(VKBuffer->Handle, 0, Buffer->Size);
-            DescriptorWrites[i].setPBufferInfo(&DescriptorBuffers[i]);
-            break;  
+            switch (Uniforms[i].Type)
+            {
+            case uniformType::Buffer :
+                std::shared_ptr<buffer> Buffer = std::static_pointer_cast<buffer>(Uniforms[i].Resource);
+                std::shared_ptr<vkBufferData> VKBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
+                vk::DescriptorBufferInfo DescriptorBufferInfo(VKBuffer->Handle, Uniforms[i].Binding, Buffer->Size);
+
+                DescriptorWrites[i].setDescriptorType(vk::DescriptorType::eUniformBuffer);
+                DescriptorBuffers[i] = vk::DescriptorBufferInfo(VKBuffer->Handle, 0, Buffer->Size);
+                DescriptorWrites[i].setPBufferInfo(&DescriptorBuffers[i]);
+                break;  
+            }
         }
+
+        VkData->Device.updateDescriptorSets(DescriptorWrites, {});
     }
 
-    VkData->Device.updateDescriptorSets(DescriptorWrites, {});
 }
 
 }

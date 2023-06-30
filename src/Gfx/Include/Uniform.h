@@ -1,6 +1,6 @@
 #pragma once
 #include "Types.h"
-
+#include <unordered_map>
 namespace gfx
 {
 
@@ -32,7 +32,7 @@ struct uniform
 struct uniformGroup
 {
     std::vector<uniform> Uniforms;
-    u32 Binding = 0;
+    std::unordered_map<pipelineHandle, u32> Bindings; //Store where this uniform group is bound in each pipeline
     void Initialize();
     void Update();
     std::shared_ptr<void> ApiData;

@@ -164,7 +164,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
     pipeline *Pipeline = (pipeline*)context::Get()->ResourceManager.Pipelines.GetResource(VkCommandBufferData->BoundPipeline);
     std::shared_ptr<vkPipelineData> VkPipeline = std::static_pointer_cast<vkPipelineData>(Pipeline->ApiData);
     std::shared_ptr<vkUniformData> VkUniformData = std::static_pointer_cast<vkUniformData>(Group->ApiData);
-    VkCommandBufferData->Handle.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, VkPipeline->PipelineLayout, Binding, 1, &VkUniformData->DescriptorSet, 0, 0);
+    VkCommandBufferData->Handle.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, VkPipeline->PipelineLayout, Binding, 1, &VkUniformData->DescriptorInfos[VkCommandBufferData->BoundPipeline].DescriptorSet, 0, 0);
 }
 
 

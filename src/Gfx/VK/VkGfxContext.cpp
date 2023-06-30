@@ -1218,11 +1218,17 @@ void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pip
     std::shared_ptr<vkPipelineData> VkPipeline = std::static_pointer_cast<vkPipelineData>(Pipeline->ApiData);
     std::shared_ptr<vkUniformData> VkUniformData = std::static_pointer_cast<vkUniformData>(Uniforms->ApiData);
 
-    VkUniformData->DescriptorSetLayout = VkPipeline->DescriptorSetLayouts[Binding]->NativeHandle;
-    if(!VkUniformData->Initialized)
+
+    if(VkUniformData->DescriptorInfos.find(PipelineHandle) == VkUniformData->DescriptorInfos.end())
     {
-        VkUniformData->DescriptorSet = AllocateDescriptorSet(VkUniformData->DescriptorSetLayout, Uniforms);
-        VkUniformData->Initialized=true;
+        Uniforms->Bindings[PipelineHandle] = Binding;
+        VkUniformData->DescriptorInfos[PipelineHandle] = {};
+        VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSetLayout = VkPipeline->DescriptorSetLayouts[Binding]->NativeHandle;
+        if(!VkUniformData->Initialized)
+        {
+            VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSet = AllocateDescriptorSet(VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSetLayout, Uniforms);
+            VkUniformData->Initialized=true;
+        }
     }
 }
 

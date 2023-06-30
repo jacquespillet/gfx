@@ -118,16 +118,18 @@ struct application
 
 		//That's the content of a descriptor set
 		Uniforms = std::make_shared<gfx::uniformGroup>();
+		Uniforms->Initialize();
 		Uniforms->Uniforms.push_back({
 			"Buffer",
 			gfx::uniformType::Buffer,
 			0,
 			std::shared_ptr<gfx::buffer>(UniformBuffer),
 		});
-		Uniforms->Initialize();
-		
+		//Tell the context that we'll be using this uniforms with this pipeline at binding 0
+		//It's possible to bind a uniform group to multiple pipelines.
 		GfxContext->BindUniformsToPipeline(Uniforms, PipelineHandle, 0);
-
+		
+		//Update the bindings
 		Uniforms->Update();
 
 		
