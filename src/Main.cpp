@@ -36,10 +36,25 @@ struct application
 	gfx::pipelineHandle PipelineHandle;
 	gfx::bufferHandle VertexBuffer;
 	std::shared_ptr<gfx::swapchain> Swapchain;
+	std::shared_ptr<gfx::uniformGroup> Uniforms;
+
+
+	struct uniformData
+	{
+		gfx::v4f Color0;
+		gfx::v4f Color1;
+	};
+	uniformData UniformData;
 
 	uint32_t Width, Height;
 	void Init()
 	{
+		UniformData = 
+		{
+			gfx::v4f(1,0,0,1),
+			gfx::v4f(0,1,0,1)
+		};
+		
 		gfx::memory::Get()->Init();
     
 		// Create the appropriate graphics API object based on runtime configuration
@@ -97,6 +112,27 @@ struct application
 		
 		SwapchainPass = GfxContext->GetDefaultRenderPass();
 
+		gfx::bufferHandle UniformBufferHandle = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
+		gfx::buffer *UniformBuffer = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle);
+		UniformBuffer->CopyData((uint8_t*)&UniformData, sizeof(uniformData), 0);
+
+		//That's the content of a descriptor set
+		Uniforms = std::make_shared<gfx::uniformGroup>();
+		Uniforms->Uniforms.push_back({
+			"Buffer",
+			gfx::uniformType::Buffer,
+			0,
+			std::shared_ptr<gfx::buffer>(UniformBuffer),
+		});
+		Uniforms->Initialize();
+		
+		GfxContext->BindUniformsToPipeline(Uniforms, PipelineHandle, 0);
+
+		Uniforms->Update();
+
+		
+
+
 	}
 
 	void Run()
@@ -121,6 +157,9 @@ struct application
 			CommandBuffer->SetScissor(0, 0, Width, Height);
 
 			CommandBuffer->BindGraphicsPipeline(PipelineHandle);
+			
+			CommandBuffer->BindUniformGroup(Uniforms, 0);
+
 			CommandBuffer->BindVertexBuffer(VertexBuffer);
 			CommandBuffer->DrawTriangles(0, 3); 
 			CommandBuffer->EndPass();

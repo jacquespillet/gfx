@@ -26,6 +26,7 @@
 #include "VkSwapchain.h"
 #include "VkBuffer.h"
 #include "VkShader.h"
+#include "VkUniform.h"
 #include "VkMemoryAllocation.h"
 #include "VkUtil.h"
 #include "VkRenderPass.h"
@@ -438,6 +439,27 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
     glslang::InitializeProcess();
     InitializeInfo.InfoCallback("Initialized GLSL compiler");
 
+    //Descriptor pool
+    std::array DescriptorPoolSizes = 
+    {
+        vk::DescriptorPoolSize (vk::DescriptorType::eSampler, 1024),
+        vk::DescriptorPoolSize (vk::DescriptorType::eCombinedImageSampler, 1024),
+        vk::DescriptorPoolSize (vk::DescriptorType::eSampledImage, 1024),
+        vk::DescriptorPoolSize (vk::DescriptorType::eStorageImage, 1024),
+        vk::DescriptorPoolSize (vk::DescriptorType::eUniformTexelBuffer, 1024),
+        vk::DescriptorPoolSize (vk::DescriptorType::eStorageTexelBuffer, 1024),
+        vk::DescriptorPoolSize (vk::DescriptorType::eUniformBuffer, 1024),
+        vk::DescriptorPoolSize (vk::DescriptorType::eStorageBuffer, 1024),
+        vk::DescriptorPoolSize (vk::DescriptorType::eUniformBufferDynamic, 1024),
+        vk::DescriptorPoolSize (vk::DescriptorType::eStorageBufferDynamic, 1024),
+        vk::DescriptorPoolSize (vk::DescriptorType::eInputAttachment, 1024),
+    };
+    vk::DescriptorPoolCreateInfo DescriptorPoolCreateInfo;
+    DescriptorPoolCreateInfo.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet | vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind)
+                            .setPoolSizes(DescriptorPoolSizes)
+                            .setMaxSets(2048 * (u32) DescriptorPoolSizes.size());
+    VkData->DescriptorPool = VkData->Device.createDescriptorPool(DescriptorPoolCreateInfo);    
+
     
     //Initialize sync objects
     VkData->ImageAvailableSemaphore = VkData->Device.createSemaphore(vk::SemaphoreCreateInfo());
@@ -745,7 +767,7 @@ descriptorSetLayoutHandle CreateDescriptorSetLayout(const descriptorSetLayoutCre
 
         VkBinding.binding = Binding.Start;
         VkBinding.descriptorType = InputBinding.Type;
-        VkBinding.descriptorType = VkBinding.descriptorType == vk::DescriptorType::eUniformBuffer ? vk::DescriptorType::eUniformBufferDynamic : VkBinding.descriptorType;
+        // VkBinding.descriptorType = VkBinding.descriptorType == vk::DescriptorType::eUniformBuffer ? vk::DescriptorType::eUniformBufferDynamic : VkBinding.descriptorType;
         VkBinding.descriptorCount = InputBinding.Count;
 
         VkBinding.stageFlags = vk::ShaderStageFlagBits::eAll;
@@ -1176,6 +1198,32 @@ framebufferHandle context::GetSwapchainFramebuffer()
     std::shared_ptr<vkSwapchainData> VkSwapchainData = std::static_pointer_cast<vkSwapchainData>(Swapchain->ApiData);
     framebufferHandle Framebuffer = VkSwapchainData->Framebuffers[VkSwapchainData->CurrentIndex];
     return Framebuffer;
+}
+
+vk::DescriptorSet AllocateDescriptorSet(vk::DescriptorSetLayout SetLayout, std::shared_ptr<uniformGroup> Group)
+{
+    GET_CONTEXT(VkData, context::Get());
+    
+    vk::DescriptorSetAllocateInfo AllocateInfo;
+    AllocateInfo.setDescriptorPool(VkData->DescriptorPool)
+                .setDescriptorSetCount(1)
+                .setPSetLayouts(&SetLayout);
+    
+    return VkData->Device.allocateDescriptorSets(AllocateInfo).front();
+}
+
+void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding){
+    GET_CONTEXT(VkData, this);
+    pipeline *Pipeline = (pipeline*)ResourceManager.Pipelines.GetResource(PipelineHandle);
+    std::shared_ptr<vkPipelineData> VkPipeline = std::static_pointer_cast<vkPipelineData>(Pipeline->ApiData);
+    std::shared_ptr<vkUniformData> VkUniformData = std::static_pointer_cast<vkUniformData>(Uniforms->ApiData);
+
+    VkUniformData->DescriptorSetLayout = VkPipeline->DescriptorSetLayouts[Binding]->NativeHandle;
+    if(!VkUniformData->Initialized)
+    {
+        VkUniformData->DescriptorSet = AllocateDescriptorSet(VkUniformData->DescriptorSetLayout, Uniforms);
+        VkUniformData->Initialized=true;
+    }
 }
 
 void context::DestroyPipeline(pipelineHandle PipelineHandle)

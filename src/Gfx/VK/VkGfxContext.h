@@ -47,6 +47,8 @@ struct vkData
     vk::Semaphore RenderingFinishedSemaphore;
     vk::Fence ImmediateFence;
 
+    vk::DescriptorPool DescriptorPool;
+
     vk::CommandPool CommandPool;
     std::shared_ptr<commandBuffer> ImmediateCommandBuffer {};
 

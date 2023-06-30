@@ -1,5 +1,6 @@
 #pragma once
 #include "stdint.h"
+#include <glm/glm.hpp>
 
 #if GFX_API==GFX_VK
 #include <vulkan/vulkan.hpp>
@@ -31,6 +32,16 @@ typedef uint32_t pipelineHandle;
 typedef uint32_t imageHandle;
 typedef uint32_t renderPassHandle;
 typedef uint32_t framebufferHandle;
+
+typedef glm::vec2 v2f;
+typedef glm::vec3 v3f;
+typedef glm::vec4 v4f;
+typedef glm::ivec2 v2i;
+typedef glm::ivec3 v3i;
+typedef glm::ivec4 v4i;
+typedef glm::mat4 m4x4;
+
+
 
 #if GFX_API==GFX_VK
 typedef uint32_t shaderStateHandle;

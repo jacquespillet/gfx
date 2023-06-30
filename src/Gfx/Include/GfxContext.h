@@ -6,6 +6,7 @@
 #include "Types.h"
 #include "Pipeline.h"
 #include "ResourceManager.h"
+#include "Uniform.h"
 #include <memory>
 
 namespace app
@@ -93,6 +94,8 @@ struct context
 
     void DestroyPipeline(pipelineHandle Pipeline);
     void DestroyBuffer(bufferHandle Buffer);
+
+    void BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding);
 
     void Cleanup();
     void DestroySwapchain();

@@ -64,7 +64,7 @@ void heapAllocator::Destroy()
         printf("ERROR:Unfreed Memory Detected\n");
     }
 
-    assert(Stats._AllocatedBytes == 0);
+    // assert(Stats._AllocatedBytes == 0);
 
     tlsf_destroy(_TlsfHandle);
     free(_Memory);

@@ -1,6 +1,7 @@
 #pragma once
 #include "RenderPass.h"
 #include "Types.h"
+#include "Uniform.h"
 #include <memory>
 
 namespace gfx
@@ -25,6 +26,8 @@ struct commandBuffer
     void ClearColor(f32 R, f32 G,f32 B,f32 A);
     void ClearDepthStencil(f32 Depth, f32 Stencil);
     void DrawTriangles(uint32_t Start, uint32_t Count);
+
+    void BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Binding);
     
     void CopyBuffer(const bufferInfo &Source, const bufferInfo &Destination, size_t ByteSize);
 

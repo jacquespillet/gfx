@@ -67,7 +67,7 @@ void buffer::FlushMemory(size_t ByteSize, size_t Offset)
 void buffer::Destroy()
 {
     std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(this->ApiData);
-    if(VkBufferData->Handle)
+    if(VkBufferData && VkBufferData->Handle)
     {
         if(this->MappedData != nullptr)
         {
