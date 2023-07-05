@@ -33,6 +33,9 @@ void commandBuffer::Begin()
 {   
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
     ThrowIfFailed(D12CommandBufferData->CommandList->Reset(D12CommandBufferData->CommandAllocator, nullptr));
+
+    GET_CONTEXT(D12Data, context::Get());
+    D12CommandBufferData->CommandList->SetDescriptorHeaps(1, &D12Data->CommonDescriptorHeap);
 }
 
 
@@ -109,8 +112,8 @@ void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
 
 
     // Set necessary state.
-    D12CommandBufferData->CommandList->SetPipelineState(D12PipelineData->PipelineState.Get());
     D12CommandBufferData->CommandList->SetGraphicsRootSignature(D12PipelineData->RootSignature.Get());
+    D12CommandBufferData->CommandList->SetPipelineState(D12PipelineData->PipelineState.Get());
 }
 
 void commandBuffer::BindVertexBuffer(bufferHandle BufferHandle)
@@ -167,7 +170,24 @@ void commandBuffer::End()
     ThrowIfFailed(D12CommandBufferData->CommandList->Close());
 }
 
+void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Binding)
+{
+    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
+    GET_CONTEXT(D12Data, context::Get());
 
+    //Here we need to get the address
+    //We need to save the address of each element of the uniformGroup inside the api data
+    if(Group->Uniforms.size() > 0)
+    {
+        if(Group->Uniforms[0].Type == uniformType::Buffer)
+        {
+            std::shared_ptr<buffer> BufferData = std::static_pointer_cast<buffer>(Group->Uniforms[0].Resource);
+            std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(BufferData->ApiData);
+
+            D12CommandBufferData->CommandList->SetGraphicsRootDescriptorTable(Binding, D12Data->GetGPUDescriptorAt(D12BufferData->OffsetInHeap));
+        }
+    }
+}
     
 
 

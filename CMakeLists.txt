@@ -13,7 +13,7 @@ add_compile_definitions(_GLFW_WIN32 GLFW_EXPOSE_NATIVE_WIN32 VK_USE_PLATFORM_WIN
 set(GFX_API_GL 0)
 set(GFX_API_VK 1)
 set(GFX_API_D3D12 2)
-set(GFX_API ${GFX_API_VK})
+set(GFX_API ${GFX_API_D3D12})
 
 add_definitions(-DGFX_GL=${GFX_API_GL})
 add_definitions(-DGFX_VK=${GFX_API_VK})
@@ -164,6 +164,7 @@ set(d3d12Code
         src/Gfx/D3D12/D12Framebuffer.cpp
         src/Gfx/D3D12/D12Mapping.cpp
         src/Gfx/D3D12/D12Buffer.cpp
+        src/Gfx/D3D12/D12Uniform.cpp
 )
 
 set(glCode

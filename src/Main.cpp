@@ -131,10 +131,6 @@ struct application
 		
 		//Update the bindings
 		Uniforms->Update();
-
-		
-
-
 	}
 
 	void Run()

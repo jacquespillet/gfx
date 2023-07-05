@@ -20,7 +20,15 @@ struct d3d12Data
     std::shared_ptr<commandBuffer> ImmediateCommandBuffer;
     ComPtr<ID3D12CommandAllocator> ImmediateCommandAllocator;
     
+    ID3D12DescriptorHeap* CommonDescriptorHeap;
+    u32 DescriptorSize=0;
+
     stageBuffer StageBuffer;
+
+    uint32_t CurrentHeapOffset=0;
+
+    D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorAt(sz Index);
+    D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorAt(sz Index);
 };
 
 }

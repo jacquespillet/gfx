@@ -19,6 +19,7 @@
 #include "D12Framebuffer.h"
 #include "D12Mapping.h"
 #include "D12CommandBuffer.h"
+#include "D12Uniform.h"
 
 #include <iostream>
 
@@ -145,6 +146,13 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
         IID_PPV_ARGS(&D12Data->Device)
         ));
 
+    D3D12_DESCRIPTOR_HEAP_DESC HeapDesc;
+    HeapDesc.NumDescriptors = 1024;
+    HeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    HeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    HeapDesc.NodeMask = 0;
+    D12Data->Device->CreateDescriptorHeap(&HeapDesc, IID_PPV_ARGS(&D12Data->CommonDescriptorHeap));
+    D12Data->DescriptorSize = D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
     // Describe and create the command queue.
     D3D12_COMMAND_QUEUE_DESC queueDesc = {};
@@ -325,13 +333,34 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     //TODO: Deal with descriptors here
     // Create an empty root signature.
     {
-        CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-        rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+        CD3DX12_DESCRIPTOR_RANGE cbvTable;
+        cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0); //Say that the only input we have is a constant buffer view
+        // cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1); //... Other buffers
+        // cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2); //... Other buffers
+            
+        CD3DX12_ROOT_PARAMETER slotRootParameter[1];
+        slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable); //Set the first root parameter to be the descriptor table described previously
 
-        ComPtr<ID3DBlob> signature;
-        ComPtr<ID3DBlob> error;
-        ThrowIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error));
-        ThrowIfFailed(D12Data->Device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&D12PipelineData->RootSignature)));
+        // A root signature is an array of root parameters.
+        CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(1, slotRootParameter, 0, nullptr,  D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+        // create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
+        ComPtr<ID3DBlob> serializedRootSig = nullptr;
+        ComPtr<ID3DBlob> errorBlob = nullptr;
+        HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
+            serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
+
+        if(errorBlob != nullptr)
+        {
+            ::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+        }
+        ThrowIfFailed(hr);
+
+        ThrowIfFailed(D12Data->Device->CreateRootSignature(
+            0,
+            serializedRootSig->GetBufferPointer(),
+            serializedRootSig->GetBufferSize(),
+            IID_PPV_ARGS(&D12PipelineData->RootSignature)));
     }
 
     // Create the pipeline state, which includes compiling and loading shaders.
@@ -413,6 +442,13 @@ void context::Present()
 
 }
 
+void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding){
+    GET_CONTEXT(VkData, this);
+    pipeline *Pipeline = (pipeline*)ResourceManager.Pipelines.GetResource(PipelineHandle);
+    std::shared_ptr<d3d12PipelineData> D12Pipeline = std::static_pointer_cast<d3d12PipelineData>(Pipeline->ApiData);
+    std::shared_ptr<d3d12UniformData> D12UniformData = std::static_pointer_cast<d3d12UniformData>(Uniforms->ApiData);
+}
+
 void context::EndFrame()
 {
     GET_CONTEXT(D12Data, this);
@@ -448,6 +484,16 @@ void context::WaitIdle()
 void context::Cleanup()
 {
 
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE d3d12Data::GetCPUDescriptorAt(sz Index)
+{
+    return CD3DX12_CPU_DESCRIPTOR_HANDLE(CommonDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), Index, DescriptorSize);
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE d3d12Data::GetGPUDescriptorAt(sz Index)
+{
+    return CD3DX12_GPU_DESCRIPTOR_HANDLE(CommonDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), Index, DescriptorSize);
 }
 
 }

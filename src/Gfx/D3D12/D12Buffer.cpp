@@ -20,9 +20,19 @@ void d3d12BufferData::Transition(ID3D12GraphicsCommandList *CommandList, D3D12_R
     this->ResourceState = DestinationState;
 }
 
+
+static u32 CalcConstantBufferByteSize(u32 byteSize)
+{
+    return (byteSize + 255) & ~255;
+}
+
 void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryUsage)
 {
     this->Size = ByteSize;
+    if(Usage == bufferUsage::UniformBuffer)
+    {
+        this->Size = CalcConstantBufferByteSize(ByteSize);
+    }
     
     ApiData = std::make_shared<d3d12BufferData>();
     std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(ApiData);
@@ -49,10 +59,56 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
     ThrowIfFailed(D12Data->Device->CreateCommittedResource(
         &CD3DX12_HEAP_PROPERTIES(HeapType),
         D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(ByteSize),
+        &CD3DX12_RESOURCE_DESC::Buffer(this->Size),
         InitialResourceState,
         nullptr,
         IID_PPV_ARGS(&D12BufferData->Handle)));
+
+    uint32_t test = (uint32_t)bufferUsage::UniformBuffer;
+    uint32_t test2 = (uint32_t)bufferUsage::VertexBuffer;
+
+    if(Usage == bufferUsage::UniformBuffer)
+    {
+        GET_CONTEXT(D12Data, context::Get());
+
+        D12BufferData->CPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(D12Data->CommonDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+        D12BufferData->GPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(D12Data->CommonDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+        D12BufferData->OffsetInHeap = D12Data->CurrentHeapOffset;
+
+        // Create a CBV descriptor
+        D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
+        cbvDesc.BufferLocation = D12BufferData->Handle->GetGPUVirtualAddress() + D12BufferData->OffsetInHeap;
+        cbvDesc.SizeInBytes = this->Size;
+        D12Data->Device->CreateConstantBufferView(&cbvDesc, D12Data->GetCPUDescriptorAt(D12BufferData->OffsetInHeap));
+
+        // Allocate descriptors by incrementing the handles
+        D12BufferData->CPUHandle.Offset(1, D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)); // index is the index of the descriptor to allocate
+        D12BufferData->GPUHandle.Offset(1, D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+        D12Data->CurrentHeapOffset += D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+
+        //Root signature : 
+        //Same as pipeline layout : defines all the descriptors that must be set to execute the pipeline
+        //Entries in the root signature can be
+        //  Constant
+        //  Constant buffers
+        //  descriptor table (contain multiple buffers...)
+        
+        //Descriptor heaps are equivalent to descriptor sets (Except only 1 can be set at a time...)
+        //--> Have a single big descriptor heap for the entier application
+        //Bind it all the time
+
+        //At render
+        //We bind the root signature
+        //then bind each descriptor table or constant buffer.
+        //We need to tell the binding and the offset within the heap, 
+        //See this for good example :
+        //https://learn.microsoft.com/en-us/windows/win32/direct3d12/creating-a-root-signature
+
+
+        // Create a CBV descriptor heap (if needed) and allocate a descriptor for the CBV
+        
+    }
 }
 
 u8 *buffer::MapMemory()
