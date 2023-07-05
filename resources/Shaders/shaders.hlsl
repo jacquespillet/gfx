@@ -15,10 +15,28 @@ struct PSInput
     float4 color : COLOR;
 };
 
-cbuffer MainConstantBuffer : register(b0)
+cbuffer MainConstantBuffer1 : register(b0)
 {
     float4 Color0;
     float4 Color1;
+};
+
+cbuffer MainConstantBuffer2 : register(b1)
+{
+    float4 Color2;
+    float4 Color3;
+};
+
+cbuffer MainConstantBuffer3 : register(b2)
+{
+    float4 Color4;
+    float4 Color5;
+};
+
+cbuffer MainConstantBuffer4 : register(b3)
+{
+    float4 Color6;
+    float4 Color7;
 };
 
 PSInput VSMain(float4 position : POSITION0, float4 color : POSITION1)
@@ -33,5 +51,5 @@ PSInput VSMain(float4 position : POSITION0, float4 color : POSITION1)
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    return input.color + Color0;
+    return input.color + Color6;
 }

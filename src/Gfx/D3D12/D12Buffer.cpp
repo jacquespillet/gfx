@@ -64,9 +64,7 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
         nullptr,
         IID_PPV_ARGS(&D12BufferData->Handle)));
 
-    uint32_t test = (uint32_t)bufferUsage::UniformBuffer;
-    uint32_t test2 = (uint32_t)bufferUsage::VertexBuffer;
-
+    
     if(Usage == bufferUsage::UniformBuffer)
     {
         GET_CONTEXT(D12Data, context::Get());
@@ -77,14 +75,14 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
 
         // Create a CBV descriptor
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
-        cbvDesc.BufferLocation = D12BufferData->Handle->GetGPUVirtualAddress() + D12BufferData->OffsetInHeap;
+        cbvDesc.BufferLocation = D12BufferData->Handle->GetGPUVirtualAddress();
         cbvDesc.SizeInBytes = this->Size;
         D12Data->Device->CreateConstantBufferView(&cbvDesc, D12Data->GetCPUDescriptorAt(D12BufferData->OffsetInHeap));
 
         // Allocate descriptors by incrementing the handles
         D12BufferData->CPUHandle.Offset(1, D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)); // index is the index of the descriptor to allocate
         D12BufferData->GPUHandle.Offset(1, D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
-        D12Data->CurrentHeapOffset += D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        D12Data->CurrentHeapOffset++;
 
 
         //Root signature : 

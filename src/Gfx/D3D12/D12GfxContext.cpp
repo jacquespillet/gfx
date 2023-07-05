@@ -334,7 +334,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     // Create an empty root signature.
     {
         CD3DX12_DESCRIPTOR_RANGE cbvTable;
-        cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0); //Say that the only input we have is a constant buffer view
+        cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 4, 0); //4 buffers starting from register 0
         // cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1); //... Other buffers
         // cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2); //... Other buffers
             

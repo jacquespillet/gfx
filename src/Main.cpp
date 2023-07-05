@@ -44,15 +44,34 @@ struct application
 		gfx::v4f Color0;
 		gfx::v4f Color1;
 	};
-	uniformData UniformData;
+
+	uniformData UniformData1;
+	uniformData UniformData2;
+	uniformData UniformData3;
+	uniformData UniformData4;
 
 	uint32_t Width, Height;
 	void Init()
 	{
-		UniformData = 
+		UniformData1 = 
 		{
 			gfx::v4f(1,0,0,1),
-			gfx::v4f(0,1,0,1)
+			gfx::v4f(0,0,0,1)
+		};
+		UniformData2 = 
+		{
+			gfx::v4f(0,1,0,1),
+			gfx::v4f(0,0,0,1)
+		};
+		UniformData3 = 
+		{
+			gfx::v4f(0,0,1,1),
+			gfx::v4f(0,0,0,1)
+		};
+		UniformData4 = 
+		{
+			gfx::v4f(1,0,1,1),
+			gfx::v4f(0,0,0,1)
 		};
 		
 		gfx::memory::Get()->Init();
@@ -112,9 +131,21 @@ struct application
 		
 		SwapchainPass = GfxContext->GetDefaultRenderPass();
 
-		gfx::bufferHandle UniformBufferHandle = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
-		gfx::buffer *UniformBuffer = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle);
-		UniformBuffer->CopyData((uint8_t*)&UniformData, sizeof(uniformData), 0);
+		gfx::bufferHandle UniformBufferHandle1 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
+		gfx::buffer *UniformBuffer1 = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle1);
+		UniformBuffer1->CopyData((uint8_t*)&UniformData1, sizeof(uniformData), 0);
+
+		gfx::bufferHandle UniformBufferHandle2 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
+		gfx::buffer *UniformBuffer2 = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle2);
+		UniformBuffer2->CopyData((uint8_t*)&UniformData2, sizeof(uniformData), 0);
+
+		gfx::bufferHandle UniformBufferHandle3 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
+		gfx::buffer *UniformBuffer3 = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle3);
+		UniformBuffer3->CopyData((uint8_t*)&UniformData3, sizeof(uniformData), 0);
+
+		gfx::bufferHandle UniformBufferHandle4 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
+		gfx::buffer *UniformBuffer4 = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle4);
+		UniformBuffer4->CopyData((uint8_t*)&UniformData4, sizeof(uniformData), 0);
 
 		//That's the content of a descriptor set
 		Uniforms = std::make_shared<gfx::uniformGroup>();
@@ -123,7 +154,25 @@ struct application
 			"Buffer",
 			gfx::uniformType::Buffer,
 			0,
-			std::shared_ptr<gfx::buffer>(UniformBuffer),
+			std::shared_ptr<gfx::buffer>(UniformBuffer1),
+		});
+		Uniforms->Uniforms.push_back({
+			"Buffer",
+			gfx::uniformType::Buffer,
+			1,
+			std::shared_ptr<gfx::buffer>(UniformBuffer2),
+		});
+		Uniforms->Uniforms.push_back({
+			"Buffer",
+			gfx::uniformType::Buffer,
+			2,
+			std::shared_ptr<gfx::buffer>(UniformBuffer3),
+		});
+		Uniforms->Uniforms.push_back({
+			"Buffer",
+			gfx::uniformType::Buffer,
+			3,
+			std::shared_ptr<gfx::buffer>(UniformBuffer4),
 		});
 		//Tell the context that we'll be using this uniforms with this pipeline at binding 0
 		//It's possible to bind a uniform group to multiple pipelines.

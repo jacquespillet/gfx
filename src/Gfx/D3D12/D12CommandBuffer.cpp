@@ -175,8 +175,6 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
     GET_CONTEXT(D12Data, context::Get());
 
-    //Here we need to get the address
-    //We need to save the address of each element of the uniformGroup inside the api data
     if(Group->Uniforms.size() > 0)
     {
         if(Group->Uniforms[0].Type == uniformType::Buffer)
