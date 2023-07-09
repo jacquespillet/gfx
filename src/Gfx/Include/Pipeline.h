@@ -123,6 +123,7 @@ struct depthStencilCreation
 
 struct shaderStage
 {
+    const char *FileName = nullptr;
     const char *Code = nullptr;
     u32 CodeSize = 0;
     shaderStageFlags::bits Stage = shaderStageFlags::All;
@@ -136,7 +137,7 @@ struct shaderStateCreation
     u32 SpvInput=0;
     shaderStateCreation &Reset();
     shaderStateCreation &SetName(const char *);
-    shaderStateCreation &AddStage(const char *Code, u32 CodeSize, shaderStageFlags::bits Stage);
+    shaderStateCreation &AddStage(const char *Code, const char *FileName, u32 CodeSize, shaderStageFlags::bits Stage);
     shaderStateCreation &AddStage(const char *FileName, shaderStageFlags::bits Stage);
 };
 

@@ -127,6 +127,7 @@ struct application
 		};
 		VertexBuffer = GfxContext->CreateVertexBuffer(vertices, sizeof(vertices), 7 * sizeof(float), Attributes);
 
+		
 		PipelineHandle = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json");
 		
 		SwapchainPass = GfxContext->GetDefaultRenderPass();

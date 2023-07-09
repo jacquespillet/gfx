@@ -51,8 +51,9 @@ shaderStateCreation &shaderStateCreation::SetName(const char * Name)
     return *this;
 }
 
-shaderStateCreation &shaderStateCreation::AddStage(const char *Code, u32 CodeSize, shaderStageFlags::bits Stage)
+shaderStateCreation &shaderStateCreation::AddStage(const char *Code, const char *FileName, u32 CodeSize, shaderStageFlags::bits Stage)
 {
+    Stages[StagesCount].FileName = FileName;   
     Stages[StagesCount].Code = Code;   
     Stages[StagesCount].CodeSize = CodeSize;   
     Stages[StagesCount].Stage = Stage;
@@ -224,8 +225,9 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
                 }
             }
 
-            ShaderStage["shader"].get_to(Name);
-            ShaderConcatenate(Name, Code, ParentPath);
+            std::string ShaderFileName;
+            ShaderStage["shader"].get_to(ShaderFileName);
+            ShaderConcatenate(ShaderFileName, Code, ParentPath);
 
             ShaderStage["stage"].get_to(Name);
             
@@ -240,13 +242,14 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
             // Code.replace(Code.begin(), Code.end(), "{{CustomDefines}}", CustomDefines);
             Code = std::regex_replace(Code, std::regex("CUSTOM_DEFINES"), CustomDefines);
             const char *CodeCStr = AllocateCString(Code.c_str());
+            const char *FileNameCStr = AllocateCString(ParentPath + "/" + ShaderFileName.c_str());
 
             if(Name == "vertex")
-                PipelineCreation.Shaders.AddStage(CodeCStr, strlen(CodeCStr), shaderStageFlags::bits::Vertex);
+                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, strlen(CodeCStr), shaderStageFlags::bits::Vertex);
             else if(Name == "fragment")
-                PipelineCreation.Shaders.AddStage(CodeCStr, strlen(CodeCStr), shaderStageFlags::bits::Fragment);
+                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, strlen(CodeCStr), shaderStageFlags::bits::Fragment);
             else if(Name == "compute")
-                PipelineCreation.Shaders.AddStage(CodeCStr, strlen(CodeCStr), shaderStageFlags::bits::Compute);
+                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, strlen(CodeCStr), shaderStageFlags::bits::Compute);
         }
     }
 
@@ -463,6 +466,7 @@ pipelineHandle context::CreatePipelineFromFile(const char *FileName)
             WriteFileString("Shader", PipelineCreation.Shaders.Stages[0].Code);
         }
     }
+    //TODO: Return an array of pipelines here
     for(u32 i=0; i<PipelineCreations.size(); i++)
     {
         pipelineHandle pipeline = this->CreatePipeline(PipelineCreations[i]);

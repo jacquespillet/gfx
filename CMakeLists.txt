@@ -120,6 +120,7 @@ set(D3DX_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/d3dx)
 include_directories(${D3DX_INC_DIR})
 set(DXC_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dxc/include)
 set(DXC_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dxc/lib)
+set(DXC_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dxc/bin)
 include_directories(${DXC_INC_DIR})
 link_directories(${DXC_LIB_DIR})
 endif()
@@ -245,6 +246,9 @@ if(${GFX_API} EQUAL ${GFX_API_D3D12})
         target_link_libraries(Main DXGI.lib)
         target_link_libraries(Main D3DCompiler.lib)
         target_link_libraries(Main dxcompiler.lib)
+        install(FILES ${DXC_BIN_DIR}/dxil.dll
+                DESTINATION bin
+        )
 endif()
 
 if(${GFX_API} EQUAL ${GFX_API_GL})

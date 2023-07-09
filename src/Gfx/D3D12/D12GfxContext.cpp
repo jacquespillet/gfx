@@ -30,6 +30,13 @@ using namespace Microsoft::WRL;
 #include <d3dx12.h>
 #include <DirectXMath.h>
 #include <d3dcompiler.h>
+
+#include <dxc/dxcapi.h>
+#include <d3d12shader.h> // Contains functions and structures useful in accessing shader information.
+
+// #include <dxc/DxilContainer/DxilContainer.h>
+// #include <dxc/DxilContainer/DxilContainerUtil.h>
+// #include <dxc/DxilShader/DxilShaderModel.h>
 using namespace DirectX;
 
 
@@ -77,7 +84,7 @@ void GetHardwareAdapter(
 
             // Check to see whether the adapter supports Direct3D 12, but don't create the
             // actual device yet.
-            if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr)))
+            if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_0, _uuidof(ID3D12Device), nullptr)))
             {
                 break;
             }
@@ -317,6 +324,154 @@ void context::SubmitCommandBufferImmediate(commandBuffer *CommandBuffer)
 	D12Data->CommandQueue->ExecuteCommandLists(1, CommandLists);
 }
 
+LPCWSTR ConstCharToLPCWSTR(const char* narrowString) {
+    int bufferSize = MultiByteToWideChar(CP_UTF8, 0, narrowString, -1, nullptr, 0);
+    wchar_t* wideString = new wchar_t[bufferSize];
+    MultiByteToWideChar(CP_UTF8, 0, narrowString, -1, wideString, bufferSize);
+    return wideString;
+}
+
+std::wstring LPCSTRToWString(LPCSTR str)
+{
+    // Determine the required length of the wide string
+    int wideStrLength = MultiByteToWideChar(CP_ACP, 0, str, -1, nullptr, 0);
+
+    // Allocate memory for the wide string
+    wchar_t* wideStrBuffer = new wchar_t[wideStrLength];
+
+    // Convert the narrow string to wide string
+    MultiByteToWideChar(CP_ACP, 0, str, -1, wideStrBuffer, wideStrLength);
+
+    // Create a wstring from the wide string
+    std::wstring wideStr(wideStrBuffer);
+
+    // Clean up the allocated memory
+    delete[] wideStrBuffer;
+
+    return wideStr;
+}
+
+
+ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_PARAMETER> &OutRootParams, std::unordered_map<u32, u32> &BindingRootParamMapping)
+{
+    ComPtr<IDxcUtils> Utils;
+    ThrowIfFailed(DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&Utils)));
+    ComPtr<IDxcCompiler3> Compiler;
+    ThrowIfFailed(DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&Compiler)));
+    ComPtr<IDxcIncludeHandler> IncludeHandler;
+    ThrowIfFailed(Utils->CreateDefaultIncludeHandler(&IncludeHandler));
+
+    std::vector<LPCWSTR> CompileArgs =
+    {
+        DXC_ARG_PACK_MATRIX_ROW_MAJOR,
+        // DXC_ARG_WARNINGS_ARE_ERRORS,
+        DXC_ARG_ALL_RESOURCES_BOUND
+    };
+    if(Stage.Stage == shaderStageFlags::Vertex)
+    {
+        CompileArgs.push_back(L"-E");
+        CompileArgs.push_back(L"VSMain");
+        CompileArgs.push_back(L"-T");
+        CompileArgs.push_back(L"vs_6_0");
+    }
+    else if(Stage.Stage ==  shaderStageFlags::Fragment)
+    {
+        CompileArgs.push_back(L"-E");
+        CompileArgs.push_back(L"PSMain");
+        CompileArgs.push_back(L"-T");
+        CompileArgs.push_back(L"ps_6_0");
+    }
+
+    //TODO
+    bool Debug=true;
+    // Indicate that the shader should be in a debuggable state if in debug mode.
+    // Else, set optimization level to 3.
+    if(Debug)
+    {
+        CompileArgs.push_back(DXC_ARG_DEBUG);
+    }
+    else
+    {
+        CompileArgs.push_back(DXC_ARG_OPTIMIZATION_LEVEL3);
+    }    
+
+    // Load the shader source file to a blob.
+    ComPtr<IDxcBlobEncoding> sourceBlob{};
+    ThrowIfFailed(Utils->LoadFile(ConstCharToLPCWSTR(Stage.FileName), nullptr, &sourceBlob));
+
+    DxcBuffer sourceBuffer
+    {
+        sourceBlob->GetBufferPointer(),
+        sourceBlob->GetBufferSize(),
+        0u,
+    };
+
+    // Compile the shader.
+    Microsoft::WRL::ComPtr<IDxcResult> CompiledShaderBuffer{};
+    const HRESULT hr = Compiler->Compile(&sourceBuffer,
+                            CompileArgs.data(),
+                            static_cast<uint32_t>(CompileArgs.size()),
+                            IncludeHandler.Get(),   
+                            IID_PPV_ARGS(&CompiledShaderBuffer));
+    if (FAILED(hr))
+    {
+        assert(false);
+    }
+    ComPtr<IDxcBlob> CompiledShaderBlob{nullptr};
+    CompiledShaderBuffer->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&CompiledShaderBlob), nullptr);
+
+    // Get compilation errors (if any).
+    ComPtr<IDxcBlobUtf8> errors{};
+    ThrowIfFailed(CompiledShaderBuffer->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&errors), nullptr));
+    if (errors && errors->GetStringLength() > 0)
+    {
+        const LPCSTR errorMessage = errors->GetStringPointer();
+        std::wcout << LPCSTRToWString(errorMessage) << std::endl;
+        //assert(false);
+    }    
+
+    // Get shader reflection data.
+    ComPtr<IDxcBlob> reflectionBlob{};
+    ThrowIfFailed(CompiledShaderBuffer->GetOutput(DXC_OUT_REFLECTION, IID_PPV_ARGS(&reflectionBlob), nullptr));
+
+    const DxcBuffer reflectionBuffer
+    {
+        reflectionBlob->GetBufferPointer(),
+        reflectionBlob->GetBufferSize(),
+        0,
+    };
+
+    ComPtr<ID3D12ShaderReflection> shaderReflection{};
+    Utils->CreateReflection(&reflectionBuffer, IID_PPV_ARGS(&shaderReflection));
+    D3D12_SHADER_DESC shaderDesc{};
+    shaderReflection->GetDesc(&shaderDesc);    
+
+    for (uint32_t i=0; i<shaderDesc.BoundResources; i++)
+    {
+        D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{};
+        ThrowIfFailed(shaderReflection->GetResourceBindingDesc(i, &shaderInputBindDesc));
+
+        if (shaderInputBindDesc.Type == D3D_SIT_CBUFFER)
+        {
+            BindingRootParamMapping[shaderInputBindDesc.BindPoint] = static_cast<uint32_t>(OutRootParams.size());
+            ID3D12ShaderReflectionConstantBuffer* shaderReflectionConstantBuffer = shaderReflection->GetConstantBufferByIndex(i);
+            D3D12_SHADER_BUFFER_DESC constantBufferDesc{};
+            shaderReflectionConstantBuffer->GetDesc(&constantBufferDesc);
+
+            D3D12_ROOT_PARAMETER rootParameter = {};
+            rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+            rootParameter.Descriptor = {};
+            rootParameter.Descriptor.ShaderRegister = shaderInputBindDesc.BindPoint,
+            rootParameter.Descriptor.RegisterSpace = shaderInputBindDesc.Space,
+            // rootParameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE,
+            
+            OutRootParams.push_back(rootParameter);
+        }
+    } 
+    
+    return CompiledShaderBlob;
+}
+
 pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 {
     pipelineHandle Handle = ResourceManager.Pipelines.ObtainResource();
@@ -330,25 +485,35 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 
     GET_CONTEXT(D12Data, this);
 
-    //TODO: Deal with descriptors here
-    // Create an empty root signature.
+        
+    //Problem : 
+    //There's only one constant buffer that's bound on register 3.
+    //There's only 1 root parameter
     {
-        CD3DX12_DESCRIPTOR_RANGE cbvTable;
-        cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 4, 0); //4 buffers starting from register 0
-        // cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1); //... Other buffers
-        // cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2); //... Other buffers
-            
-        CD3DX12_ROOT_PARAMETER slotRootParameter[1];
-        slotRootParameter[0].InitAsDescriptorTable(1, &cbvTable); //Set the first root parameter to be the descriptor table described previously
+        D12PipelineData->RootParams.clear();
+        D12PipelineData->BindingRootParamMapping.clear();
+        D12PipelineData->vertexShader = CompileShader(PipelineCreation.Shaders.Stages[0], D12PipelineData->RootParams, D12PipelineData->BindingRootParamMapping);
+        D12PipelineData->pixelShader = CompileShader(PipelineCreation.Shaders.Stages[1], D12PipelineData->RootParams, D12PipelineData->BindingRootParamMapping);
 
-        // A root signature is an array of root parameters.
-        CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(1, slotRootParameter, 0, nullptr,  D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+        memset(&D12PipelineData->UsedRootParams[0], 0, d3d12PipelineData::MaxResourceBindings * sizeof(b8));
+        for(sz i=0; i<D12PipelineData->RootParams.size(); i++)
+        {
+            D12PipelineData->UsedRootParams[D12PipelineData->RootParams[i].Descriptor.ShaderRegister]=true;
+        }
+
+        D3D12_ROOT_SIGNATURE_DESC rootSigDesc;
+        rootSigDesc.NumParameters = D12PipelineData->RootParams.size();
+        rootSigDesc.pParameters = D12PipelineData->RootParams.data();
+        rootSigDesc.NumStaticSamplers = 0;
+        rootSigDesc.pStaticSamplers = nullptr;
+        rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
         // create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
         ComPtr<ID3DBlob> serializedRootSig = nullptr;
         ComPtr<ID3DBlob> errorBlob = nullptr;
         HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
             serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
+
 
         if(errorBlob != nullptr)
         {
@@ -364,13 +529,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     }
 
     // Create the pipeline state, which includes compiling and loading shaders.
-    {
-        // Enable better shader debugging with the graphics debugging tools.
-        UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-
-        ThrowIfFailed(D3DCompile(PipelineCreation.Shaders.Stages[0].Code, PipelineCreation.Shaders.Stages[0].CodeSize, nullptr, nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &D12PipelineData->vertexShader, nullptr));
-        ThrowIfFailed(D3DCompile(PipelineCreation.Shaders.Stages[1].Code, PipelineCreation.Shaders.Stages[1].CodeSize, nullptr, nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &D12PipelineData->pixelShader, nullptr));
-        
+    {   
         // Define the vertex input layout.
         //TODO: Add ability to have multiple vertex streams
         std::vector<D3D12_INPUT_ELEMENT_DESC> InputElementDescriptors(PipelineCreation.VertexInput.NumVertexAttributes);        
@@ -396,8 +555,12 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
         psoDesc.InputLayout = { InputElementDescriptors.data(), (u32)InputElementDescriptors.size() };
         psoDesc.pRootSignature = D12PipelineData->RootSignature.Get();
-        psoDesc.VS = CD3DX12_SHADER_BYTECODE(D12PipelineData->vertexShader.Get());
-        psoDesc.PS = CD3DX12_SHADER_BYTECODE(D12PipelineData->pixelShader.Get());
+
+        psoDesc.VS.BytecodeLength = D12PipelineData->vertexShader->GetBufferSize();
+        psoDesc.VS.pShaderBytecode = D12PipelineData->vertexShader->GetBufferPointer();
+        psoDesc.PS.BytecodeLength = D12PipelineData->pixelShader->GetBufferSize();
+        psoDesc.PS.pShaderBytecode = D12PipelineData->pixelShader->GetBufferPointer();
+
         psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
         psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
         psoDesc.DepthStencilState.DepthEnable = FALSE;

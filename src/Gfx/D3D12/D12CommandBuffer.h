@@ -22,6 +22,8 @@ struct d3d12CommandBufferData
     u8 ClearStencil = 0;
 
     framebuffer *CurrentFramebuffer=nullptr;
+
+    pipeline *CurrentPipeline = nullptr;
 };
 
 std::shared_ptr<commandBuffer> CreateD3D12CommandBuffer(ComPtr<ID3D12CommandAllocator> CommandAllocator);

@@ -63,6 +63,8 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
         InitialResourceState,
         nullptr,
         IID_PPV_ARGS(&D12BufferData->Handle)));
+    
+    D3D12_GPU_VIRTUAL_ADDRESS VA =  D12BufferData->Handle->GetGPUVirtualAddress();
 
     
     if(Usage == bufferUsage::UniformBuffer)

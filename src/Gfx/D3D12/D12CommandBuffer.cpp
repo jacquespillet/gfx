@@ -111,6 +111,7 @@ void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
     std::shared_ptr<d3d12PipelineData> D12PipelineData = std::static_pointer_cast<d3d12PipelineData>(Pipeline->ApiData);
 
 
+    D12CommandBufferData->CurrentPipeline = Pipeline;
     // Set necessary state.
     D12CommandBufferData->CommandList->SetGraphicsRootSignature(D12PipelineData->RootSignature.Get());
     D12CommandBufferData->CommandList->SetPipelineState(D12PipelineData->PipelineState.Get());
@@ -173,8 +174,11 @@ void commandBuffer::End()
 void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Binding)
 {
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
+    std::shared_ptr<d3d12PipelineData> D12Pipeline = std::static_pointer_cast<d3d12PipelineData>(D12CommandBufferData->CurrentPipeline->ApiData);
+    
     GET_CONTEXT(D12Data, context::Get());
 
+#if 0
     if(Group->Uniforms.size() > 0)
     {
         if(Group->Uniforms[0].Type == uniformType::Buffer)
@@ -185,6 +189,24 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             D12CommandBufferData->CommandList->SetGraphicsRootDescriptorTable(Binding, D12Data->GetGPUDescriptorAt(D12BufferData->OffsetInHeap));
         }
     }
+#else
+    for(sz i=0; i< Group->Uniforms.size(); i++)
+    {
+        if(Group->Uniforms[i].Type == uniformType::Buffer)
+        {
+
+            std::shared_ptr<buffer> BufferData = std::static_pointer_cast<buffer>(Group->Uniforms[i].Resource);
+            std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(BufferData->ApiData);
+            
+            if(D12Pipeline->UsedRootParams[Group->Uniforms[i].Binding])
+            {
+                u32 RootParamIndex = D12Pipeline->BindingRootParamMapping[Group->Uniforms[i].Binding];
+                D3D12_GPU_VIRTUAL_ADDRESS VirtualAddress = D12BufferData->Handle->GetGPUVirtualAddress();
+                D12CommandBufferData->CommandList->SetGraphicsRootConstantBufferView(RootParamIndex, VirtualAddress);
+            }
+        }
+    }
+#endif
 }
     
 
