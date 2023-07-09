@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include "../Include/Types.h"
-
+#include <Windows.h>
 
 namespace gfx
 {
@@ -13,6 +13,12 @@ void WriteFileString(const char *FileName, std::string Content);
 std::string ReadShaderFile(const char * FileName);
 
 b8 FileExists(const char *FileName);
+
+
+//TODO: Allocate using heap allocator in these functions to keep track of memory
+LPCWSTR ConstCharToLPCWSTR(const char* narrowString);
+std::wstring LPCSTRToWString(LPCSTR str);
+
 
 struct fileContent
 {

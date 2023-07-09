@@ -324,33 +324,6 @@ void context::SubmitCommandBufferImmediate(commandBuffer *CommandBuffer)
 	D12Data->CommandQueue->ExecuteCommandLists(1, CommandLists);
 }
 
-LPCWSTR ConstCharToLPCWSTR(const char* narrowString) {
-    int bufferSize = MultiByteToWideChar(CP_UTF8, 0, narrowString, -1, nullptr, 0);
-    wchar_t* wideString = new wchar_t[bufferSize];
-    MultiByteToWideChar(CP_UTF8, 0, narrowString, -1, wideString, bufferSize);
-    return wideString;
-}
-
-std::wstring LPCSTRToWString(LPCSTR str)
-{
-    // Determine the required length of the wide string
-    int wideStrLength = MultiByteToWideChar(CP_ACP, 0, str, -1, nullptr, 0);
-
-    // Allocate memory for the wide string
-    wchar_t* wideStrBuffer = new wchar_t[wideStrLength];
-
-    // Convert the narrow string to wide string
-    MultiByteToWideChar(CP_ACP, 0, str, -1, wideStrBuffer, wideStrLength);
-
-    // Create a wstring from the wide string
-    std::wstring wideStr(wideStrBuffer);
-
-    // Clean up the allocated memory
-    delete[] wideStrBuffer;
-
-    return wideStr;
-}
-
 
 ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_PARAMETER> &OutRootParams, std::unordered_map<u32, u32> &BindingRootParamMapping)
 {
@@ -445,7 +418,8 @@ ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_
     Utils->CreateReflection(&reflectionBuffer, IID_PPV_ARGS(&shaderReflection));
     D3D12_SHADER_DESC shaderDesc{};
     shaderReflection->GetDesc(&shaderDesc);    
-
+    
+    std::vector<CD3DX12_DESCRIPTOR_RANGE> DescriptorRanges;
     for (uint32_t i=0; i<shaderDesc.BoundResources; i++)
     {
         D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{};
@@ -467,6 +441,28 @@ ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_
             
             OutRootParams.push_back(rootParameter);
         }
+        if (shaderInputBindDesc.Type == D3D_SIT_TEXTURE)
+        {
+            // For now, each individual texture belongs in its own descriptor table. This can cause the root signature to quickly exceed the 64WORD size limit.
+            BindingRootParamMapping[shaderInputBindDesc.BindPoint] = static_cast<uint32_t>(OutRootParams.size());
+            const CD3DX12_DESCRIPTOR_RANGE srvRange(D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
+                                    1u,
+                                    shaderInputBindDesc.BindPoint,
+                                    shaderInputBindDesc.Space,
+                                    D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+            
+            //TODO: Keep track of the pointer to the descriptor range here!
+            DescriptorRanges.push_back(srvRange);
+
+            D3D12_ROOT_PARAMETER RootParameter = {};
+            RootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
+            RootParameter.DescriptorTable = {};
+            RootParameter.DescriptorTable.NumDescriptorRanges = 1u,
+            RootParameter.DescriptorTable.pDescriptorRanges = &DescriptorRanges.back(),
+            RootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL,
+            
+            OutRootParams.push_back(RootParameter);
+        }
     } 
     
     return CompiledShaderBlob;
@@ -486,9 +482,6 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     GET_CONTEXT(D12Data, this);
 
         
-    //Problem : 
-    //There's only one constant buffer that's bound on register 3.
-    //There's only 1 root parameter
     {
         D12PipelineData->RootParams.clear();
         D12PipelineData->BindingRootParamMapping.clear();

@@ -94,6 +94,34 @@ b8 FileExists(const char *FileName)
     return true;
 }
 
+LPCWSTR ConstCharToLPCWSTR(const char* narrowString) {
+    int bufferSize = MultiByteToWideChar(CP_UTF8, 0, narrowString, -1, nullptr, 0);
+    wchar_t* wideString = new wchar_t[bufferSize];
+    MultiByteToWideChar(CP_UTF8, 0, narrowString, -1, wideString, bufferSize);
+    return wideString;
+}
+
+std::wstring LPCSTRToWString(LPCSTR str)
+{
+    // Determine the required length of the wide string
+    int wideStrLength = MultiByteToWideChar(CP_ACP, 0, str, -1, nullptr, 0);
+
+    // Allocate memory for the wide string
+    wchar_t* wideStrBuffer = new wchar_t[wideStrLength];
+
+    // Convert the narrow string to wide string
+    MultiByteToWideChar(CP_ACP, 0, str, -1, wideStrBuffer, wideStrLength);
+
+    // Create a wstring from the wide string
+    std::wstring wideStr(wideStrBuffer);
+
+    // Clean up the allocated memory
+    delete[] wideStrBuffer;
+
+    return wideStr;
+}
+
+
 
 fileContent ReadFileBinary(const char *FileName)
 {
