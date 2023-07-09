@@ -118,6 +118,10 @@ endif()
 if(${GFX_API} EQUAL ${GFX_API_D3D12})
 set(D3DX_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/d3dx)
 include_directories(${D3DX_INC_DIR})
+set(DXC_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dxc/include)
+set(DXC_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dxc/lib)
+include_directories(${DXC_INC_DIR})
+link_directories(${DXC_LIB_DIR})
 endif()
 
 # # Vma
@@ -240,6 +244,7 @@ if(${GFX_API} EQUAL ${GFX_API_D3D12})
         target_link_libraries(Main D3D12.lib)
         target_link_libraries(Main DXGI.lib)
         target_link_libraries(Main D3DCompiler.lib)
+        target_link_libraries(Main dxcompiler.lib)
 endif()
 
 if(${GFX_API} EQUAL ${GFX_API_GL})
