@@ -5,8 +5,84 @@
 #include "VkGfxContext.h"
 #include "VkCommon.h"
 #include "VkMemoryAllocation.h"
+
+#include <algorithm>
 namespace gfx
 {
+
+
+void GenerateMipmaps(vk::Image Image, u32 Width, u32 Height, u32 MipLevels, vk::CommandBuffer &CommandBuffer)
+{
+    // VkImageMemoryBarrier Barrier {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+    vk::ImageMemoryBarrier Barrier;
+    Barrier.image = Image;
+    Barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    Barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    Barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+    Barrier.subresourceRange.baseArrayLayer=0;
+    Barrier.subresourceRange.layerCount=1;
+    Barrier.subresourceRange.levelCount=1;
+
+    int32_t MipWidth = Width;
+    int32_t MipHeight = Height;
+    for(u32 i=1; i<MipLevels; i++)
+    {
+        Barrier.subresourceRange.baseMipLevel=i-1;
+        Barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+        Barrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+        Barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+        Barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+
+        CommandBuffer.pipelineBarrier(
+            vk::PipelineStageFlagBits::eTransfer, 
+            vk::PipelineStageFlagBits::eTransfer, (vk::DependencyFlagBits)0,
+            0, nullptr, 
+            0, nullptr, 
+            1, &Barrier);
+        
+        vk::ImageBlit Blit {};
+        Blit.srcOffsets[0] = vk::Offset3D(0,0,0);
+        Blit.srcOffsets[1] = vk::Offset3D(MipWidth, MipHeight, 1);
+        Blit.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+        Blit.srcSubresource.mipLevel = i-1;
+        Blit.srcSubresource.baseArrayLayer = 0;
+        Blit.srcSubresource.layerCount=1;
+        Blit.dstOffsets[0] = vk::Offset3D(0,0,0);
+        Blit.dstOffsets[1] = vk::Offset3D(MipWidth > 1 ? MipWidth / 2 : 1, MipHeight > 1 ? MipHeight/2 : 1, 1);
+        Blit.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+        Blit.dstSubresource.mipLevel = i;
+        Blit.dstSubresource.baseArrayLayer = 0;
+        Blit.dstSubresource.layerCount=1;
+
+        CommandBuffer.blitImage(Image, vk::ImageLayout::eTransferSrcOptimal,
+                                Image, vk::ImageLayout::eTransferDstOptimal,
+                                1, &Blit, vk::Filter::eLinear);
+        
+        Barrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+        Barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        Barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+        Barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+        CommandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, (vk::DependencyFlagBits)0,
+                                     0, nullptr,
+                                     0, nullptr,
+                                     1, &Barrier);
+        if (MipWidth > 1) MipWidth /= 2;
+        if (MipHeight > 1) MipHeight /= 2;                     
+    }
+
+    Barrier.subresourceRange.baseMipLevel = MipLevels - 1;
+    Barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+    Barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+    Barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+    Barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+    
+    CommandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, (vk::DependencyFlagBits)0,
+                                    0, nullptr,
+                                    0, nullptr,
+                                    1, &Barrier);
+}
+
 void vkImageData::Init(const image &Image, imageUsage::value ImageUsage, memoryUsage MemoryUsage)
 {
     vk::ImageCreateInfo ImageCreateInfo;
@@ -35,15 +111,18 @@ image::image(imageData *ImageData, textureCreateInfo &CreateInfo)
     Extent.Width = ImageData->Width;
     Extent.Height = ImageData->Height;
     Format = ImageData->Format;
+    this->MipLevelCount = CreateInfo._GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
 
     context *VulkanContext = context::Get();
 
     ApiData = std::make_shared<vkImageData>();
     std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(ApiData);
 
+    imageUsage::value ImageUsage = imageUsage::TRANSFER_DESTINATION | imageUsage::SHADER_READ; 
+    if(GenerateMipmaps) ImageUsage |= imageUsage::TRANSFER_SOURCE;
     VKImage->Init(
         *this,
-        imageUsage::TRANSFER_DESTINATION | imageUsage::SHADER_READ,
+        ImageUsage,
         memoryUsage::GpuOnly
     );
 
@@ -62,11 +141,15 @@ image::image(imageData *ImageData, textureCreateInfo &CreateInfo)
         imageInfo {this, imageUsage::UNKNOWN, 0, 0}
     );
 
-    VkData->ImmediateCommandBuffer->TransferLayout(*this, imageUsage::TRANSFER_DESTINATION, imageUsage::SHADER_READ);
+    if(!CreateInfo._GenerateMipmaps)
+        VkData->ImmediateCommandBuffer->TransferLayout(*this, imageUsage::TRANSFER_DESTINATION, imageUsage::SHADER_READ);
+    else
+    {
+        GenerateMipmaps(VKImage->Handle, this->Extent.Width, this->Extent.Height, MipLevelCount, std::static_pointer_cast<vkCommandBufferData>(VkData->ImmediateCommandBuffer->ApiData)->Handle);
+    }
 
     VkData->StageBuffer.Flush();
     VkData->ImmediateCommandBuffer->End();
-
     context::Get()->SubmitCommandBufferImmediate(VkData->ImmediateCommandBuffer.get());
     VkData->StageBuffer.Reset();
 
@@ -211,6 +294,7 @@ void vkImageData::InitViews(const image &Image, const vk::Image &VkImage, format
 
 void vkImageData::InitSampler(textureCreateInfo &CreateInfo)
 {
+    //TODO
     vk::SamplerCreateInfo SamplerCreateInfo;
     SamplerCreateInfo.setMagFilter(vk::Filter::eLinear)
                      .setMinFilter(vk::Filter::eLinear)

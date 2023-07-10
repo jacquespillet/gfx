@@ -116,7 +116,7 @@ struct application
 			// gfx::textureWrapMode::CLAMP_TO_BORDER,
 			// gfx::textureWrapMode::CLAMP_TO_BORDER,
 			// gfx::textureWrapMode::CLAMP_TO_BORDER,
-			false
+			true
 		};
 		//TODO: Use imageHandle like buffers
 		Texture = gfx::image(&Image, TextureCreateInfo);
