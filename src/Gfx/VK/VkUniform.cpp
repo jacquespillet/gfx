@@ -3,6 +3,7 @@
 #include "VkUniform.h"
 #include "VkCommon.h"
 #include "VkGfxContext.h"
+#include "vkImage.h"
 
 namespace gfx
 {
@@ -24,8 +25,10 @@ void uniformGroup::Update()
 
         std::vector<vk::WriteDescriptorSet> DescriptorWrites;
         std::vector<vk::DescriptorBufferInfo> DescriptorBuffers;
+        std::vector<vk::DescriptorImageInfo> DescriptorImages;
         DescriptorWrites.reserve(Uniforms.size());
         DescriptorBuffers.reserve(Uniforms.size());
+        DescriptorImages.reserve(Uniforms.size());
         for(sz i=0; i<Uniforms.size(); i++)
         {
             descriptorInfo &DescriptorInfo = VkUniformData->DescriptorInfos[PipelineHandle];
@@ -37,16 +40,24 @@ void uniformGroup::Update()
                                 .setDstArrayElement(0)
                                 .setDescriptorCount(1);
 
-            switch (Uniforms[i].Type)
+            if(Uniforms[i].Type == uniformType::Buffer)
             {
-            case uniformType::Buffer :
                 std::shared_ptr<buffer> Buffer = std::static_pointer_cast<buffer>(Uniforms[i].Resource);
                 std::shared_ptr<vkBufferData> VKBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
                 
                 DescriptorBuffers.push_back(vk::DescriptorBufferInfo(VKBuffer->Handle, 0, Buffer->Size));
                 DescriptorWrite.setDescriptorType(vk::DescriptorType::eUniformBuffer)
                                    .setPBufferInfo(&DescriptorBuffers[DescriptorBuffers.size()-1]);
-                break;  
+            }
+            else if(Uniforms[i].Type == uniformType::Texture2d)
+            {
+                std::shared_ptr<image> Image = std::static_pointer_cast<image>(Uniforms[i].Resource);
+                std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(Image->ApiData);
+                    // vk::DescriptorImageInfo DescriptorImageInfo(Texture->GetSampler(), Texture->GetNativeView(imageView::NATIVE), vk::ImageLayout::eShaderReadOnlyOptimal);
+
+                DescriptorImages.push_back(vk::DescriptorImageInfo(VKImage->Sampler, VKImage->DefaultImageViews.NativeView, vk::ImageLayout::eShaderReadOnlyOptimal));
+                DescriptorWrite.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+                                   .setPImageInfo(&DescriptorImages[DescriptorImages.size()-1]);
             }
 
             DescriptorWrites.push_back(DescriptorWrite);

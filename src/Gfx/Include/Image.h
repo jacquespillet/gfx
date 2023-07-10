@@ -4,6 +4,34 @@
 
 namespace gfx
 {
+    
+struct textureCreateInfo
+{
+    f32 _BorderColor[4];
+    // textureFilter _MinFilter = textureFilter::LINEAR;
+    // textureFilter _MaxFilter = textureFilter::LINEAR;
+    // textureWrapMode _WrapS = textureWrapMode::CLAMP_TO_BORDER;
+    // textureWrapMode _WrapT = textureWrapMode::CLAMP_TO_BORDER;
+    // textureWrapMode _WrapR = textureWrapMode::CLAMP_TO_BORDER;
+    b8 _GenerateMipmaps = false;
+    // compareOp _DepthCompareOp = compareOp::LESS;
+
+    // static textureCreateInfo Default();
+};
+
+struct imageData
+{
+    format Format;
+    type Type;
+    u8 *Data;
+    u32 Width;
+    u32 Height;
+    s32 ChannelCount;
+    size_t DataSize;
+};
+
+imageData ImageFromFile(char *FileName);
+
 struct image
 {
     format Format;
@@ -14,6 +42,11 @@ struct image
     std::shared_ptr<void> ApiData;
 
     image(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage);
+        
+    image(imageData *Image, textureCreateInfo &CreateInfo);
+        
+    u32 GetMipLevelWidth(u32 MipLevel);
+    u32 GetMipLevelHeight(u32 MipLevel);
 
 //TODO: What do we do here
 #if GFX_API == GFX_VK

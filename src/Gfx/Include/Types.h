@@ -206,6 +206,24 @@ enum class format : u32
     D32_SFLOAT_S8_UINT,
 };
 
+
+enum class type
+{
+    BYTE,
+    UNSIGNED_BYTE,
+    SHORT,
+    UNSIGNED_SHORT,
+    INT,
+    UNSIGNED_INT,
+    HALF_FLOAT,
+    FLOAT,
+    DOUBLE,
+    FIXED,
+    INT_2_10_10_10_REV,
+    UNSIGNED_INT_2_10_10_10_REV,
+    UNSIGNED_INT_10F_11F_11F_REV,
+};
+
 enum class memoryUsage
 {
     GpuOnly = 0,

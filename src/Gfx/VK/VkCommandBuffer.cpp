@@ -12,6 +12,7 @@
 #include "VkPipeline.h"
 #include "VkFramebuffer.h"
 #include "VkUniform.h"
+#include "VkImage.h"
 namespace gfx
 {
 
@@ -141,6 +142,72 @@ void commandBuffer::CopyBuffer(const bufferInfo &Source, const bufferInfo &Desti
     VkCommandBufferData->Handle.copyBuffer(SourceHandle, DestHandle, BufferCopyInfo);
 }
 
+void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo &Destination)
+{
+    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
+    std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(Destination.Resource->ApiData);
+    std::shared_ptr<vkBufferData> VKBuffer = std::static_pointer_cast<vkBufferData>(Source.Resource->ApiData);
+
+    if(Destination.Usage != imageUsage::TRANSFER_DESTINATION)
+    {
+
+        auto DestinationRange = GetDefaultImageSubresourceRange(*Destination.Resource);
+        vk::ImageMemoryBarrier ToTransferDestBarrier;
+        ToTransferDestBarrier.setSrcAccessMask(ImageUsageToAccessFlags(Destination.Usage))
+                             .setDstAccessMask(vk::AccessFlagBits::eTransferWrite)
+                             .setOldLayout(ImageUsageToImageLayout(Destination.Usage))
+                             .setNewLayout(vk::ImageLayout::eTransferDstOptimal)
+                             .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                             .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                             .setImage(VKImage->Handle)
+                             .setSubresourceRange(DestinationRange);
+
+        VkCommandBufferData->Handle.pipelineBarrier(
+            ImageUsageToPipelineStage(Destination.Usage),
+            vk::PipelineStageFlagBits::eTransfer,
+            {},
+            {},
+            {},
+            ToTransferDestBarrier
+        );
+    }
+
+    auto DestinationLayers = GetDefaultImageSubresourceLayers(*Destination.Resource, Destination.MipLevel, Destination.Layer);
+    vk::BufferImageCopy BufferToImageCopyInfo;
+    BufferToImageCopyInfo.setBufferOffset(Source.Offset)
+                         .setBufferImageHeight(0)
+                         .setBufferRowLength(0)
+                         .setImageSubresource(DestinationLayers)
+                         .setImageOffset(vk::Offset3D(0,0,0))
+                         .setImageExtent(vk::Extent3D(
+                            Destination.Resource->GetMipLevelWidth(Destination.MipLevel),
+                            Destination.Resource->GetMipLevelHeight(Destination.MipLevel),
+                            1
+                         ));
+    VkCommandBufferData->Handle.copyBufferToImage(
+        VKBuffer->Handle,
+        VKImage->Handle,
+        vk::ImageLayout::eTransferDstOptimal,
+        BufferToImageCopyInfo
+    );
+}
+
+void commandBuffer::TransferLayout(const image &Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout)
+{
+    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
+    std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(Texture.ApiData);
+
+    auto Barrier = GetImageMemoryBarrier(Texture, OldLayout, NewLayout);
+    VkCommandBufferData->Handle.pipelineBarrier(
+        ImageUsageToPipelineStage(OldLayout),
+        ImageUsageToPipelineStage(NewLayout),
+        {},
+        {},
+        {},
+        Barrier
+    );    
+}
+
 void commandBuffer::ClearColor(f32 R, f32 G,f32 B,f32 A)
 {
     std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
@@ -166,6 +233,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
     std::shared_ptr<vkUniformData> VkUniformData = std::static_pointer_cast<vkUniformData>(Group->ApiData);
     VkCommandBufferData->Handle.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, VkPipeline->PipelineLayout, Binding, 1, &VkUniformData->DescriptorInfos[VkCommandBufferData->BoundPipeline].DescriptorSet, 0, 0);
 }
+
 
 
 }

@@ -34,8 +34,8 @@ set(GLM_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glm)
 include_directories(${GLM_INC_DIR})
 
 # # stb
-# set(STB_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/stb)
-# include_directories(${STB_INC_DIR})
+set(STB_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/stb)
+include_directories(${STB_INC_DIR})
 
 # # tinygltf
 # set(GLTF_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/tinygltf)
@@ -184,6 +184,7 @@ set(glCode
         
 set(commonCode
         src/Gfx/Common/ResourceManager.cpp
+        src/Gfx/Common/Image.cpp
         src/Gfx/Common/Pipeline.cpp
         src/Gfx/Common/Util.cpp
         src/Gfx/Common/Memory.cpp

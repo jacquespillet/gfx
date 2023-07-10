@@ -7,7 +7,71 @@
 #include "VkMemoryAllocation.h"
 namespace gfx
 {
+void vkImageData::Init(const image &Image, imageUsage::value ImageUsage, memoryUsage MemoryUsage)
+{
+    vk::ImageCreateInfo ImageCreateInfo;
+    ImageCreateInfo.setImageType(vk::ImageType::e2D)
+                    .setFormat(FormatToNative(Image.Format))
+                    .setExtent(vk::Extent3D(Image.Extent.Width, Image.Extent.Height, 1))
+                    .setSamples(vk::SampleCountFlagBits::e1)
+                    .setMipLevels(Image.MipLevelCount)
+                    .setArrayLayers(Image.LayerCount)
+                    .setTiling(vk::ImageTiling::eOptimal)
+                    .setUsage((vk::ImageUsageFlags)ImageUsage)
+                    .setSharingMode(vk::SharingMode::eExclusive)
+                    .setInitialLayout(vk::ImageLayout::eUndefined);
 
+    // if(Options & imageOptions::CUBEMAP)
+    // {
+    //     ImageCreateInfo.setFlags(vk::ImageCreateFlagBits::eCubeCompatible);
+    // }                       
+
+    Allocation = gfx::AllocateImage(ImageCreateInfo, MemoryUsage, &Handle);
+    InitViews(Image, Handle, Image.Format);
+}
+
+image::image(imageData *ImageData, textureCreateInfo &CreateInfo)
+{
+    Extent.Width = ImageData->Width;
+    Extent.Height = ImageData->Height;
+    Format = ImageData->Format;
+
+    context *VulkanContext = context::Get();
+
+    ApiData = std::make_shared<vkImageData>();
+    std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(ApiData);
+
+    VKImage->Init(
+        *this,
+        imageUsage::TRANSFER_DESTINATION | imageUsage::SHADER_READ,
+        memoryUsage::GpuOnly
+    );
+
+    // stageBuffer &StageBuffer = VulkanContext->GetCurrentStageBuffer();
+    // commandBuffer &CommandBuffer = VulkanContext->GetCurrentCommandBuffer();
+
+    // CommandBuffer.Begin();
+    GET_CONTEXT(VkData, context::Get());
+    auto TextureAllocation = VkData->StageBuffer.Submit(ImageData->Data, (u32)ImageData->DataSize);
+    
+    VkData->ImmediateCommandBuffer->Begin();
+
+    
+    VkData->ImmediateCommandBuffer->CopyBufferToImage(
+        bufferInfo {VkData->StageBuffer.GetBuffer(), TextureAllocation.Offset },
+        imageInfo {this, imageUsage::UNKNOWN, 0, 0}
+    );
+
+    VkData->ImmediateCommandBuffer->TransferLayout(*this, imageUsage::TRANSFER_DESTINATION, imageUsage::SHADER_READ);
+
+    VkData->StageBuffer.Flush();
+    VkData->ImmediateCommandBuffer->End();
+
+    context::Get()->SubmitCommandBufferImmediate(VkData->ImmediateCommandBuffer.get());
+    VkData->StageBuffer.Reset();
+
+    VKImage->InitSampler(CreateInfo);
+}
 
 image::image(vk::Image VkImage, u32 Width, u32 Height, format Format)
 {
@@ -70,6 +134,36 @@ vk::ImageSubresourceRange GetDefaultImageSubresourceRange(const image &Image)
     );    
 }
 
+vk::ImageSubresourceLayers GetDefaultImageSubresourceLayers(const image &Image, u32 MipLevel, u32 Layer)
+{
+    return vk::ImageSubresourceLayers(
+        ImageFormatToImageAspect(Image.Format),
+        MipLevel,
+        Layer,
+        1
+    );
+}
+
+
+vk::ImageMemoryBarrier GetImageMemoryBarrier(const image &Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout)
+{
+    std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(Texture.ApiData);
+
+    auto SubResourceRange = GetDefaultImageSubresourceRange(Texture);
+    vk::ImageMemoryBarrier Barrier;
+    Barrier.setSrcAccessMask(ImageUsageToAccessFlags(OldLayout))
+           .setDstAccessMask(ImageUsageToAccessFlags(NewLayout))
+           .setOldLayout(ImageUsageToImageLayout(OldLayout))
+           .setNewLayout(ImageUsageToImageLayout(NewLayout))
+           .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+           .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+           .setImage(VkImageData->Handle)
+           .setSubresourceRange(SubResourceRange);
+
+    return Barrier;
+}
+
+
 void vkImageData::InitViews(const image &Image, const vk::Image &VkImage, format Format)
 {
     auto Vulkan = context::Get();
@@ -113,6 +207,23 @@ void vkImageData::InitViews(const image &Image, const vk::Image &VkImage, format
         this->DefaultImageViews.StencilOnlyView = VkData->Device.createImageView(ImageViewCreateInfo);
         this->DefaultImageViews.StencilOnlyViewSet=true;
     }    
+}
+
+void vkImageData::InitSampler(textureCreateInfo &CreateInfo)
+{
+    vk::SamplerCreateInfo SamplerCreateInfo;
+    SamplerCreateInfo.setMagFilter(vk::Filter::eLinear)
+                     .setMinFilter(vk::Filter::eLinear)
+                     .setMipmapMode(vk::SamplerMipmapMode::eLinear)
+                     .setAddressModeU(vk::SamplerAddressMode::eRepeat)
+                     .setAddressModeV(vk::SamplerAddressMode::eRepeat)
+                     .setAddressModeW(vk::SamplerAddressMode::eRepeat)
+                     .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
+    
+    auto Vulkan = context::Get();
+    GET_CONTEXT(VkData, context::Get());
+
+    this->Sampler = VkData->Device.createSampler(SamplerCreateInfo);
 }
 
 void image::Destroy()

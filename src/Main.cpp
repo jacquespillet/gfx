@@ -105,6 +105,19 @@ struct application
 
 		Swapchain = GfxContext->CreateSwapchain(Width, Height);
 		
+		gfx::imageData Image = gfx::ImageFromFile("resources/Textures/Debug.jpg");
+		gfx::textureCreateInfo TextureCreateInfo = 
+		{
+			{0.0f,0.0f,0.0f,0.0f},
+			// gfx::textureFilter::LINEAR,
+			// gfx::textureFilter::LINEAR,
+			// gfx::textureWrapMode::CLAMP_TO_BORDER,
+			// gfx::textureWrapMode::CLAMP_TO_BORDER,
+			// gfx::textureWrapMode::CLAMP_TO_BORDER,
+			false
+		};
+		//TODO: Use imageHandle like buffers
+		gfx::image Texture(&Image, TextureCreateInfo);
 
 		// Create a vertex buffer with triangle data
 		// float vertices[] = {
@@ -173,6 +186,12 @@ struct application
 			gfx::uniformType::Buffer,
 			3,
 			std::shared_ptr<gfx::buffer>(UniformBuffer4),
+		});
+		Uniforms->Uniforms.push_back({
+			"Image",
+			gfx::uniformType::Texture2d,
+			4,
+			std::shared_ptr<gfx::image>(&Texture),
 		});
 		//Tell the context that we'll be using this uniforms with this pipeline at binding 0
 		//It's possible to bind a uniform group to multiple pipelines.

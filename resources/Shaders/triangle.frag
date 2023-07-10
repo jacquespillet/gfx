@@ -17,8 +17,11 @@ DECLARE_UNIFORM_BUFFER(0, 0, UniformData)
     uniformData Data;
 };
 
+layout (set=0, binding = 4) uniform sampler2D Texture;
+
+
 
 void main() 
 {
-    outputColor = FragColor + Data._Color0;
+    outputColor = FragColor + Data._Color0 + texture(Texture, FragColor.xy);
 }

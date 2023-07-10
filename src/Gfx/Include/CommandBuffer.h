@@ -13,6 +13,15 @@ struct bufferInfo
     u32 Offset;
 };    
 
+struct image;
+struct imageInfo
+{
+    image* Resource;
+    imageUsage::bits Usage = imageUsage::UNKNOWN;
+    u32 MipLevel = 0;
+    u32 Layer = 0;
+};
+
 struct commandBuffer
 {
     void Initialize();
@@ -29,8 +38,10 @@ struct commandBuffer
 
     void BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Binding);
     
+    void CopyBufferToImage(const bufferInfo &Source, const imageInfo &Destination);
     void CopyBuffer(const bufferInfo &Source, const bufferInfo &Destination, size_t ByteSize);
-
+    void TransferLayout(const image &Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout);
+    
 
     void EndPass();
     void End();
