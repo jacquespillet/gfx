@@ -41,6 +41,7 @@ struct image
 
     std::shared_ptr<void> ApiData;
 
+    image() = default;
     image(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage);
         
     image(imageData *Image, textureCreateInfo &CreateInfo);

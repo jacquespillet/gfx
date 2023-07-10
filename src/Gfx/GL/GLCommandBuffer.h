@@ -48,6 +48,12 @@ struct command
             u32 Binding;
             GLuint Buffer;
         } BindUniformBuffer;
+                
+        struct bindImageState
+        {
+            u32 Binding;
+            GLuint Image;
+        } BindUniformImage;
         
         struct viewportState
         {

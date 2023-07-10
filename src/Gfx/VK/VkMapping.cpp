@@ -16,6 +16,7 @@ format FormatFromNative(const vk::Format &VkFormat)
     return (format)0;    
 }
 
+
 vk::Format &FormatToNative(format Format)
 {
     return FormatTable[(u64)Format];

@@ -14,4 +14,8 @@ GLenum BufferUsageFromUsage(bufferUsage::value Value);
 GLenum VertexAttributeTypeToNative(vertexAttributeType Type);
 
 GLenum ShaderStageToNative(shaderStageFlags::value Stage);
+
+GLenum FormatToNativeInternal(format Format);
+GLenum FormatToNative(format Format);
+GLenum TypeToNative(type Type);
 }

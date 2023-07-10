@@ -549,7 +549,25 @@ struct imageUsage
         INPUT_ATTACHMENT = (value)vk::ImageUsageFlagBits::eInputAttachment,
         FRAGNENT_SHADING_RATE_ATTACHMENT = (value)vk::ImageUsageFlagBits::eFragmentShadingRateAttachmentKHR,
 #elif GFX_API==GFX_GL
+        UNKNOWN,
+        TRANSFER_SOURCE,
+        TRANSFER_DESTINATION,
+        SHADER_READ,
+        STORAGE,
+        COLOR_ATTACHMENT,
+        DEPTH_STENCIL_ATTACHMENT,
+        INPUT_ATTACHMENT,
+        FRAGNENT_SHADING_RATE_ATTACHMENT,
 #elif GFX_API==GFX_D3D12
+        UNKNOWN,
+        TRANSFER_SOURCE,
+        TRANSFER_DESTINATION,
+        SHADER_READ,
+        STORAGE,
+        COLOR_ATTACHMENT,
+        DEPTH_STENCIL_ATTACHMENT,
+        INPUT_ATTACHMENT,
+        FRAGNENT_SHADING_RATE_ATTACHMENT,
 #endif
     };
 };

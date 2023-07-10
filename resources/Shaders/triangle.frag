@@ -17,8 +17,7 @@ DECLARE_UNIFORM_BUFFER(0, 0, UniformData)
     uniformData Data;
 };
 
-layout (set=0, binding = 4) uniform sampler2D Texture;
-
+DECLARE_UNIFORM_TEXTURE(0, 4, Texture);
 
 
 void main() 

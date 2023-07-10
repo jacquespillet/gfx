@@ -49,6 +49,8 @@ struct application
 	uniformData UniformData2;
 	uniformData UniformData3;
 	uniformData UniformData4;
+	
+	gfx::image Texture;
 
 	uint32_t Width, Height;
 	void Init()
@@ -117,7 +119,7 @@ struct application
 			false
 		};
 		//TODO: Use imageHandle like buffers
-		gfx::image Texture(&Image, TextureCreateInfo);
+		Texture = gfx::image(&Image, TextureCreateInfo);
 
 		// Create a vertex buffer with triangle data
 		// float vertices[] = {

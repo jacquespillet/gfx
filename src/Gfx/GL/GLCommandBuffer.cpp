@@ -1,9 +1,11 @@
 #include "../Include/CommandBuffer.h"
 #include "../Include/GfxContext.h"
 #include "../Include/Buffer.h"
+#include "../Include/Image.h"
 #include "../Include/Framebuffer.h"
 #include "GLCommandBuffer.h"
 #include "GLBuffer.h"
+#include "GLImage.h"
 #include "GLPipeline.h"
 #include "GLShader.h"
 #include "GLFramebuffer.h"
@@ -57,6 +59,11 @@ void ExecuteBeginPass(const command &Command)
 void ExecuteBindUniformBuffer(const command &Command)
 {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, Command.BindUniformBuffer.Binding, Command.BindUniformBuffer.Buffer);
+}
+
+void ExecuteBindUniformImage(const command &Command)
+{
+    glBindTextureUnit(Command.BindUniformImage.Binding, Command.BindUniformImage.Image);
 }
 
 void ExecuteBindVertexBuffer(const command &Command)
@@ -223,6 +230,18 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             Command.BindUniformBuffer.Binding = Group->Uniforms[i].Binding;
             Command.BindUniformBuffer.Buffer = GLBuffer->Handle;
             Command.CommandFunction = (commandFunction)&ExecuteBindUniformBuffer;
+            GLCommandBuffer->Commands.push_back(Command);
+        }
+        if(Group->Uniforms[i].Type == uniformType::Texture2d)
+        {
+            std::shared_ptr<image> ImageData = std::static_pointer_cast<image>(Group->Uniforms[i].Resource);
+            std::shared_ptr<glImage> GLImage = std::static_pointer_cast<glImage>(ImageData->ApiData);
+
+            command Command;
+            Command.Type = commandType::DrawTriangles;
+            Command.BindUniformImage.Binding = Group->Uniforms[i].Binding;
+            Command.BindUniformImage.Image = GLImage->Handle;
+            Command.CommandFunction = (commandFunction)&ExecuteBindUniformImage;
             GLCommandBuffer->Commands.push_back(Command);
         }
     }
