@@ -161,6 +161,7 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
     D12Data->Device->CreateDescriptorHeap(&HeapDesc, IID_PPV_ARGS(&D12Data->CommonDescriptorHeap));
     D12Data->DescriptorSize = D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
+
     // Describe and create the command queue.
     D3D12_COMMAND_QUEUE_DESC queueDesc = {};
     queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
@@ -321,7 +322,7 @@ void context::SubmitCommandBufferImmediate(commandBuffer *CommandBuffer)
 }
 
 
-ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_PARAMETER> &OutRootParams, std::unordered_map<u32, u32> &BindingRootParamMapping)
+ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_PARAMETER> &OutRootParams, std::unordered_map<u32, u32> &BindingRootParamMapping, std::vector<CD3DX12_DESCRIPTOR_RANGE> &DescriptorRanges)
 {
     ComPtr<IDxcUtils> Utils;
     ThrowIfFailed(DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&Utils)));
@@ -415,7 +416,7 @@ ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_
     D3D12_SHADER_DESC shaderDesc{};
     shaderReflection->GetDesc(&shaderDesc);    
     
-    std::vector<CD3DX12_DESCRIPTOR_RANGE> DescriptorRanges;
+    
     for (uint32_t i=0; i<shaderDesc.BoundResources; i++)
     {
         D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{};
@@ -445,7 +446,7 @@ ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_
                                     1u,
                                     shaderInputBindDesc.BindPoint,
                                     shaderInputBindDesc.Space,
-                                    D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+                                    D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND);
             
             //TODO: Keep track of the pointer to the descriptor range here!
             DescriptorRanges.push_back(srvRange);
@@ -455,9 +456,9 @@ ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_
             RootParameter.DescriptorTable = {};
             RootParameter.DescriptorTable.NumDescriptorRanges = 1u,
             RootParameter.DescriptorTable.pDescriptorRanges = &DescriptorRanges.back(),
-            RootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL,
+            RootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL,
             
-            OutRootParams.push_back(RootParameter);
+            OutRootParams.push_back(RootParameter);  
         }
     } 
     
@@ -479,22 +480,36 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 
         
     {
+        std::vector<CD3DX12_DESCRIPTOR_RANGE> DescriptorRanges;
         D12PipelineData->RootParams.clear();
         D12PipelineData->BindingRootParamMapping.clear();
-        D12PipelineData->vertexShader = CompileShader(PipelineCreation.Shaders.Stages[0], D12PipelineData->RootParams, D12PipelineData->BindingRootParamMapping);
-        D12PipelineData->pixelShader = CompileShader(PipelineCreation.Shaders.Stages[1], D12PipelineData->RootParams, D12PipelineData->BindingRootParamMapping);
+        D12PipelineData->vertexShader = CompileShader(PipelineCreation.Shaders.Stages[0], D12PipelineData->RootParams, D12PipelineData->BindingRootParamMapping, DescriptorRanges);
+        D12PipelineData->pixelShader = CompileShader(PipelineCreation.Shaders.Stages[1], D12PipelineData->RootParams, D12PipelineData->BindingRootParamMapping, DescriptorRanges);
 
         memset(&D12PipelineData->UsedRootParams[0], 0, d3d12PipelineData::MaxResourceBindings * sizeof(b8));
         for(sz i=0; i<D12PipelineData->RootParams.size(); i++)
         {
-            D12PipelineData->UsedRootParams[D12PipelineData->RootParams[i].Descriptor.ShaderRegister]=true;
+            if(D12PipelineData->RootParams[i].ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
+            {
+                D12PipelineData->UsedRootParams[D12PipelineData->RootParams[i].DescriptorTable.pDescriptorRanges[0].BaseShaderRegister]=true;
+            }
+            else
+            {
+                D12PipelineData->UsedRootParams[D12PipelineData->RootParams[i].Descriptor.ShaderRegister]=true;
+            }
         }
+
+        const CD3DX12_STATIC_SAMPLER_DESC pointWrap( 0, // shaderRegister    
+                                            D3D12_FILTER_MIN_MAG_MIP_POINT, // filter    
+                                            D3D12_TEXTURE_ADDRESS_MODE_WRAP, // addressU    
+                                            D3D12_TEXTURE_ADDRESS_MODE_WRAP, // addressV    
+                                            D3D12_TEXTURE_ADDRESS_MODE_WRAP); // addressW  
 
         D3D12_ROOT_SIGNATURE_DESC rootSigDesc;
         rootSigDesc.NumParameters = D12PipelineData->RootParams.size();
         rootSigDesc.pParameters = D12PipelineData->RootParams.data();
-        rootSigDesc.NumStaticSamplers = 0;
-        rootSigDesc.pStaticSamplers = nullptr;
+        rootSigDesc.NumStaticSamplers = 1;
+        rootSigDesc.pStaticSamplers = &pointWrap;
         rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
         // create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer

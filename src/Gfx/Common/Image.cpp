@@ -17,10 +17,10 @@ imageData ImageFromFile(char *FileName)
     
     Result.Width = Width;
     Result.Height = Height;
-    Result.ChannelCount = ChannelCount;
+    Result.ChannelCount = 4;
     Result.Format = format::R8G8B8A8_UNORM;
     Result.Type = type::UNSIGNED_BYTE;
-    Result.DataSize = Width * Height * ChannelCount * sizeof(u8);
+    Result.DataSize = Width * Height * Result.ChannelCount * sizeof(u8);
     return Result;    
 }
 u32 image::GetMipLevelWidth(u32 MipLevel)

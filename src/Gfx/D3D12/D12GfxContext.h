@@ -21,6 +21,7 @@ struct d3d12Data
     ComPtr<ID3D12CommandAllocator> ImmediateCommandAllocator;
     
     ID3D12DescriptorHeap* CommonDescriptorHeap;
+    ID3D12DescriptorHeap* SrvDescriptorHeap;
     u32 DescriptorSize=0;
 
     stageBuffer StageBuffer;

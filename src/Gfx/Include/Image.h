@@ -38,6 +38,7 @@ struct image
     u32 MipLevelCount=1;
     u32 LayerCount=1;
     extent2D Extent;
+    sz ByteSize=0;
 
     std::shared_ptr<void> ApiData;
 

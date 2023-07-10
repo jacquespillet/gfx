@@ -7,7 +7,9 @@
 #include "../Include/Pipeline.h"
 #include "D12Pipeline.h"
 #include "D12Buffer.h"
+#include "D12Image.h"
 #include "D12Framebuffer.h"
+#include "D12Mapping.h"
 
 #include <d3dx12.h>
 
@@ -44,6 +46,12 @@ ID3D12Resource *GetBufferHandle(buffer *Buffer)
     std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);
     return D12BufferData->Handle.Get();
 }
+
+ID3D12Resource *GetImageHandle(image *Image)
+{
+    std::shared_ptr<d3d12ImageData> D12ImageData = std::static_pointer_cast<d3d12ImageData>(Image->ApiData);
+    return D12ImageData->Handle.Get();
+}
 void commandBuffer::CopyBuffer(const bufferInfo &Source, const bufferInfo &Destination, size_t ByteSize)
 {
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
@@ -73,10 +81,48 @@ void commandBuffer::CopyBuffer(const bufferInfo &Source, const bufferInfo &Desti
     if(TransitionDestination) D12DestinationHandle->Transition(D12CommandBufferData->CommandList, DestinationInitialState);
 }
 
-//Everything comes from the framebuffer handle here
-//There isn't really a concept of render pass in dx 12. 
-//We manipulate the rendertargets directly (Framebuffers)
-//The swapchain framebuffer object will contain the descriptor heaps for depth and color
+void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo &Destination)
+{
+    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
+    
+    ID3D12Resource *SourceHandle = GetBufferHandle(Source.Resource);
+    ID3D12Resource *DestHandle = GetImageHandle(Destination.Resource);
+
+    std::shared_ptr<d3d12BufferData> D12SourceHandle = std::static_pointer_cast<d3d12BufferData>(Source.Resource->ApiData);
+    std::shared_ptr<d3d12BufferData> D12DestinationHandle = std::static_pointer_cast<d3d12BufferData>(Destination.Resource->ApiData);
+
+    // D12CommandBufferData->CommandList->CopyTextureRegion(DestHandle, 0, SourceHandle, 0, Destination.Resource->ByteSize);
+    
+    D3D12_SUBRESOURCE_FOOTPRINT pitchedDesc = { };
+    pitchedDesc.Format = FormatToNative(Destination.Resource->Format);
+    pitchedDesc.Width = Destination.Resource->Extent.Width;
+    pitchedDesc.Height = Destination.Resource->Extent.Height;
+    pitchedDesc.Depth = 1;
+    pitchedDesc.RowPitch = Destination.Resource->ByteSize / Destination.Resource->Extent.Height;
+    
+    D3D12_PLACED_SUBRESOURCE_FOOTPRINT placedTexture2D = { 0 };
+    placedTexture2D.Offset = Source.Offset;
+    placedTexture2D.Footprint = pitchedDesc;
+
+
+    D12CommandBufferData->CommandList->CopyTextureRegion( 
+        &CD3DX12_TEXTURE_COPY_LOCATION( DestHandle, 0 ), 
+        0, 0, 0, 
+        &CD3DX12_TEXTURE_COPY_LOCATION( SourceHandle, placedTexture2D ), 
+        nullptr );
+    
+}
+
+void commandBuffer::TransferLayout(const image &Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout)
+{
+    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
+
+    std::shared_ptr<d3d12ImageData> D12ImageData = std::static_pointer_cast<d3d12ImageData>(Texture.ApiData);
+    CD3DX12_RESOURCE_BARRIER barrier1 = CD3DX12_RESOURCE_BARRIER::Transition(D12ImageData->Handle.Get(),
+        ImageUsageToResourceState(OldLayout), ImageUsageToResourceState(NewLayout));
+    D12CommandBufferData->CommandList->ResourceBarrier(1, &barrier1);
+}
+
 void commandBuffer::BeginPass(renderPassHandle RenderPass, framebufferHandle FramebufferHandle)
 {
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
@@ -182,7 +228,6 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
     {
         if(Group->Uniforms[i].Type == uniformType::Buffer)
         {
-
             std::shared_ptr<buffer> BufferData = std::static_pointer_cast<buffer>(Group->Uniforms[i].Resource);
             std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(BufferData->ApiData);
             
@@ -191,6 +236,17 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
                 u32 RootParamIndex = D12Pipeline->BindingRootParamMapping[Group->Uniforms[i].Binding];
                 D3D12_GPU_VIRTUAL_ADDRESS VirtualAddress = D12BufferData->Handle->GetGPUVirtualAddress();
                 D12CommandBufferData->CommandList->SetGraphicsRootConstantBufferView(RootParamIndex, VirtualAddress);
+            }
+        }
+        if(Group->Uniforms[i].Type == uniformType::Texture2d)
+        {
+            std::shared_ptr<image> ImageData = std::static_pointer_cast<image>(Group->Uniforms[i].Resource);
+            std::shared_ptr<d3d12ImageData> D12ImageData = std::static_pointer_cast<d3d12ImageData>(ImageData->ApiData);
+            
+            if(D12Pipeline->UsedRootParams[Group->Uniforms[i].Binding])
+            {
+                u32 RootParamIndex = D12Pipeline->BindingRootParamMapping[Group->Uniforms[i].Binding];
+                D12CommandBufferData->CommandList->SetGraphicsRootDescriptorTable(RootParamIndex, D12Data->GetGPUDescriptorAt(D12ImageData->OffsetInHeap));
             }
         }
     }
