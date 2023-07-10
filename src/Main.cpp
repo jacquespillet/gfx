@@ -185,11 +185,17 @@ struct application
 
 	void Run()
 	{
+		float t = 0;
 		while(!Window->ShouldClose())
 		{
+			t += 0.01f;
+			UniformData1.Color0.r = (cos(t) + 1.0f) * 0.5f;
+			std::shared_ptr<gfx::buffer> Buffer = std::static_pointer_cast<gfx::buffer>(Uniforms->Uniforms[0].Resource);
+			Buffer->CopyData((uint8_t*)&UniformData1, sizeof(uniformData), 0);
+
 			Window->PollEvents();
-			
 			GfxContext->StartFrame();
+			
 
 			// Set up the render state
 			std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();

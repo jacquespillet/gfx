@@ -42,6 +42,12 @@ struct command
             u32 Start;
             u32 Count;
         } DrawTriangles;
+                
+        struct bindBufferState
+        {
+            u32 Binding;
+            GLuint Buffer;
+        } BindUniformBuffer;
         
         struct viewportState
         {

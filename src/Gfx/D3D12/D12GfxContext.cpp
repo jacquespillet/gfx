@@ -597,12 +597,8 @@ void context::Present()
 {
 
 }
-
 void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding){
-    GET_CONTEXT(VkData, this);
-    pipeline *Pipeline = (pipeline*)ResourceManager.Pipelines.GetResource(PipelineHandle);
-    std::shared_ptr<d3d12PipelineData> D12Pipeline = std::static_pointer_cast<d3d12PipelineData>(Pipeline->ApiData);
-    std::shared_ptr<d3d12UniformData> D12UniformData = std::static_pointer_cast<d3d12UniformData>(Uniforms->ApiData);
+//Uniforms don't need to know about the pipeline
 }
 
 void context::EndFrame()

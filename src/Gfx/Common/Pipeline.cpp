@@ -9,7 +9,7 @@ namespace gfx
 void ShaderConcatenate(std::string &FileName, std::string &Code, std::string &ParentPath)
 {
     std::string Path = ParentPath + "/" + FileName;
-    std::string FileContent = ReadFileString(Path.c_str());
+    std::string FileContent = ReadShaderFile(Path.c_str());
 
     Code += FileContent + "\n";
 }

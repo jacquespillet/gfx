@@ -20,6 +20,7 @@ LPCWSTR ConstCharToLPCWSTR(const char* narrowString);
 std::wstring LPCSTRToWString(LPCSTR str);
 
 
+
 struct fileContent
 {
     sz Size;

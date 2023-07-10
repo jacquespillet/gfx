@@ -1,5 +1,7 @@
 #version 450
 
+#include "Common/Macros.glsl"
+
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec4 color;
 
@@ -16,7 +18,8 @@ struct uniformData
     vec4 _Color0;
     vec4 _Color1;
 };
-layout(set = 0, binding = 0) uniform UniformData
+
+DECLARE_UNIFORM_BUFFER(0, UniformData)
 {
     uniformData Data;
 };

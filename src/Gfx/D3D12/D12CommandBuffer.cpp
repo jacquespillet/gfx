@@ -178,18 +178,6 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
     
     GET_CONTEXT(D12Data, context::Get());
 
-#if 0
-    if(Group->Uniforms.size() > 0)
-    {
-        if(Group->Uniforms[0].Type == uniformType::Buffer)
-        {
-            std::shared_ptr<buffer> BufferData = std::static_pointer_cast<buffer>(Group->Uniforms[0].Resource);
-            std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(BufferData->ApiData);
-
-            D12CommandBufferData->CommandList->SetGraphicsRootDescriptorTable(Binding, D12Data->GetGPUDescriptorAt(D12BufferData->OffsetInHeap));
-        }
-    }
-#else
     for(sz i=0; i< Group->Uniforms.size(); i++)
     {
         if(Group->Uniforms[i].Type == uniformType::Buffer)
@@ -206,7 +194,6 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             }
         }
     }
-#endif
 }
     
 

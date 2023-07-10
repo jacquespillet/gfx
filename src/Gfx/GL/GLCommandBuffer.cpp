@@ -54,6 +54,10 @@ void ExecuteBeginPass(const command &Command)
 
     glBindFramebuffer(GL_FRAMEBUFFER, GLFramebuffer->Handle);
 }
+void ExecuteBindUniformBuffer(const command &Command)
+{
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, Command.BindUniformBuffer.Binding, Command.BindUniformBuffer.Buffer);
+}
 
 void ExecuteBindVertexBuffer(const command &Command)
 {
@@ -200,6 +204,28 @@ void commandBuffer::End()
         GLCommandBuffer->Commands[i].CommandFunction(GLCommandBuffer->Commands[i]);
     }
     GLCommandBuffer->Commands.resize(0);
+}
+
+void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Binding)
+{
+    GET_GL_COMMANDS
+
+    
+    for(sz i=0; i< Group->Uniforms.size(); i++)
+    {
+        if(Group->Uniforms[i].Type == uniformType::Buffer)
+        {
+            std::shared_ptr<buffer> BufferData = std::static_pointer_cast<buffer>(Group->Uniforms[i].Resource);
+            std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(BufferData->ApiData);
+
+            command Command;
+            Command.Type = commandType::DrawTriangles;
+            Command.BindUniformBuffer.Binding = Group->Uniforms[i].Binding;
+            Command.BindUniformBuffer.Buffer = GLBuffer->Handle;
+            Command.CommandFunction = (commandFunction)&ExecuteBindUniformBuffer;
+            GLCommandBuffer->Commands.push_back(Command);
+        }
+    }
 }
 
 }

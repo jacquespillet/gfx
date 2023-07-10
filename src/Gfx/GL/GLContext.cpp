@@ -102,11 +102,24 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
 //     return Result;
 // }
 
-// bufferHandle context::CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage MemoryUsage)
-// {
-//     return 0;
-// }
+bufferHandle context::CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage MemoryUsage)
+{
+    bufferHandle Handle = ResourceManager.Buffers.ObtainResource();
+    if(Handle == InvalidHandle)
+    {
+        return Handle;
+    }
+    buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(Handle);
+    Buffer->ApiData = std::make_shared<glBuffer>();
+    std::shared_ptr<glBuffer> D12BufferData = std::static_pointer_cast<glBuffer>(Buffer->ApiData);
+    
+    Buffer->Init(Size, Usage, MemoryUsage);
+    return Handle;
+}
 
+void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding){
+
+}
 
 std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
 {
