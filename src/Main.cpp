@@ -103,7 +103,6 @@ struct application
 		ContextInitialize.InfoCallback = InfoCallback;
 		GfxContext = gfx::context::Initialize(ContextInitialize, *Window);
 
-		//TODO : Do we really need that ? May as well create it in the context initialization...
 		Swapchain = GfxContext->CreateSwapchain(Width, Height);
 		
 
@@ -240,7 +239,6 @@ struct application
 
 
 		system("pause");
-		//TODO: Investigate crash here ?
 	}
 
 	void OnResize(uint32_t NewWidth, uint32_t NewHeight)

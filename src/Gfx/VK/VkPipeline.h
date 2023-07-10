@@ -44,7 +44,6 @@ struct vkPipelineData
     vk::PipelineLayout PipelineLayout;
     vk::PipelineBindPoint BindPoint;
 
-    //TODO: Descriptor sets
     descriptorSetLayout *DescriptorSetLayouts[MaxDescriptorSetLayouts];
     descriptorSetLayoutHandle DescriptorSetLayoutHandles[MaxDescriptorSetLayouts];
 

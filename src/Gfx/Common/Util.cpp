@@ -96,7 +96,7 @@ b8 FileExists(const char *FileName)
 
 LPCWSTR ConstCharToLPCWSTR(const char* narrowString) {
     int bufferSize = MultiByteToWideChar(CP_UTF8, 0, narrowString, -1, nullptr, 0);
-    wchar_t* wideString = new wchar_t[bufferSize];
+    wchar_t* wideString = (wchar_t*) AllocateMemory(bufferSize);
     MultiByteToWideChar(CP_UTF8, 0, narrowString, -1, wideString, bufferSize);
     return wideString;
 }

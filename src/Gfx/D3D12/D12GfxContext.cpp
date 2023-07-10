@@ -256,11 +256,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     {
         ThrowIfFailed(D12SwapchainData->SwapChain->GetBuffer(n, IID_PPV_ARGS(&D12SwapchainData->Buffers[n])));
     }
-    //TODO
-    //Here we create a framebuffer object
-    //  It contains all the descriptor heap, size etc.. for each attachment
-    //  Create depth buffer too
-    //  We don't store the resources in the swapchain
+    
     D12FramebufferData->RenderTargetsCount = d3d12SwapchainData::FrameCount;
     D12FramebufferData->CreateHeaps();
     D12FramebufferData->SetRenderTargets(D12SwapchainData->Buffers);

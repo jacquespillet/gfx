@@ -146,8 +146,6 @@ void ParseSpirv(void* ByteCode, sz ByteCodeSize, spirvParseResult &Results)
     //For each binding
     for(const auto &DescriptorBinding : DescriptorBindings)
     {
-        //TODO: Descriptor sets
-
         // if(DescriptorBinding->set == device::BindlessSet && 
         //     (DescriptorBinding->binding == device::BindlessTextureBinding || DescriptorBinding->binding == (device::BindlessTextureBinding+1)))
         // {
