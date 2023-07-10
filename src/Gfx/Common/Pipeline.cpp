@@ -233,11 +233,19 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
             
             std::string CustomDefines;
             if(Name == "vertex")
-                CustomDefines = "#define VERTEX";
+                CustomDefines = "#define VERTEX\n";
             if(Name == "fragment")
-                CustomDefines = "#define FRAGMENT";
+                CustomDefines = "#define FRAGMENT\n";
             if(Name == "compute")
-                CustomDefines = "#define COMPUTE";
+                CustomDefines = "#define COMPUTE\n";
+            if((GFX_API == GFX_VK) && Name != "GLSL")
+            {
+                CustomDefines += "#define GRAPHICS_API VK\n";
+            }
+            if((GFX_API == GFX_GL) && Name != "GLSL")
+            {
+                CustomDefines += "#define GRAPHICS_API GL\n";
+            }                
             
             // Code.replace(Code.begin(), Code.end(), "{{CustomDefines}}", CustomDefines);
             Code = std::regex_replace(Code, std::regex("CUSTOM_DEFINES"), CustomDefines);
