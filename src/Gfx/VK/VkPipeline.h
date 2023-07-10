@@ -1,5 +1,5 @@
 #pragma once
-
+#include "VkGfxContext.h"
 namespace gfx
 {
 static const u8 MaxDescriptorSetLayouts = 8;
@@ -17,6 +17,7 @@ struct descriptorBinding
 
 struct descriptorSetLayout
 {
+    
     vk::DescriptorSetLayout NativeHandle;
 
     vk::DescriptorSetLayoutBinding *BindingNativeHandle=nullptr;
@@ -27,6 +28,8 @@ struct descriptorSetLayout
     u16 SetIndex=0;
     u8 Bindless=0;
     u8 Dynamic = 0;
+
+    b8 UsedBindings[vkConstants::MaxDescriptorsPerSet];
 
     descriptorSetLayoutHandle Handle;
 };
@@ -42,7 +45,7 @@ struct vkPipelineData
     vk::PipelineBindPoint BindPoint;
 
     //TODO: Descriptor sets
-    const descriptorSetLayout *DescriptorSetLayouts[MaxDescriptorSetLayouts];
+    descriptorSetLayout *DescriptorSetLayouts[MaxDescriptorSetLayouts];
     descriptorSetLayoutHandle DescriptorSetLayoutHandles[MaxDescriptorSetLayouts];
 
     u32 NumActiveLayouts = 0;

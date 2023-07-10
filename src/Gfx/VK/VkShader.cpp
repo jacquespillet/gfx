@@ -165,6 +165,8 @@ void ParseSpirv(void* ByteCode, sz ByteCodeSize, spirvParseResult &Results)
 
         if(DescriptorBinding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
             Binding.Type = vk::DescriptorType::eUniformBuffer;
+        if(DescriptorBinding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+            Binding.Type = vk::DescriptorType::eStorageBuffer;
         else if(DescriptorBinding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
             Binding.Type = vk::DescriptorType::eCombinedImageSampler;
         else if(DescriptorBinding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE)

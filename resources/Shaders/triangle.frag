@@ -12,7 +12,7 @@ struct uniformData
     vec4 _Color1;
 };
 
-DECLARE_UNIFORM_BUFFER(0, UniformData)
+DECLARE_UNIFORM_BUFFER(0, 0, UniformData)
 {
     uniformData Data;
 };

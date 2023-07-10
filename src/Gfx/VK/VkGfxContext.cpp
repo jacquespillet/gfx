@@ -731,6 +731,8 @@ descriptorSetLayoutHandle CreateDescriptorSetLayout(const descriptorSetLayoutCre
 
     descriptorSetLayout *DescriptorSetLayout = (descriptorSetLayout *)VkResourceManager->DescriptorSetLayouts.GetResource(Handle);
 
+    memset(&DescriptorSetLayout->UsedBindings[0], 0, vkConstants::MaxDescriptorsPerSet * sizeof(b8));
+
     u16 MaxBinding=0;
     for(u32 i=0; i<Creation.NumBindings; i++)
     {
@@ -767,11 +769,11 @@ descriptorSetLayoutHandle CreateDescriptorSetLayout(const descriptorSetLayoutCre
 
         VkBinding.binding = Binding.Start;
         VkBinding.descriptorType = InputBinding.Type;
-        // VkBinding.descriptorType = VkBinding.descriptorType == vk::DescriptorType::eUniformBuffer ? vk::DescriptorType::eUniformBufferDynamic : VkBinding.descriptorType;
         VkBinding.descriptorCount = InputBinding.Count;
-
         VkBinding.stageFlags = vk::ShaderStageFlagBits::eAll;
         VkBinding.pImmutableSamplers = nullptr; 
+
+        DescriptorSetLayout->UsedBindings[Binding.Start] = true;
     }
 
     vk::DescriptorSetLayoutCreateInfo DescriptorSetLayoutCreateInfo;
@@ -1223,10 +1225,10 @@ void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pip
     {
         Uniforms->Bindings[PipelineHandle] = Binding;
         VkUniformData->DescriptorInfos[PipelineHandle] = {};
-        VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSetLayout = VkPipeline->DescriptorSetLayouts[Binding]->NativeHandle;
+        VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSetLayout = VkPipeline->DescriptorSetLayouts[Binding];
         if(!VkUniformData->Initialized)
         {
-            VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSet = AllocateDescriptorSet(VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSetLayout, Uniforms);
+            VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSet = AllocateDescriptorSet(VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSetLayout->NativeHandle, Uniforms);
             VkUniformData->Initialized=true;
         }
     }

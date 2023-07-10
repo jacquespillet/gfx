@@ -1,7 +1,5 @@
 #version 450
 
-#include "Common/Macros.glsl"
-
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec4 color;
 
@@ -11,18 +9,6 @@ out gl_PerVertex
 };
 
 layout (location = 0) out vec4 FragColor;
-
-
-struct uniformData
-{
-    vec4 _Color0;
-    vec4 _Color1;
-};
-
-DECLARE_UNIFORM_BUFFER(0, UniformData)
-{
-    uniformData Data;
-};
 
 
 void main() 
