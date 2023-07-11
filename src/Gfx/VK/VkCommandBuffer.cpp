@@ -36,7 +36,7 @@ void commandBuffer::Begin()
     VkCommandBufferData->Handle.begin(CommandBufferBeginInfo);
 }
 
-void commandBuffer::BeginPass(framebufferHandle FramebufferHandle)
+void commandBuffer::BeginPass(framebufferHandle FramebufferHandle, clearColorValues ClearColor, clearDepthStencilValues DepthStencil)
 {
     context *Context = context::Get();
     GET_CONTEXT(VkData, Context);
@@ -55,14 +55,21 @@ void commandBuffer::BeginPass(framebufferHandle FramebufferHandle)
     RenderArea.setExtent(vk::Extent2D(Framebuffer->Width, Framebuffer->Height));
     RenderArea.setOffset(vk::Offset2D(0, 0));
 
+    std::array<float, 4> ClearColorsArray = { ClearColor.R, ClearColor.G, ClearColor.B, ClearColor.A};
+    vk::ClearValue ClearValue[2];
+    ClearValue[0].color.setFloat32(ClearColorsArray);
+    ClearValue[1].depthStencil.setDepth(DepthStencil.Depth);
+    ClearValue[1].depthStencil.setStencil(DepthStencil.Stencil);
+
     vk::RenderPassBeginInfo RenderPassBegin;
     RenderPassBegin.setRenderPass(VkRenderPassHandle)
-                   .setClearValues(VkCommandBufferData->Clears)
+                   .setClearValues(ClearValue)
                    .setRenderArea(RenderArea)
                    .setFramebuffer(VkFramebufferHandle);
 
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
     CommandBuffer.beginRenderPass(RenderPassBegin, vk::SubpassContents::eInline);
+    
 }
 
 void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
@@ -93,7 +100,7 @@ void commandBuffer::BindVertexBuffer(bufferHandle BufferHandle)
 void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height)
 {
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
-    vk::Viewport Viewport(X, Y, Width, Height, 0, 1);
+    vk::Viewport Viewport(X, Height, Width, -Height, 0, 1);
     CommandBuffer.setViewport(0, Viewport);
 }
 
@@ -208,20 +215,7 @@ void commandBuffer::TransferLayout(const image &Texture, imageUsage::bits OldLay
     );    
 }
 
-void commandBuffer::ClearColor(f32 R, f32 G,f32 B,f32 A)
-{
-    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
-    std::array<float, 4> ClearColors = { R, G, B, A};
-    VkCommandBufferData->Clears[0].color = vk::ClearColorValue{ClearColors}; 
-}
 
-
-void commandBuffer::ClearDepthStencil(f32 Depth, f32 Stencil)
-{
-    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
-    VkCommandBufferData->Clears[1].depthStencil.depth = Depth;
-    VkCommandBufferData->Clears[1].depthStencil.stencil = Stencil;
-}
 
 
 

@@ -30,6 +30,10 @@ struct command
         struct framebufferState
         {
             framebufferHandle FramebufferHandle;
+            
+            f32 ClearColor[4];
+            f32 ClearDepth;
+            u8 ClearStencil;
         } BeginPass;
         
         struct vertexBufferState
@@ -71,12 +75,6 @@ struct command
             u32 Height;
         } Scissor;
         
-        struct clearState
-        {
-            f32 ClearColor[4];
-            f32 ClearDepth;
-            u8 ClearStencil;
-        } Clear;
 
         struct graphicsPipelineState
         {

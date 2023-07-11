@@ -234,11 +234,10 @@ struct application
 			CommandBuffer->Begin();
 
 			//TODO: This should go after beginpass...
-			CommandBuffer->ClearColor(0.5f, 0.0f, 0.8f, 1.0f);
-			CommandBuffer->ClearDepthStencil(1.0f, 0.0f);
 			
+			//TODO: THIS DOESNT WORK BECAUSE IT'S STORED IN THE COMMAND BUFFER, must be stored in the commands themselves
 			// CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer());
-			CommandBuffer->BeginPass(OffscreenPass);
+			CommandBuffer->BeginPass(OffscreenPass, {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
 			CommandBuffer->SetViewport(0, 0, Width, Height);
 			CommandBuffer->SetScissor(0, 0, Width, Height);
 
@@ -251,7 +250,7 @@ struct application
 			CommandBuffer->EndPass();
 			
 			
-			CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer());
+			CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
 			CommandBuffer->EndPass();
 			
 			GfxContext->EndFrame();

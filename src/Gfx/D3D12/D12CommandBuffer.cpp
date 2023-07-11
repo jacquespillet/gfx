@@ -123,7 +123,7 @@ void commandBuffer::TransferLayout(const image &Texture, imageUsage::bits OldLay
     D12CommandBufferData->CommandList->ResourceBarrier(1, &barrier1);
 }
 
-void commandBuffer::BeginPass(framebufferHandle FramebufferHandle)
+void commandBuffer::BeginPass(framebufferHandle FramebufferHandle, clearColorValues ClearColor, clearDepthStencilValues DepthStencil)
 {
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
 
@@ -137,8 +137,10 @@ void commandBuffer::BeginPass(framebufferHandle FramebufferHandle)
     CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(D12FramebufferData->RenderTargetViewHeap->GetCPUDescriptorHandleForHeapStart(), D12FramebufferData->CurrentTarget, D12FramebufferData->RTVDescriptorSize);
     
     D12CommandBufferData->CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &D12FramebufferData->DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart());    
-    D12CommandBufferData->CommandList->ClearRenderTargetView(rtvHandle, D12CommandBufferData->ClearColor, 0, nullptr);    
-    D12CommandBufferData->CommandList->ClearDepthStencilView(D12FramebufferData->DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, D12CommandBufferData->ClearDepth, D12CommandBufferData->ClearStencil, 0, nullptr);
+    D12CommandBufferData->CommandList->ClearRenderTargetView(rtvHandle, (f32*)&ClearColor, 0, nullptr);    
+    D12CommandBufferData->CommandList->ClearDepthStencilView(D12FramebufferData->DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, DepthStencil.Depth, (u8)DepthStencil.Stencil, 0, nullptr);
+
+    
 }
 
 void commandBuffer::EndPass()
@@ -190,22 +192,6 @@ void commandBuffer::SetScissor(s32 X, s32 Y, u32 Width, u32 Height)
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
     CD3DX12_RECT Scissor = CD3DX12_RECT(0, 0, (LONG)context::Get()->Swapchain->Width, (LONG)context::Get()->Swapchain->Height);
     D12CommandBufferData->CommandList->RSSetScissorRects(1, &Scissor);
-}
-
-void commandBuffer::ClearColor(f32 R, f32 G,f32 B,f32 A)
-{
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
-    D12CommandBufferData->ClearColor[0] = R;
-    D12CommandBufferData->ClearColor[1] = G;
-    D12CommandBufferData->ClearColor[2] = B;
-    D12CommandBufferData->ClearColor[3] = A;
-}
-
-void commandBuffer::ClearDepthStencil(f32 Depth, f32 Stencil)
-{
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
-    D12CommandBufferData->ClearDepth = Depth;
-    D12CommandBufferData->ClearStencil = (u8)Stencil;
 }
 
 void commandBuffer::DrawTriangles(uint32_t Start, uint32_t Count)
