@@ -100,7 +100,7 @@ void commandBuffer::Begin()
     GLCommandBuffer->IsRecording=true;
 }
 
-void commandBuffer::BeginPass(renderPassHandle RenderPass, framebufferHandle Framebuffer)
+void commandBuffer::BeginPass(framebufferHandle Framebuffer)
 {
     GET_GL_COMMANDS
     command Command;

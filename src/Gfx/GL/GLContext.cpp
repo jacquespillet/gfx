@@ -121,6 +121,64 @@ void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pip
 
 }
 
+framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &CreateInfo)
+{
+    //Create the render pass
+    GET_CONTEXT(GLData, this);
+    
+    framebufferHandle FramebufferHandle = ResourceManager.Framebuffers.ObtainResource();
+    if(FramebufferHandle == InvalidHandle)
+    {
+        assert(false);
+        return InvalidHandle;
+    }
+    framebuffer *Framebuffer = (framebuffer*)ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+    Framebuffer->Width = CreateInfo.Width;
+    Framebuffer->Height = CreateInfo.Height;
+    Framebuffer->ApiData = std::make_shared<glFramebufferData>();
+    std::shared_ptr<glFramebufferData> GLFramebufferData = std::static_pointer_cast<glFramebufferData>(Framebuffer->ApiData);
+
+    GLFramebufferData->ColorTextures.resize(CreateInfo.ColorFormats.size());
+
+    glGenFramebuffers(1, &GLFramebufferData->Handle);
+    glBindFramebuffer(GL_FRAMEBUFFER, GLFramebufferData->Handle);
+    std::vector<GLenum> ColorAttachments(CreateInfo.ColorFormats.size());
+    for(sz i=0; i<CreateInfo.ColorFormats.size(); i++)
+    {
+        glGenTextures(1, &GLFramebufferData->ColorTextures[i]);
+        glBindTexture(GL_TEXTURE_2D, GLFramebufferData->ColorTextures[i]);
+        // Set texture parameters and allocate storage
+        glTexImage2D(GL_TEXTURE_2D, 0, FormatToNativeInternal(CreateInfo.ColorFormats[i]), CreateInfo.Width, CreateInfo.Height, 0, FormatToNative(CreateInfo.ColorFormats[i]), FormatToType(CreateInfo.ColorFormats[i]), nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GLFramebufferData->ColorTextures[i], 0);
+
+        ColorAttachments[i] = GL_COLOR_ATTACHMENT0 + i;
+    }
+
+#if 0 // No depth texture
+    glGenRenderbuffers(1, &GLFramebufferData->DepthTexture);
+    glBindRenderbuffer(GL_RENDERBUFFER, GLFramebufferData->DepthTexture);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, CreateInfo.Width, CreateInfo.Height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, GLFramebufferData->DepthTexture);
+#else
+    glGenTextures(1, &GLFramebufferData->DepthTexture);
+    glBindTexture(GL_TEXTURE_2D, GLFramebufferData->DepthTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, FormatToNativeInternal(CreateInfo.DepthFormat), CreateInfo.Width, CreateInfo.Height, 0, FormatToNative(CreateInfo.DepthFormat), FormatToType(CreateInfo.DepthFormat), nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GLFramebufferData->DepthTexture, 0);
+#endif
+
+    glDrawBuffers(ColorAttachments.size(), ColorAttachments.data());
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        assert(false);
+    }
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
 {
     GET_CONTEXT(GLData, this);    

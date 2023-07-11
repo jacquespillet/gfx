@@ -17,5 +17,6 @@ GLenum ShaderStageToNative(shaderStageFlags::value Stage);
 
 GLenum FormatToNativeInternal(format Format);
 GLenum FormatToNative(format Format);
+GLenum FormatToType(format Format);
 GLenum TypeToNative(type Type);
 }
