@@ -11,6 +11,7 @@ image::image(imageData *ImageData, textureCreateInfo &CreateInfo)
     this->Extent.Width = ImageData->Width;
     this->Extent.Height = ImageData->Height;
     this->Format = ImageData->Format;
+    
     //TODO
     this->MipLevelCount = (CreateInfo._GenerateMipmaps)?1 : 1;
     this->ApiData = std::make_shared<glImage>();

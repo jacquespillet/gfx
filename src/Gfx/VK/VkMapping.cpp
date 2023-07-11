@@ -66,7 +66,7 @@ vk::ImageLayout ImageUsageToImageLayout(imageUsage::bits Usage)
     case imageUsage::DEPTH_STENCIL_ATTACHMENT:
         return vk::ImageLayout::eDepthStencilAttachmentOptimal;
     case imageUsage::INPUT_ATTACHMENT:
-        return vk::ImageLayout::eAttachmentOptimalKHR; // TODO: is it ok?
+        return vk::ImageLayout::eAttachmentOptimalKHR;
     case imageUsage::FRAGNENT_SHADING_RATE_ATTACHMENT:
         return vk::ImageLayout::eFragmentShadingRateAttachmentOptimalKHR;
     default:
@@ -90,7 +90,7 @@ vk::AccessFlags ImageUsageToAccessFlags(imageUsage::bits Usage)
     case imageUsage::SHADER_READ:
         return vk::AccessFlagBits::eShaderRead;
     case imageUsage::STORAGE:
-        return vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite; // TODO: what if storage is not read or write?
+        return vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite;
     case imageUsage::COLOR_ATTACHMENT:
         return vk::AccessFlagBits::eColorAttachmentWrite;
     case imageUsage::DEPTH_STENCIL_ATTACHMENT:
@@ -117,15 +117,15 @@ vk::PipelineStageFlags ImageUsageToPipelineStage(imageUsage::bits Usage)
     case imageUsage::TRANSFER_DESTINATION:
         return vk::PipelineStageFlagBits::eTransfer;
     case imageUsage::SHADER_READ:
-        return vk::PipelineStageFlagBits::eFragmentShader; // TODO: whats for vertex shader reads?
+        return vk::PipelineStageFlagBits::eFragmentShader; 
     case imageUsage::STORAGE:
-        return vk::PipelineStageFlagBits::eFragmentShader; // TODO: whats for vertex shader reads?
+        return vk::PipelineStageFlagBits::eFragmentShader; 
     case imageUsage::COLOR_ATTACHMENT:
         return vk::PipelineStageFlagBits::eColorAttachmentOutput;
     case imageUsage::DEPTH_STENCIL_ATTACHMENT:
-        return vk::PipelineStageFlagBits::eEarlyFragmentTests; // TODO: whats for late fragment test?
+        return vk::PipelineStageFlagBits::eEarlyFragmentTests; 
     case imageUsage::INPUT_ATTACHMENT:
-        return vk::PipelineStageFlagBits::eFragmentShader; // TODO: check if at least works
+        return vk::PipelineStageFlagBits::eFragmentShader; 
     case imageUsage::FRAGNENT_SHADING_RATE_ATTACHMENT:
         return vk::PipelineStageFlagBits::eFragmentShadingRateAttachmentKHR;
     default:

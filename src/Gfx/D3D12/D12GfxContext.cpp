@@ -525,7 +525,6 @@ ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_
                                     shaderInputBindDesc.Space,
                                     D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND);
             
-            //TODO: Keep track of the pointer to the descriptor range here!
             DescriptorRanges.push_back(srvRange);
 
             D3D12_ROOT_PARAMETER RootParameter = {};

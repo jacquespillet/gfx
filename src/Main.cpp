@@ -233,10 +233,6 @@ struct application
 			// Begin recording commands into the command buffer
 			CommandBuffer->Begin();
 
-			//TODO: This should go after beginpass...
-			
-			//TODO: THIS DOESNT WORK BECAUSE IT'S STORED IN THE COMMAND BUFFER, must be stored in the commands themselves
-			// CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer());
 			CommandBuffer->BeginPass(OffscreenPass, {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
 			CommandBuffer->SetViewport(0, 0, Width, Height);
 			CommandBuffer->SetScissor(0, 0, Width, Height);
