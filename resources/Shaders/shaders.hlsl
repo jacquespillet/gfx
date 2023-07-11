@@ -57,5 +57,5 @@ PSInput VSMain(float4 position : POSITION0, float4 color : POSITION1)
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    return color.Sample(defaultSampler, input.uv);
+    return color.SampleLevel(defaultSampler, input.uv, 1) + input.color + Color0;
 }

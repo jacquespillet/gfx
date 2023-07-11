@@ -111,7 +111,7 @@ image::image(imageData *ImageData, textureCreateInfo &CreateInfo)
     Extent.Width = ImageData->Width;
     Extent.Height = ImageData->Height;
     Format = ImageData->Format;
-    this->MipLevelCount = CreateInfo._GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
+    MipLevelCount = CreateInfo._GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
 
     context *VulkanContext = context::Get();
 

@@ -28,6 +28,9 @@ struct d3d12Data
 
     uint32_t CurrentHeapOffset=0;
 
+    ComPtr<ID3D12Fence> ImmediateFence;
+    HANDLE ImmediateFenceEvent;
+
     D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorAt(sz Index);
     D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorAt(sz Index);
 };

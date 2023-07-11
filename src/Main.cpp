@@ -50,7 +50,8 @@ struct application
 	uniformData UniformData3;
 	uniformData UniformData4;
 	
-	gfx::image Texture;
+	gfx::image Texture1;
+	gfx::image Texture2;
 
 	uint32_t Width, Height;
 	void Init()
@@ -119,7 +120,8 @@ struct application
 			true
 		};
 		//TODO: Use imageHandle like buffers
-		Texture = gfx::image(&Image, TextureCreateInfo);
+		Texture1 = gfx::image(&Image, TextureCreateInfo);
+		Texture2 = gfx::image(&Image, TextureCreateInfo);
 
 		// Create a vertex buffer with triangle data
 		// float vertices[] = {
@@ -193,7 +195,7 @@ struct application
 			"Image",
 			gfx::uniformType::Texture2d,
 			4,
-			std::shared_ptr<gfx::image>(&Texture),
+			std::shared_ptr<gfx::image>(&Texture2),
 		});
 		//Tell the context that we'll be using this uniforms with this pipeline at binding 0
 		//It's possible to bind a uniform group to multiple pipelines.

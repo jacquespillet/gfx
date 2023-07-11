@@ -174,6 +174,15 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
 
     D12Data->StageBuffer = Singleton->CreateStageBuffer(InitializeInfo.MaxStageBufferSize);
 
+    //Create a fence initialized with 0
+    ThrowIfFailed(D12Data->Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&D12Data->ImmediateFence)));
+    
+    //Create a fence event that will be triggered
+    D12Data->ImmediateFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (D12Data->ImmediateFenceEvent == nullptr)
+    {
+        ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
+    }
 
     return Singleton;
 }
@@ -314,11 +323,19 @@ bufferHandle context::CreateVertexBuffer(f32 *Values, sz ByteSize, sz Stride, co
 void context::SubmitCommandBufferImmediate(commandBuffer *CommandBuffer)
 {
     GET_CONTEXT(D12Data, this);
+    
+    D12Data->ImmediateFence->Signal(0);
+
+
     std::shared_ptr<d3d12CommandBufferData> D12CommandData = std::static_pointer_cast<d3d12CommandBufferData>(CommandBuffer->ApiData);
 
     // Execute the initialization commands.
 	ID3D12CommandList* CommandLists[] = { D12CommandData->CommandList };
 	D12Data->CommandQueue->ExecuteCommandLists(1, CommandLists);
+
+    ThrowIfFailed(D12Data->CommandQueue->Signal(D12Data->ImmediateFence.Get(), 1));
+    ThrowIfFailed(D12Data->ImmediateFence->SetEventOnCompletion(1, D12Data->ImmediateFenceEvent));
+    WaitForSingleObjectEx(D12Data->ImmediateFenceEvent, INFINITE, FALSE);
 }
 
 
