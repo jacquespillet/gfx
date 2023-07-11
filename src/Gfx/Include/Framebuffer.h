@@ -4,6 +4,8 @@
 #include <dxgi1_6.h>
 #include <wrl.h>
 #include <memory>
+#include <vector>
+
 using namespace Microsoft::WRL;
 
 namespace gfx

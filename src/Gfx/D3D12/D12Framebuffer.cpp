@@ -1,6 +1,8 @@
 #include "D12Framebuffer.h"
 #include "D12Common.h"
 #include "D12GfxContext.h"
+#include "D12Mapping.h"
+
 #include <d3dx12.h>
 
 namespace gfx
@@ -18,7 +20,7 @@ void d3d12FramebufferData::CreateHeaps()
     rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     ThrowIfFailed(D12Data->Device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&RenderTargetViewHeap)));
     RTVDescriptorSize = D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-    
+        
 
     D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
     dsvHeapDesc.NumDescriptors = 1;  //Un seul depth buffer
@@ -28,23 +30,32 @@ void d3d12FramebufferData::CreateHeaps()
     ThrowIfFailed(D12Data->Device->CreateDescriptorHeap(&dsvHeapDesc,IID_PPV_ARGS(&DepthBufferViewHeap)));         
 }
 
-void d3d12FramebufferData::SetRenderTargets(ComPtr<ID3D12Resource> *Buffers)
+void d3d12FramebufferData::SetRenderTargets(ComPtr<ID3D12Resource> *Buffers, u32 Count)
+{
+    this->RenderTargetsCount = Count;
+    for (UINT n = 0; n < Count; n++)
+    {
+        this->RenderTargets[n] = Buffers[n];
+    }        
+}
+
+void d3d12FramebufferData::BuildDescriptors()
 {
     std::shared_ptr<d3d12Data> D12Data = std::static_pointer_cast<d3d12Data>(context::Get()->ApiContextData);
 
     // Create a RTV for each frame.
     CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(RenderTargetViewHeap->GetCPUDescriptorHandleForHeapStart());
-    for (UINT n = 0; n < d3d12SwapchainData::FrameCount; n++)
+    for (UINT n = 0; n < RenderTargetsCount; n++)
     {
-        this->RenderTargets[n] = Buffers[n];
-        //Link each rtv heap of the framebuffer with the swapchain buffers
         D12Data->Device->CreateRenderTargetView(RenderTargets[n].Get(), nullptr, rtvHandle);
         rtvHandle.Offset(1, RTVDescriptorSize);
-    }        
+    }   
 }
 
-void d3d12FramebufferData::CreateDepthBuffer(u32 Width, u32 Height)
+void d3d12FramebufferData::CreateDepthBuffer(u32 Width, u32 Height, format Format)
 {
+    this->DepthStencilFormat = FormatToNative(Format);
+
     std::shared_ptr<d3d12Data> D12Data = std::static_pointer_cast<d3d12Data>(context::Get()->ApiContextData);
 
     D3D12_RESOURCE_DESC depthStencilDesc;
@@ -66,7 +77,7 @@ void d3d12FramebufferData::CreateDepthBuffer(u32 Width, u32 Height)
     optClear.DepthStencil.Stencil = 0;
     
     ThrowIfFailed(D12Data->Device->CreateCommittedResource(  &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),  
-                                                        D3D12_HEAP_FLAG_NONE,  &depthStencilDesc,  D3D12_RESOURCE_STATE_COMMON,  
+                                                        D3D12_HEAP_FLAG_NONE,  &depthStencilDesc,  D3D12_RESOURCE_STATE_DEPTH_WRITE,  
                                                         &optClear,  IID_PPV_ARGS(DepthStencilBuffer.GetAddressOf())));   
 
     D12Data->Device->CreateDepthStencilView( DepthStencilBuffer.Get(),  nullptr,   DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart());

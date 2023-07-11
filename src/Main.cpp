@@ -250,6 +250,7 @@ struct application
 			CommandBuffer->DrawTriangles(0, 3); 
 			CommandBuffer->EndPass();
 			
+			
 			CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer());
 			CommandBuffer->EndPass();
 			

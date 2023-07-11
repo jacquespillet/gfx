@@ -136,6 +136,7 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 	{
 		debugController->EnableDebugLayer();
+        
 
 		// Enable additional debug layers.
 		dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
@@ -269,8 +270,10 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     
     D12FramebufferData->RenderTargetsCount = d3d12SwapchainData::FrameCount;
     D12FramebufferData->CreateHeaps();
-    D12FramebufferData->SetRenderTargets(D12SwapchainData->Buffers);
-    D12FramebufferData->CreateDepthBuffer(Width, Height);
+    D12FramebufferData->SetRenderTargets(D12SwapchainData->Buffers, d3d12SwapchainData::FrameCount);
+    D12FramebufferData->BuildDescriptors();
+    D12FramebufferData->CreateDepthBuffer(Width, Height, format::D24_UNORM_S8_UINT);
+    D12FramebufferData->IsSwapchain=true;
 
     this->Swapchain = Swapchain;
     
@@ -338,6 +341,63 @@ void context::SubmitCommandBufferImmediate(commandBuffer *CommandBuffer)
     WaitForSingleObjectEx(D12Data->ImmediateFenceEvent, INFINITE, FALSE);
 }
 
+framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &CreateInfo)
+{
+    //Create the render pass
+    GET_CONTEXT(D12Data, this);
+    
+    framebufferHandle FramebufferHandle = ResourceManager.Framebuffers.ObtainResource();
+    if(FramebufferHandle == InvalidHandle)
+    {
+        assert(false);
+        return InvalidHandle;
+    }
+    framebuffer *Framebuffer = (framebuffer*)ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+    Framebuffer->Width = CreateInfo.Width;
+    Framebuffer->Height = CreateInfo.Height;
+    Framebuffer->ApiData = std::make_shared<d3d12FramebufferData>();
+    std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(Framebuffer->ApiData);
+    
+    assert(CreateInfo.ColorFormats.size() < d3d12FramebufferData::MaxRenderTargets);
+    
+    for(sz i=0; i<CreateInfo.ColorFormats.size(); i++)
+    {
+
+        D3D12_RESOURCE_DESC desc = {};
+        desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+        desc.Alignment = 0;
+        desc.Width = CreateInfo.Width;
+        desc.Height = CreateInfo.Height;
+        desc.DepthOrArraySize = 1;
+        desc.MipLevels = 1;
+        desc.Format = FormatToNative(CreateInfo.ColorFormats[i]);
+        desc.SampleDesc.Count = 1;
+        desc.SampleDesc.Quality = 0;
+        desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+
+        D3D12_HEAP_PROPERTIES heapProperties = {};
+        heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+        D3D12_CLEAR_VALUE clearValue = {};
+        clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        clearValue.Color[0] = 0.5f;
+        clearValue.Color[1] = 0.0f;
+        clearValue.Color[2] = 0.8f;
+        clearValue.Color[3] = 1.0f;
+        
+        D12Data->Device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&D12FramebufferData->RenderTargets[i]));
+    }
+
+    D12FramebufferData->RenderTargetsCount = CreateInfo.ColorFormats.size();
+    D12FramebufferData->CreateHeaps();
+    D12FramebufferData->BuildDescriptors();
+    D12FramebufferData->CreateDepthBuffer(CreateInfo.Width, CreateInfo.Height, CreateInfo.DepthFormat);
+
+    
+    return FramebufferHandle;
+    
+}
 
 ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_PARAMETER> &OutRootParams, std::unordered_map<u32, u32> &BindingRootParamMapping, std::vector<CD3DX12_DESCRIPTOR_RANGE> &DescriptorRanges)
 {
