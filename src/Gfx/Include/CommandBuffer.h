@@ -27,7 +27,7 @@ struct commandBuffer
     void Initialize();
     
     void Begin();
-    void BeginPass(renderPassHandle RenderPass, framebufferHandle Framebuffer);
+    void BeginPass(framebufferHandle Framebuffer);
     void BindGraphicsPipeline(pipelineHandle Pipeline);
     void BindVertexBuffer(bufferHandle Buffer);
     void SetViewport(f32 X, f32 Y, f32 Width, f32 Height);

@@ -7,6 +7,7 @@
 #include <regex>
 #include "../Common/Util.h"
 #include <memory>
+#include "RenderPass.h"
 
 // 	// Create a shader program
 // 	ShaderHandle vertexShader = GfxContext->CreateShader("vertex_shader.glsl", ShaderType::Vertex);
@@ -21,7 +22,6 @@
 namespace gfx
 {
 
-static const u8 MaxImageOutputs = 8;
 static const u8 MaxVertexStreams = 16;
 static const u8 MaxVertexAttributes = 16;
 static const u8 MaxShaderStages = 8;
@@ -58,14 +58,6 @@ static const char *ToString(values Values)
 }
 }
 
-
-namespace renderPassOperation
-{
-enum values
-{
-    DontCare, Load, Clear, Count
-};
-}
 
 struct vertexAttribute
 {
@@ -203,28 +195,6 @@ struct rasterizationCreation
     fillMode::values Fill = fillMode::Solid;
 };
 
-struct renderPassOutput
-{
-    format ColorFormats[MaxImageOutputs];
-    imageLayout ColorFinalLayouts[MaxImageOutputs];
-    renderPassOperation::values ColorOperations[MaxImageOutputs];
-
-    format DepthStencilFormat;
-    imageLayout DepthStencilFinalLayout;
-
-    u32 NumColorFormats=0;
-
-    renderPassOperation::values DepthOperation = renderPassOperation::DontCare;
-    renderPassOperation::values StencilOperation = renderPassOperation::DontCare;
-
-    const char *Name;
-
-    void Reset();
-    renderPassOutput &Depth(format Format, imageLayout Layout);
-    renderPassOutput &Color(format Format, imageLayout Layout, renderPassOperation::values Operation);
-    renderPassOutput &SetDepthStencilOperation(renderPassOperation::values DepthOperation, renderPassOperation::values StencilOperation);
-};
-
 struct pipelineCreation
 {
     vertexInputCreation VertexInput;
@@ -258,6 +228,8 @@ struct pipeline
     rasterizationCreation Rasterization;
     
     b8 GraphicsPipeline=true;
+
+    framebufferHandle Framebuffer;
 
     std::shared_ptr<void> ApiData;
 };

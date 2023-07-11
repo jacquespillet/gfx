@@ -33,6 +33,7 @@ struct application
 	std::shared_ptr<app::window> Window;
 	std::shared_ptr<gfx::context> GfxContext;
 	gfx::renderPassHandle SwapchainPass;
+	gfx::renderPassHandle OffscreenPass;
 	gfx::pipelineHandle PipelineHandle;
 	gfx::bufferHandle VertexBuffer;
 	std::shared_ptr<gfx::swapchain> Swapchain;
@@ -143,10 +144,17 @@ struct application
 		};
 		VertexBuffer = GfxContext->CreateVertexBuffer(vertices, sizeof(vertices), 7 * sizeof(float), Attributes);
 
-		
-		PipelineHandle = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json");
+		gfx::framebufferCreateInfo FramebufferCreateInfo = 
+		{
+			1024, 1024,
+			{gfx::format::R8G8B8A8_UNORM},
+			gfx::format::D24_UNORM_S8_UINT
+		};
+		OffscreenPass = GfxContext->CreateFramebuffer(FramebufferCreateInfo);
+		PipelineHandle = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json", OffscreenPass);
 		
 		SwapchainPass = GfxContext->GetDefaultRenderPass();
+
 
 		gfx::bufferHandle UniformBufferHandle1 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
 		gfx::buffer *UniformBuffer1 = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle1);
@@ -225,10 +233,12 @@ struct application
 			// Begin recording commands into the command buffer
 			CommandBuffer->Begin();
 
+			//TODO: This should go after beginpass...
 			CommandBuffer->ClearColor(0.5f, 0.0f, 0.8f, 1.0f);
 			CommandBuffer->ClearDepthStencil(1.0f, 0.0f);
 			
-			CommandBuffer->BeginPass(SwapchainPass, GfxContext->GetSwapchainFramebuffer());
+			// CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer());
+			CommandBuffer->BeginPass(OffscreenPass);
 			CommandBuffer->SetViewport(0, 0, Width, Height);
 			CommandBuffer->SetScissor(0, 0, Width, Height);
 
@@ -238,6 +248,9 @@ struct application
 
 			CommandBuffer->BindVertexBuffer(VertexBuffer);
 			CommandBuffer->DrawTriangles(0, 3); 
+			CommandBuffer->EndPass();
+			
+			CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer());
 			CommandBuffer->EndPass();
 			
 			GfxContext->EndFrame();

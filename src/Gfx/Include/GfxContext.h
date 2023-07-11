@@ -20,6 +20,7 @@ struct commandBuffer;
 struct swapchain;
 struct pipeline;
 struct stageBuffer;
+struct framebufferCreateInfo;
 
 inline void DefaultCallback(const std::string&) {}
 
@@ -76,13 +77,16 @@ struct context
     // {
     //     std::vector<pipelineHandle> Passes;
     // }
-    pipelineHandle CreatePipelineFromFile(const char *FileName); 
+    
+    pipelineHandle CreatePipelineFromFile(const char *FileName, framebufferHandle Framebuffer = InvalidHandle); 
     pipelineHandle CreatePipeline(const pipelineCreation &PipelineCreation);
 
     imageHandle CreateImage(u32 Width, u32 Height, format Format, u8 *Pixels);
 
     renderPassHandle GetDefaultRenderPass();
     framebufferHandle GetSwapchainFramebuffer();
+
+    framebufferHandle CreateFramebuffer(const framebufferCreateInfo &CreateInfo);
     
     pipeline *GetPipeline(pipelineHandle Handle);   
 

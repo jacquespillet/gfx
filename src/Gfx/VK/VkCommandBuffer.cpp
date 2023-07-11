@@ -36,7 +36,7 @@ void commandBuffer::Begin()
     VkCommandBufferData->Handle.begin(CommandBufferBeginInfo);
 }
 
-void commandBuffer::BeginPass(renderPassHandle RenderPassHandle, framebufferHandle FramebufferHandle)
+void commandBuffer::BeginPass(framebufferHandle FramebufferHandle)
 {
     context *Context = context::Get();
     GET_CONTEXT(VkData, Context);
@@ -47,12 +47,12 @@ void commandBuffer::BeginPass(renderPassHandle RenderPassHandle, framebufferHand
     std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
     vk::Framebuffer VkFramebufferHandle = VkFramebufferData->Handle;
 
-    renderPass *RenderPass = (renderPass*) Context->ResourceManager.RenderPasses.GetResource(RenderPassHandle);
+    renderPass *RenderPass = (renderPass*) Context->ResourceManager.RenderPasses.GetResource(Framebuffer->RenderPass);
     std::shared_ptr<vkRenderPassData> VkRenderPassData = std::static_pointer_cast<vkRenderPassData>(RenderPass->ApiData);
     vk::RenderPass VkRenderPassHandle = VkRenderPassData->NativeHandle;
 
     vk::Rect2D RenderArea;
-    RenderArea.setExtent(vk::Extent2D(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height));
+    RenderArea.setExtent(vk::Extent2D(Framebuffer->Width, Framebuffer->Height));
     RenderArea.setOffset(vk::Offset2D(0, 0));
 
     vk::RenderPassBeginInfo RenderPassBegin;

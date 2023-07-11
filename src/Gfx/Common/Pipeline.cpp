@@ -1,6 +1,8 @@
 #include "../Include/Pipeline.h"
 #include "../Include/GfxContext.h"
 #include "../Include/Memory.h"
+#include "../Include/Framebuffer.h"
+#include "../Include/RenderPass.h"
 #include "Util.h"
 
 namespace gfx
@@ -400,29 +402,29 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
     }
 
     //TODO: Other than swapchain
-    json RenderPass = PipelineJSON["render_pass"];
-    if(RenderPass.is_string())
-    {
-        std::string Name;
-        RenderPass.get_to(Name);
-        if(Name == "Swapchain")
-        {
-            PipelineCreation.RenderPass = context::Get()->SwapchainOutput;
-        }
-        else
-        {
-            // const renderPass *RenderPass = device::Get()->GetRenderPass(Node->_RenderPass);
-            // PipelineCreation._RenderPass = RenderPass->_Output;
-        }
-    } 
-    else
-    {
-        PipelineCreation.RenderPass = context::Get()->SwapchainOutput;
-    }   
+    // json RenderPass = PipelineJSON["render_pass"];
+    // if(RenderPass.is_string())
+    // {
+    //     std::string Name;
+    //     RenderPass.get_to(Name);
+    //     if(Name == "Swapchain")
+    //     {
+    //     }
+    //     else
+    //     {
+    //         PipelineCreation
+    //         // const renderPass *RenderPass = device::Get()->GetRenderPass(Node->_RenderPass);
+    //         // PipelineCreation._RenderPass = RenderPass->_Output;
+    //     }
+    // } 
+    // else
+    // {
+    //     PipelineCreation.RenderPass = context::Get()->SwapchainOutput;
+    // }   
 }
 
 
-pipelineHandle context::CreatePipelineFromFile(const char *FileName)
+pipelineHandle context::CreatePipelineFromFile(const char *FileName, framebufferHandle FramebufferHandle)
 {
     std::string PathStr(FileName);
     std::string ParentPath = std::filesystem::path(PathStr).parent_path().string();
@@ -477,6 +479,17 @@ pipelineHandle context::CreatePipelineFromFile(const char *FileName)
     //TODO: Return an array of pipelines here
     for(u32 i=0; i<PipelineCreations.size(); i++)
     {
+        if(FramebufferHandle == InvalidHandle)
+        {
+            PipelineCreations[i].RenderPass = context::Get()->SwapchainOutput;
+        }
+        else
+        {
+            framebuffer *Framebuffer = (framebuffer*) context::Get()->ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+            renderPass *RenderPass = (renderPass*) context::Get()->ResourceManager.RenderPasses.GetResource(Framebuffer->RenderPass);
+            
+            PipelineCreations[i].RenderPass = RenderPass->Output;
+        }
         pipelineHandle pipeline = this->CreatePipeline(PipelineCreations[i]);
         for (size_t j = 0; j < PipelineCreations[i].Shaders.StagesCount; j++)
         {

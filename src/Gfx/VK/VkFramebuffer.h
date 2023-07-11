@@ -9,5 +9,6 @@ struct vkFramebufferData
 
     std::shared_ptr<image> *ColorImages;
     std::shared_ptr<image> DepthStencilImage;
+    
 };
 }

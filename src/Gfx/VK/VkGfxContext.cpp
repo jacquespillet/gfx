@@ -70,11 +70,17 @@ bool GetSupportedDepthFormat(vk::PhysicalDevice PhysicalDevice, format *DepthFor
     return false;
 }
 
-void CreateFramebuffer(std::shared_ptr<image> *ColorImages, std::shared_ptr<image> DepthStencilImage, vk::RenderPass RenderPass, sz ImagesCount, vkSwapchainData *VkSwapchainData)
+void CreateSwapchainFramebuffer(std::shared_ptr<image> *ColorImages, std::shared_ptr<image> DepthStencilImage, renderPassHandle RenderPassHandle, sz ImagesCount, vkSwapchainData *VkSwapchainData)
 {
+    auto Context = context::Get();
+    GET_CONTEXT(VkData, Context);
+
     int Width = ColorImages[0]->Extent.Width;
     int Height = ColorImages[0]->Extent.Height;
-    
+
+    renderPass *RenderPass = (renderPass*) Context->ResourceManager.RenderPasses.GetResource(RenderPassHandle);
+    vk::RenderPass VkRenderPass = std::static_pointer_cast<vkRenderPassData>(RenderPass->ApiData)->NativeHandle;
+     
     for (size_t i = 0; i < ImagesCount; i++)
     {
         std::shared_ptr<vkImageData> VkColorImage = std::static_pointer_cast<vkImageData>(ColorImages[i]->ApiData);
@@ -87,14 +93,12 @@ void CreateFramebuffer(std::shared_ptr<image> *ColorImages, std::shared_ptr<imag
 
 
         vk::FramebufferCreateInfo FramebufferCreateInfo;
-        FramebufferCreateInfo.setRenderPass(RenderPass)
+        FramebufferCreateInfo.setRenderPass(VkRenderPass)
                             .setAttachments(Attachments)
                             .setWidth(ColorImages[i]->Extent.Width)
                             .setHeight(ColorImages[i]->Extent.Height)
                             .setLayers(1);
         
-        auto Context = context::Get();
-        GET_CONTEXT(VkData, Context);
 
         framebufferHandle FramebufferHandle = Context->ResourceManager.Framebuffers.ObtainResource();
         if(FramebufferHandle == InvalidHandle)
@@ -103,7 +107,10 @@ void CreateFramebuffer(std::shared_ptr<image> *ColorImages, std::shared_ptr<imag
             return;
         }
         framebuffer *Framebuffer = (framebuffer*)Context->ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+        Framebuffer->Width = ColorImages[i]->Extent.Width;
+        Framebuffer->Height = ColorImages[i]->Extent.Height;
         Framebuffer->ApiData = std::make_shared<vkFramebufferData>();
+        Framebuffer->RenderPass = RenderPassHandle;
         std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
         VkFramebufferData->DepthStencilImage = DepthStencilImage;
         VkFramebufferData->ColorImages = ColorImages;
@@ -183,7 +190,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     format DepthFormat;
     bool FoundDepthFormat = GetSupportedDepthFormat(VkData->PhysicalDevice, &DepthFormat);
     std::shared_ptr<image> DepthStencil = std::make_shared<image>(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
-    CreateFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, VkSwapchainPass->NativeHandle, VkData->PresentImageCount, VkSwapchainData.get());
+    CreateSwapchainFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, SwapchainPassHandle, VkData->PresentImageCount, VkSwapchainData.get());
 
     return Swapchain;
 }
@@ -246,8 +253,6 @@ std::shared_ptr<swapchain> context::RecreateSwapchain(u32 Width, u32 Height, std
     }
 
     renderPassHandle SwapchainPassHandle = GetDefaultRenderPass();
-    renderPass *SwapchainPass = (renderPass *)ResourceManager.RenderPasses.GetResource(SwapchainPassHandle);
-    std::shared_ptr<vkRenderPassData> VkSwapchainPass = std::static_pointer_cast<vkRenderPassData>(SwapchainPass->ApiData);
 
     //Initialize texture representations of swapchain images
     for(u32 i=0; i<VkData->PresentImageCount; i++)
@@ -259,7 +264,7 @@ std::shared_ptr<swapchain> context::RecreateSwapchain(u32 Width, u32 Height, std
     format DepthFormat;
     bool FoundDepthFormat = GetSupportedDepthFormat(VkData->PhysicalDevice, &DepthFormat);
     std::shared_ptr<image> DepthStencil = std::make_shared<image>(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
-    CreateFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, VkSwapchainPass->NativeHandle, VkData->PresentImageCount,VkSwapchainData.get());
+    CreateSwapchainFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, SwapchainPassHandle, VkData->PresentImageCount,VkSwapchainData.get());
 
     Swapchain = OldSwapchain;
     return OldSwapchain;
@@ -980,6 +985,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         return Handle;
     }
 
+
     shaderStateHandle ShaderState = CreateShaderState(PipelineCreation.Shaders);
     if(ShaderState == InvalidHandle)
     {
@@ -1193,6 +1199,75 @@ renderPassHandle context::GetDefaultRenderPass()
 {
     GET_CONTEXT(VkData, this);
     return VkData->RenderPassCache["Swapchain"];
+}
+
+framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &CreateInfo)
+{
+    //PARAMETERS
+
+    //Create the render pass
+    GET_CONTEXT(VKData, this);
+    renderPassOutput RenderPassOutput = {};
+    RenderPassOutput.Reset();
+    for (sz i = 0; i < CreateInfo.ColorFormats.size(); i++)
+    {
+        RenderPassOutput.Color(CreateInfo.ColorFormats[i], imageLayout::ColorAttachmentOptimal, renderPassOperation::Clear);
+    }
+    RenderPassOutput.Depth(CreateInfo.DepthFormat, imageLayout::DepthAttachmentOptimal);
+    RenderPassOutput.SetDepthStencilOperation(renderPassOperation::Clear, renderPassOperation::Clear);
+    RenderPassOutput.Name = "Foo";
+    renderPass *RenderPass = VKData->GetRenderPass(RenderPassOutput, "Foo");
+    RenderPass->Output = RenderPassOutput;
+
+    auto Context = context::Get();
+    GET_CONTEXT(VkData, Context);
+
+
+    vk::RenderPass VkRenderPass = std::static_pointer_cast<vkRenderPassData>(RenderPass->ApiData)->NativeHandle;
+    
+    //Create colorImage
+    std::shared_ptr<image> *ColorImages = (std::shared_ptr<image>*)AllocateMemory(sizeof(std::shared_ptr<image>) * CreateInfo.ColorFormats.size());
+    std::vector<vk::ImageView> Attachments(CreateInfo.ColorFormats.size() + 1);
+
+    //Create depthImage
+    for (sz i = 0; i < CreateInfo.ColorFormats.size(); i++)
+    {
+        //Create color image
+        ColorImages[i] = std::make_shared<image>(CreateInfo.Width, CreateInfo.Height, CreateInfo.ColorFormats[i], imageUsage::COLOR_ATTACHMENT, memoryUsage::GpuOnly);
+        std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(ColorImages[i]->ApiData);
+        Attachments[i] = VKImage->DefaultImageViews.NativeView;
+    }
+    std::shared_ptr<image> DepthImage = std::make_shared<image>(CreateInfo.Width, CreateInfo.Height, CreateInfo.DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
+    std::shared_ptr<vkImageData> VKDepthImage = std::static_pointer_cast<vkImageData>(DepthImage->ApiData);
+    Attachments[Attachments.size()-1] = VKDepthImage->DefaultImageViews.NativeView;
+
+
+    vk::FramebufferCreateInfo FramebufferCreateInfo;
+    FramebufferCreateInfo.setRenderPass(VkRenderPass)
+                        .setAttachments(Attachments)
+                        .setAttachmentCount(Attachments.size())
+                        .setWidth(CreateInfo.Width)
+                        .setHeight(CreateInfo.Height)
+                        .setLayers(1);
+    
+
+    framebufferHandle FramebufferHandle = Context->ResourceManager.Framebuffers.ObtainResource();
+    if(FramebufferHandle == InvalidHandle)
+    {
+        assert(false);
+        return InvalidHandle;
+    }
+    framebuffer *Framebuffer = (framebuffer*)Context->ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+    Framebuffer->Width = CreateInfo.Width;
+    Framebuffer->Height = CreateInfo.Height;
+    Framebuffer->ApiData = std::make_shared<vkFramebufferData>();
+    Framebuffer->RenderPass = VKData->RenderPassCache["Foo"];   
+    std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
+    VkFramebufferData->DepthStencilImage = DepthImage;
+    VkFramebufferData->ColorImages = ColorImages;
+    VkFramebufferData->Handle = VkData->Device.createFramebuffer(FramebufferCreateInfo);
+
+    return FramebufferHandle;;
 }
 
 framebufferHandle context::GetSwapchainFramebuffer()
