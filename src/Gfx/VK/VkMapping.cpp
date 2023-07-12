@@ -217,6 +217,21 @@ vk::SamplerMipmapMode SamplerFilterToNativeMip(samplerFilter MinFilter)
 }
 
 
+static vk::SamplerAddressMode SamplerWrapModeTable[] = 
+{
+    vk::SamplerAddressMode::eClampToEdge,//ClampToEdge,
+    vk::SamplerAddressMode::eClampToBorder,//ClampToBorder,
+    vk::SamplerAddressMode::eMirroredRepeat,//MirroredRepeat,
+    vk::SamplerAddressMode::eRepeat,//Repeat,
+    vk::SamplerAddressMode::eMirrorClampToEdge,//MirrorClampToEdge
+};
+
+vk::SamplerAddressMode SamplerWrapModeToNative(samplerWrapMode Mode)
+{
+    return SamplerWrapModeTable[(sz)Mode];
+}
+
+
 
 }
 

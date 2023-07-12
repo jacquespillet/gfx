@@ -623,4 +623,22 @@ enum class samplerWrapMode
     MirrorClampToEdge
 };
 
+
+namespace vertexInputRate
+{
+enum values
+{
+    PerVertex, PerInstance, Count
+};
+}
+
+namespace fillMode
+{
+enum values
+{
+    WireFrame, Solid, Point, Count
+};
+}
+
+
 }

@@ -623,8 +623,6 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 
     // Create the pipeline state, which includes compiling and loading shaders.
     {   
-        // Define the vertex input layout.
-        //TODO: Add ability to have multiple vertex streams
         std::vector<D3D12_INPUT_ELEMENT_DESC> InputElementDescriptors(PipelineCreation.VertexInput.NumVertexAttributes);        
         u32 Offset=0;
         for(sz i=0; i<PipelineCreation.VertexInput.NumVertexAttributes; i++)

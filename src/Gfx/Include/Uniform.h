@@ -38,7 +38,6 @@ struct uniformGroup
     void Initialize();
     void Update();
 
-    //TODO: Use raw pointer here...
     std::shared_ptr<void> ApiData;
 };
 

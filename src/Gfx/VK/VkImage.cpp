@@ -293,17 +293,13 @@ void vkImageData::InitViews(const image &Image, const vk::Image &VkImage, format
 
 void vkImageData::InitSampler(const imageCreateInfo &CreateInfo)
 {
-    vk::Filter MinFilter = SamplerFilterToNative(CreateInfo.MinFilter);
-    vk::Filter MagFilter = SamplerFilterToNative(CreateInfo.MagFilter);
-    vk::SamplerMipmapMode MipFilter = SamplerFilterToNativeMip(CreateInfo.MinFilter);
-    //TODO
     vk::SamplerCreateInfo SamplerCreateInfo;
-    SamplerCreateInfo.setMagFilter(MinFilter)
-                     .setMinFilter(MagFilter)
-                     .setMipmapMode(MipFilter)
-                     .setAddressModeU(vk::SamplerAddressMode::eRepeat)
-                     .setAddressModeV(vk::SamplerAddressMode::eRepeat)
-                     .setAddressModeW(vk::SamplerAddressMode::eRepeat)
+    SamplerCreateInfo.setMagFilter(SamplerFilterToNative(CreateInfo.MinFilter))
+                     .setMinFilter(SamplerFilterToNative(CreateInfo.MagFilter))
+                     .setMipmapMode(SamplerFilterToNativeMip(CreateInfo.MinFilter))
+                     .setAddressModeU(SamplerWrapModeToNative(CreateInfo.WrapR))
+                     .setAddressModeV(SamplerWrapModeToNative(CreateInfo.WrapS))
+                     .setAddressModeW(SamplerWrapModeToNative(CreateInfo.WrapT))
                      .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
     
     auto Vulkan = context::Get();

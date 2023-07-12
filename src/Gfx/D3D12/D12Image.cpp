@@ -36,7 +36,6 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
         &TextureDesc, D12Image->ResourceState, nullptr,
         IID_PPV_ARGS(&D12Image->Handle));
 
-    //TODO: Do we use these handles ?
     D12Image->OffsetInHeap = D12Data->CurrentHeapOffset;
 
     // Create the shader resource view (SRV)

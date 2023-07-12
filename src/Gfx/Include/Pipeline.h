@@ -26,13 +26,6 @@ static const u8 MaxVertexStreams = 16;
 static const u8 MaxVertexAttributes = 16;
 static const u8 MaxShaderStages = 8;
 
-namespace vertexInputRate
-{
-enum values
-{
-    PerVertex, PerInstance, Count
-};
-}
 
 
 struct vertexStream
@@ -179,13 +172,6 @@ struct blendStateCreation
 };
 
 
-namespace fillMode
-{
-enum values
-{
-    WireFrame, Solid, Point, Count
-};
-}
 
 
 struct rasterizationCreation

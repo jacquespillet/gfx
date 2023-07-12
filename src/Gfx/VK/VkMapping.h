@@ -325,5 +325,6 @@ imageLayout ImageLayoutFromNative(const vk::ImageLayout &VkImageLayout);
 vk::Filter SamplerFilterToNative(samplerFilter Filter);
 vk::SamplerMipmapMode SamplerFilterToNativeMip(samplerFilter MinFilter);
 
+vk::SamplerAddressMode SamplerWrapModeToNative(samplerWrapMode Mode);
 }
 
