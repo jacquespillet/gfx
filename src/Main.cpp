@@ -10,7 +10,7 @@
 #include "Gfx/Api.h"  
 #include "App/App.h"
 
-#define MULTISTREAM 0
+#define MULTISTREAM 1
 
 
 void WindowErrorCallback(const std::string &errorMessage)

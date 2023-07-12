@@ -169,16 +169,22 @@ void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
     D12CommandBufferData->CommandList->SetPipelineState(D12PipelineData->PipelineState.Get());
 }
 
-void commandBuffer::BindVertexBuffer(bufferHandle BufferHandle)
+void commandBuffer::BindVertexBuffer(vertexBufferHandle BufferHandle)
 {
-    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
-    std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);
-
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
+    vertexBuffer *VertexBuffer = (vertexBuffer*)context::Get()->ResourceManager.VertexBuffers.GetResource(BufferHandle);
+    
     
     // Record commands.
     D12CommandBufferData->CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    D12CommandBufferData->CommandList->IASetVertexBuffers(0, 1, &D12BufferData->BufferView);
+    for(int i=0; i<VertexBuffer->NumVertexStreams; i++)
+    {
+        buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(VertexBuffer->VertexStreams[i].Buffer);
+        std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);
+
+        u64 Offsets[] = {0};
+        D12CommandBufferData->CommandList->IASetVertexBuffers(VertexBuffer->VertexStreams[i].StreamIndex, 1, &D12BufferData->BufferView);
+    }
 }
 
 void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height)

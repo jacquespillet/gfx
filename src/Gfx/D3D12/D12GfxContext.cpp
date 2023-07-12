@@ -283,6 +283,19 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     return Swapchain;
 }
 
+vertexBufferHandle context::CreateEmptyVertexBuffer()
+{
+    vertexBufferHandle Handle = context::Get()->ResourceManager.VertexBuffers.ObtainResource();
+    if(Handle == InvalidHandle)
+    {
+        assert(false);
+        return Handle;
+    }
+    
+    return Handle;
+}
+
+//TODO: Move this out to buffer.cpp
 bufferHandle context::CreateVertexBuffer(f32 *Values, sz ByteSize, sz Stride, const std::vector<vertexInputAttribute> &Attributes)
 {
     GET_CONTEXT(D12Data, this);
@@ -621,7 +634,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
                 SemanticFromAttrib(PipelineCreation.VertexInput.VertexAttributes[i].Format),
                 PipelineCreation.VertexInput.VertexAttributes[i].SemanticIndex,
                 AttribFormatToNative(PipelineCreation.VertexInput.VertexAttributes[i].Format),
-                0, //??????????
+                PipelineCreation.VertexInput.VertexAttributes[i].Binding,
                 PipelineCreation.VertexInput.VertexAttributes[i].Offset,
                 //VertexInputRateToNative(PipelineCreation.VertexInput.VertexStreams[i].InputRate), 
                 D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
@@ -717,6 +730,13 @@ void context::StartFrame()
 {
     GET_CONTEXT(D12Data, this);
     D12Data->VirtualFrames.StartFrame();
+}
+
+void context::DestroyVertexBuffer(bufferHandle BufferHandle)
+{
+    GET_CONTEXT(VkData, this);
+
+    ResourceManager.VertexBuffers.ReleaseResource(BufferHandle);
 }
 
 void context::DestroyPipeline(pipelineHandle PipelineHandle)

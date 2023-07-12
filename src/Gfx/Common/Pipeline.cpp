@@ -311,7 +311,7 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
 
             json VertexInput = VertexInputs[i];
             VertexAttribute.Location = (u16) VertexInput.value("attribute_location", 0u);
-            VertexAttribute.Binding = (u16) VertexInput.value("attribute_binding", 0u);
+            VertexAttribute.Binding = (u16) VertexInput.value("vertex_stream", 0u);
             VertexAttribute.Offset = VertexInput.value("attribute_offset", 0u);
             json AttributeFormat = VertexInput["attribute_format"];
             if(AttributeFormat.is_string())

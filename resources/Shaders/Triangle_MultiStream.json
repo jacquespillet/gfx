@@ -18,15 +18,15 @@
 			],
 			"vertex_input" : [
 				{
+					"vertex_stream" : 0,
 					"attribute_location" : 0,
-					"attribute_binding" : 0,
 					"attribute_offset" : 0,
 					"attribute_format" : "Float3",
 					"name" : "Position"
 				},
 				{
+					"vertex_stream" : 1,
 					"attribute_location" : 1,
-					"attribute_binding" : 1,
 					"attribute_offset" : 0,
 					"attribute_format" : "Float4",
 					"name" : "Position"
