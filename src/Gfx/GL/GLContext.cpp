@@ -378,8 +378,18 @@ void context::DestroyBuffer(bufferHandle BufferHandle)
     ResourceManager.Buffers.ReleaseResource(BufferHandle);
 }
 
-void context::DestroyVertexBuffer(vertexBufferHandle BufferHandle)
+void context::DestroyVertexBuffer(vertexBufferHandle VertexBufferHandle)
 {
+    vertexBuffer *VertexBuffer = (vertexBuffer *) ResourceManager.VertexBuffers.GetResource(VertexBufferHandle);
+    for (sz i = 0; i < VertexBuffer->NumVertexStreams; i++)
+    {
+        DestroyBuffer(VertexBuffer->VertexStreams[i].Buffer);
+    }
+    
+    std::shared_ptr<glVertexBuffer> GLVertexBuffer = std::static_pointer_cast<glVertexBuffer>(VertexBuffer->ApiData);
+    glDeleteVertexArrays(1, &GLVertexBuffer->VAO);
+
+    ResourceManager.VertexBuffers.ReleaseResource(VertexBufferHandle);
 }
 
 void context::DestroyImage(imageHandle ImageHandle)

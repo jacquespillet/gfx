@@ -72,8 +72,6 @@ struct vertexBuffer
 
     std::shared_ptr<void> ApiData = nullptr;
 
-    vertexBufferHandle VertexBufferHandle;
-
     vertexBuffer &Init();
     vertexBuffer &Reset();
     vertexBuffer &AddVertexStream(vertexStreamData StreamData);

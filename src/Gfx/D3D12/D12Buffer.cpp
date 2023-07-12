@@ -263,8 +263,6 @@ vertexBuffer &vertexBuffer::Reset()
     }
     ApiData = nullptr;
 
-    VertexBufferHandle = InvalidHandle;
-    
     return *this;
 }
 

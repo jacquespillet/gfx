@@ -732,11 +732,15 @@ void context::StartFrame()
     D12Data->VirtualFrames.StartFrame();
 }
 
-void context::DestroyVertexBuffer(bufferHandle BufferHandle)
-{
-    GET_CONTEXT(VkData, this);
 
-    ResourceManager.VertexBuffers.ReleaseResource(BufferHandle);
+void context::DestroyVertexBuffer(bufferHandle VertexBufferHandle)
+{
+    vertexBuffer *VertexBuffer = (vertexBuffer *) ResourceManager.VertexBuffers.GetResource(VertexBufferHandle);
+    for (sz i = 0; i < VertexBuffer->NumVertexStreams; i++)
+    {
+        DestroyBuffer(VertexBuffer->VertexStreams[i].Buffer);
+    }
+    ResourceManager.VertexBuffers.ReleaseResource(VertexBufferHandle);
 }
 
 void context::DestroyPipeline(pipelineHandle PipelineHandle)

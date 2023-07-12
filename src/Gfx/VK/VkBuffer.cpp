@@ -202,9 +202,6 @@ vertexBuffer &vertexBuffer::Reset()
         this->VertexStreams[i].StreamIndex = (u32)-1;
     }
     ApiData = nullptr;
-
-    VertexBufferHandle = InvalidHandle;
-    
     return *this;
 }
 
