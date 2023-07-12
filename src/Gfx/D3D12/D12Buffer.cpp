@@ -21,7 +21,7 @@ void d3d12BufferData::Transition(ID3D12GraphicsCommandList *CommandList, D3D12_R
 }
 
 
-static u32 CalcConstantBufferByteSize(u32 byteSize)
+static sz CalcConstantBufferByteSize(sz byteSize)
 {
     return (byteSize + 255) & ~255;
 }
@@ -76,7 +76,7 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
         // Create a CBV descriptor
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
         cbvDesc.BufferLocation = D12BufferData->Handle->GetGPUVirtualAddress();
-        cbvDesc.SizeInBytes = this->Size;
+        cbvDesc.SizeInBytes = (u32)this->Size;
         D12Data->Device->CreateConstantBufferView(&cbvDesc, D12Data->GetCPUDescriptorAt(D12BufferData->OffsetInHeap));
 
         // Allocate descriptors by incrementing the handles

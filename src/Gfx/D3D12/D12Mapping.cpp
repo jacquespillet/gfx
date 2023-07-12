@@ -35,6 +35,8 @@ const char *SemanticFromAttrib(vertexComponentFormat::values Format)
     default:
         break;
     }
+
+    return "";
 }
 
 // Float, Float2, Float3, Float4, Mat4, Byte, Byte4N, UByte, UByte4N, Short2, Short2N, Short4, Short4N, Uint, Uint2, Uint4, Count

@@ -330,8 +330,8 @@ bufferHandle context::CreateVertexBuffer(f32 *Values, sz ByteSize, sz Stride, co
 
     // Initialize the vertex buffer view.
     D12BufferData->BufferView.BufferLocation = D12BufferData->Handle->GetGPUVirtualAddress();
-    D12BufferData->BufferView.StrideInBytes = Stride;
-    D12BufferData->BufferView.SizeInBytes = ByteSize;   
+    D12BufferData->BufferView.StrideInBytes = (u32)Stride;
+    D12BufferData->BufferView.SizeInBytes = (u32)ByteSize;   
     
     return Handle;
 }
@@ -403,7 +403,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
         D12Data->Device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&D12FramebufferData->RenderTargets[i]));
     }
 
-    D12FramebufferData->RenderTargetsCount = CreateInfo.ColorFormats.size();
+    D12FramebufferData->RenderTargetsCount = (u32)CreateInfo.ColorFormats.size();
     D12FramebufferData->CreateHeaps();
     D12FramebufferData->BuildDescriptors();
     D12FramebufferData->CreateDepthBuffer(CreateInfo.Width, CreateInfo.Height, CreateInfo.DepthFormat);
@@ -595,7 +595,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
                                             D3D12_TEXTURE_ADDRESS_MODE_WRAP); // addressW  
 
         D3D12_ROOT_SIGNATURE_DESC rootSigDesc;
-        rootSigDesc.NumParameters = D12PipelineData->RootParams.size();
+        rootSigDesc.NumParameters = (u32)D12PipelineData->RootParams.size();
         rootSigDesc.pParameters = D12PipelineData->RootParams.data();
         rootSigDesc.NumStaticSamplers = 1;
         rootSigDesc.pStaticSamplers = &pointWrap;
@@ -780,12 +780,12 @@ void context::Cleanup()
 
 D3D12_CPU_DESCRIPTOR_HANDLE d3d12Data::GetCPUDescriptorAt(sz Index)
 {
-    return CD3DX12_CPU_DESCRIPTOR_HANDLE(CommonDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), Index, DescriptorSize);
+    return CD3DX12_CPU_DESCRIPTOR_HANDLE(CommonDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), (s32)Index, DescriptorSize);
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE d3d12Data::GetGPUDescriptorAt(sz Index)
 {
-    return CD3DX12_GPU_DESCRIPTOR_HANDLE(CommonDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), Index, DescriptorSize);
+    return CD3DX12_GPU_DESCRIPTOR_HANDLE(CommonDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), (s32)Index, DescriptorSize);
 }
 
 }

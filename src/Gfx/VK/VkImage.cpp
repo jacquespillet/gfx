@@ -121,7 +121,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
 
 
     imageUsage::value ImageUsage = imageUsage::TRANSFER_DESTINATION | imageUsage::SHADER_READ; 
-    if(GenerateMipmaps) ImageUsage |= imageUsage::TRANSFER_SOURCE;
+    if(CreateInfo.GenerateMipmaps) ImageUsage |= imageUsage::TRANSFER_SOURCE;
     VKImage->Init(
         *this,
         ImageUsage,

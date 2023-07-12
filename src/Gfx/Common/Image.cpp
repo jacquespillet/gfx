@@ -9,7 +9,6 @@ namespace gfx
 {
 imageData ImageFromFile(char *FileName)
 {
-    s32 nChannels;
     imageData Result;
 
     s32 Width, Height, ChannelCount;

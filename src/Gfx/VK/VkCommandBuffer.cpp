@@ -91,7 +91,7 @@ void commandBuffer::BindVertexBuffer(vertexBufferHandle BufferHandle)
     vertexBuffer *VertexBuffer = (vertexBuffer*)context::Get()->ResourceManager.VertexBuffers.GetResource(BufferHandle);
 
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
-    for(int i=0; i<VertexBuffer->NumVertexStreams; i++)
+    for(u32 i=0; i<VertexBuffer->NumVertexStreams; i++)
     {
         buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(VertexBuffer->VertexStreams[i].Buffer);
         std::shared_ptr<vkBufferData> VkBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);

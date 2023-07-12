@@ -29,8 +29,8 @@ void buffer::CopyData(const uint8_t *Data, size_t ByteSize, size_t Offset)
     glBindBuffer(GLBuffer->Target, GLBuffer->Handle);
 
 
-    u32 CopySize = ByteSize - Offset;
 #if 0
+    sz CopySize = ByteSize - Offset;
     if(CopySize == this->Size)
     {
         glBufferData(GLBuffer->Target, CopySize, Data, GLBuffer->Usage);
@@ -165,13 +165,13 @@ vertexBuffer &vertexBuffer::Create()
         glBindBuffer(GLBuffer->Target, GLBuffer->Handle);
         
         u32 StartPtr=0;
-        for(int j=0; j<VertexStreams[i].AttributesCount; j++)
+        for(u32 j=0; j<VertexStreams[i].AttributesCount; j++)
         {
             glVertexAttribPointer(VertexStreams[i].InputAttributes[j].InputIndex, 
                                 VertexStreams[i].InputAttributes[j].ElementCount, 
                                 VertexAttributeTypeToNative(VertexStreams[i].InputAttributes[j].Type), 
                                 VertexStreams[i].InputAttributes[j].Normalized,
-                                VertexStreams[i].Stride, 
+                                (GLsizei)VertexStreams[i].Stride, 
                                 (void*)((uintptr_t)StartPtr));
             glEnableVertexAttribArray(VertexStreams[i].InputAttributes[j].InputIndex);
             StartPtr += VertexStreams[i].InputAttributes[j].ElementCount * VertexStreams[i].InputAttributes[j].ElementSize;

@@ -28,7 +28,7 @@ void ExecuteEndPass(const command &Command)
 
 void ExecuteSetViewport(const command &Command)
 {
-    glViewport(Command.Viewport.StartX, Command.Viewport.StartY, Command.Viewport.Width, Command.Viewport.Height);
+    glViewport((GLint)Command.Viewport.StartX, (GLint)Command.Viewport.StartY, (GLsizei)Command.Viewport.Width, (GLsizei)Command.Viewport.Height);
 }
 
 void ExecuteSetScissor(const command &Command)

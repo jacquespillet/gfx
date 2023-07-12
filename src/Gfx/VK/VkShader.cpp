@@ -54,6 +54,8 @@ EShLanguage GetShaderType(shaderStageFlags::bits Stage)
     default:
         break;
     }
+
+    return EShLangVertex;
 }
 
 

@@ -10,7 +10,7 @@ namespace gfx
 struct buffer
 {
     const char *Name;
-    u32 Size;
+    sz Size;
     u8 *MappedData;
     
     std::shared_ptr<void> ApiData;

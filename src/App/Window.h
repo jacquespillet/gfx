@@ -20,7 +20,7 @@
 
 #include "Types.h"
 
-class GLFWwindow;
+struct GLFWwindow;
 
 namespace app
 {
@@ -184,7 +184,7 @@ struct windowCreateOptions
 };
 
 
-class window
+struct window
 {
 public:
     window(const windowCreateOptions &windowCreateOptions);

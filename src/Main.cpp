@@ -325,7 +325,7 @@ struct application
 			CommandBuffer->Begin();
 
 			CommandBuffer->BeginPass(OffscreenPass, {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
-			CommandBuffer->SetViewport(0, 0, Width, Height);
+			CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);
 			CommandBuffer->SetScissor(0, 0, Width, Height);
 
 			CommandBuffer->BindGraphicsPipeline(PipelineHandleOffscreen);
@@ -338,7 +338,7 @@ struct application
 			
 			
 			CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
-			CommandBuffer->SetViewport(0, 0, Width, Height);
+			CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);
 			CommandBuffer->SetScissor(0, 0, Width, Height);
 
 			CommandBuffer->BindGraphicsPipeline(PipelineHandleSwapchain);

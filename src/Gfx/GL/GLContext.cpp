@@ -154,7 +154,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GLFramebufferData->ColorTextures[i], 0);
 
-        ColorAttachments[i] = GL_COLOR_ATTACHMENT0 + i;
+        ColorAttachments[i] = (GLenum)(GL_COLOR_ATTACHMENT0 + i);
     }
 
 #if 0 // No depth texture
@@ -171,13 +171,15 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, GLFramebufferData->DepthTexture, 0);
 #endif
 
-    glDrawBuffers(ColorAttachments.size(), ColorAttachments.data());
+    glDrawBuffers((GLsizei)ColorAttachments.size(), ColorAttachments.data());
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         assert(false);
     }
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    return FramebufferHandle;
 }
 
 imageHandle context::CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo)

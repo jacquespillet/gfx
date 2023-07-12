@@ -84,7 +84,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
 
         u32 IntermediateOffsetInHeapStart = D12Data->CurrentHeapOffset;
         std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> IntermediateUAVs(MipLevelCount);
-        for(int i=0; i<MipLevelCount; i++)
+        for(u32 i=0; i<MipLevelCount; i++)
         {
             IntermediateUAVs[i] = D12Data->GetCPUDescriptorAt(IntermediateOffsetInHeapStart + i);
             // Describe and create the UAV for the intermediate texture

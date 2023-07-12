@@ -99,7 +99,7 @@ void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo 
     pitchedDesc.Width = Destination.Resource->Extent.Width;
     pitchedDesc.Height = Destination.Resource->Extent.Height;
     pitchedDesc.Depth = 1;
-    pitchedDesc.RowPitch = Destination.Resource->ByteSize / Destination.Resource->Extent.Height;
+    pitchedDesc.RowPitch = (u32)(Destination.Resource->ByteSize / Destination.Resource->Extent.Height);
     
     D3D12_PLACED_SUBRESOURCE_FOOTPRINT placedTexture2D = { 0 };
     placedTexture2D.Offset = Source.Offset;
@@ -177,7 +177,7 @@ void commandBuffer::BindVertexBuffer(vertexBufferHandle BufferHandle)
     
     // Record commands.
     D12CommandBufferData->CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    for(int i=0; i<VertexBuffer->NumVertexStreams; i++)
+    for(u32 i=0; i<VertexBuffer->NumVertexStreams; i++)
     {
         buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(VertexBuffer->VertexStreams[i].Buffer);
         std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);

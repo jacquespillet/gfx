@@ -1275,7 +1275,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     vk::FramebufferCreateInfo FramebufferCreateInfo;
     FramebufferCreateInfo.setRenderPass(VkRenderPass)
                         .setAttachments(Attachments)
-                        .setAttachmentCount(Attachments.size())
+                        .setAttachmentCount((u32)Attachments.size())
                         .setWidth(CreateInfo.Width)
                         .setHeight(CreateInfo.Height)
                         .setLayers(1);
@@ -1295,7 +1295,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
     VkFramebufferData->DepthStencilImage = DepthImage;
     VkFramebufferData->ColorImages = ColorImages;
-    VkFramebufferData->ColorImagesCount = CreateInfo.ColorFormats.size();
+    VkFramebufferData->ColorImagesCount = (u32)CreateInfo.ColorFormats.size();
     VkFramebufferData->Handle = VkData->Device.createFramebuffer(FramebufferCreateInfo);
 
     return FramebufferHandle;;
