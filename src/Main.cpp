@@ -113,7 +113,7 @@ struct application
 		ContextInitialize.Extensions = Window->GetRequiredExtensions();
 		ContextInitialize.ErrorCallback = ErrorCallback;
 		ContextInitialize.InfoCallback = InfoCallback;
-		ContextInitialize.Debug = false;
+		ContextInitialize.Debug = true;
 		GfxContext = gfx::context::Initialize(ContextInitialize, *Window);
 
 		Swapchain = GfxContext->CreateSwapchain(Width, Height);

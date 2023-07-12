@@ -22,9 +22,6 @@
 namespace gfx
 {
 
-static const u8 MaxVertexStreams = 16;
-static const u8 MaxVertexAttributes = 16;
-static const u8 MaxShaderStages = 8;
 
 
 
@@ -66,8 +63,8 @@ struct vertexInputCreation
     u32 NumVertexStreams=0;
     u32 NumVertexAttributes=0;
 
-    vertexStream VertexStreams[MaxVertexStreams];
-    vertexAttribute VertexAttributes[MaxVertexAttributes];
+    vertexStream VertexStreams[commonConstants::MaxVertexStreams];
+    vertexAttribute VertexAttributes[commonConstants::MaxVertexAttributes];
 
     vertexInputCreation &Reset();
     vertexInputCreation &AddVertexStream(const vertexStream &Stream);
@@ -116,7 +113,7 @@ struct shaderStage
 
 struct shaderStateCreation
 {
-    shaderStage Stages[MaxShaderStages];
+    shaderStage Stages[commonConstants::MaxShaderStages];
     const char *Name=nullptr;
     u32 StagesCount=0;
     u32 SpvInput=0;
@@ -166,7 +163,7 @@ struct blendState
 
 struct blendStateCreation
 {
-    blendState BlendStates[MaxImageOutputs];
+    blendState BlendStates[commonConstants::MaxImageOutputs];
     u32 ActiveStates =0;
     blendState &AddBlendState();
 };

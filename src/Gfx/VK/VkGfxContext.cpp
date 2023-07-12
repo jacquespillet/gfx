@@ -916,7 +916,7 @@ vk::RenderPass CreateRenderPass(vkData *VkData, const renderPassOutput &Output)
     vk::SubpassDescription Subpass = {};
     Subpass.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
 
-    vk::AttachmentDescription Attachments[MaxImageOutputs + 1]{};
+    vk::AttachmentDescription Attachments[commonConstants::MaxImageOutputs + 1]{};
     
     for(u32 ActiveAttachments=0; ActiveAttachments < Output.NumColorFormats; ++ActiveAttachments)
     {
@@ -1030,7 +1030,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     std::shared_ptr<vkShaderData> VkShaderData = std::static_pointer_cast<vkShaderData>(ShaderStateData->ApiData);
 
     VkPipelineData->ShaderState = ShaderState;
-    vk::DescriptorSetLayout Layouts[MaxDescriptorSetLayouts];
+    vk::DescriptorSetLayout Layouts[vkConstants::MaxDescriptorSetLayouts];
 
     u32 NumActiveLayouts = VkShaderData->SpirvParseResults.SetCount;
     for(sz i=0; i<NumActiveLayouts; i++)

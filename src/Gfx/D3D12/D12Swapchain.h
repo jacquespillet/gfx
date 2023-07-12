@@ -2,7 +2,7 @@
 #include "../Include/Types.h"
 #include "../Include/Framebuffer.h"
 #include "D12Framebuffer.h"
-
+#include "D12Common.h"
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl.h>
@@ -12,10 +12,9 @@ namespace gfx
 {
 struct d3d12SwapchainData
 {
-    static const u32 FrameCount = 2;
     ComPtr<IDXGISwapChain3> SwapChain;    
     framebufferHandle FramebufferHandle;
-    ComPtr<ID3D12Resource> Buffers[FrameCount] = {};
+    ComPtr<ID3D12Resource> Buffers[d12Constants::FrameCount] = {};
 
 
     u32 GetFrameIndex()

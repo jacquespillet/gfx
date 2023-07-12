@@ -14,10 +14,6 @@
 namespace gfx
 {
 
-struct vkConstants
-{
-    static const u8 MaxDescriptorsPerSet = 16;
-};
 
 struct vkData
 {

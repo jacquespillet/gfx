@@ -197,7 +197,7 @@ vertexBuffer &vertexBuffer::Init()
 vertexBuffer &vertexBuffer::Reset()
 {
     NumVertexStreams=0;
-    for (sz i = 0; i < MaxVertexStreams; i++)
+    for (sz i = 0; i < commonConstants::MaxVertexStreams; i++)
     {
         this->VertexStreams[i].StreamIndex = (u32)-1;
     }

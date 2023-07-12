@@ -46,7 +46,6 @@ struct stageBuffer
 
 struct vertexStreamData
 {
-    static const u32 MaxInputAttributes = 16;
 
     void *Data=nullptr;
     sz Size=0;
@@ -54,7 +53,7 @@ struct vertexStreamData
     u32 StreamIndex=0;
     bufferHandle Buffer=0;
     u32 AttributesCount=0;
-    vertexInputAttribute InputAttributes[MaxInputAttributes];
+    vertexInputAttribute InputAttributes[commonConstants::MaxVertexAttributes];
 
     vertexStreamData &Reset();
     vertexStreamData &SetData(void *Data);
@@ -66,8 +65,7 @@ struct vertexStreamData
 
 struct vertexBuffer
 {
-    static const u32 MaxVertexStreams = 16;
-    vertexStreamData VertexStreams[MaxVertexStreams];
+    vertexStreamData VertexStreams[commonConstants::MaxVertexStreams];
     u32 NumVertexStreams=0;
 
     std::shared_ptr<void> ApiData = nullptr;

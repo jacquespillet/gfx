@@ -11,7 +11,6 @@ namespace gfx
 {
 struct d3d12PipelineData
 {
-    static const u32 MaxResourceBindings = 1024; 
     ComPtr<ID3D12RootSignature> RootSignature;
     ComPtr<ID3D12PipelineState> PipelineState;
 
@@ -19,7 +18,7 @@ struct d3d12PipelineData
     ComPtr<IDxcBlob> pixelShader;
     
     std::vector<D3D12_ROOT_PARAMETER> RootParams;
-    b8 UsedRootParams[MaxResourceBindings]; 
+    b8 UsedRootParams[d12Constants::MaxResourceBindings]; 
     
     std::unordered_map<u32, u32> BindingRootParamMapping;
 };

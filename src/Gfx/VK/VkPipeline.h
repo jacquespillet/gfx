@@ -2,7 +2,6 @@
 #include "VkGfxContext.h"
 namespace gfx
 {
-static const u8 MaxDescriptorSetLayouts = 8;
 
 
 struct descriptorBinding
@@ -44,8 +43,8 @@ struct vkPipelineData
     vk::PipelineLayout PipelineLayout;
     vk::PipelineBindPoint BindPoint;
 
-    descriptorSetLayout *DescriptorSetLayouts[MaxDescriptorSetLayouts];
-    descriptorSetLayoutHandle DescriptorSetLayoutHandles[MaxDescriptorSetLayouts];
+    descriptorSetLayout *DescriptorSetLayouts[vkConstants::MaxDescriptorSetLayouts];
+    descriptorSetLayoutHandle DescriptorSetLayoutHandles[vkConstants::MaxDescriptorSetLayouts];
 
     u32 NumActiveLayouts = 0;
 };

@@ -21,7 +21,7 @@ void virtualFramesProvider::Init()
     // Create frame resources.
     {
         // Create a RTV for each frame.
-        for (UINT n = 0; n < d3d12SwapchainData::FrameCount; n++)
+        for (UINT n = 0; n < d12Constants::FrameCount; n++)
         {
             
             ThrowIfFailed(D12Data->Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&CommandAllocators[n])));

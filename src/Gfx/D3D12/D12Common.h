@@ -15,4 +15,10 @@ namespace gfx
             std::cout << "Error " << std::endl;
         }
     }
+
+    namespace d12Constants
+    {
+        static const u32 FrameCount = 2;
+        static const u32 MaxResourceBindings = 1024; 
+    }
 }

@@ -13,7 +13,6 @@ namespace gfx
 
 struct d3d12FramebufferData
 {
-    static const u32 MaxRenderTargets = 16;
 
     u32 CurrentTarget=0;
     u32 RenderTargetsCount=0;
@@ -21,7 +20,7 @@ struct d3d12FramebufferData
     ComPtr<ID3D12DescriptorHeap> RenderTargetViewHeap = {};
     ComPtr<ID3D12DescriptorHeap> DepthBufferViewHeap = {};
     u32 RTVDescriptorSize=0;
-    ComPtr<ID3D12Resource> RenderTargets[MaxRenderTargets] = {};
+    ComPtr<ID3D12Resource> RenderTargets[commonConstants::MaxImageOutputs] = {};
     ComPtr<ID3D12Resource> DepthStencilBuffer;  
         
     DXGI_FORMAT DepthStencilFormat =DXGI_FORMAT_D24_UNORM_S8_UINT;

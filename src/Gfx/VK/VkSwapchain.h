@@ -9,12 +9,11 @@ namespace gfx
 struct image;
 struct vkSwapchainData
 {
-    static const s32 maxSwapchainImages = 16;
 
     vk::SwapchainKHR Handle;
-    std::shared_ptr<image> SwapchainImages[maxSwapchainImages];
-    imageUsage::bits SwapchainImageUsages[maxSwapchainImages];
-    framebufferHandle Framebuffers[maxSwapchainImages];
+    std::shared_ptr<image> SwapchainImages[vkConstants::MaxSwapchainImages];
+    imageUsage::bits SwapchainImageUsages[vkConstants::MaxSwapchainImages];
+    framebufferHandle Framebuffers[vkConstants::MaxSwapchainImages];
 
     u32 ImageCount=0;
 

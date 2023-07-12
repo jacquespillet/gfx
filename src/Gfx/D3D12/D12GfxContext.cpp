@@ -238,7 +238,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
 
     // Describe and create the swap chain.
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-    swapChainDesc.BufferCount = d3d12SwapchainData::FrameCount;
+    swapChainDesc.BufferCount = d12Constants::FrameCount;
     swapChainDesc.Width = Width;
     swapChainDesc.Height = Height;
     swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -264,14 +264,14 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     D12SwapchainData->SetFrameIndex(D12SwapchainData->SwapChain->GetCurrentBackBufferIndex());
     
     //Retrieve buffers of the swapchain and store them
-    for (UINT n = 0; n < d3d12SwapchainData::FrameCount; n++)
+    for (UINT n = 0; n < d12Constants::FrameCount; n++)
     {
         ThrowIfFailed(D12SwapchainData->SwapChain->GetBuffer(n, IID_PPV_ARGS(&D12SwapchainData->Buffers[n])));
     }
     
-    D12FramebufferData->RenderTargetsCount = d3d12SwapchainData::FrameCount;
+    D12FramebufferData->RenderTargetsCount = d12Constants::FrameCount;
     D12FramebufferData->CreateHeaps();
-    D12FramebufferData->SetRenderTargets(D12SwapchainData->Buffers, d3d12SwapchainData::FrameCount);
+    D12FramebufferData->SetRenderTargets(D12SwapchainData->Buffers, d12Constants::FrameCount);
     D12FramebufferData->BuildDescriptors();
     D12FramebufferData->CreateDepthBuffer(Width, Height, format::D24_UNORM_S8_UINT);
     D12FramebufferData->IsSwapchain=true;
@@ -372,7 +372,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     Framebuffer->ApiData = std::make_shared<d3d12FramebufferData>();
     std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(Framebuffer->ApiData);
     
-    assert(CreateInfo.ColorFormats.size() < d3d12FramebufferData::MaxRenderTargets);
+    assert(CreateInfo.ColorFormats.size() < commonConstants::MaxImageOutputs);
     
     for(sz i=0; i<CreateInfo.ColorFormats.size(); i++)
     {
@@ -575,7 +575,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         D12PipelineData->vertexShader = CompileShader(PipelineCreation.Shaders.Stages[0], D12PipelineData->RootParams, D12PipelineData->BindingRootParamMapping, DescriptorRanges);
         D12PipelineData->pixelShader = CompileShader(PipelineCreation.Shaders.Stages[1], D12PipelineData->RootParams, D12PipelineData->BindingRootParamMapping, DescriptorRanges);
 
-        memset(&D12PipelineData->UsedRootParams[0], 0, d3d12PipelineData::MaxResourceBindings * sizeof(b8));
+        memset(&D12PipelineData->UsedRootParams[0], 0, d12Constants::MaxResourceBindings * sizeof(b8));
         for(sz i=0; i<D12PipelineData->RootParams.size(); i++)
         {
             if(D12PipelineData->RootParams[i].ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)

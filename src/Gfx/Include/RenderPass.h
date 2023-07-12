@@ -5,7 +5,6 @@
 
 namespace gfx
 {
-static const u8 MaxImageOutputs = 8;
 
 namespace renderPassOperation
 {
@@ -17,9 +16,9 @@ enum values
 
 struct renderPassOutput
 {
-    format ColorFormats[MaxImageOutputs];
-    imageLayout ColorFinalLayouts[MaxImageOutputs];
-    renderPassOperation::values ColorOperations[MaxImageOutputs];
+    format ColorFormats[commonConstants::MaxImageOutputs];
+    imageLayout ColorFinalLayouts[commonConstants::MaxImageOutputs];
+    renderPassOperation::values ColorOperations[commonConstants::MaxImageOutputs];
 
     format DepthStencilFormat;
     imageLayout DepthStencilFinalLayout;

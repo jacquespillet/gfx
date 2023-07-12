@@ -25,7 +25,7 @@ renderPassOutput &renderPassOutput::SetDepthStencilOperation(renderPassOperation
 void renderPassOutput::Reset()
 {
     NumColorFormats = 0;
-    for (u32 i = 0; i < MaxImageOutputs; i++)
+    for (u32 i = 0; i < commonConstants::MaxImageOutputs; i++)
     {
         ColorFormats[i] = format::UNDEFINED;
         ColorOperations[i] = renderPassOperation::DontCare;

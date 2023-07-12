@@ -53,6 +53,13 @@ typedef uint32_t descriptorSetLayoutHandle;
 static const u32 InvalidHandle = 0xffffffff;
 
 
+namespace commonConstants
+{
+    static const u8 MaxVertexAttributes = 16;
+    static const u32 MaxVertexStreams = 16;
+    static const u8 MaxImageOutputs = 8;
+    static const u8 MaxShaderStages = 8;
+};
 
 enum class clearBufferType
 {

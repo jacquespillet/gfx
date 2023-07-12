@@ -15,7 +15,7 @@ struct glBuffer
 struct glVertexBuffer
 {
     GLuint VAO = (GLuint)-1;
-    bufferHandle VertexBuffers[vertexBuffer::MaxVertexStreams];
+    bufferHandle VertexBuffers[commonConstants::MaxVertexStreams];
 };
 
 }

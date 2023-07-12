@@ -50,9 +50,8 @@ struct spirvParseResult
 
 struct vkShaderData
 {
-    static const u8 MaxShaderStages = 8;
 
-    vk::PipelineShaderStageCreateInfo ShaderStageCreateInfo[MaxShaderStages];
+    vk::PipelineShaderStageCreateInfo ShaderStageCreateInfo[commonConstants::MaxShaderStages];
     spirvParseResult SpirvParseResults;
 };
 
