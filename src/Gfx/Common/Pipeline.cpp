@@ -70,7 +70,7 @@ shaderStateCreation &shaderStateCreation::AddStage(const char *FileName, shaderS
     char *Code = (char*)AllocateMemory(CodeStr.size() + 1);
 
 
-    strcpy(Code, CodeStr.c_str());
+    strcpy_s(Code, CodeStr.size() + 1,CodeStr.c_str());
 
     Stages[StagesCount].Code = Code;   
     Stages[StagesCount].CodeSize = (u32)strlen(Code);   
@@ -255,17 +255,14 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
             const char *FileNameCStr = AllocateCString(ParentPath + "/" + ShaderFileName.c_str());
 
             if(Name == "vertex")
-                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, strlen(CodeCStr), shaderStageFlags::bits::Vertex);
+                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::Vertex);
             else if(Name == "fragment")
-                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, strlen(CodeCStr), shaderStageFlags::bits::Fragment);
+                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::Fragment);
             else if(Name == "compute")
-                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, strlen(CodeCStr), shaderStageFlags::bits::Compute);
+                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::Compute);
         }
     }
 
-    //TODO: 
-    //We can calculate the stride of the stream and the offsets of the attributes instead of setting them in the json
-    
     json VertexStreams = PipelineJSON["vertex_streams"];
     if(VertexStreams.is_array())
     {
@@ -393,7 +390,7 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
         Cull.get_to(Name);
         if(Name== "back")
         {
-            PipelineCreation.Rasterization.CullMode == cullMode::Back;
+            PipelineCreation.Rasterization.CullMode = cullMode::Back;
         }
         else
         {
@@ -480,7 +477,8 @@ pipelineHandle context::CreatePipelineFromFile(const char *FileName, framebuffer
         return pipeline;
     }
 
-    
+
+    return InvalidHandle;    
 }    
 
 
