@@ -6,11 +6,11 @@
 namespace gfx
 {
 
-image::image(imageData *ImageData, textureCreateInfo &CreateInfo)
+void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
 {
-    this->Extent.Width = ImageData->Width;
-    this->Extent.Height = ImageData->Height;
-    this->Format = ImageData->Format;
+    this->Extent.Width = ImageData.Width;
+    this->Extent.Height = ImageData.Height;
+    this->Format = ImageData.Format;
     
     //TODO
     this->MipLevelCount = (CreateInfo._GenerateMipmaps)?1 : 1;
@@ -20,7 +20,7 @@ image::image(imageData *ImageData, textureCreateInfo &CreateInfo)
     glGenTextures(1, &GLImage->Handle);
     glBindTexture(GL_TEXTURE_2D, GLImage->Handle);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, FormatToNativeInternal(ImageData->Format), ImageData->Width, ImageData->Height, 0, FormatToNative(ImageData->Format), TypeToNative(ImageData->Type), ImageData->Data);
+    glTexImage2D(GL_TEXTURE_2D, 0, FormatToNativeInternal(ImageData.Format), ImageData.Width, ImageData.Height, 0, FormatToNative(ImageData.Format), TypeToNative(ImageData.Type), ImageData.Data);
 
     //TODO
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, Mapping(CreateInfo._WrapS));

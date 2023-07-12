@@ -17,6 +17,7 @@
 #include "GLCommon.h"
 #include "GLBuffer.h"
 #include "GLMapping.h"
+#include "GLImage.h"
 #include "GLFramebuffer.h"
 
 #include <GL/glew.h>
@@ -178,6 +179,20 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
+
+imageHandle context::CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo)
+{
+    imageHandle ImageHandle = ResourceManager.Images.ObtainResource();
+    if(ImageHandle == InvalidHandle)
+    {
+        return ImageHandle;
+    }
+    image *Image = (image*)ResourceManager.Images.GetResource(ImageHandle);
+    *Image = image();
+    Image->Init(ImageData, CreateInfo);
+    return ImageHandle;
+}
+
 
 std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
 {
@@ -365,26 +380,70 @@ void context::OnResize(u32 NewWidth, u32 NewHeight)
 // {
 // }
 
-// void context::DestroyPipeline(pipelineHandle PipelineHandle)
-// {
+void context::DestroyPipeline(pipelineHandle PipelineHandle)
+{
+    GET_CONTEXT(GLData, this);    
+    pipeline *Pipeline = (pipeline *) ResourceManager.Pipelines.GetResource(PipelineHandle);
+    std::shared_ptr<glPipeline> VkPipelineData = std::static_pointer_cast<glPipeline>(Pipeline->ApiData);
 
-// }
-// void context::DestroyBuffer(bufferHandle BufferHandle)
-// {
 
-// }
-// void context::DestroySwapchain()
-// {
+    if(VkPipelineData->ShaderProgram->VertexShader != nullptr) glDeleteShader(VkPipelineData->ShaderProgram->VertexShader->ShaderObject);
+    if(VkPipelineData->ShaderProgram->GeometryShader != nullptr) glDeleteShader(VkPipelineData->ShaderProgram->GeometryShader->ShaderObject);
+    if(VkPipelineData->ShaderProgram->FragmentShader != nullptr) glDeleteShader(VkPipelineData->ShaderProgram->FragmentShader->ShaderObject);
 
-// }
+    glDeleteProgram(VkPipelineData->ShaderProgram->ProgramShaderObject);
 
-// void context::WaitIdle()
-// {
-// }
+    ResourceManager.Pipelines.ReleaseResource(PipelineHandle);
 
-// void context::Cleanup()
-// {
 
-// }
+}
+
+void context::DestroyBuffer(bufferHandle BufferHandle)
+{
+    buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(BufferHandle);
+    std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(Buffer->ApiData);
+    glDeleteBuffers(1, &GLBuffer->Handle);
+    if(GLBuffer->VAO != (GLuint)-1)
+    {
+        glDeleteVertexArrays(1, &GLBuffer->VAO);
+    }
+    ResourceManager.Buffers.ReleaseResource(BufferHandle);
+}
+
+void context::DestroyImage(imageHandle ImageHandle)
+{
+    image *Image = (image*)ResourceManager.Images.GetResource(ImageHandle);
+    std::shared_ptr<glImage> GLImage = std::static_pointer_cast<glImage>(Image->ApiData);
+    glDeleteTextures(1, &GLImage->Handle);
+    ResourceManager.Images.ReleaseResource(ImageHandle);
+}
+
+void context::DestroySwapchain()
+{
+    GET_CONTEXT(GLData, this);    
+    ResourceManager.Framebuffers.ReleaseResource(GLData->SwapchainFramebuffer);
+}
+
+void context::DestroyFramebuffer(framebufferHandle FramebufferHandle)
+{
+    framebuffer *Framebuffer = (framebuffer*)ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+    std::shared_ptr<glFramebufferData> GLFramebuffer = std::static_pointer_cast<glFramebufferData>(Framebuffer->ApiData);
+    
+    glDeleteTextures((GLsizei)GLFramebuffer->ColorTextures.size(), GLFramebuffer->ColorTextures.data());
+    glDeleteTextures(1, &GLFramebuffer->DepthTexture);
+    glDeleteFramebuffers(1, &GLFramebuffer->Handle);
+ 
+    ResourceManager.Framebuffers.ReleaseResource(FramebufferHandle);
+}
+
+void context::Cleanup()
+{
+    ResourceManager.Destroy();
+}
+
+void context::WaitIdle()
+{
+}
+
 
 }

@@ -20,8 +20,6 @@ struct glShader
 
     shaderStageFlags::value Type;
     
-    ~glShader();
-    
     //GL
     GLint ShaderObject;
 };
@@ -39,11 +37,10 @@ struct glShaderProgram
     
     //shader programs
 
-    std::shared_ptr<glShader> VertexShader;
-    std::shared_ptr<glShader> GeometryShader;
-    std::shared_ptr<glShader> FragmentShader;
+    std::shared_ptr<glShader> VertexShader = nullptr;
+    std::shared_ptr<glShader> GeometryShader = nullptr;
+    std::shared_ptr<glShader> FragmentShader = nullptr;
     
-    ~glShaderProgram();
 
     void Bind();
     void Unbind();

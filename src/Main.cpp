@@ -126,7 +126,6 @@ struct application
 			// gfx::textureWrapMode::CLAMP_TO_BORDER,
 			true
 		};
-		//TODO: Use imageHandle like buffers
 		TextureHandle1 = GfxContext->CreateImage(ImageData, ImageCreateInfo);
 		TextureHandle2 = GfxContext->CreateImage(ImageData, ImageCreateInfo);
 		gfx::image *Texture1 = (gfx::image*) GfxContext->ResourceManager.Images.GetResource(TextureHandle1);
@@ -172,7 +171,7 @@ struct application
 		UniformBufferHandle2 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
 		gfx::buffer *UniformBuffer2 = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle2);
 		UniformBuffer2->CopyData((uint8_t*)&UniformData2, sizeof(uniformData), 0);
-
+  
 		UniformBufferHandle3 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
 		gfx::buffer *UniformBuffer3 = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle3);
 		UniformBuffer3->CopyData((uint8_t*)&UniformData3, sizeof(uniformData), 0);
@@ -221,14 +220,12 @@ struct application
 		
 		//Update the bindings
 		Uniforms->Update();
-#if 0
-#endif
 	}
 	
 	void Cleanup()
 	{
-		// GfxContext->WaitIdle();
-		
+		GfxContext->WaitIdle();
+
 		DestroyProgramSpecific();
 
 		GfxContext->DestroySwapchain();
@@ -237,7 +234,6 @@ struct application
 		gfx::memory *Memory = gfx::memory::Get();
 		Memory->Destroy();
 		delete Memory;
-
 
 		system("pause");
 	}
@@ -259,7 +255,6 @@ struct application
 
 	void Run()
 	{
-#if 1
 		float t = 0;
 		while(!Window->ShouldClose())
 		{
@@ -309,7 +304,6 @@ struct application
 			// Present the rendered frame
 			GfxContext->Present();
 		}
-#endif
 	}
 
 	void OnResize(uint32_t NewWidth, uint32_t NewHeight)

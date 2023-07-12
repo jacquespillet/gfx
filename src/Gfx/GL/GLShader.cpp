@@ -47,11 +47,6 @@ void glShader::Compile()
 	Compiled = true;
 }
 
-glShader::~glShader()
-{
-    delete[] Source;
-    glDeleteShader(ShaderObject);
-}
 
 //
 glShaderProgram::glShaderProgram(glShader *VertexShader, glShader *GeometryShader, glShader *FragmentShader) :
@@ -143,10 +138,6 @@ void glShaderProgram::Unbind()
 }
 
 
-glShaderProgram::~glShaderProgram()
-{
-    glDeleteProgram(ProgramShaderObject);
-}
 
 
 

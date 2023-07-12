@@ -17,7 +17,6 @@
 					"attribute_binding" : 0,
 					"attribute_offset" : 0,
 					"attribute_format" : "Float3",
-					"stream_binding" : 0,
 					"name" : "Position"
 				},
 				{
@@ -25,7 +24,6 @@
 					"attribute_binding" : 0,
 					"attribute_offset" : 12,
 					"attribute_format" : "Float4",
-					"stream_binding" : 0,
 					"name" : "Position"
 				}
 			],
