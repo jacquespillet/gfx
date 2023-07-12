@@ -106,17 +106,19 @@ void vkImageData::Init(const image &Image, imageUsage::value ImageUsage, memoryU
     InitViews(Image, Handle, Image.Format);
 }
 
-image::image(imageData *ImageData, textureCreateInfo &CreateInfo)
+void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
 {
-    Extent.Width = ImageData->Width;
-    Extent.Height = ImageData->Height;
-    Format = ImageData->Format;
+    Extent.Width = ImageData.Width;
+    Extent.Height = ImageData.Height;
+    Format = ImageData.Format;
+
+
     MipLevelCount = CreateInfo._GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
 
     context *VulkanContext = context::Get();
-
     ApiData = std::make_shared<vkImageData>();
     std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(ApiData);
+
 
     imageUsage::value ImageUsage = imageUsage::TRANSFER_DESTINATION | imageUsage::SHADER_READ; 
     if(GenerateMipmaps) ImageUsage |= imageUsage::TRANSFER_SOURCE;
@@ -131,7 +133,7 @@ image::image(imageData *ImageData, textureCreateInfo &CreateInfo)
 
     // CommandBuffer.Begin();
     GET_CONTEXT(VkData, context::Get());
-    auto TextureAllocation = VkData->StageBuffer.Submit(ImageData->Data, (u32)ImageData->DataSize);
+    auto TextureAllocation = VkData->StageBuffer.Submit(ImageData.Data, (u32)ImageData.DataSize);
     
     VkData->ImmediateCommandBuffer->Begin();
 
@@ -173,7 +175,7 @@ image::image(vk::Image VkImage, u32 Width, u32 Height, format Format)
 
 
 
-image::image(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage)
+void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage)
 {
     ApiData = std::make_shared<vkImageData>();
     std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(ApiData);
@@ -292,7 +294,7 @@ void vkImageData::InitViews(const image &Image, const vk::Image &VkImage, format
     }    
 }
 
-void vkImageData::InitSampler(textureCreateInfo &CreateInfo)
+void vkImageData::InitSampler(const imageCreateInfo &CreateInfo)
 {
     //TODO
     vk::SamplerCreateInfo SamplerCreateInfo;
@@ -320,6 +322,11 @@ void image::Destroy()
         VkData->Device.destroyImageView(VkImageData->DefaultImageViews.DepthOnlyView);
     if(VkImageData->DefaultImageViews.StencilOnlyViewSet)
         VkData->Device.destroyImageView(VkImageData->DefaultImageViews.StencilOnlyView);
+
+    if((void*)VkImageData->Sampler != nullptr)
+    {
+        VkData->Device.destroySampler(VkImageData->Sampler);
+    }
     
     vmaDestroyImage(VkData->Allocator, VkImageData->Handle, VkImageData->Allocation);
 

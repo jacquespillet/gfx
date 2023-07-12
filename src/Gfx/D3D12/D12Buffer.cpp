@@ -204,4 +204,9 @@ buffer *stageBuffer::GetBuffer()
     return Buffer;
 }
 
+void stageBuffer::Destroy()
+{
+    context::Get()->ResourceManager.Buffers.ReleaseResource(BufferHandle);
+}
+
 }

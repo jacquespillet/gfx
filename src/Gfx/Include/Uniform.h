@@ -37,6 +37,8 @@ struct uniformGroup
     std::unordered_map<pipelineHandle, u32> Bindings; //Store where this uniform group is bound in each pipeline
     void Initialize();
     void Update();
+
+    //TODO: Use raw pointer here...
     std::shared_ptr<void> ApiData;
 };
 

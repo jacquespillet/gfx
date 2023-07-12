@@ -651,10 +651,29 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
         psoDesc.SampleDesc.Count = 1;
         ThrowIfFailed(D12Data->Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&D12PipelineData->PipelineState)));
+
+        for(sz i=0; i<InputElementDescriptors.size(); i++)
+        {
+            DeallocateMemory((void*)InputElementDescriptors[i].SemanticName);
+        }
     }    
 
     return Handle;
 }
+
+imageHandle context::CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo)
+{
+    imageHandle ImageHandle = ResourceManager.Images.ObtainResource();
+    if(ImageHandle == InvalidHandle)
+    {
+        return ImageHandle;
+    }
+    image *Image = (image*)ResourceManager.Images.GetResource(ImageHandle);
+    *Image = image();
+    Image->Init(ImageData, CreateInfo);
+    return ImageHandle;
+}
+
 
 renderPassHandle context::GetDefaultRenderPass()
 {
@@ -702,15 +721,24 @@ void context::StartFrame()
 
 void context::DestroyPipeline(pipelineHandle PipelineHandle)
 {
-
+    ResourceManager.Pipelines.ReleaseResource(PipelineHandle);
 }
 void context::DestroyBuffer(bufferHandle BufferHandle)
 {
-
+    ResourceManager.Buffers.ReleaseResource(BufferHandle);
+}
+void context::DestroyImage(imageHandle ImageHandle)
+{
+    ResourceManager.Images.ReleaseResource(ImageHandle);
+}
+void context::DestroyFramebuffer(framebufferHandle FramebufferHandle)
+{
+    ResourceManager.Framebuffers.ReleaseResource(FramebufferHandle);
 }
 void context::DestroySwapchain()
 {
-
+    std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
+    ResourceManager.Framebuffers.ReleaseResource(D12SwapchainData->FramebufferHandle);
 }
 
 void context::WaitIdle()
@@ -721,8 +749,11 @@ void context::WaitIdle()
 }
 
 void context::Cleanup()
-{
-
+{   
+    GET_CONTEXT(D12Data, this);
+    D12Data->StageBuffer.Destroy();
+    
+    ResourceManager.Destroy();
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE d3d12Data::GetCPUDescriptorAt(sz Index)

@@ -8,9 +8,9 @@ namespace gfx
 
 struct imageViews
 {
-    vk::ImageView NativeView;
-    vk::ImageView DepthOnlyView;
-    vk::ImageView StencilOnlyView;
+    vk::ImageView NativeView = VK_NULL_HANDLE;
+    vk::ImageView DepthOnlyView = VK_NULL_HANDLE;
+    vk::ImageView StencilOnlyView = VK_NULL_HANDLE;
     b8 DepthOnlyViewSet=false;
     b8 StencilOnlyViewSet=false;
 };
@@ -21,11 +21,12 @@ struct vkImageData
     std::vector<imageViews> CubemapImageViews;
     vk::Image Handle;
     VmaAllocation Allocation = {};
-    vk::Sampler Sampler;
+    
+    vk::Sampler Sampler = nullptr;
 
     void Init(const image &Image, imageUsage::value ImageUsage, memoryUsage MemoryUsage);
     void InitViews(const image &Image, const vk::Image &VkImage, format Format);
-    void InitSampler(textureCreateInfo &CreateInfo);
+    void InitSampler(const imageCreateInfo &CreateInfo);
 };
 
 

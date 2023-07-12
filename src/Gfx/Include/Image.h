@@ -5,7 +5,7 @@
 namespace gfx
 {
     
-struct textureCreateInfo
+struct imageCreateInfo
 {
     f32 _BorderColor[4];
     // textureFilter _MinFilter = textureFilter::LINEAR;
@@ -41,11 +41,9 @@ struct image
     sz ByteSize=0;
 
     std::shared_ptr<void> ApiData;
-
     image() = default;
-    image(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage);
-        
-    image(imageData *Image, textureCreateInfo &CreateInfo);
+    void Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage);
+    void Init(const imageData &Image, const imageCreateInfo &CreateInfo);
         
     u32 GetMipLevelWidth(u32 MipLevel);
     u32 GetMipLevelHeight(u32 MipLevel);

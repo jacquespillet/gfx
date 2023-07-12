@@ -7,6 +7,7 @@
 #include "Pipeline.h"
 #include "ResourceManager.h"
 #include "Uniform.h"
+#include "Image.h"
 #include <memory>
 
 namespace app
@@ -71,6 +72,8 @@ struct context
     stageBuffer CreateStageBuffer(sz Size);
     bufferHandle CreateVertexBuffer(f32 *Values, sz Count, sz Stride, const std::vector<vertexInputAttribute> &Attributes);
     bufferHandle CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage MemoryUsage);
+    imageHandle CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo);
+    imageHandle CreateImage(u32 Width, u32 Height, format Format, u8 *Pixels);
 
     //TODO: return a technique struct with multiple passes and pipelines
     // struct technique
@@ -81,7 +84,6 @@ struct context
     pipelineHandle CreatePipelineFromFile(const char *FileName, framebufferHandle Framebuffer = InvalidHandle); 
     pipelineHandle CreatePipeline(const pipelineCreation &PipelineCreation);
 
-    imageHandle CreateImage(u32 Width, u32 Height, format Format, u8 *Pixels);
 
     renderPassHandle GetDefaultRenderPass();
     framebufferHandle GetSwapchainFramebuffer();
@@ -92,17 +94,18 @@ struct context
 
     void SubmitCommandBuffer(commandBuffer *CommandBuffer);
     void SubmitCommandBufferImmediate(commandBuffer *CommandBuffer);
+    void BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding);
 
     void DestroyCommandBuffer(commandBuffer* Handle);
     void DestroySwapchain(swapchain *Swapchain);
-
     void DestroyPipeline(pipelineHandle Pipeline);
+    void DestroyFramebuffer(framebufferHandle Framebuffer);
     void DestroyBuffer(bufferHandle Buffer);
+    void DestroyImage(imageHandle Buffer);
+    void DestroySwapchain();
 
-    void BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding);
 
     void Cleanup();
-    void DestroySwapchain();
     void WaitIdle();
 
     void OnResize(u32 newWidth, u32 NewHeight);

@@ -473,6 +473,7 @@ pipelineHandle context::CreatePipelineFromFile(const char *FileName, framebuffer
         for (size_t j = 0; j < PipelineCreations[i].Shaders.StagesCount; j++)
         {
             DeallocateMemory((void*)PipelineCreations[i].Shaders.Stages[j].Code);
+            DeallocateMemory((void*)PipelineCreations[i].Shaders.Stages[j].FileName);
         }
         DeallocateMemory((void*)PipelineCreations[i].Name);
         

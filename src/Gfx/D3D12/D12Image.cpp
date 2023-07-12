@@ -14,14 +14,14 @@ using namespace Microsoft::WRL;
 namespace gfx
 {
 
-image::image(imageData *ImageData, textureCreateInfo &CreateInfo)
+void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
 {
     std::shared_ptr<d3d12Data> D12Data = std::static_pointer_cast<d3d12Data>(context::Get()->ApiContextData);
 
-    Extent.Width = ImageData->Width;
-    Extent.Height = ImageData->Height;
-    Format = ImageData->Format;
-    ByteSize = ImageData->DataSize;
+    Extent.Width = ImageData.Width;
+    Extent.Height = ImageData.Height;
+    Format = ImageData.Format;
+    ByteSize = ImageData.DataSize;
     MipLevelCount = CreateInfo._GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
 
     context *VulkanContext = context::Get();
@@ -31,7 +31,7 @@ image::image(imageData *ImageData, textureCreateInfo &CreateInfo)
         
     D12Image->ResourceState = D3D12_RESOURCE_STATE_COPY_DEST;
 
-    CD3DX12_RESOURCE_DESC TextureDesc = CD3DX12_RESOURCE_DESC::Tex2D(FormatToNative(ImageData->Format), ImageData->Width, ImageData->Height, 1, MipLevelCount);
+    CD3DX12_RESOURCE_DESC TextureDesc = CD3DX12_RESOURCE_DESC::Tex2D(FormatToNative(ImageData.Format), ImageData.Width, ImageData.Height, 1, MipLevelCount);
     D12Data->Device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE,
         &TextureDesc, D12Image->ResourceState, nullptr,
         IID_PPV_ARGS(&D12Image->Handle));
@@ -44,7 +44,7 @@ image::image(imageData *ImageData, textureCreateInfo &CreateInfo)
 
     // Create the shader resource view (SRV)
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Format = FormatToNative(ImageData->Format);
+    srvDesc.Format = FormatToNative(ImageData.Format);
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
     srvDesc.Texture2D.MipLevels = MipLevelCount;
     srvDesc.Texture2D.MostDetailedMip = 0;
@@ -57,7 +57,7 @@ image::image(imageData *ImageData, textureCreateInfo &CreateInfo)
     D12Data->CurrentHeapOffset++;
 
     //Fill the stage buffer with data
-    auto TextureAllocation = D12Data->StageBuffer.Submit(ImageData->Data, (u32)ImageData->DataSize);
+    auto TextureAllocation = D12Data->StageBuffer.Submit(ImageData.Data, (u32)ImageData.DataSize);
     
 
     

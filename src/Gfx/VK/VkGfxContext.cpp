@@ -100,6 +100,7 @@ void CreateSwapchainFramebuffer(std::shared_ptr<image> *ColorImages, std::shared
                             .setLayers(1);
         
 
+        //TODO: Handle this : what happens when we resize ? Surely the old one doesn't get deleted.
         framebufferHandle FramebufferHandle = Context->ResourceManager.Framebuffers.ObtainResource();
         if(FramebufferHandle == InvalidHandle)
         {
@@ -189,7 +190,8 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
 
     format DepthFormat;
     bool FoundDepthFormat = GetSupportedDepthFormat(VkData->PhysicalDevice, &DepthFormat);
-    std::shared_ptr<image> DepthStencil = std::make_shared<image>(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
+    std::shared_ptr<image> DepthStencil = std::make_shared<image>();
+    DepthStencil->Init(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
     CreateSwapchainFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, SwapchainPassHandle, VkData->PresentImageCount, VkSwapchainData.get());
 
     return Swapchain;
@@ -263,7 +265,8 @@ std::shared_ptr<swapchain> context::RecreateSwapchain(u32 Width, u32 Height, std
 
     format DepthFormat;
     bool FoundDepthFormat = GetSupportedDepthFormat(VkData->PhysicalDevice, &DepthFormat);
-    std::shared_ptr<image> DepthStencil = std::make_shared<image>(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
+    std::shared_ptr<image> DepthStencil = std::make_shared<image>();
+    DepthStencil->Init(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
     CreateSwapchainFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, SwapchainPassHandle, VkData->PresentImageCount,VkSwapchainData.get());
 
     Swapchain = OldSwapchain;
@@ -365,7 +368,7 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
     Singleton->SwapchainOutput.Color(FormatFromNative(VkData->SurfaceFormat.format), imageLayout::PresentSrcKHR, renderPassOperation::Clear);
     Singleton->SwapchainOutput.Depth(DepthFormat, imageLayout::DepthStencilAttachmentOptimal);
     Singleton->SwapchainOutput.SetDepthStencilOperation(renderPassOperation::Clear, renderPassOperation::Clear);
-    Singleton->SwapchainOutput.Name = "Swapchain";
+    Singleton->SwapchainOutput.Name = AllocateCString("Swapchain");
     
     InitializeInfo.InfoCallback("Selected Surface format " + vk::to_string(VkData->SurfaceFormat.format));
 
@@ -584,6 +587,19 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage
     VkBufferData->Allocation = gfx::AllocateBuffer(BufferCreateInfo, MemoryUsage, &VkBufferData->Handle);    
 
     return Handle;
+}
+
+imageHandle context::CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo)
+{
+    imageHandle ImageHandle = ResourceManager.Images.ObtainResource();
+    if(ImageHandle == InvalidHandle)
+    {
+        return ImageHandle;
+    }
+    image *Image = (image*)ResourceManager.Images.GetResource(ImageHandle);
+    *Image = image();
+    Image->Init(ImageData, CreateInfo);
+    return ImageHandle;
 }
 
 stageBuffer context::CreateStageBuffer(sz Size)
@@ -1233,11 +1249,13 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     for (sz i = 0; i < CreateInfo.ColorFormats.size(); i++)
     {
         //Create color image
-        ColorImages[i] = std::make_shared<image>(CreateInfo.Width, CreateInfo.Height, CreateInfo.ColorFormats[i], imageUsage::COLOR_ATTACHMENT, memoryUsage::GpuOnly);
+        ColorImages[i] = std::make_shared<image>();
+        ColorImages[i]->Init(CreateInfo.Width, CreateInfo.Height, CreateInfo.ColorFormats[i], imageUsage::COLOR_ATTACHMENT, memoryUsage::GpuOnly);
         std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(ColorImages[i]->ApiData);
         Attachments[i] = VKImage->DefaultImageViews.NativeView;
     }
-    std::shared_ptr<image> DepthImage = std::make_shared<image>(CreateInfo.Width, CreateInfo.Height, CreateInfo.DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
+    std::shared_ptr<image> DepthImage = std::make_shared<image>();
+    DepthImage->Init(CreateInfo.Width, CreateInfo.Height, CreateInfo.DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
     std::shared_ptr<vkImageData> VKDepthImage = std::static_pointer_cast<vkImageData>(DepthImage->ApiData);
     Attachments[Attachments.size()-1] = VKDepthImage->DefaultImageViews.NativeView;
 
@@ -1265,6 +1283,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
     VkFramebufferData->DepthStencilImage = DepthImage;
     VkFramebufferData->ColorImages = ColorImages;
+    VkFramebufferData->ColorImagesCount = CreateInfo.ColorFormats.size();
     VkFramebufferData->Handle = VkData->Device.createFramebuffer(FramebufferCreateInfo);
 
     return FramebufferHandle;;
@@ -1301,7 +1320,9 @@ void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pip
         Uniforms->Bindings[PipelineHandle] = Binding;
         VkUniformData->DescriptorInfos[PipelineHandle] = {};
         VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSetLayout = VkPipeline->DescriptorSetLayouts[Binding];
-        if(!VkUniformData->Initialized)
+        
+        //TODO: Do we really want to create a new descriptor set everytime we bind to a pipeline?
+        // if(!VkUniformData->Initialized)
         {
             VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSet = AllocateDescriptorSet(VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSetLayout->NativeHandle, Uniforms);
             VkUniformData->Initialized=true;
@@ -1331,7 +1352,14 @@ void context::DestroyPipeline(pipelineHandle PipelineHandle)
     VkData->Device.destroyPipelineLayout(VkPipelineData->PipelineLayout);
     ResourceManager.Pipelines.ReleaseResource(PipelineHandle);
 
-    
+    std::shared_ptr<vkResourceManagerData> VKResourceManager = std::static_pointer_cast<vkResourceManagerData>(ResourceManager.ApiData);
+    for(sz i=0; i<VkPipelineData->NumActiveLayouts; i++)
+    {
+        VkData->Device.destroyDescriptorSetLayout(VkPipelineData->DescriptorSetLayouts[i]->NativeHandle);
+        VKResourceManager->DescriptorSetLayouts.ReleaseResource(VkPipelineData->DescriptorSetLayoutHandles[i]);
+        DeallocateMemory(VkPipelineData->DescriptorSetLayouts[i]->Bindings);
+    }
+
 
 }
 
@@ -1343,6 +1371,34 @@ void context::DestroyBuffer(bufferHandle BufferHandle)
     std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
     vmaDestroyBuffer(VkData->Allocator, VkBufferData->Handle, VkBufferData->Allocation);
     ResourceManager.Buffers.ReleaseResource(BufferHandle);
+}
+
+void context::DestroyImage(imageHandle ImageHandle)
+{
+    GET_CONTEXT(VkData, this);
+    image *Image = (image *) ResourceManager.Images.GetResource(ImageHandle);
+    std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(Image->ApiData);
+    Image->Destroy();
+    ResourceManager.Images.ReleaseResource(ImageHandle);
+}
+
+void context::DestroyFramebuffer(framebufferHandle FramebufferHandle)
+{
+    GET_CONTEXT(VkData, this);
+    framebuffer *Framebuffer = (framebuffer *) ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+    std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
+
+    for (sz i = 0; i < VkFramebufferData->ColorImagesCount; i++)
+    {
+        VkFramebufferData->ColorImages[i]->Destroy();
+        
+    }
+    VkFramebufferData->DepthStencilImage->Destroy();
+    
+    VkData->Device.destroyFramebuffer(VkFramebufferData->Handle);
+    ResourceManager.Framebuffers.ReleaseResource(FramebufferHandle);
+
+    DeallocateMemory(VkFramebufferData->ColorImages);
 }
 
 void context::DestroySwapchain()
@@ -1381,9 +1437,9 @@ void context::Cleanup()
 {
     GET_CONTEXT(VkData, this);
 
-
+    DeallocateMemory((void*)SwapchainOutput.Name);
     VkData->StageBuffer.Destroy();
-    VkData->VirtualFrames.Destroy();
+    VkData->VirtualFrames.Destroy();  
     
     for(auto RenderPassHandle : VkData->RenderPassCache)
     {
@@ -1398,6 +1454,8 @@ void context::Cleanup()
     VkData->Device.freeCommandBuffers(VkData->CommandPool,  {std::static_pointer_cast<vkCommandBufferData>(VkData->ImmediateCommandBuffer->ApiData)->Handle});
 
     VkData->Device.destroyCommandPool(VkData->CommandPool);
+
+    VkData->Device.destroyDescriptorPool(VkData->DescriptorPool);
 
     VkData->Device.destroySemaphore(VkData->ImageAvailableSemaphore);
     VkData->Device.destroySemaphore(VkData->RenderingFinishedSemaphore);

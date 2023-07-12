@@ -34,7 +34,8 @@ struct application
 	std::shared_ptr<gfx::context> GfxContext;
 	gfx::renderPassHandle SwapchainPass;
 	gfx::renderPassHandle OffscreenPass;
-	gfx::pipelineHandle PipelineHandle;
+	gfx::pipelineHandle PipelineHandleOffscreen;
+	gfx::pipelineHandle PipelineHandleSwapchain;
 	gfx::bufferHandle VertexBuffer;
 	std::shared_ptr<gfx::swapchain> Swapchain;
 	std::shared_ptr<gfx::uniformGroup> Uniforms;
@@ -51,8 +52,13 @@ struct application
 	uniformData UniformData3;
 	uniformData UniformData4;
 	
-	gfx::image Texture1;
-	gfx::image Texture2;
+	gfx::imageHandle TextureHandle1;
+	gfx::imageHandle TextureHandle2;
+
+	gfx::bufferHandle UniformBufferHandle1;
+	gfx::bufferHandle UniformBufferHandle2;
+	gfx::bufferHandle UniformBufferHandle3;
+	gfx::bufferHandle UniformBufferHandle4;
 
 	uint32_t Width, Height;
 	void Init()
@@ -109,8 +115,8 @@ struct application
 
 		Swapchain = GfxContext->CreateSwapchain(Width, Height);
 		
-		gfx::imageData Image = gfx::ImageFromFile("resources/Textures/Debug.jpg");
-		gfx::textureCreateInfo TextureCreateInfo = 
+		gfx::imageData ImageData = gfx::ImageFromFile("resources/Textures/Debug.jpg");
+		gfx::imageCreateInfo ImageCreateInfo = 
 		{
 			{0.0f,0.0f,0.0f,0.0f},
 			// gfx::textureFilter::LINEAR,
@@ -121,8 +127,10 @@ struct application
 			true
 		};
 		//TODO: Use imageHandle like buffers
-		Texture1 = gfx::image(&Image, TextureCreateInfo);
-		Texture2 = gfx::image(&Image, TextureCreateInfo);
+		TextureHandle1 = GfxContext->CreateImage(ImageData, ImageCreateInfo);
+		TextureHandle2 = GfxContext->CreateImage(ImageData, ImageCreateInfo);
+		gfx::image *Texture1 = (gfx::image*) GfxContext->ResourceManager.Images.GetResource(TextureHandle1);
+		gfx::image *Texture2 = (gfx::image*) GfxContext->ResourceManager.Images.GetResource(TextureHandle2);
 
 		// Create a vertex buffer with triangle data
 		// float vertices[] = {
@@ -151,24 +159,25 @@ struct application
 			gfx::format::D24_UNORM_S8_UINT
 		};
 		OffscreenPass = GfxContext->CreateFramebuffer(FramebufferCreateInfo);
-		PipelineHandle = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json", OffscreenPass);
-		
 		SwapchainPass = GfxContext->GetDefaultRenderPass();
+		
+		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json", OffscreenPass);
+		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json");
 
 
-		gfx::bufferHandle UniformBufferHandle1 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
+		UniformBufferHandle1 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
 		gfx::buffer *UniformBuffer1 = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle1);
 		UniformBuffer1->CopyData((uint8_t*)&UniformData1, sizeof(uniformData), 0);
 
-		gfx::bufferHandle UniformBufferHandle2 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
+		UniformBufferHandle2 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
 		gfx::buffer *UniformBuffer2 = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle2);
 		UniformBuffer2->CopyData((uint8_t*)&UniformData2, sizeof(uniformData), 0);
 
-		gfx::bufferHandle UniformBufferHandle3 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
+		UniformBufferHandle3 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
 		gfx::buffer *UniformBuffer3 = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle3);
 		UniformBuffer3->CopyData((uint8_t*)&UniformData3, sizeof(uniformData), 0);
 
-		gfx::bufferHandle UniformBufferHandle4 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
+		UniformBufferHandle4 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
 		gfx::buffer *UniformBuffer4 = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle4);
 		UniformBuffer4->CopyData((uint8_t*)&UniformData4, sizeof(uniformData), 0);
 
@@ -203,18 +212,54 @@ struct application
 			"Image",
 			gfx::uniformType::Texture2d,
 			4,
-			std::shared_ptr<gfx::image>(&Texture2),
+			std::shared_ptr<gfx::image>(Texture1),
 		});
 		//Tell the context that we'll be using this uniforms with this pipeline at binding 0
 		//It's possible to bind a uniform group to multiple pipelines.
-		GfxContext->BindUniformsToPipeline(Uniforms, PipelineHandle, 0);
+		GfxContext->BindUniformsToPipeline(Uniforms, PipelineHandleOffscreen, 0);
+		GfxContext->BindUniformsToPipeline(Uniforms, PipelineHandleSwapchain, 0);
 		
 		//Update the bindings
 		Uniforms->Update();
+#if 0
+#endif
 	}
+	
+	void Cleanup()
+	{
+		// GfxContext->WaitIdle();
+		
+		DestroyProgramSpecific();
+
+		GfxContext->DestroySwapchain();
+		GfxContext->Cleanup();
+
+		gfx::memory *Memory = gfx::memory::Get();
+		Memory->Destroy();
+		delete Memory;
+
+
+		system("pause");
+	}
+
+	void DestroyProgramSpecific()
+	{
+		GfxContext->DestroyBuffer(UniformBufferHandle1);
+		GfxContext->DestroyBuffer(UniformBufferHandle2);
+		GfxContext->DestroyBuffer(UniformBufferHandle3);
+		GfxContext->DestroyBuffer(UniformBufferHandle4);
+		GfxContext->DestroyPipeline(PipelineHandleSwapchain);
+		GfxContext->DestroyPipeline(PipelineHandleOffscreen);
+		GfxContext->DestroyFramebuffer(OffscreenPass);
+		GfxContext->DestroyBuffer(VertexBuffer);
+		GfxContext->DestroyImage(TextureHandle1);
+		GfxContext->DestroyImage(TextureHandle2);
+	}
+
 
 	void Run()
 	{
+#if 1
 		float t = 0;
 		while(!Window->ShouldClose())
 		{
@@ -237,7 +282,7 @@ struct application
 			CommandBuffer->SetViewport(0, 0, Width, Height);
 			CommandBuffer->SetScissor(0, 0, Width, Height);
 
-			CommandBuffer->BindGraphicsPipeline(PipelineHandle);
+			CommandBuffer->BindGraphicsPipeline(PipelineHandleOffscreen);
 			
 			CommandBuffer->BindUniformGroup(Uniforms, 0);
 
@@ -247,6 +292,16 @@ struct application
 			
 			
 			CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
+			CommandBuffer->SetViewport(0, 0, Width, Height);
+			CommandBuffer->SetScissor(0, 0, Width, Height);
+
+			CommandBuffer->BindGraphicsPipeline(PipelineHandleSwapchain);
+			
+			CommandBuffer->BindUniformGroup(Uniforms, 0);
+
+			CommandBuffer->BindVertexBuffer(VertexBuffer);
+			CommandBuffer->DrawTriangles(0, 3); 
+
 			CommandBuffer->EndPass();
 			
 			GfxContext->EndFrame();
@@ -254,23 +309,7 @@ struct application
 			// Present the rendered frame
 			GfxContext->Present();
 		}
-	}
-
-	void Cleanup()
-	{
-		// GfxContext->WaitIdle();
-		// GfxContext->DestroyPipeline(PipelineHandle);
-		// GfxContext->DestroyBuffer(VertexBuffer);
-
-		// GfxContext->DestroySwapchain();
-		// GfxContext->Cleanup();
-
-		gfx::memory *Memory = gfx::memory::Get();
-		Memory->Destroy();
-		delete Memory;
-
-
-		system("pause");
+#endif
 	}
 
 	void OnResize(uint32_t NewWidth, uint32_t NewHeight)
