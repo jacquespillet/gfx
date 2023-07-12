@@ -186,6 +186,38 @@ imageLayout ImageLayoutFromNative(const vk::ImageLayout &VkImageLayout)
 }
 
 
+static vk::Filter SamplerFilterTable[] = 
+{
+    vk::Filter::eNearest,//Nearest,
+    vk::Filter::eLinear,//Linear,
+    vk::Filter::eNearest,//NearestMipmapNearest,
+    vk::Filter::eLinear,//LinearMipmapNearest,
+    vk::Filter::eNearest,//NearestMipmapLinear,
+    vk::Filter::eLinear,//LinearMipmapLinear
+};
+
+vk::Filter SamplerFilterToNative(samplerFilter Filter)
+{
+    return SamplerFilterTable[(sz)Filter];
+}
+
+
+static vk::SamplerMipmapMode SamplerFilterTableMip[] = 
+{
+    vk::SamplerMipmapMode::eNearest,//Nearest,
+    vk::SamplerMipmapMode::eLinear,//Linear,
+    vk::SamplerMipmapMode::eNearest,//NearestMipmapNearest,
+    vk::SamplerMipmapMode::eLinear,//LinearMipmapNearest,
+    vk::SamplerMipmapMode::eLinear,//NearestMipmapLinear,
+    vk::SamplerMipmapMode::eLinear,//LinearMipmapLinear
+};
+vk::SamplerMipmapMode SamplerFilterToNativeMip(samplerFilter MinFilter)
+{
+    return SamplerFilterTableMip[(sz)MinFilter];
+}
+
+
+
 }
 
 #endif

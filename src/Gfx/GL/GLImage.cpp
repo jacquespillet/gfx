@@ -12,7 +12,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     this->Extent.Height = ImageData.Height;
     this->Format = ImageData.Format;
     
-    this->MipLevelCount = CreateInfo._GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
+    this->MipLevelCount = CreateInfo.GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
 
     this->ApiData = std::make_shared<glImage>();
     std::shared_ptr<glImage> GLImage = std::static_pointer_cast<glImage>(this->ApiData);
@@ -23,19 +23,13 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     glTexImage2D(GL_TEXTURE_2D, 0, FormatToNativeInternal(ImageData.Format), ImageData.Width, ImageData.Height, 0, FormatToNative(ImageData.Format), TypeToNative(ImageData.Type), ImageData.Data);
 
     //TODO
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, Mapping(CreateInfo._WrapS));
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, Mapping(CreateInfo._WrapT));
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, Mapping(CreateInfo._WrapR));
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, Mapping(CreateInfo._MinFilter));
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, Mapping(CreateInfo._MaxFilter));
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_REPEAT); 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, &CreateInfo._BorderColor[0]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, SamplerWrapToNative(CreateInfo.WrapS));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, SamplerWrapToNative(CreateInfo.WrapT));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, SamplerWrapToNative(CreateInfo.WrapR));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, SamplerFilterToNative(CreateInfo.MinFilter));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, SamplerFilterToNative(CreateInfo.MagFilter));
     
-    if(CreateInfo._GenerateMipmaps) glGenerateMipmap(GL_TEXTURE_2D);
+    if(CreateInfo.GenerateMipmaps) glGenerateMipmap(GL_TEXTURE_2D);
     
     glBindTexture(GL_TEXTURE_2D, 0);
 }

@@ -224,7 +224,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
     {
         if(Group->Uniforms[i].Type == uniformType::Buffer)
         {
-            std::shared_ptr<buffer> BufferData = std::static_pointer_cast<buffer>(Group->Uniforms[i].Resource);
+            buffer* BufferData = (buffer*)(Group->Uniforms[i].Resource);
             std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(BufferData->ApiData);
             
             if(D12Pipeline->UsedRootParams[Group->Uniforms[i].Binding])
@@ -236,7 +236,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
         }
         if(Group->Uniforms[i].Type == uniformType::Texture2d)
         {
-            std::shared_ptr<image> ImageData = std::static_pointer_cast<image>(Group->Uniforms[i].Resource);
+            image* ImageData = (image*)(Group->Uniforms[i].Resource);
             std::shared_ptr<d3d12ImageData> D12ImageData = std::static_pointer_cast<d3d12ImageData>(ImageData->ApiData);
             
             if(D12Pipeline->UsedRootParams[Group->Uniforms[i].Binding])

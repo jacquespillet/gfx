@@ -603,4 +603,24 @@ struct extent2D
     u32 Height;
 };
 
+enum class samplerFilter 
+{
+    Nearest,
+    Linear,
+    NearestMipmapNearest,
+    LinearMipmapNearest,
+    NearestMipmapLinear,
+    LinearMipmapLinear
+};
+
+//
+enum class samplerWrapMode 
+{
+    ClampToEdge,
+    ClampToBorder,
+    MirroredRepeat,
+    Repeat,
+    MirrorClampToEdge
+};
+
 }

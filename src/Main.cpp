@@ -122,11 +122,11 @@ struct application
 		gfx::imageCreateInfo ImageCreateInfo = 
 		{
 			{0.0f,0.0f,0.0f,0.0f},
-			// gfx::textureFilter::LINEAR,
-			// gfx::textureFilter::LINEAR,
-			// gfx::textureWrapMode::CLAMP_TO_BORDER,
-			// gfx::textureWrapMode::CLAMP_TO_BORDER,
-			// gfx::textureWrapMode::CLAMP_TO_BORDER,
+			gfx::samplerFilter::Linear,
+			gfx::samplerFilter::Linear,
+			gfx::samplerWrapMode::ClampToBorder,
+			gfx::samplerWrapMode::ClampToBorder,
+			gfx::samplerWrapMode::ClampToBorder,
 			true
 		};
 		TextureHandle1 = GfxContext->CreateImage(ImageData, ImageCreateInfo);
@@ -134,12 +134,6 @@ struct application
 		gfx::image *Texture1 = (gfx::image*) GfxContext->ResourceManager.Images.GetResource(TextureHandle1);
 		gfx::image *Texture2 = (gfx::image*) GfxContext->ResourceManager.Images.GetResource(TextureHandle2);
 
-		// Create a vertex buffer with triangle data
-		// float vertices[] = {
-		// 	-0.5f, -0.5f, 0.0f,
-		// 	0.5f, -0.5f, 0.0f,
-		// 	0.0f, 0.5f, 0.0f
-		// };
 #if MULTISTREAM
 		float vertices[] =
 		{
@@ -244,31 +238,31 @@ struct application
 			"Buffer",
 			gfx::uniformType::Buffer,
 			0,
-			std::shared_ptr<gfx::buffer>(UniformBuffer1),
+			UniformBuffer1,
 		});
 		Uniforms->Uniforms.push_back({
 			"Buffer",
 			gfx::uniformType::Buffer,
 			1,
-			std::shared_ptr<gfx::buffer>(UniformBuffer2),
+			UniformBuffer2,
 		});
 		Uniforms->Uniforms.push_back({
 			"Buffer",
 			gfx::uniformType::Buffer,
 			2,
-			std::shared_ptr<gfx::buffer>(UniformBuffer3),
+			UniformBuffer3,
 		});
 		Uniforms->Uniforms.push_back({
 			"Buffer",
 			gfx::uniformType::Buffer,
 			3,
-			std::shared_ptr<gfx::buffer>(UniformBuffer4),
+			UniformBuffer4,
 		});
 		Uniforms->Uniforms.push_back({
 			"Image",
 			gfx::uniformType::Texture2d,
 			4,
-			std::shared_ptr<gfx::image>(Texture1),
+			Texture1,
 		});
 		//Tell the context that we'll be using this uniforms with this pipeline at binding 0
 		//It's possible to bind a uniform group to multiple pipelines.
@@ -317,7 +311,7 @@ struct application
 		{
 			t += 0.01f;
 			UniformData1.Color0.r = (cos(t) + 1.0f) * 0.5f;
-			std::shared_ptr<gfx::buffer> Buffer = std::static_pointer_cast<gfx::buffer>(Uniforms->Uniforms[0].Resource);
+			gfx::buffer *Buffer = (gfx::buffer*)(Uniforms->Uniforms[0].Resource);
 			Buffer->CopyData((uint8_t*)&UniformData1, sizeof(uniformData), 0);
 
 			Window->PollEvents();

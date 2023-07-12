@@ -197,7 +197,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
     {
         if(Group->Uniforms[i].Type == uniformType::Buffer)
         {
-            std::shared_ptr<buffer> BufferData = std::static_pointer_cast<buffer>(Group->Uniforms[i].Resource);
+            buffer* BufferData = (buffer*)(Group->Uniforms[i].Resource);
             std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(BufferData->ApiData);
 
             command Command;
@@ -209,7 +209,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
         }
         if(Group->Uniforms[i].Type == uniformType::Texture2d)
         {
-            std::shared_ptr<image> ImageData = std::static_pointer_cast<image>(Group->Uniforms[i].Resource);
+            image* ImageData = (image*)(Group->Uniforms[i].Resource);
             std::shared_ptr<glImage> GLImage = std::static_pointer_cast<glImage>(ImageData->ApiData);
 
             command Command;

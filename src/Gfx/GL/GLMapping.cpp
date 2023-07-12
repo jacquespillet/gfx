@@ -518,4 +518,34 @@ GLenum FormatToType(format Format)
     return Result;
 }
 
+
+static GLenum SamplerWrapTable[] = 
+{
+    GL_CLAMP_TO_EDGE,//ClampToEdge,
+    GL_CLAMP_TO_BORDER,//ClampToBorder,
+    GL_MIRRORED_REPEAT_ARB,//MirroredRepeat,
+    GL_REPEAT,//Repeat,
+    GL_MIRROR_CLAMP_TO_EDGE,//MirrorClampToEdge
+};
+GLenum SamplerWrapToNative(samplerWrapMode Mode)
+{
+    return SamplerWrapTable[(sz)Mode];
+}
+
+
+static GLenum SamplerFilterTable[] = 
+{
+    GL_NEAREST,//Nearest,
+    GL_LINEAR,//Linear,
+    GL_NEAREST_MIPMAP_NEAREST,//NearestMipmapNearest,
+    GL_LINEAR_MIPMAP_NEAREST,//LinearMipmapNearest,
+    GL_NEAREST_MIPMAP_NEAREST,//NearestMipmapLinear,
+    GL_LINEAR_MIPMAP_LINEAR,//LinearMipmapLinear
+};
+GLenum SamplerFilterToNative(samplerFilter Filter)
+{
+    return SamplerFilterTable[(sz)Filter];
+}
+
+
 }

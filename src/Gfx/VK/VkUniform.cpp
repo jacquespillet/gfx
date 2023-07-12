@@ -42,7 +42,7 @@ void uniformGroup::Update()
 
             if(Uniforms[i].Type == uniformType::Buffer)
             {
-                std::shared_ptr<buffer> Buffer = std::static_pointer_cast<buffer>(Uniforms[i].Resource);
+                buffer* Buffer = (buffer*)(Uniforms[i].Resource);
                 std::shared_ptr<vkBufferData> VKBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
                 
                 DescriptorBuffers.push_back(vk::DescriptorBufferInfo(VKBuffer->Handle, 0, Buffer->Size));
@@ -51,7 +51,7 @@ void uniformGroup::Update()
             }
             else if(Uniforms[i].Type == uniformType::Texture2d)
             {
-                std::shared_ptr<image> Image = std::static_pointer_cast<image>(Uniforms[i].Resource);
+                image* Image = (image*)(Uniforms[i].Resource);
                 std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(Image->ApiData);
                     // vk::DescriptorImageInfo DescriptorImageInfo(Texture->GetSampler(), Texture->GetNativeView(imageView::NATIVE), vk::ImageLayout::eShaderReadOnlyOptimal);
 

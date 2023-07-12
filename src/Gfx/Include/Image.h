@@ -4,18 +4,21 @@
 
 namespace gfx
 {
-    
+
+//
+
+ 
+
 struct imageCreateInfo
 {
-    f32 _BorderColor[4];
-    // textureFilter _MinFilter = textureFilter::LINEAR;
-    // textureFilter _MaxFilter = textureFilter::LINEAR;
-    // textureWrapMode _WrapS = textureWrapMode::CLAMP_TO_BORDER;
-    // textureWrapMode _WrapT = textureWrapMode::CLAMP_TO_BORDER;
-    // textureWrapMode _WrapR = textureWrapMode::CLAMP_TO_BORDER;
-    b8 _GenerateMipmaps = false;
-    // compareOp _DepthCompareOp = compareOp::LESS;
-
+    f32 BorderColor[4];
+    samplerFilter MinFilter = samplerFilter::Linear;   
+    samplerFilter MagFilter = samplerFilter::Linear;
+    samplerWrapMode WrapS = samplerWrapMode::ClampToBorder;
+    samplerWrapMode WrapT = samplerWrapMode::ClampToBorder;
+    samplerWrapMode WrapR = samplerWrapMode::ClampToBorder;
+    b8 GenerateMipmaps = false;
+    compareOperation DepthCompareOp = compareOperation::Less;
     // static textureCreateInfo Default();
 };
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "../Include/Types.h"
 #include "../Include/VertexInput.h"
+#include "../Include/Image.h"
 
 #include <GL/glew.h>
 #include <assert.h>
@@ -19,4 +20,7 @@ GLenum FormatToNativeInternal(format Format);
 GLenum FormatToNative(format Format);
 GLenum FormatToType(format Format);
 GLenum TypeToNative(type Type);
+
+GLenum SamplerWrapToNative(samplerWrapMode Mode);
+GLenum SamplerFilterToNative(samplerFilter Filter);
 }

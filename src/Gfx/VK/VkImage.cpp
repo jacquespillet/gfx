@@ -113,7 +113,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     Format = ImageData.Format;
 
 
-    MipLevelCount = CreateInfo._GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
+    MipLevelCount = CreateInfo.GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
 
     context *VulkanContext = context::Get();
     ApiData = std::make_shared<vkImageData>();
@@ -128,9 +128,6 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
         memoryUsage::GpuOnly
     );
 
-    // stageBuffer &StageBuffer = VulkanContext->GetCurrentStageBuffer();
-    // commandBuffer &CommandBuffer = VulkanContext->GetCurrentCommandBuffer();
-
     // CommandBuffer.Begin();
     GET_CONTEXT(VkData, context::Get());
     auto TextureAllocation = VkData->StageBuffer.Submit(ImageData.Data, (u32)ImageData.DataSize);
@@ -143,7 +140,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
         imageInfo {this, imageUsage::UNKNOWN, 0, 0}
     );
 
-    if(!CreateInfo._GenerateMipmaps)
+    if(!CreateInfo.GenerateMipmaps)
         VkData->ImmediateCommandBuffer->TransferLayout(*this, imageUsage::TRANSFER_DESTINATION, imageUsage::SHADER_READ);
     else
     {
@@ -296,11 +293,14 @@ void vkImageData::InitViews(const image &Image, const vk::Image &VkImage, format
 
 void vkImageData::InitSampler(const imageCreateInfo &CreateInfo)
 {
+    vk::Filter MinFilter = SamplerFilterToNative(CreateInfo.MinFilter);
+    vk::Filter MagFilter = SamplerFilterToNative(CreateInfo.MagFilter);
+    vk::SamplerMipmapMode MipFilter = SamplerFilterToNativeMip(CreateInfo.MinFilter);
     //TODO
     vk::SamplerCreateInfo SamplerCreateInfo;
-    SamplerCreateInfo.setMagFilter(vk::Filter::eLinear)
-                     .setMinFilter(vk::Filter::eLinear)
-                     .setMipmapMode(vk::SamplerMipmapMode::eLinear)
+    SamplerCreateInfo.setMagFilter(MinFilter)
+                     .setMinFilter(MagFilter)
+                     .setMipmapMode(MipFilter)
                      .setAddressModeU(vk::SamplerAddressMode::eRepeat)
                      .setAddressModeV(vk::SamplerAddressMode::eRepeat)
                      .setAddressModeW(vk::SamplerAddressMode::eRepeat)

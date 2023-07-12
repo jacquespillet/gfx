@@ -28,7 +28,7 @@ struct uniform
     char *Name;
     uniformType Type;
     u32 Binding=0;
-    std::shared_ptr<void> Resource;
+    void* Resource;
 };
 
 struct uniformGroup

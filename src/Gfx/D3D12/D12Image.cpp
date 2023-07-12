@@ -22,7 +22,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     Extent.Height = ImageData.Height;
     Format = ImageData.Format;
     ByteSize = ImageData.DataSize;
-    MipLevelCount = CreateInfo._GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
+    MipLevelCount = CreateInfo.GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
 
     context *VulkanContext = context::Get();
 
@@ -63,7 +63,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
         imageInfo {this, imageUsage::UNKNOWN, 0, 0}
     );
 
-    if (!CreateInfo._GenerateMipmaps)
+    if (!CreateInfo.GenerateMipmaps)
     {
         D12Data->ImmediateCommandBuffer->TransferLayout(*this, imageUsage::TRANSFER_DESTINATION, imageUsage::SHADER_READ);
 
