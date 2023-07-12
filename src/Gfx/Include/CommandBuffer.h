@@ -40,7 +40,7 @@ struct commandBuffer
     void Begin();
     void BeginPass(framebufferHandle Framebuffer, clearColorValues ClearColor, clearDepthStencilValues DepthStencil);
     void BindGraphicsPipeline(pipelineHandle Pipeline);
-    void BindVertexBuffer(bufferHandle Buffer);
+    void BindVertexBuffer(vertexBufferHandle Buffer);
     void SetViewport(f32 X, f32 Y, f32 Width, f32 Height);
     void SetScissor(s32 X, s32 Y, u32 Width, u32 Height);
     void DrawTriangles(uint32_t Start, uint32_t Count);

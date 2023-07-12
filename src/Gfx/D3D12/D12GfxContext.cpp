@@ -126,21 +126,22 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
     Singleton->ResourceManager.Init();
     Singleton->ApiContextData = std::make_shared<d3d12Data>();
     GET_CONTEXT(D12Data, Singleton);
+    D12Data->Debug = InitializeInfo.Debug;
     
     Singleton->Window = &Window;
     UINT dxgiFactoryFlags = 0;
 
     // Enable the debug layer (requires the Graphics Tools "optional feature").
     // NOTE: Enabling the debug layer after device creation will invalidate the active device.
-	ComPtr<ID3D12Debug> debugController;
-	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
-	{
-		debugController->EnableDebugLayer();
-        
-
-		// Enable additional debug layers.
-		dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
-	}
+	if(D12Data->Debug)
+    {
+        ComPtr<ID3D12Debug> debugController;
+        if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+        {
+            debugController->EnableDebugLayer();
+            dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+        }
+    }
 
     
     ThrowIfFailed(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&D12Data->Factory)));
@@ -401,6 +402,8 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
 
 ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_PARAMETER> &OutRootParams, std::unordered_map<u32, u32> &BindingRootParamMapping, std::vector<CD3DX12_DESCRIPTOR_RANGE> &DescriptorRanges)
 {
+    GET_CONTEXT(D12Data, context::Get());
+
     ComPtr<IDxcUtils> Utils;
     ThrowIfFailed(DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&Utils)));
     ComPtr<IDxcCompiler3> Compiler;
@@ -429,11 +432,8 @@ ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_
         CompileArgs.push_back(L"ps_6_0");
     }
 
-    //TODO
-    bool Debug=true;
-    // Indicate that the shader should be in a debuggable state if in debug mode.
-    // Else, set optimization level to 3.
-    if(Debug)
+    
+    if(D12Data->Debug)
     {
         CompileArgs.push_back(DXC_ARG_DEBUG);
     }

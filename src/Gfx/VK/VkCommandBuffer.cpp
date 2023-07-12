@@ -86,15 +86,19 @@ void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
     
 }
 
-void commandBuffer::BindVertexBuffer(bufferHandle BufferHandle)
+void commandBuffer::BindVertexBuffer(vertexBufferHandle BufferHandle)
 {
-    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
-    std::shared_ptr<vkBufferData> VkBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
-
-    u64 Offsets[] = {0};
+    vertexBuffer *VertexBuffer = (vertexBuffer*)context::Get()->ResourceManager.VertexBuffers.GetResource(BufferHandle);
 
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
-    CommandBuffer.bindVertexBuffers(0, 1, &VkBuffer->Handle, Offsets);
+    for(int i=0; i<VertexBuffer->NumVertexStreams; i++)
+    {
+        buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(VertexBuffer->VertexStreams[i].Buffer);
+        std::shared_ptr<vkBufferData> VkBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
+
+        u64 Offsets[] = {0};
+        CommandBuffer.bindVertexBuffers(VertexBuffer->VertexStreams[i].StreamIndex, 1, &VkBuffer->Handle, Offsets);
+    }
 }
 
 void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height)

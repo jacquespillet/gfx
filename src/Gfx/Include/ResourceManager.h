@@ -112,6 +112,7 @@ struct resourceManager
     void Destroy();
     void DestroyApiSpecific();
     resourcePool Buffers;
+    resourcePool VertexBuffers;
     resourcePool Images;
     resourcePool Pipelines;
     resourcePool Shaders;

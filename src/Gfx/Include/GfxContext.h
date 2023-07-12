@@ -8,6 +8,7 @@
 #include "ResourceManager.h"
 #include "Uniform.h"
 #include "Image.h"
+#include "Buffer.h"
 #include <memory>
 
 namespace app
@@ -71,6 +72,7 @@ struct context
 
     stageBuffer CreateStageBuffer(sz Size);
     bufferHandle CreateVertexBuffer(f32 *Values, sz Count, sz Stride, const std::vector<vertexInputAttribute> &Attributes);
+    vertexBufferHandle CreateEmptyVertexBuffer();
     bufferHandle CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage MemoryUsage);
     imageHandle CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo);
     imageHandle CreateImage(u32 Width, u32 Height, format Format, u8 *Pixels);
@@ -101,6 +103,7 @@ struct context
     void DestroyPipeline(pipelineHandle Pipeline);
     void DestroyFramebuffer(framebufferHandle Framebuffer);
     void DestroyBuffer(bufferHandle Buffer);
+    void DestroyVertexBuffer(vertexBufferHandle Buffer);
     void DestroyImage(imageHandle Buffer);
     void DestroySwapchain();
 

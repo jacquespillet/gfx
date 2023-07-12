@@ -150,5 +150,86 @@ void stageBuffer::Destroy()
     context::Get()->ResourceManager.Buffers.ReleaseResource(BufferHandle);
 }
 
+vertexStreamData &vertexStreamData::Reset()
+{
+    Data=nullptr;
+    Size=0;
+    Stride=0;
+    StreamIndex=0;
+    Buffer=0;
+    AttributesCount=0;
+    return *this;
+}
+
+vertexStreamData &vertexStreamData::SetData(void *Data)
+{
+    this->Data = Data;
+    return *this;
+}
+
+vertexStreamData &vertexStreamData::SetSize(u32 Size)
+{
+    this->Size = Size;
+    return *this;
+}
+vertexStreamData &vertexStreamData::SetStride(u32 Stride)
+{
+    this->Stride = Stride;
+    return *this;
+}
+vertexStreamData &vertexStreamData::SetStreamIndex(u32 StreamIndex)
+{
+    this->StreamIndex = StreamIndex;
+    return *this;
+}
+vertexStreamData &vertexStreamData::AddAttribute(vertexInputAttribute Attribute)
+{
+    this->InputAttributes[this->AttributesCount++] = Attribute;
+    return *this;
+}
+
+vertexBuffer &vertexBuffer::Init()
+{
+    Reset();
+    return *this;
+}
+
+vertexBuffer &vertexBuffer::Reset()
+{
+    NumVertexStreams=0;
+    for (sz i = 0; i < MaxVertexStreams; i++)
+    {
+        this->VertexStreams[i].StreamIndex = (u32)-1;
+    }
+    ApiData = nullptr;
+
+    VertexBufferHandle = InvalidHandle;
+    
+    return *this;
+}
+
+vertexBuffer &vertexBuffer::AddVertexStream(vertexStreamData StreamData)
+{
+    this->VertexStreams[NumVertexStreams++] = StreamData;   
+    return *this;
+}
+
+vertexBuffer &vertexBuffer::Create()
+{
+    vertexBufferHandle Handle = context::Get()->ResourceManager.VertexBuffers.ObtainResource();
+    
+    GET_CONTEXT(VkData, context::Get());
+    for(sz i=0; i<NumVertexStreams; i++)
+    {
+        std::vector<vertexInputAttribute> Attributes(VertexStreams[i].AttributesCount);
+        memcpy(&Attributes[0], &VertexStreams[i].InputAttributes, VertexStreams[i].AttributesCount * sizeof(vertexInputAttribute));
+
+        VertexStreams[i].Buffer = context::Get()->CreateVertexBuffer((f32*)VertexStreams[i].Data, VertexStreams[i].Size, VertexStreams[i].Stride, Attributes);
+    }
+    
+    return *this;
+}
+
+
 }
 #endif

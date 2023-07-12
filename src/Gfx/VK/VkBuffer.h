@@ -14,6 +14,7 @@ struct vkBufferData
 };
 
 
+
 vk::Buffer GetBufferHandle(buffer *Buffer);
 
 }

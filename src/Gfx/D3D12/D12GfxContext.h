@@ -31,6 +31,8 @@ struct d3d12Data
     ComPtr<ID3D12Fence> ImmediateFence;
     HANDLE ImmediateFenceEvent;
 
+    bool Debug=true;
+
     D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorAt(sz Index);
     D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorAt(sz Index);
 };

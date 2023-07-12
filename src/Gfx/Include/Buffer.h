@@ -1,6 +1,10 @@
 #pragma once
 #include "Types.h"
+#include "VertexInput.h"
+
+
 #include <memory>
+#include <unordered_map>
 namespace gfx
 {
 struct buffer
@@ -38,6 +42,42 @@ struct stageBuffer
     void Reset();
     void Destroy();
     buffer *GetBuffer();
+};
+
+struct vertexStreamData
+{
+    static const u32 MaxInputAttributes = 16;
+
+    void *Data=nullptr;
+    sz Size=0;
+    sz Stride=0;
+    u32 StreamIndex=0;
+    bufferHandle Buffer=0;
+    u32 AttributesCount=0;
+    vertexInputAttribute InputAttributes[MaxInputAttributes];
+
+    vertexStreamData &Reset();
+    vertexStreamData &SetData(void *Data);
+    vertexStreamData &SetSize(u32 Size);
+    vertexStreamData &SetStride(u32 Stride);
+    vertexStreamData &SetStreamIndex(u32 StreamIndex);
+    vertexStreamData &AddAttribute(vertexInputAttribute Attribute);
+};
+
+struct vertexBuffer
+{
+    static const u32 MaxVertexStreams = 16;
+    vertexStreamData VertexStreams[MaxVertexStreams];
+    u32 NumVertexStreams=0;
+
+    std::shared_ptr<void> ApiData = nullptr;
+
+    vertexBufferHandle VertexBufferHandle;
+
+    vertexBuffer &Init();
+    vertexBuffer &Reset();
+    vertexBuffer &AddVertexStream(vertexStreamData StreamData);
+    vertexBuffer &Create();
 };
 
 }

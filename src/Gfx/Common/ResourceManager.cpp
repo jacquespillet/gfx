@@ -16,6 +16,7 @@ void resourceManager::Init()
 	Shaders.Init(2048, sizeof(shader));
 	RenderPasses.Init(2048, sizeof(renderPass));
 	Framebuffers.Init(2048, sizeof(framebuffer));
+	VertexBuffers.Init(2048, sizeof(vertexBuffer));
 
 	InitApiSpecific();
 }
@@ -28,6 +29,7 @@ void resourceManager::Destroy()
 	Shaders.Destroy();
 	RenderPasses.Destroy();
 	Framebuffers.Destroy();
+	VertexBuffers.Destroy();
 
 	DestroyApiSpecific();
 }

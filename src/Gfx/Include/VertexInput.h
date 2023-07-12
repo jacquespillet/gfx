@@ -38,6 +38,7 @@ struct vertexInputAttribute
     vertexAttributeType Type;
     b8 Normalized;
     attributeSemantic AttributeType;
+    u32 StreamIndex;
 };
 
 }

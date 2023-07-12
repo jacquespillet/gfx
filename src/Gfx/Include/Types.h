@@ -32,6 +32,7 @@ typedef uint32_t pipelineHandle;
 typedef uint32_t imageHandle;
 typedef uint32_t renderPassHandle;
 typedef uint32_t framebufferHandle;
+typedef uint32_t vertexBufferHandle;
 
 typedef glm::vec2 v2f;
 typedef glm::vec3 v3f;

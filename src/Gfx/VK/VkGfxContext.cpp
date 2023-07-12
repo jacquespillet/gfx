@@ -561,6 +561,18 @@ bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count, sz Stride, const
     return Handle;
 }
 
+vertexBufferHandle context::CreateEmptyVertexBuffer()
+{
+    vertexBufferHandle Handle = context::Get()->ResourceManager.VertexBuffers.ObtainResource();
+    if(Handle == InvalidHandle)
+    {
+        assert(false);
+        return Handle;
+    }
+    
+    return Handle;
+}
+
 bufferHandle context::CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage MemoryUsage)
 {
     bufferHandle Handle = ResourceManager.Buffers.ObtainResource();
@@ -1371,6 +1383,16 @@ void context::DestroyBuffer(bufferHandle BufferHandle)
     std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
     vmaDestroyBuffer(VkData->Allocator, VkBufferData->Handle, VkBufferData->Allocation);
     ResourceManager.Buffers.ReleaseResource(BufferHandle);
+}
+
+void context::DestroyVertexBuffer(bufferHandle BufferHandle)
+{
+    GET_CONTEXT(VkData, this);
+
+    // buffer *Buffer = (buffer *) ResourceManager.Buffers.GetResource(BufferHandle);
+    // std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
+    // vmaDestroyBuffer(VkData->Allocator, VkBufferData->Handle, VkBufferData->Allocation);
+    // ResourceManager.Buffers.ReleaseResource(BufferHandle);
 }
 
 void context::DestroyImage(imageHandle ImageHandle)
