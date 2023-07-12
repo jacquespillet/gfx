@@ -25,7 +25,7 @@ std::shared_ptr<commandBuffer> CreateD3D12CommandBuffer(ComPtr<ID3D12CommandAllo
     
     std::shared_ptr<d3d12Data> D12Data = std::static_pointer_cast<d3d12Data>(context::Get()->ApiContextData);
 
-    ThrowIfFailed(D12Data->Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D12CommandBufferData->CommandAllocator, nullptr, IID_PPV_ARGS(&D12CommandBufferData->CommandList)));
+    ThrowIfFailed(D12Data->Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D12CommandBufferData->CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&D12CommandBufferData->CommandList)));
     ThrowIfFailed(D12CommandBufferData->CommandList->Close());
 
     return CommandBuffer;
@@ -34,10 +34,11 @@ std::shared_ptr<commandBuffer> CreateD3D12CommandBuffer(ComPtr<ID3D12CommandAllo
 void commandBuffer::Begin()
 {
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
-    ThrowIfFailed(D12CommandBufferData->CommandList->Reset(D12CommandBufferData->CommandAllocator, nullptr));
+    ThrowIfFailed(D12CommandBufferData->CommandList->Reset(D12CommandBufferData->CommandAllocator.Get(), nullptr));
 
     GET_CONTEXT(D12Data, context::Get());
-    D12CommandBufferData->CommandList->SetDescriptorHeaps(1, &D12Data->CommonDescriptorHeap);
+    ID3D12DescriptorHeap* ppHeaps[] = { D12Data->CommonDescriptorHeap.Get() };
+    D12CommandBufferData->CommandList->SetDescriptorHeaps(1, ppHeaps);
 }
 
 
@@ -71,14 +72,14 @@ void commandBuffer::CopyBuffer(const bufferInfo &Source, const bufferInfo &Desti
     b8 TransitionSource = (SourceInitialState != D3D12_RESOURCE_STATE_COPY_SOURCE) && (D12SourceHandle->HeapType != D3D12_HEAP_TYPE_READBACK) && (D12SourceHandle->HeapType != D3D12_HEAP_TYPE_UPLOAD);
     b8 TransitionDestination = (DestinationInitialState != D3D12_RESOURCE_STATE_COPY_DEST) && (D12DestinationHandle->HeapType != D3D12_HEAP_TYPE_READBACK) && (D12DestinationHandle->HeapType != D3D12_HEAP_TYPE_UPLOAD);
 
-    if(TransitionSource) D12SourceHandle->Transition(D12CommandBufferData->CommandList, D3D12_RESOURCE_STATE_COPY_SOURCE);
-    if(TransitionDestination) D12DestinationHandle->Transition(D12CommandBufferData->CommandList, D3D12_RESOURCE_STATE_COPY_DEST);
+    if(TransitionSource) D12SourceHandle->Transition(D12CommandBufferData->CommandList.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE);
+    if(TransitionDestination) D12DestinationHandle->Transition(D12CommandBufferData->CommandList.Get(), D3D12_RESOURCE_STATE_COPY_DEST);
     // Copy the contents of the source buffer to the destination buffer
     D12CommandBufferData->CommandList->CopyBufferRegion(DestHandle, Destination.Offset, SourceHandle, Source.Offset, ByteSize);
 
     // Create a resource barrier to transition the destination buffer back to its original state
-    if(TransitionSource) D12SourceHandle->Transition(D12CommandBufferData->CommandList, SourceInitialState);
-    if(TransitionDestination) D12DestinationHandle->Transition(D12CommandBufferData->CommandList, DestinationInitialState);
+    if(TransitionSource) D12SourceHandle->Transition(D12CommandBufferData->CommandList.Get(), SourceInitialState);
+    if(TransitionDestination) D12DestinationHandle->Transition(D12CommandBufferData->CommandList.Get(), DestinationInitialState);
 }
 
 void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo &Destination)

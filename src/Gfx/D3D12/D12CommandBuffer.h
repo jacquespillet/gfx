@@ -14,8 +14,8 @@ namespace gfx
 struct framebuffer;
 struct d3d12CommandBufferData
 {
-    ID3D12GraphicsCommandList *CommandList;
-    ID3D12CommandAllocator *CommandAllocator;
+    ComPtr<ID3D12GraphicsCommandList> CommandList;
+    ComPtr<ID3D12CommandAllocator> CommandAllocator;
 
     framebuffer *CurrentFramebuffer=nullptr;
 

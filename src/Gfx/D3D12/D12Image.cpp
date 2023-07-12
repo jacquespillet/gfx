@@ -187,7 +187,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
         psoDesc.CS = shaderBytecode;
 
         // Create the compute pipeline state object
-        ID3D12PipelineState* computePSO = nullptr;
+        ComPtr<ID3D12PipelineState> computePSO = nullptr;
         hr = D12Data->Device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&computePSO));
         if (FAILED(hr))
         {
@@ -226,7 +226,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
             D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
         
 
-        D12CommandBuffer->CommandList->SetPipelineState(computePSO);
+        D12CommandBuffer->CommandList->SetPipelineState(computePSO.Get());
         D12CommandBuffer->CommandList->SetComputeRootSignature(rootSignature);
         D12CommandBuffer->CommandList->SetComputeRootDescriptorTable(0, D12Data->GetGPUDescriptorAt(D12Image->OffsetInHeap));
         

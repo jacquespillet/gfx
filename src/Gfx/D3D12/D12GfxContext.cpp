@@ -159,7 +159,7 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
     HeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     HeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     HeapDesc.NodeMask = 0;
-    D12Data->Device->CreateDescriptorHeap(&HeapDesc, IID_PPV_ARGS(&D12Data->CommonDescriptorHeap));
+    ThrowIfFailed(D12Data->Device->CreateDescriptorHeap(&HeapDesc, IID_PPV_ARGS(&D12Data->CommonDescriptorHeap)));
     D12Data->DescriptorSize = D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 
@@ -333,7 +333,7 @@ void context::SubmitCommandBufferImmediate(commandBuffer *CommandBuffer)
     std::shared_ptr<d3d12CommandBufferData> D12CommandData = std::static_pointer_cast<d3d12CommandBufferData>(CommandBuffer->ApiData);
 
     // Execute the initialization commands.
-	ID3D12CommandList* CommandLists[] = { D12CommandData->CommandList };
+	ID3D12CommandList* CommandLists[] = { D12CommandData->CommandList.Get() };
 	D12Data->CommandQueue->ExecuteCommandLists(1, CommandLists);
 
     ThrowIfFailed(D12Data->CommandQueue->Signal(D12Data->ImmediateFence.Get(), 1));

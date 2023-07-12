@@ -99,7 +99,7 @@ void virtualFramesProvider::EndFrame()
     ThrowIfFailed(D12CommandBuffer->CommandList->Close());
     
     // Execute the command list.
-    ID3D12CommandList* ppCommandLists[] = { D12CommandBuffer->CommandList };
+    ID3D12CommandList* ppCommandLists[] = { D12CommandBuffer->CommandList.Get() };
     D12Data->CommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
     // Present the frame.
