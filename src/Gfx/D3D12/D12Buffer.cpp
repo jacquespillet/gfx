@@ -71,8 +71,6 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
     {
         GET_CONTEXT(D12Data, context::Get());
 
-        D12BufferData->CPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(D12Data->CommonDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-        D12BufferData->GPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(D12Data->CommonDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
         D12BufferData->OffsetInHeap = D12Data->CurrentHeapOffset;
 
         // Create a CBV descriptor
@@ -82,32 +80,7 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
         D12Data->Device->CreateConstantBufferView(&cbvDesc, D12Data->GetCPUDescriptorAt(D12BufferData->OffsetInHeap));
 
         // Allocate descriptors by incrementing the handles
-        D12BufferData->CPUHandle.Offset(1, D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)); // index is the index of the descriptor to allocate
-        D12BufferData->GPUHandle.Offset(1, D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
-        D12Data->CurrentHeapOffset++;
-
-
-        //Root signature : 
-        //Same as pipeline layout : defines all the descriptors that must be set to execute the pipeline
-        //Entries in the root signature can be
-        //  Constant
-        //  Constant buffers
-        //  descriptor table (contain multiple buffers...)
-        
-        //Descriptor heaps are equivalent to descriptor sets (Except only 1 can be set at a time...)
-        //--> Have a single big descriptor heap for the entier application
-        //Bind it all the time
-
-        //At render
-        //We bind the root signature
-        //then bind each descriptor table or constant buffer.
-        //We need to tell the binding and the offset within the heap, 
-        //See this for good example :
-        //https://learn.microsoft.com/en-us/windows/win32/direct3d12/creating-a-root-signature
-
-
-        // Create a CBV descriptor heap (if needed) and allocate a descriptor for the CBV
-        
+        D12Data->CurrentHeapOffset++;   
     }
 }
 

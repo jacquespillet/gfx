@@ -37,9 +37,6 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
         IID_PPV_ARGS(&D12Image->Handle));
 
     //TODO: Do we use these handles ?
-    D12Image->CPUHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(D12Data->CommonDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-    D12Image->GPUHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(D12Data->CommonDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
-
     D12Image->OffsetInHeap = D12Data->CurrentHeapOffset;
 
     // Create the shader resource view (SRV)
@@ -52,8 +49,6 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     D12Data->Device->CreateShaderResourceView(D12Image->Handle.Get(), &srvDesc, D12Data->GetCPUDescriptorAt(D12Image->OffsetInHeap));    
     
     // Allocate descriptors by incrementing the handles
-    D12Image->CPUHandle.Offset(1, D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)); // index is the index of the descriptor to allocate
-    D12Image->GPUHandle.Offset(1, D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
     D12Data->CurrentHeapOffset++;
 
     //Fill the stage buffer with data

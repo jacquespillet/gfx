@@ -12,8 +12,8 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     this->Extent.Height = ImageData.Height;
     this->Format = ImageData.Format;
     
-    //TODO
-    this->MipLevelCount = (CreateInfo._GenerateMipmaps)?1 : 1;
+    this->MipLevelCount = CreateInfo._GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
+
     this->ApiData = std::make_shared<glImage>();
     std::shared_ptr<glImage> GLImage = std::static_pointer_cast<glImage>(this->ApiData);
 
