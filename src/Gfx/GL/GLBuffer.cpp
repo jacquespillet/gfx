@@ -1,6 +1,9 @@
 #include "../Include/Buffer.h"
+#include "../Include/GfxContext.h"
 #include "GLBuffer.h"
 #include "GLMapping.h"
+#include "GLContext.h"
+#include "GLCommon.h"
 
 #include <GL/glew.h>
 
@@ -12,17 +15,12 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
     this->Size = ByteSize;
     
     glGenBuffers(1, &GLBuffer->Handle);
-    if(Usage == bufferUsage::VertexBuffer)
-    {
-        glGenVertexArrays(1, &GLBuffer->VAO);
-    }
-
     GLBuffer->Target = BufferTargetFromUsage(Usage);
     GLBuffer->Usage = BufferUsageFromUsage(Usage);
 
     glBindBuffer(GLBuffer->Target, GLBuffer->Handle);
     glBufferData(GLBuffer->Target, ByteSize, nullptr, GLBuffer->Usage);
-    glBindBuffer(GLBuffer->Target, 0);
+    // glBindBuffer(GLBuffer->Target, 0);
 }
 
 void buffer::CopyData(const uint8_t *Data, size_t ByteSize, size_t Offset)
@@ -75,6 +73,131 @@ void buffer::UnmapMemory()
     std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(this->ApiData);
     glUnmapBuffer(GLBuffer->Target);
     this->MappedData=nullptr;
+}
+
+
+vertexStreamData &vertexStreamData::Reset()
+{
+    Data=nullptr;
+    Size=0;
+    Stride=0;
+    StreamIndex=0;
+    Buffer=0;
+    AttributesCount=0;
+    return *this;
+}
+
+vertexStreamData &vertexStreamData::SetData(void *Data)
+{
+    this->Data = Data;
+    return *this;
+}
+
+vertexStreamData &vertexStreamData::SetSize(u32 Size)
+{
+    this->Size = Size;
+    return *this;
+}
+vertexStreamData &vertexStreamData::SetStride(u32 Stride)
+{
+    this->Stride = Stride;
+    return *this;
+}
+vertexStreamData &vertexStreamData::SetStreamIndex(u32 StreamIndex)
+{
+    this->StreamIndex = StreamIndex;
+    return *this;
+}
+vertexStreamData &vertexStreamData::AddAttribute(vertexInputAttribute Attribute)
+{
+    this->InputAttributes[this->AttributesCount++] = Attribute;
+    return *this;
+}
+
+vertexBuffer &vertexBuffer::Init()
+{
+    Reset();
+    return *this;
+}
+
+vertexBuffer &vertexBuffer::Reset()
+{
+    NumVertexStreams=0;
+    for (sz i = 0; i < MaxVertexStreams; i++)
+    {
+        this->VertexStreams[i].StreamIndex = (u32)-1;
+    }
+    ApiData = nullptr;
+
+    VertexBufferHandle = InvalidHandle;
+    
+    return *this;
+}
+
+vertexBuffer &vertexBuffer::AddVertexStream(vertexStreamData StreamData)
+{
+    this->VertexStreams[NumVertexStreams++] = StreamData;   
+    return *this;
+}
+
+vertexBuffer &vertexBuffer::Create()
+{
+    GET_CONTEXT(GLData, context::Get());
+
+    this->ApiData = std::make_shared<glVertexBuffer>();
+    std::shared_ptr<glVertexBuffer> GLVertexBuffer = std::static_pointer_cast<glVertexBuffer>(this->ApiData);
+
+    //Create the vao
+    glGenVertexArrays(1, &GLVertexBuffer->VAO);
+
+    glBindVertexArray(GLVertexBuffer->VAO);
+    //Create the vbos
+    for(sz i=0; i<NumVertexStreams; i++)
+    {
+        GLVertexBuffer->VertexBuffers[i] = context::Get()->ResourceManager.Buffers.ObtainResource();
+        buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(GLVertexBuffer->VertexBuffers[i]);
+        Buffer->ApiData = std::make_shared<glBuffer>();
+
+        Buffer->Init(VertexStreams[i].Size, bufferUsage::VertexBuffer, memoryUsage::GpuOnly);
+        GLData->CheckErrors();
+        Buffer->CopyData((u8*)VertexStreams[i].Data, VertexStreams[i].Size, 0);
+        GLData->CheckErrors();
+        std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(Buffer->ApiData);
+        
+        glBindBuffer(GLBuffer->Target, GLBuffer->Handle);
+        
+        u32 StartPtr=0;
+        for(int j=0; j<VertexStreams[i].AttributesCount; j++)
+        {
+            glVertexAttribPointer(VertexStreams[i].InputAttributes[j].InputIndex, 
+                                VertexStreams[i].InputAttributes[j].ElementCount, 
+                                VertexAttributeTypeToNative(VertexStreams[i].InputAttributes[j].Type), 
+                                VertexStreams[i].InputAttributes[j].Normalized,
+                                VertexStreams[i].Stride, 
+                                (void*)((uintptr_t)StartPtr));
+            glEnableVertexAttribArray(VertexStreams[i].InputAttributes[j].InputIndex);
+            StartPtr += VertexStreams[i].InputAttributes[j].ElementCount * VertexStreams[i].InputAttributes[j].ElementSize;
+        }
+        glBindBuffer(GLBuffer->Target, 0);
+    }
+    glBindVertexArray(0);
+    GLData->CheckErrors();
+
+    
+
+    
+
+
+    // GET_CONTEXT(GLData, context::Get());
+    // for(sz i=0; i<NumVertexStreams; i++)
+    // {
+    //     std::vector<vertexInputAttribute> Attributes(VertexStreams[i].AttributesCount);
+    //     memcpy(&Attributes[0], &VertexStreams[i].InputAttributes, VertexStreams[i].AttributesCount * sizeof(vertexInputAttribute));
+
+    //     VertexStreams[i].Buffer = context::Get()->CreateVertexBuffer((f32*)VertexStreams[i].Data, VertexStreams[i].Size, VertexStreams[i].Stride, Attributes);
+    // }
+    
+    return *this;
 }
 
 }

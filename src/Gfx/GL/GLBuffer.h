@@ -1,4 +1,6 @@
 #pragma once
+#include "../Include/Buffer.h"
+
 #include <GL/glew.h>
 namespace gfx
 {
@@ -6,9 +8,14 @@ namespace gfx
 struct glBuffer
 {
     GLuint Handle;
-    GLuint VAO = (GLuint)-1; //Used if the buffer is a vertex buffer
     GLenum Target;
     GLenum Usage;
+};
+
+struct glVertexBuffer
+{
+    GLuint VAO = (GLuint)-1;
+    bufferHandle VertexBuffers[vertexBuffer::MaxVertexStreams];
 };
 
 }

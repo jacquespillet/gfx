@@ -63,11 +63,10 @@ void ExecuteBindUniformImage(const command &Command)
 void ExecuteBindVertexBuffer(const command &Command)
 {
     bufferHandle VertexBufferHandle = Command.BindVertexBuffer.VertexBufferHandle;
-    buffer *VertexBuffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(VertexBufferHandle);
-    std::shared_ptr<glBuffer> GLVertexBuffer = std::static_pointer_cast<glBuffer>(VertexBuffer->ApiData);
+    vertexBuffer *VertexBuffer = (vertexBuffer*)context::Get()->ResourceManager.VertexBuffers.GetResource(VertexBufferHandle);
+    std::shared_ptr<glVertexBuffer> GLVertexBuffer = std::static_pointer_cast<glVertexBuffer>(VertexBuffer->ApiData);
 
     glBindVertexArray(GLVertexBuffer->VAO);
-    glBindBuffer(GLVertexBuffer->Target, GLVertexBuffer->Handle);
 }
 
 void ExecuteDrawTriangles(const command &Command)
@@ -129,7 +128,7 @@ void commandBuffer::BindGraphicsPipeline(pipelineHandle Pipeline)
     Command.CommandFunction = (commandFunction)&ExecuteBindGraphicsPipeline;
     GLCommandBuffer->Commands.push_back(Command);
 }
-void commandBuffer::BindVertexBuffer(bufferHandle Buffer)
+void commandBuffer::BindVertexBuffer(vertexBufferHandle Buffer)
 {
     GET_GL_COMMANDS
     command Command;

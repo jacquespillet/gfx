@@ -276,8 +276,6 @@ vertexBuffer &vertexBuffer::AddVertexStream(vertexStreamData StreamData)
 
 vertexBuffer &vertexBuffer::Create()
 {
-    vertexBufferHandle Handle = context::Get()->ResourceManager.VertexBuffers.ObtainResource();
-    
     GET_CONTEXT(VkData, context::Get());
     for(sz i=0; i<NumVertexStreams; i++)
     {

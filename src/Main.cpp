@@ -10,7 +10,7 @@
 #include "Gfx/Api.h"  
 #include "App/App.h"
 
-#define MULTISTREAM 1
+#define MULTISTREAM 0
 
 
 void WindowErrorCallback(const std::string &errorMessage)
@@ -160,14 +160,14 @@ struct application
 			.SetStride(3 * sizeof(float))
 			.SetData(&vertices)
 			.SetStreamIndex(0)
-			.AddAttribute({sizeof(float), 3, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0});
+			.AddAttribute({sizeof(float), 3, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 0});
 		gfx::vertexStreamData VertexStream2 = {};
 		VertexStream2
 			.SetSize(sizeof(Colors))
 			.SetStride(4 * sizeof(float))
 			.SetData(&Colors)
 			.SetStreamIndex(1)
-			.AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, true, gfx::attributeSemantic::COLOR, 1});
+			.AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, true, gfx::attributeSemantic::COLOR, 1, 1});
 		
 		//TODO: This is not ideal....
 		VertexBufferHandle = GfxContext->CreateEmptyVertexBuffer();
@@ -175,7 +175,7 @@ struct application
 		VertexBuffer->Init()
 					.AddVertexStream(VertexStream1)
 					.AddVertexStream(VertexStream2)
-					.Create();
+					.Create();  
 #else
 		float vertices[] =
 		{
@@ -190,8 +190,8 @@ struct application
 			.SetStride(7 * sizeof(float))
 			.SetData(&vertices)
 			.SetStreamIndex(0)
-			.AddAttribute({sizeof(float), 3, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0})
-			.AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::COLOR, 0});
+			.AddAttribute({sizeof(float), 3, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 0})
+			.AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::COLOR, 0, 1});
 		
 		//TODO: This is not ideal....
 		VertexBufferHandle = GfxContext->CreateEmptyVertexBuffer();

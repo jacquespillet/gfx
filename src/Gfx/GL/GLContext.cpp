@@ -221,43 +221,15 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     return Swapchain;
 }
 
-bufferHandle context::CreateVertexBuffer(f32 *Values, sz ByteSize, sz Stride, const std::vector<vertexInputAttribute> &Attributes)
+vertexBufferHandle context::CreateEmptyVertexBuffer()
 {
-    GET_CONTEXT(GLData, this);
-    bufferHandle Handle = ResourceManager.Buffers.ObtainResource();
+    vertexBufferHandle Handle = context::Get()->ResourceManager.VertexBuffers.ObtainResource();
     if(Handle == InvalidHandle)
     {
+        assert(false);
         return Handle;
     }
-    buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(Handle);
-    Buffer->ApiData = std::make_shared<glBuffer>();
-    Buffer->Init(ByteSize, bufferUsage::VertexBuffer, memoryUsage::GpuOnly);
-    GLData->CheckErrors();
     
-    Buffer->CopyData((u8*)Values, ByteSize, 0);
-    GLData->CheckErrors();
-
-    std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(Buffer->ApiData);
-    
-
-    glBindVertexArray(GLBuffer->VAO);
-    glBindBuffer(GLBuffer->Target, GLBuffer->Handle);
-    sz StartPtr=0;
-    for(int i=0; i<Attributes.size(); i++)
-    {
-        glEnableVertexAttribArray(i);
-        glVertexAttribPointer(i, 
-                              Attributes[i].ElementCount, 
-                              VertexAttributeTypeToNative(Attributes[i].Type), 
-                              Attributes[i].Normalized,
-                              Stride, 
-                              (void*)((uintptr_t)StartPtr));
-        StartPtr += Attributes[i].ElementCount * Attributes[i].ElementSize;
-    }    
-    glBindBuffer(GLBuffer->Target, 0);
-    glBindVertexArray(0);
-    GLData->CheckErrors();
-
     return Handle;
 }
 
@@ -403,11 +375,11 @@ void context::DestroyBuffer(bufferHandle BufferHandle)
     buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(BufferHandle);
     std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(Buffer->ApiData);
     glDeleteBuffers(1, &GLBuffer->Handle);
-    if(GLBuffer->VAO != (GLuint)-1)
-    {
-        glDeleteVertexArrays(1, &GLBuffer->VAO);
-    }
     ResourceManager.Buffers.ReleaseResource(BufferHandle);
+}
+
+void context::DestroyVertexBuffer(vertexBufferHandle BufferHandle)
+{
 }
 
 void context::DestroyImage(imageHandle ImageHandle)
