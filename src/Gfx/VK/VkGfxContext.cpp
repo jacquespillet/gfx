@@ -530,46 +530,6 @@ void context::OnResize(u32 NewWidth, u32 NewHeight)
     RecreateSwapchain(NewWidth, NewHeight, Swapchain);
 }
 
-bufferHandle context::CreateVertexBuffer(f32 *Values, sz Count, sz Stride, const std::vector<vertexInputAttribute> &Attributes)
-{
-    bufferHandle Handle = ResourceManager.Buffers.ObtainResource();
-    if(Handle == InvalidHandle)
-    {
-        return Handle;
-    }
-
-    buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(Handle);
-    
-    Buffer->Name = "";
-    Buffer->ApiData = std::make_shared<vkBufferData>();
-    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
-    *VkBufferData = vkBufferData();
-
-    auto VulkanContext = context::Get();
-    
-    auto StageBuffer = VulkanContext->GetStageBuffer();
-    auto CommandBuffer = VulkanContext->GetImmediateCommandBuffer();
-
-    CommandBuffer->Begin();
-
-    auto VertexAllocation = StageBuffer->Submit((uint8_t*)Values, (u32)Count * sizeof(f32));
-
-    Buffer->Init(VertexAllocation.Size, gfx::bufferUsage::VertexBuffer | gfx::bufferUsage::TransferDestination, gfx::memoryUsage::GpuOnly);
-  
-    CommandBuffer->CopyBuffer(
-        gfx::bufferInfo {StageBuffer->GetBuffer(), VertexAllocation.Offset},
-        gfx::bufferInfo {Buffer, 0},
-        VertexAllocation.Size
-    );
-    
-    StageBuffer->Flush();
-    CommandBuffer->End();
-
-    VulkanContext->SubmitCommandBufferImmediate(CommandBuffer);
-    StageBuffer->Reset();     
-
-    return Handle;
-}
 
 vertexBufferHandle context::CreateEmptyVertexBuffer()
 {

@@ -596,10 +596,10 @@ struct cullMode
         Back,
         FrontAndBack
 #elif GFX_API==GFX_D3D12
-        None,
-        Front,
-        Back,
-        FrontAndBack
+        None = D3D12_CULL_MODE_NONE,
+        Front = D3D12_CULL_MODE_FRONT,
+        Back = D3D12_CULL_MODE_BACK,
+        FrontAndBack = D3D12_CULL_MODE_BACK | D3D12_CULL_MODE_FRONT
 #endif
     };
 };
@@ -639,13 +639,13 @@ enum values
 };
 }
 
-namespace fillMode
+enum class fillMode
 {
-enum values
-{
-    WireFrame, Solid, Point, Count
+    WireFrame, 
+    Solid, 
+    Point, 
+    Count
 };
-}
 
 
 }

@@ -249,5 +249,181 @@ D3D12_RESOURCE_STATES ImageUsageToResourceState(imageUsage::bits Usage)
     }    
 }
 
+static D3D12_COMPARISON_FUNC DepthFuncTable[]
+{
+    D3D12_COMPARISON_FUNC_NEVER,//Never,
+    D3D12_COMPARISON_FUNC_LESS,//Less,
+    D3D12_COMPARISON_FUNC_EQUAL,//Equal,
+    D3D12_COMPARISON_FUNC_LESS_EQUAL,//LessOrEqual,
+    D3D12_COMPARISON_FUNC_GREATER,//Greater,
+    D3D12_COMPARISON_FUNC_NOT_EQUAL,//NotEqual,
+    D3D12_COMPARISON_FUNC_GREATER_EQUAL,//GreaterOrEqual,
+    D3D12_COMPARISON_FUNC_ALWAYS,//Always
+};
+
+D3D12_COMPARISON_FUNC DepthFuncToNative(compareOperation Operation)
+{
+    return DepthFuncTable[(sz)Operation];
+}
+
+D3D12_DEPTH_WRITE_MASK DepthWriteToNative(u8 DepthWriteEnabled)
+{
+    return DepthWriteEnabled ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+}
+
+static D3D12_STENCIL_OP StencilOpTable[] = 
+{
+    D3D12_STENCIL_OP_KEEP,//Keep,
+    D3D12_STENCIL_OP_ZERO,//Zero,
+    D3D12_STENCIL_OP_REPLACE,//Replace,
+    D3D12_STENCIL_OP_INCR,//IncrementAndClamp,
+    D3D12_STENCIL_OP_DECR,//DecrementAndClamp,
+    D3D12_STENCIL_OP_INVERT,//Invert,
+    D3D12_STENCIL_OP_INCR_SAT,//IncrementAndWrap,
+    D3D12_STENCIL_OP_DECR_SAT,//DecrementAndWrap    
+};
+
+D3D12_STENCIL_OP StencilOpToNative(stencilOperation Operation)
+{
+    return StencilOpTable[(sz)Operation];
+}
+
+D3D12_DEPTH_STENCILOP_DESC StencilStateToNative(stencilOperationState Operation)
+{
+    D3D12_DEPTH_STENCILOP_DESC Result;
+    Result.StencilDepthFailOp = StencilOpToNative(Operation.DepthFail);
+    Result.StencilFailOp = StencilOpToNative(Operation.Fail);
+    Result.StencilPassOp = StencilOpToNative(Operation.Pass);
+    Result.StencilFunc = DepthFuncToNative(Operation.Compare);
+    return Result;
+}
+
+static D3D12_BLEND BlendFactorTable[] = 
+{
+    D3D12_BLEND_ZERO,//Zero,
+    D3D12_BLEND_ONE,//One,
+    D3D12_BLEND_SRC_COLOR,//SrcColor,
+    D3D12_BLEND_INV_SRC_COLOR,//OneMinusSrcColor,
+    D3D12_BLEND_DEST_COLOR,//DstColor,
+    D3D12_BLEND_INV_DEST_COLOR,//OneMinusDstColor,
+    D3D12_BLEND_SRC_ALPHA,//SrcAlpha,
+    D3D12_BLEND_INV_SRC_ALPHA,//OneMinusSrcAlpha,
+    D3D12_BLEND_DEST_ALPHA,//DstAlpha,
+    D3D12_BLEND_INV_DEST_ALPHA,//OneMinusDstAlpha,
+    (D3D12_BLEND)-1,//ConstantColor,
+    (D3D12_BLEND)-1,//OneMinusConstantColor,
+    (D3D12_BLEND)-1,//ConstantAlpha,
+    (D3D12_BLEND)-1,//OneMinusConstantAlpha,
+    D3D12_BLEND_SRC_ALPHA_SAT,//SrcAlphaSaturate,
+    D3D12_BLEND_SRC1_COLOR,//Src1Color,
+    D3D12_BLEND_INV_SRC1_COLOR,//OneMinusSrc1Color,
+    D3D12_BLEND_SRC1_ALPHA,//Src1Alpha,
+    D3D12_BLEND_INV_SRC1_ALPHA,//OneMinusSrc1Alpha    
+};
+
+D3D12_BLEND BlendFactorToNative(blendFactor Factor)
+{
+    return BlendFactorTable[(sz)Factor];
+}
+
+static D3D12_BLEND_OP BlendOpTable[] = 
+{
+    D3D12_BLEND_OP_ADD,//Add,
+    D3D12_BLEND_OP_SUBTRACT,//Subtract,
+    D3D12_BLEND_OP_REV_SUBTRACT,//ReverseSubtract,
+    D3D12_BLEND_OP_MIN,//Min,
+    D3D12_BLEND_OP_MAX,//Max,
+    (D3D12_BLEND_OP)-1,//ZeroEXT,
+    (D3D12_BLEND_OP)-1,//SrcEXT,
+    (D3D12_BLEND_OP)-1,//DstEXT,
+    (D3D12_BLEND_OP)-1,//SrcOverEXT,
+    (D3D12_BLEND_OP)-1,//DstOverEXT,
+    (D3D12_BLEND_OP)-1,//SrcInEXT,
+    (D3D12_BLEND_OP)-1,//DstInEXT,
+    (D3D12_BLEND_OP)-1,//SrcOutEXT,
+    (D3D12_BLEND_OP)-1,//DstOutEXT,
+    (D3D12_BLEND_OP)-1,//SrcAtopEXT,
+    (D3D12_BLEND_OP)-1,//DstAtopEXT,
+    (D3D12_BLEND_OP)-1,//XorEXT,
+    (D3D12_BLEND_OP)-1,//MultiplyEXT,
+    (D3D12_BLEND_OP)-1,//ScreenEXT,
+    (D3D12_BLEND_OP)-1,//OverlayEXT,
+    (D3D12_BLEND_OP)-1,//DarkenEXT,
+    (D3D12_BLEND_OP)-1,//LightenEXT,
+    (D3D12_BLEND_OP)-1,//ColordodgeEXT,
+    (D3D12_BLEND_OP)-1,//ColorburnEXT,
+    (D3D12_BLEND_OP)-1,//HardlightEXT,
+    (D3D12_BLEND_OP)-1,//SoftlightEXT,
+    (D3D12_BLEND_OP)-1,//DifferenceEXT,
+    (D3D12_BLEND_OP)-1,//ExclusionEXT,
+    (D3D12_BLEND_OP)-1,//InvertEXT,
+    (D3D12_BLEND_OP)-1,//InvertRgbEXT,
+    (D3D12_BLEND_OP)-1,//LineardodgeEXT,
+    (D3D12_BLEND_OP)-1,//LinearburnEXT,
+    (D3D12_BLEND_OP)-1,//VividlightEXT,
+    (D3D12_BLEND_OP)-1,//LinearlightEXT,
+    (D3D12_BLEND_OP)-1,//PinlightEXT,
+    (D3D12_BLEND_OP)-1,//HardmixEXT,
+    (D3D12_BLEND_OP)-1,//HslHueEXT,
+    (D3D12_BLEND_OP)-1,//HslSaturationEXT,
+    (D3D12_BLEND_OP)-1,//HslColorEXT,
+    (D3D12_BLEND_OP)-1,//HslLuminosityEXT,
+    (D3D12_BLEND_OP)-1,//PlusEXT,
+    (D3D12_BLEND_OP)-1,//PlusClampedEXT,
+    (D3D12_BLEND_OP)-1,//PlusClampedAlphaEXT,
+    (D3D12_BLEND_OP)-1,//PlusDarkerEXT,
+    (D3D12_BLEND_OP)-1,//MinusEXT,
+    (D3D12_BLEND_OP)-1,//MinusClampedEXT,
+    (D3D12_BLEND_OP)-1,//ContrastEXT,
+    (D3D12_BLEND_OP)-1,//InvertOvgEXT,
+    (D3D12_BLEND_OP)-1,//RedEXT,
+    (D3D12_BLEND_OP)-1,//GreenEXT,
+    (D3D12_BLEND_OP)-1,//BlueEXT    
+};
+
+D3D12_BLEND_OP BlendOperationToNative(blendOperation Operation)
+{
+    return BlendOpTable[(sz)Operation];
+}
+
+u8 BlendWriteMaskToNative(colorWriteEnabled::mask Mask)
+{
+    u8 Result = 0;
+    if(Mask & colorWriteEnabled::RedMask)
+        Result |= D3D12_COLOR_WRITE_ENABLE_RED;
+    if(Mask & colorWriteEnabled::GreenMask)
+        Result |= D3D12_COLOR_WRITE_ENABLE_GREEN;
+    if(Mask & colorWriteEnabled::BlueMask)
+        Result |= D3D12_COLOR_WRITE_ENABLE_BLUE;
+    if(Mask & colorWriteEnabled::AlphaMask)
+        Result |= D3D12_COLOR_WRITE_ENABLE_ALPHA;
+
+    return Result;
+}
+
+
+D3D12_CULL_MODE CullModeToNative(cullMode::bits Mode)
+{
+    return (D3D12_CULL_MODE)Mode;
+}
+
+b8 FrontFaceToNative(frontFace Face)
+{
+    return (Face == frontFace::CounterClockwise) ? 1 : 0;
+}
+
+static D3D12_FILL_MODE FillModeTable[] = 
+{
+    D3D12_FILL_MODE_WIREFRAME,
+    D3D12_FILL_MODE_SOLID,
+    (D3D12_FILL_MODE)-1,
+};
+
+D3D12_FILL_MODE FillModeToNative(fillMode Mode)
+{
+    return FillModeTable[(sz)Mode];
+}
+
+
 
 }

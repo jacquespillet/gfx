@@ -3,6 +3,7 @@
 #include "../Include/GfxContext.h"
 #include "D12Common.h"
 #include "D12GfxContext.h"
+#include "D12CommandBuffer.h"
 #include <d3dx12.h>
 
 namespace gfx
@@ -182,6 +183,48 @@ void stageBuffer::Destroy()
     context::Get()->ResourceManager.Buffers.ReleaseResource(BufferHandle);
 }
 
+bufferHandle CreateVertexBuffer(f32 *Values, sz ByteSize, sz Stride, const std::vector<vertexInputAttribute> &Attributes)
+{
+    context *Context = context::Get();
+    GET_CONTEXT(D12Data, Context);
+    bufferHandle Handle = Context->ResourceManager.Buffers.ObtainResource();
+    if(Handle == InvalidHandle)
+    {
+        return Handle;
+    }
+
+    //Create vertex buffer
+    buffer *Buffer = (buffer*)Context->ResourceManager.Buffers.GetResource(Handle);
+    Buffer->Init(ByteSize, bufferUsage::VertexBuffer, memoryUsage::GpuOnly);
+    Buffer->Name = "";
+    std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);    
+
+    //Copy data to stage buffer
+    D12Data->ImmediateCommandBuffer->Begin();
+    auto VertexAllocation = D12Data->StageBuffer.Submit((uint8_t*)Values, (u32)ByteSize);
+    
+    //Copy stage buffer to vertex buffer
+    D12Data->ImmediateCommandBuffer->CopyBuffer(
+        bufferInfo {D12Data->StageBuffer.GetBuffer(), VertexAllocation.Offset},
+        bufferInfo {Buffer, 0},
+        VertexAllocation.Size
+    );
+    
+    //Submit command buffer
+    D12Data->StageBuffer.Flush();
+    D12Data->ImmediateCommandBuffer->End();
+    Context->SubmitCommandBufferImmediate(D12Data->ImmediateCommandBuffer.get());
+    D12Data->StageBuffer.Reset(); 
+
+    // Initialize the vertex buffer view.
+    D12BufferData->BufferView.BufferLocation = D12BufferData->Handle->GetGPUVirtualAddress();
+    D12BufferData->BufferView.StrideInBytes = (u32)Stride;
+    D12BufferData->BufferView.SizeInBytes = (u32)ByteSize;   
+    
+    return Handle;
+}
+
+
 
 vertexStreamData &vertexStreamData::Reset()
 {
@@ -253,7 +296,7 @@ vertexBuffer &vertexBuffer::Create()
         std::vector<vertexInputAttribute> Attributes(VertexStreams[i].AttributesCount);
         memcpy(&Attributes[0], &VertexStreams[i].InputAttributes, VertexStreams[i].AttributesCount * sizeof(vertexInputAttribute));
 
-        VertexStreams[i].Buffer = context::Get()->CreateVertexBuffer((f32*)VertexStreams[i].Data, VertexStreams[i].Size, VertexStreams[i].Stride, Attributes);
+        VertexStreams[i].Buffer = CreateVertexBuffer((f32*)VertexStreams[i].Data, VertexStreams[i].Size, VertexStreams[i].Stride, Attributes);
     }
     
     return *this;

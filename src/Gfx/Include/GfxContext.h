@@ -71,7 +71,6 @@ struct context
     std::shared_ptr<swapchain> RecreateSwapchain(u32 Width, u32 Height, std::shared_ptr<swapchain> OldSwapchain);
 
     stageBuffer CreateStageBuffer(sz Size);
-    bufferHandle CreateVertexBuffer(f32 *Values, sz Count, sz Stride, const std::vector<vertexInputAttribute> &Attributes);
     vertexBufferHandle CreateEmptyVertexBuffer();
     bufferHandle CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage MemoryUsage);
     imageHandle CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo);

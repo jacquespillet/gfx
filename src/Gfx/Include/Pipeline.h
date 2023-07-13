@@ -175,7 +175,7 @@ struct rasterizationCreation
 {
     cullMode::bits CullMode = cullMode::None;
     frontFace FrontFace = frontFace::CounterClockwise;
-    fillMode::values Fill = fillMode::Solid;
+    fillMode Fill = fillMode::Solid;
 };
 
 struct pipelineCreation
