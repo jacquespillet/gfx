@@ -259,6 +259,16 @@ std::shared_ptr<swapchain> context::RecreateSwapchain(u32 Width, u32 Height, std
     //Initialize texture representations of swapchain images
     for(u32 i=0; i<VkData->PresentImageCount; i++)
     {
+        framebuffer *Framebuffer = (framebuffer *) ResourceManager.Framebuffers.GetResource(VkSwapchainData->Framebuffers[i]);
+        std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
+        VkData->Device.destroyFramebuffer(VkFramebufferData->Handle);
+        ResourceManager.Framebuffers.ReleaseResource(VkSwapchainData->Framebuffers[i]);
+        
+        std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(VkSwapchainData->SwapchainImages[i]->ApiData);
+        VkData->Device.destroyImageView(VkImageData->DefaultImageViews.NativeView);
+        
+        if(i==0) VkFramebufferData->DepthStencilImage->Destroy();        
+     
         VkSwapchainData->SwapchainImages[i] = 
             std::make_shared<image>(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format));
     }
@@ -1448,7 +1458,6 @@ void context::DestroySwapchain()
         }        
     }
     VkData->Device.destroySwapchainKHR(VkSwapchainData->Handle);
-
 }
 
 void context::WaitIdle()

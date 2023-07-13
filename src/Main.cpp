@@ -336,7 +336,6 @@ struct application
 			CommandBuffer->DrawTriangles(0, 3); 
 			CommandBuffer->EndPass();
 			
-			
 			CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
 			CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);
 			CommandBuffer->SetScissor(0, 0, Width, Height);

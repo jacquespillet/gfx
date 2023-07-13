@@ -693,9 +693,10 @@ renderPassHandle context::GetDefaultRenderPass()
 
 framebufferHandle context::GetSwapchainFramebuffer()
 {
-    return 0;
-}
-
+    std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
+    return D12SwapchainData->FramebufferHandle;
+}  
+  
 
 
 std::shared_ptr<commandBuffer> context::GetCurrentFrameCommandBuffer()
