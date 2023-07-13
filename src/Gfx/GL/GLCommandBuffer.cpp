@@ -82,6 +82,55 @@ void ExecuteBindGraphicsPipeline(const command &Command)
     std::shared_ptr<glPipeline> GLPipeline = std::static_pointer_cast<glPipeline>(Pipeline->ApiData);
     
     glUseProgram(GLPipeline->ShaderProgram->ProgramShaderObject);
+
+    //Bind depth stencil
+    GLPipeline->DepthStencil.DepthEnable ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST);
+    GLPipeline->DepthStencil.DepthWrite ? glDepthMask(GL_TRUE) : glDepthMask(GL_FALSE);
+    GLPipeline->DepthStencil.StencilEnable ? glEnable(GL_STENCIL_TEST) : glDisable(GL_STENCIL_TEST);
+    glDepthFunc(GLPipeline->DepthStencil.DepthComparison);
+    if(GLPipeline->DepthStencil.StencilEnable)
+    {
+        glStencilFuncSeparate(GL_FRONT, GLPipeline->DepthStencil.FrontStencilOp.Operation, 0, 0xFF);
+        glStencilOpSeparate(GL_FRONT, GLPipeline->DepthStencil.FrontStencilOp.Fail, GLPipeline->DepthStencil.FrontStencilOp.DepthFail, GLPipeline->DepthStencil.FrontStencilOp.Pass);
+        glStencilFuncSeparate(GL_BACK, GLPipeline->DepthStencil.BackStencilOp.Operation, 0, 0xFF);
+        glStencilOpSeparate(GL_BACK, GLPipeline->DepthStencil.BackStencilOp.Fail, GLPipeline->DepthStencil.BackStencilOp.DepthFail, GLPipeline->DepthStencil.BackStencilOp.Pass);
+    }
+    
+    //Bind blend
+    if(GLPipeline->Blend.Enabled)
+    {
+        glEnable(GL_BLEND);
+        if(GLPipeline->Blend.Separate)
+        {
+            glBlendFunc(GLPipeline->Blend.BlendSourceColor, GLPipeline->Blend.BlendDestColor);
+            glBlendEquation(GLPipeline->Blend.ColorOp);
+        }
+        else
+        {
+            glBlendFuncSeparate(GLPipeline->Blend.BlendSourceColor, GLPipeline->Blend.BlendDestColor, GLPipeline->Blend.BlendSourceAlpha, GLPipeline->Blend.BlendDestAlpha);
+            glBlendEquationSeparate(GLPipeline->Blend.ColorOp, GLPipeline->Blend.AlphaOp);
+        }
+    }
+    else
+    {
+        glDisable(GL_BLEND);
+    }
+
+    //bind raster   
+    if(GLPipeline->Rasterizer.CullMode != 0)
+    {
+        glEnable(GL_CULL_FACE);
+        glCullFace(GLPipeline->Rasterizer.CullMode);
+    }
+    else
+    {
+        glDisable(GL_CULL_FACE);
+    }
+
+    glFrontFace(GLPipeline->Rasterizer.FrontFace);
+    glPolygonMode(GL_FRONT_AND_BACK, GLPipeline->Rasterizer.FillMode);
+
+
 }
 
 void commandBuffer::Begin()

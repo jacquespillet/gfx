@@ -551,5 +551,159 @@ GLenum SamplerFilterToNative(samplerFilter Filter)
     return SamplerFilterTable[(sz)Filter];
 }
 
+static GLenum StencilOpTable[] = 
+{
+    GL_KEEP,//Keep,
+    GL_ZERO,//Zero,
+    GL_REPLACE,//Replace,
+    GL_INCR,//IncrementAndClamp,
+    GL_DECR,//DecrementAndClamp,
+    GL_INVERT,//Invert,
+    GL_INCR_WRAP,//IncrementAndWrap,
+    GL_DECR_WRAP,//DecrementAndWrap    
+};
+
+GLenum StencilOpToNative(stencilOperation Op)
+{
+    return StencilOpTable[(sz)Op];
+}
+
+glStencilOperation StencilStateToNative(stencilOperationState Op)
+{
+    glStencilOperation Result = {};
+    Result.DepthFail = StencilOpToNative(Op.DepthFail);
+    Result.Fail = StencilOpToNative(Op.Fail);
+    Result.Pass = StencilOpToNative(Op.Pass);
+    Result.Operation = CompareOpToNative(Op.Compare);
+    return Result;
+}
+
+static GLenum CompareOpTable[] = 
+{
+    GL_NEVER,//Never,
+    GL_LESS,//Less,
+    GL_EQUAL,//Equal,
+    GL_LEQUAL,//LessOrEqual,
+    GL_GREATER,//Greater,
+    GL_NOTEQUAL,//NotEqual,
+    GL_GEQUAL,//GreaterOrEqual,
+    GL_ALWAYS,//Always    
+};
+
+GLenum CompareOpToNative(compareOperation Op)
+{
+    return CompareOpTable[(sz)Op];
+}
+
+static GLenum BlendFactorTable[] =
+{
+    GL_ZERO,//Zero,
+    GL_ONE,//One,
+    GL_SRC_COLOR,//SrcColor,
+    GL_ONE_MINUS_SRC_COLOR,//OneMinusSrcColor,
+    GL_DST_COLOR,//DstColor,
+    GL_ONE_MINUS_DST_COLOR,//OneMinusDstColor,
+    GL_SRC_ALPHA,//SrcAlpha,
+    GL_ONE_MINUS_SRC_ALPHA,//OneMinusSrcAlpha,
+    GL_DST_ALPHA,//DstAlpha,
+    GL_ONE_MINUS_DST_ALPHA,//OneMinusDstAlpha,
+    GL_CONSTANT_COLOR,//ConstantColor,
+    GL_ONE_MINUS_CONSTANT_COLOR,//OneMinusConstantColor,
+    GL_CONSTANT_ALPHA,//ConstantAlpha,
+    GL_ONE_MINUS_CONSTANT_ALPHA,//OneMinusConstantAlpha,
+    GL_SRC_ALPHA_SATURATE_EXT,//SrcAlphaSaturate,
+    GL_SRC1_COLOR,//Src1Color,
+    GL_ONE_MINUS_SRC1_COLOR,//OneMinusSrc1Color,
+    GL_SRC1_ALPHA,//Src1Alpha,
+    GL_ONE_MINUS_SRC1_ALPHA,//OneMinusSrc1Alpha    
+};
+
+GLenum BlendFactorToNative(blendFactor Factor)
+{
+    return BlendFactorTable[(sz)Factor];
+}
+
+static GLenum BlendOpTablep[] = 
+{
+    GL_ADD,//Add,
+    GL_SUBTRACT,//Subtract,
+    GL_FUNC_REVERSE_SUBTRACT,//ReverseSubtract,
+    GL_MIN,//Min,
+    GL_MAX,//Max,
+    GL_ZERO,//ZeroEXT,
+    (GLenum)-1,//SrcEXT,
+    (GLenum)-1,//DstEXT,
+    (GLenum)-1,//SrcOverEXT,
+    (GLenum)-1,//DstOverEXT,
+    (GLenum)-1,//SrcInEXT,
+    (GLenum)-1,//DstInEXT,
+    (GLenum)-1,//SrcOutEXT,
+    (GLenum)-1,//DstOutEXT,
+    (GLenum)-1,//SrcAtopEXT,
+    (GLenum)-1,//DstAtopEXT,
+    (GLenum)-1,//XorEXT,
+    (GLenum)-1,//MultiplyEXT,
+    (GLenum)-1,//ScreenEXT,
+    (GLenum)-1,//OverlayEXT,
+    (GLenum)-1,//DarkenEXT,
+    (GLenum)-1,//LightenEXT,
+    (GLenum)-1,//ColordodgeEXT,
+    (GLenum)-1,//ColorburnEXT,
+    (GLenum)-1,//HardlightEXT,
+    (GLenum)-1,//SoftlightEXT,
+    (GLenum)-1,//DifferenceEXT,
+    (GLenum)-1,//ExclusionEXT,
+    (GLenum)-1,//InvertEXT,
+    (GLenum)-1,//InvertRgbEXT,
+    (GLenum)-1,//LineardodgeEXT,
+    (GLenum)-1,//LinearburnEXT,
+    (GLenum)-1,//VividlightEXT,
+    (GLenum)-1,//LinearlightEXT,
+    (GLenum)-1,//PinlightEXT,
+    (GLenum)-1,//HardmixEXT,
+    (GLenum)-1,//HslHueEXT,
+    (GLenum)-1,//HslSaturationEXT,
+    (GLenum)-1,//HslColorEXT,
+    (GLenum)-1,//HslLuminosityEXT,
+    (GLenum)-1,//PlusEXT,
+    (GLenum)-1,//PlusClampedEXT,
+    (GLenum)-1,//PlusClampedAlphaEXT,
+    (GLenum)-1,//PlusDarkerEXT,
+    (GLenum)-1,//MinusEXT,
+    (GLenum)-1,//MinusClampedEXT,
+    (GLenum)-1,//ContrastEXT,
+    (GLenum)-1,//InvertOvgEXT,
+    (GLenum)-1,//RedEXT,
+    (GLenum)-1,//GreenEXT,
+    (GLenum)-1,//BlueEXT
+};
+
+GLenum BlendOpToNative(blendOperation Op)
+{
+    return BlendOpTablep[(sz)Op];
+}
+
+GLenum CullModeToNative(cullMode::bits Mode)
+{
+    return (GLenum)Mode;
+}
+
+static GLenum FillModeTable[] = 
+{
+    GL_LINE,//WireFrame, 
+    GL_FILL,//Solid, 
+    GL_POINT,//Point, 
+};
+
+GLenum FillModeToNative(fillMode Mode)
+{
+    return FillModeTable[(sz)Mode];
+}
+
+GLenum FrontFaceToNative(frontFace Mode)
+{
+    return (Mode == frontFace::Clockwise) ? GL_CW : GL_CCW;
+}
+
 
 }

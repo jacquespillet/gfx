@@ -2,6 +2,9 @@
 #include "../Include/Types.h"
 #include "../Include/VertexInput.h"
 #include "../Include/Image.h"
+#include "../Include/Pipeline.h"
+
+#include "GLPipeline.h"
 
 #include <GL/glew.h>
 #include <assert.h>
@@ -23,4 +26,13 @@ GLenum TypeToNative(type Type);
 
 GLenum SamplerWrapToNative(samplerWrapMode Mode);
 GLenum SamplerFilterToNative(samplerFilter Filter);
+
+glStencilOperation StencilStateToNative(stencilOperationState Op);
+GLenum CompareOpToNative(compareOperation Op);
+GLenum BlendFactorToNative(blendFactor Factor);
+GLenum BlendOpToNative(blendOperation Op);
+GLenum CullModeToNative(cullMode::bits Mode);
+GLenum FillModeToNative(fillMode Mode);
+GLenum FrontFaceToNative(frontFace Mode);
+
 }

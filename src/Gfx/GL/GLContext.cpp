@@ -299,20 +299,33 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     GLPipeline->ShaderProgram->Compile();
     
     GLData->CheckErrors();
-    //Blend state
 
     //Depth stencil state
+    GLPipeline->DepthStencil.FrontStencilOp = StencilStateToNative(PipelineCreation.DepthStencil.Front);
+    GLPipeline->DepthStencil.BackStencilOp = StencilStateToNative(PipelineCreation.DepthStencil.Back);
+    GLPipeline->DepthStencil.DepthEnable = PipelineCreation.DepthStencil.DepthEnable;
+    GLPipeline->DepthStencil.DepthWrite = PipelineCreation.DepthStencil.DepthWriteEnable;
+    GLPipeline->DepthStencil.StencilEnable = PipelineCreation.DepthStencil.StencilEnable;
+    GLPipeline->DepthStencil.DepthComparison = CompareOpToNative(PipelineCreation.DepthStencil.DepthComparison);
 
-    //Multisample state
+    //Blend state
+    GLPipeline->Blend.Enabled=false;
+    if(PipelineCreation.BlendState.ActiveStates>0)
+    {
+        GLPipeline->Blend.Enabled=true;
+        GLPipeline->Blend.BlendSourceColor = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].SourceColor);
+        GLPipeline->Blend.BlendDestColor = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].DestinationColor);
+        GLPipeline->Blend.BlendSourceAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].SourceAlpha);
+        GLPipeline->Blend.BlendDestAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].DestinationAlpha);
+        GLPipeline->Blend.ColorOp = BlendOpToNative(PipelineCreation.BlendState.BlendStates[0].ColorOp);
+        GLPipeline->Blend.AlphaOp = BlendOpToNative(PipelineCreation.BlendState.BlendStates[0].AlphaOp);
+        GLPipeline->Blend.Separate = PipelineCreation.BlendState.BlendStates[0].SeparateBlend;
+    }
 
     //Rasterizer state
-
-    //Viewport state
-
-    //Scissor state
-
-
-    //Render targets
+    GLPipeline->Rasterizer.CullMode = CullModeToNative(PipelineCreation.Rasterization.CullMode);
+    GLPipeline->Rasterizer.FillMode = FillModeToNative(PipelineCreation.Rasterization.Fill);
+    GLPipeline->Rasterizer.FrontFace = FrontFaceToNative(PipelineCreation.Rasterization.FrontFace);
 
 
     return Handle;

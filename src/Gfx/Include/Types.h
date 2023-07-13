@@ -591,10 +591,10 @@ struct cullMode
         Back = (value) vk::CullModeFlagBits::eBack,
         FrontAndBack = (value) vk::CullModeFlagBits::eFrontAndBack
 #elif GFX_API==GFX_GL
-        None,
-        Front,
-        Back,
-        FrontAndBack
+        None = 0,
+        Front = GL_FRONT,
+        Back = GL_BACK,
+        FrontAndBack = GL_FRONT_AND_BACK
 #elif GFX_API==GFX_D3D12
         None = D3D12_CULL_MODE_NONE,
         Front = D3D12_CULL_MODE_FRONT,
