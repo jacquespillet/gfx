@@ -9,6 +9,8 @@ const char *SemanticFromAttrib(vertexComponentFormat::values Format)
     switch (Format)
     {
     case vertexComponentFormat::Float2:
+        return AllocateCString("TEXCOORD");
+        break;
     case vertexComponentFormat::Float3:
     case vertexComponentFormat::Float4:
     case vertexComponentFormat::Mat4:

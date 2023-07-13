@@ -216,6 +216,10 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage
 std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
 {
     GET_CONTEXT(D12Data, this);    
+    
+    format SwapchainFormat = format::R8G8B8A8_UNORM;
+    format DepthFormat = format::D24_UNORM_S8_UINT;
+    
     std::shared_ptr<swapchain> Swapchain = std::make_shared<swapchain>();
     Swapchain->Width = Width;
     Swapchain->Height = Height;
@@ -236,12 +240,19 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(Framebuffer->ApiData);
 
 
+    Framebuffer->RenderPass = context::Get()->ResourceManager.RenderPasses.ObtainResource();
+    renderPass *RenderPass = (renderPass*) context::Get()->ResourceManager.RenderPasses.GetResource(Framebuffer->RenderPass);
+    RenderPass->Output.NumColorFormats = 1;
+    RenderPass->Output.ColorFormats[0] = SwapchainFormat;
+    RenderPass->Output.DepthStencilFormat = DepthFormat;
+    SwapchainOutput = RenderPass->Output;
+
     // Describe and create the swap chain.
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
     swapChainDesc.BufferCount = d12Constants::FrameCount;
     swapChainDesc.Width = Width;
     swapChainDesc.Height = Height;
-    swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    swapChainDesc.Format = FormatToNative(SwapchainFormat);
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     swapChainDesc.SampleDesc.Count = 1;
@@ -273,7 +284,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     D12FramebufferData->CreateHeaps();
     D12FramebufferData->SetRenderTargets(D12SwapchainData->Buffers, d12Constants::FrameCount);
     D12FramebufferData->BuildDescriptors();
-    D12FramebufferData->CreateDepthBuffer(Width, Height, format::D24_UNORM_S8_UINT);
+    D12FramebufferData->CreateDepthBuffer(Width, Height, DepthFormat);
     D12FramebufferData->IsSwapchain=true;
 
     this->Swapchain = Swapchain;
@@ -331,10 +342,16 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     Framebuffer->ApiData = std::make_shared<d3d12FramebufferData>();
     std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(Framebuffer->ApiData);
     
+    Framebuffer->RenderPass = context::Get()->ResourceManager.RenderPasses.ObtainResource();
+    renderPass *RenderPass = (renderPass*) context::Get()->ResourceManager.RenderPasses.GetResource(Framebuffer->RenderPass);
+    RenderPass->Output.NumColorFormats = CreateInfo.ColorFormats.size();
+    RenderPass->Output.DepthStencilFormat = CreateInfo.DepthFormat;
+
     assert(CreateInfo.ColorFormats.size() < commonConstants::MaxImageOutputs);
     
     for(sz i=0; i<CreateInfo.ColorFormats.size(); i++)
     {
+        RenderPass->Output.ColorFormats[i] = CreateInfo.ColorFormats[i];
 
         D3D12_RESOURCE_DESC desc = {};
         desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -609,7 +626,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         psoDesc.VS.pShaderBytecode = D12PipelineData->vertexShader->GetBufferPointer();
         psoDesc.PS.BytecodeLength = D12PipelineData->pixelShader->GetBufferSize();
         psoDesc.PS.pShaderBytecode = D12PipelineData->pixelShader->GetBufferPointer();
-        
+
         psoDesc.DepthStencilState.DepthFunc = DepthFuncToNative(PipelineCreation.DepthStencil.DepthComparison);
         psoDesc.DepthStencilState.DepthEnable = (b8)(PipelineCreation.DepthStencil.DepthEnable);
         psoDesc.DepthStencilState.StencilEnable = (b8)(PipelineCreation.DepthStencil.StencilEnable);
@@ -618,7 +635,8 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         psoDesc.DepthStencilState.BackFace = StencilStateToNative(PipelineCreation.DepthStencil.Back);
         
         psoDesc.NumRenderTargets = PipelineCreation.RenderPass.NumColorFormats;
-        
+        psoDesc.DSVFormat = FormatToNative(PipelineCreation.RenderPass.DepthStencilFormat);
+
         psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
         for(sz i=0; i<psoDesc.NumRenderTargets; i++)
         {
@@ -647,6 +665,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         psoDesc.RasterizerState.CullMode = CullModeToNative(PipelineCreation.Rasterization.CullMode);
         psoDesc.RasterizerState.FrontCounterClockwise = FrontFaceToNative(PipelineCreation.Rasterization.FrontFace);
         psoDesc.RasterizerState.FillMode = FillModeToNative(PipelineCreation.Rasterization.Fill);
+
 
         psoDesc.SampleMask = UINT_MAX;
         psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -746,11 +765,15 @@ void context::DestroyImage(imageHandle ImageHandle)
 }
 void context::DestroyFramebuffer(framebufferHandle FramebufferHandle)
 {
+    framebuffer *Framebuffer = (framebuffer*)ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+    ResourceManager.RenderPasses.ReleaseResource(Framebuffer->RenderPass);
     ResourceManager.Framebuffers.ReleaseResource(FramebufferHandle);
 }
 void context::DestroySwapchain()
 {
     std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
+    framebuffer *Framebuffer = (framebuffer*)ResourceManager.Framebuffers.GetResource(D12SwapchainData->FramebufferHandle);
+    ResourceManager.RenderPasses.ReleaseResource(Framebuffer->RenderPass);
     ResourceManager.Framebuffers.ReleaseResource(D12SwapchainData->FramebufferHandle);
 }
 

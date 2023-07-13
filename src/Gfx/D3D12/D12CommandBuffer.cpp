@@ -204,7 +204,7 @@ void commandBuffer::SetScissor(s32 X, s32 Y, u32 Width, u32 Height)
 void commandBuffer::DrawTriangles(uint32_t Start, uint32_t Count)
 {
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
-    D12CommandBufferData->CommandList->DrawInstanced(3, 1, 0, 0);
+    D12CommandBufferData->CommandList->DrawInstanced(Count, 1, Start, 0);
 }
 
 void commandBuffer::End()

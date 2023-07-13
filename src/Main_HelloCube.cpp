@@ -102,11 +102,11 @@ struct application
 		SceneMatrices = 
 		{
 			glm::lookAt(glm::vec3(1.0f,1.0f,1.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f,1.0f,0.0f)),
-			glm::perspective(glm::radians(60.0f), (float)Width / (float)Height, 0.01f, 100.0f)
+		 	glm::perspective(glm::radians(60.0f), (float)Width / (float)Height, 0.01f, 100.0f)
 		};
 		
 		gfx::memory::Get()->Init();
-    
+     
 		
 		// gfx::memory::Get()->Init();
 		
@@ -221,8 +221,8 @@ struct application
 		OffscreenPass = GfxContext->CreateFramebuffer(FramebufferCreateInfo);
 		SwapchainPass = GfxContext->GetDefaultRenderPass();
 		
-		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/Cube.json", OffscreenPass);
 		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/Cube.json");
+		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/Cube.json", OffscreenPass);
 
 
 		UniformBufferHandle1 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
@@ -356,7 +356,7 @@ struct application
 			CommandBuffer->BindVertexBuffer(VertexBufferHandle);
 			CommandBuffer->DrawTriangles(0, 36); 
 			CommandBuffer->EndPass();
-			
+
 			CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
 			CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);
 			CommandBuffer->SetScissor(0, 0, Width, Height);
