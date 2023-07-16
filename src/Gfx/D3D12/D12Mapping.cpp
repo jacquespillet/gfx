@@ -426,6 +426,10 @@ D3D12_FILL_MODE FillModeToNative(fillMode Mode)
     return FillModeTable[(sz)Mode];
 }
 
+DXGI_FORMAT IndexTypeToNative(indexType Type)
+{
+    return (Type == indexType::Uint16) ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
+}
 
 
 }

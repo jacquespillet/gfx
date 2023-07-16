@@ -83,6 +83,13 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
         // Allocate descriptors by incrementing the handles
         D12Data->CurrentHeapOffset++;   
     }
+
+    if(Usage == bufferUsage::IndexBuffer)
+    {
+        D12BufferData->IndexBufferView.BufferLocation = D12BufferData->Handle->GetGPUVirtualAddress();
+        D12BufferData->IndexBufferView.SizeInBytes = (u32)ByteSize;    
+        D12BufferData->IndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+    }
 }
 
 u8 *buffer::MapMemory()
@@ -217,9 +224,9 @@ bufferHandle CreateVertexBuffer(f32 *Values, sz ByteSize, sz Stride, const std::
     D12Data->StageBuffer.Reset(); 
 
     // Initialize the vertex buffer view.
-    D12BufferData->BufferView.BufferLocation = D12BufferData->Handle->GetGPUVirtualAddress();
-    D12BufferData->BufferView.StrideInBytes = (u32)Stride;
-    D12BufferData->BufferView.SizeInBytes = (u32)ByteSize;   
+    D12BufferData->VertexBufferView.BufferLocation = D12BufferData->Handle->GetGPUVirtualAddress();
+    D12BufferData->VertexBufferView.StrideInBytes = (u32)Stride;
+    D12BufferData->VertexBufferView.SizeInBytes = (u32)ByteSize;   
     
     return Handle;
 }

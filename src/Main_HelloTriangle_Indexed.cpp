@@ -10,8 +10,7 @@
 #include "Gfx/Api.h"  
 #include "App/App.h"
 
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
+#define MULTISTREAM 0
 
 
 void WindowErrorCallback(const std::string &errorMessage)
@@ -40,6 +39,7 @@ struct application
 	gfx::pipelineHandle PipelineHandleOffscreen;
 	gfx::pipelineHandle PipelineHandleSwapchain;
 	gfx::vertexBufferHandle VertexBufferHandle;
+	gfx::bufferHandle IndexBufferHandle;
 	std::shared_ptr<gfx::swapchain> Swapchain;
 	std::shared_ptr<gfx::uniformGroup> Uniforms;
 
@@ -50,17 +50,10 @@ struct application
 		gfx::v4f Color1;
 	};
 
-	struct sceneMatrices
-	{
-		glm::mat4 ViewMatrix;
-		glm::mat4 ProjectionMatrix;
-	};
-
 	uniformData UniformData1;
 	uniformData UniformData2;
 	uniformData UniformData3;
 	uniformData UniformData4;
-	sceneMatrices SceneMatrices;
 	
 	gfx::imageHandle TextureHandle1;
 	gfx::imageHandle TextureHandle2;
@@ -69,15 +62,10 @@ struct application
 	gfx::bufferHandle UniformBufferHandle2;
 	gfx::bufferHandle UniformBufferHandle3;
 	gfx::bufferHandle UniformBufferHandle4;
-	gfx::bufferHandle SceneMatricesBufferHandle;
 
 	uint32_t Width, Height;
 	void Init()
 	{
-		// Create the appropriate graphics API object based on runtime configuration
-		Width = 1280;
-		Height = 720;
-
 		UniformData1 = 
 		{
 			gfx::v4f(1,0,0,1),
@@ -98,15 +86,12 @@ struct application
 			gfx::v4f(1,0,1,1),
 			gfx::v4f(0,0,0,1)
 		};
-
-		SceneMatrices = 
-		{
-			glm::lookAt(glm::vec3(1.0f,1.0f,1.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f,1.0f,0.0f)),
-		 	glm::perspective(glm::radians(60.0f), (float)Width / (float)Height, 0.01f, 100.0f)
-		};
 		
 		gfx::memory::Get()->Init();
-     
+    
+		// Create the appropriate graphics API object based on runtime configuration
+		Width = 1280;
+		Height = 720;
 		
 		// gfx::memory::Get()->Init();
 		
@@ -152,57 +137,24 @@ struct application
 
 		float vertices[] =
 		{
-			-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-			0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-			0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-			0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-			-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-			-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+			0.0f, 0.25f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+			0.25f, -0.25f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+			-0.25f, -0.25f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f
+		};
 
-			-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-			0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-			0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-			0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-			-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-			-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
-			-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-			-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-			-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-			-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-			-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-			-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-			0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-			0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-			0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-			0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-			0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-			0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-			-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-			0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-			0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-			0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-			-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-			-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-			-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-			0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-			0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-			0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-			-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-			-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-		};			
+		uint32_t Indices[] = 
+		{
+			2, 1, 0
+		};
 		
 		gfx::vertexStreamData VertexStream1 = {};
 		VertexStream1
 			.SetSize(sizeof(vertices))
-			.SetStride(5 * sizeof(float))
+			.SetStride(7 * sizeof(float))
 			.SetData(&vertices)
 			.SetStreamIndex(0)
 			.AddAttribute({sizeof(float), 3, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 0})
-			.AddAttribute({sizeof(float), 2, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::UV0, 0, 1});
+			.AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::COLOR, 0, 1});
 		
 		//TODO: This is not ideal....
 		VertexBufferHandle = GfxContext->CreateEmptyVertexBuffer();
@@ -210,6 +162,9 @@ struct application
 		VertexBuffer->Init()
 					.AddVertexStream(VertexStream1)
 					.Create();
+
+		IndexBufferHandle = GfxContext->CreateBuffer(sizeof(Indices), gfx::bufferUsage::IndexBuffer, gfx::memoryUsage::GpuOnly);
+		GfxContext->CopyDataToBuffer(IndexBufferHandle, &Indices, sizeof(Indices), 0);
 		
 
 		gfx::framebufferCreateInfo FramebufferCreateInfo = 
@@ -220,9 +175,9 @@ struct application
 		};
 		OffscreenPass = GfxContext->CreateFramebuffer(FramebufferCreateInfo);
 		SwapchainPass = GfxContext->GetDefaultRenderPass();
-		
-		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/Cube.json");
-		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/Cube.json", OffscreenPass);
+	
+		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json", OffscreenPass);
+		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json");
 
 
 		UniformBufferHandle1 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
@@ -240,10 +195,6 @@ struct application
 		UniformBufferHandle4 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
 		gfx::buffer *UniformBuffer4 = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle4);
 		UniformBuffer4->CopyData((uint8_t*)&UniformData4, sizeof(uniformData), 0);
-
-		SceneMatricesBufferHandle = GfxContext->CreateBuffer(sizeof(sceneMatrices), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
-		gfx::buffer *SceneMatricesBuffer = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(SceneMatricesBufferHandle);
-		SceneMatricesBuffer->CopyData((uint8_t*)&SceneMatrices, sizeof(sceneMatrices), 0);
 
 		//That's the content of a descriptor set
 		Uniforms = std::make_shared<gfx::uniformGroup>();
@@ -278,12 +229,6 @@ struct application
 			4,
 			Texture1,
 		});
-		Uniforms->Uniforms.push_back({
-			"Matrices",
-			gfx::uniformType::Buffer,
-			5,
-			SceneMatricesBuffer,
-		});
 		//Tell the context that we'll be using this uniforms with this pipeline at binding 0
 		//It's possible to bind a uniform group to multiple pipelines.
 		GfxContext->BindUniformsToPipeline(Uniforms, PipelineHandleOffscreen, 0);
@@ -315,7 +260,7 @@ struct application
 		GfxContext->DestroyBuffer(UniformBufferHandle2);
 		GfxContext->DestroyBuffer(UniformBufferHandle3);
 		GfxContext->DestroyBuffer(UniformBufferHandle4);
-		GfxContext->DestroyBuffer(SceneMatricesBufferHandle);
+		GfxContext->DestroyBuffer(IndexBufferHandle);
 		GfxContext->DestroyPipeline(PipelineHandleSwapchain);
 		GfxContext->DestroyPipeline(PipelineHandleOffscreen);
 		GfxContext->DestroyFramebuffer(OffscreenPass);
@@ -354,9 +299,10 @@ struct application
 			CommandBuffer->BindUniformGroup(Uniforms, 0);
 
 			CommandBuffer->BindVertexBuffer(VertexBufferHandle);
-			CommandBuffer->DrawArrays(0, 36); 
+			CommandBuffer->BindIndexBuffer(IndexBufferHandle, 0, gfx::indexType::Uint32);
+			CommandBuffer->DrawIndexed(0, 3); 
 			CommandBuffer->EndPass();
-
+			
 			CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
 			CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);
 			CommandBuffer->SetScissor(0, 0, Width, Height);
@@ -366,7 +312,7 @@ struct application
 			CommandBuffer->BindUniformGroup(Uniforms, 0);
 
 			CommandBuffer->BindVertexBuffer(VertexBufferHandle);
-			CommandBuffer->DrawArrays(0, 36); 
+			CommandBuffer->DrawArrays(0, 3); 
 
 			CommandBuffer->EndPass();
 			

@@ -25,4 +25,6 @@ u8 BlendWriteMaskToNative(colorWriteEnabled::mask Mask);
 D3D12_CULL_MODE CullModeToNative(cullMode::bits Mode);
 b8 FrontFaceToNative(frontFace Face);
 D3D12_FILL_MODE FillModeToNative(fillMode Mode);
+
+DXGI_FORMAT IndexTypeToNative(indexType Type);
 }

@@ -69,10 +69,26 @@ void ExecuteBindVertexBuffer(const command &Command)
     glBindVertexArray(GLVertexBuffer->VAO);
 }
 
+void ExecuteBindIndexBuffer(const command &Command)
+{
+    bufferHandle IndexBufferHandle = Command.BindIndexBuffer.IndexBufferHandle;
+    buffer *IndexBuffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(IndexBufferHandle);
+    std::shared_ptr<glBuffer> GLIndexBuffer = std::static_pointer_cast<glBuffer>(IndexBuffer->ApiData);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLIndexBuffer->Handle);
+}
+
+void ExecuteDrawIndexed(const command &Command)
+{
+    //TODO: Store the type of the indices and reset it right after.
+    glDrawElements(GL_TRIANGLES, Command.DrawIndexed.Count, GL_UNSIGNED_INT, nullptr);
+}
+
 void ExecuteDrawTriangles(const command &Command)
 {
     glDrawArrays(GL_TRIANGLES, Command.DrawTriangles.Start, Command.DrawTriangles.Count);
 }
+
 
 void ExecuteBindGraphicsPipeline(const command &Command)
 {
@@ -187,6 +203,17 @@ void commandBuffer::BindVertexBuffer(vertexBufferHandle Buffer)
     GLCommandBuffer->Commands.push_back(Command);
 }
 
+//TODO: Use offset and index type
+void commandBuffer::BindIndexBuffer(bufferHandle Buffer, u32 Offset, indexType IndexType)
+{
+    GET_GL_COMMANDS
+    command Command;
+    Command.Type = commandType::BindIndexBuffer;
+    Command.BindIndexBuffer.IndexBufferHandle = Buffer;
+    Command.CommandFunction = (commandFunction)&ExecuteBindIndexBuffer;
+    GLCommandBuffer->Commands.push_back(Command);
+}
+
 void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height)
 {
     GET_GL_COMMANDS
@@ -215,7 +242,7 @@ void commandBuffer::SetScissor(s32 X, s32 Y, u32 Width, u32 Height)
     GLCommandBuffer->Commands.push_back(Command);
 }
 
-void commandBuffer::DrawTriangles(uint32_t Start, uint32_t Count)
+void commandBuffer::DrawArrays(uint32_t Start, uint32_t Count)
 {
     GET_GL_COMMANDS
     command Command;
@@ -223,6 +250,17 @@ void commandBuffer::DrawTriangles(uint32_t Start, uint32_t Count)
     Command.DrawTriangles.Start = Start;
     Command.DrawTriangles.Count = Count;
     Command.CommandFunction = (commandFunction)&ExecuteDrawTriangles;
+    GLCommandBuffer->Commands.push_back(Command);
+}
+
+//TODO: Use Start
+void commandBuffer::DrawIndexed(uint32_t Start, uint32_t Count)
+{
+    GET_GL_COMMANDS
+    command Command;
+    Command.Type = commandType::DrawIndexed;
+    Command.DrawIndexed.Count = Count;
+    Command.CommandFunction = (commandFunction)&ExecuteDrawIndexed;
     GLCommandBuffer->Commands.push_back(Command);
 }
     

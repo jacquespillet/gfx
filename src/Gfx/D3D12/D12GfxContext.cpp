@@ -740,6 +740,33 @@ void context::StartFrame()
     D12Data->VirtualFrames.StartFrame();
 }
 
+void context::CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz Offset)
+{
+    GET_CONTEXT(D12Data, this);
+    
+    buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(BufferHandle);
+    
+    Buffer->Name = "";
+
+    auto StageBuffer = D12Data->StageBuffer;
+    auto CommandBuffer = D12Data->ImmediateCommandBuffer;
+
+    CommandBuffer->Begin();
+
+    auto Allocation = StageBuffer.Submit((uint8_t*)Ptr, Size);
+
+    CommandBuffer->CopyBuffer(
+        gfx::bufferInfo {StageBuffer.GetBuffer(), Allocation.Offset},
+        gfx::bufferInfo {Buffer, 0},
+        Allocation.Size
+    );
+    
+    StageBuffer.Flush();
+    CommandBuffer->End();
+
+    SubmitCommandBufferImmediate(CommandBuffer.get());
+    StageBuffer.Reset();     
+}
 
 void context::DestroyVertexBuffer(bufferHandle VertexBufferHandle)
 {

@@ -326,5 +326,7 @@ vk::Filter SamplerFilterToNative(samplerFilter Filter);
 vk::SamplerMipmapMode SamplerFilterToNativeMip(samplerFilter MinFilter);
 
 vk::SamplerAddressMode SamplerWrapModeToNative(samplerWrapMode Mode);
+
+vk::IndexType IndexTypeToNative(indexType Type);
 }
 

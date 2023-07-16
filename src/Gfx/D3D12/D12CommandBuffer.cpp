@@ -169,6 +169,16 @@ void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
     D12CommandBufferData->CommandList->SetPipelineState(D12PipelineData->PipelineState.Get());
 }
 
+void commandBuffer::BindIndexBuffer(bufferHandle BufferHandle, u32 Offset, indexType IndexType)
+{
+    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
+    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
+    std::shared_ptr<d3d12BufferData> D12Buffer = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);
+    D12Buffer->IndexBufferView.Format = IndexTypeToNative(IndexType);
+    D12CommandBufferData->CommandList->IASetIndexBuffer(&D12Buffer->IndexBufferView);
+}
+
+
 void commandBuffer::BindVertexBuffer(vertexBufferHandle BufferHandle)
 {
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
@@ -183,7 +193,7 @@ void commandBuffer::BindVertexBuffer(vertexBufferHandle BufferHandle)
         std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);
 
         u64 Offsets[] = {0};
-        D12CommandBufferData->CommandList->IASetVertexBuffers(VertexBuffer->VertexStreams[i].StreamIndex, 1, &D12BufferData->BufferView);
+        D12CommandBufferData->CommandList->IASetVertexBuffers(VertexBuffer->VertexStreams[i].StreamIndex, 1, &D12BufferData->VertexBufferView);
     }
 }
 
@@ -201,10 +211,17 @@ void commandBuffer::SetScissor(s32 X, s32 Y, u32 Width, u32 Height)
     D12CommandBufferData->CommandList->RSSetScissorRects(1, &Scissor);
 }
 
-void commandBuffer::DrawTriangles(uint32_t Start, uint32_t Count)
+void commandBuffer::DrawArrays(uint32_t Start, uint32_t Count)
 {
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
     D12CommandBufferData->CommandList->DrawInstanced(Count, 1, Start, 0);
+}
+
+void commandBuffer::DrawIndexed(uint32_t Start, uint32_t Count)
+{
+    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
+    D12CommandBufferData->CommandList->DrawIndexedInstanced(Count, 1, Start, 0, 0);
+
 }
 
 void commandBuffer::End()

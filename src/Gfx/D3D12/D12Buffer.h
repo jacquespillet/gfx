@@ -9,7 +9,8 @@ namespace gfx
 struct d3d12BufferData
 {
     ComPtr<ID3D12Resource> Handle;
-    D3D12_VERTEX_BUFFER_VIEW BufferView;
+    D3D12_VERTEX_BUFFER_VIEW VertexBufferView;
+    D3D12_INDEX_BUFFER_VIEW IndexBufferView;
     D3D12_RESOURCE_STATES ResourceState;
     D3D12_HEAP_TYPE HeapType;
     

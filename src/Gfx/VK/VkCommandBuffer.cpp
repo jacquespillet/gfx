@@ -86,6 +86,14 @@ void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
     
 }
 
+void commandBuffer::BindIndexBuffer(bufferHandle BufferHandle, u32 Offset, indexType IndexType)
+{
+    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
+    std::shared_ptr<vkBufferData> VkBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
+    vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
+    CommandBuffer.bindIndexBuffer(VkBuffer->Handle, Offset, IndexTypeToNative(IndexType));
+}
+
 void commandBuffer::BindVertexBuffer(vertexBufferHandle BufferHandle)
 {
     vertexBuffer *VertexBuffer = (vertexBuffer*)context::Get()->ResourceManager.VertexBuffers.GetResource(BufferHandle);
@@ -116,10 +124,16 @@ void commandBuffer::SetScissor(s32 OffsetX, s32 OffsetY, u32 Width, u32 Height)
 }
 
 
-void commandBuffer::DrawTriangles(uint32_t Start, uint32_t Count)
+void commandBuffer::DrawArrays(uint32_t Start, uint32_t Count)
 {
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
     CommandBuffer.draw(Count, 1, Start, 0);
+}
+
+void commandBuffer::DrawIndexed(uint32_t Start, uint32_t Count)
+{
+    vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
+    CommandBuffer.drawIndexed(Count, 1, Start, 0, 0);
 }
 
 void commandBuffer::EndPass()

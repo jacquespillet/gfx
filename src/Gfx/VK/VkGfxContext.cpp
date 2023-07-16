@@ -556,7 +556,7 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage
     *VkBufferData = vkBufferData(); 
     
     constexpr std::array BufferQueueFamilyIndices = {(u32)0};
-
+    
     //Set size, usage
     Buffer->Size = Size;
     vk::BufferCreateInfo BufferCreateInfo;
@@ -1310,6 +1310,33 @@ void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pip
             VkUniformData->Initialized=true;
         }
     }
+}
+
+void context::CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz Offset)
+{
+    buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(BufferHandle);
+    
+    Buffer->Name = "";
+    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
+    
+    auto StageBuffer = GetStageBuffer();
+    auto CommandBuffer = GetImmediateCommandBuffer();
+
+    CommandBuffer->Begin();
+
+    auto Allocation = StageBuffer->Submit((uint8_t*)Ptr, Size);
+
+    CommandBuffer->CopyBuffer(
+        gfx::bufferInfo {StageBuffer->GetBuffer(), Allocation.Offset},
+        gfx::bufferInfo {Buffer, 0},
+        Allocation.Size
+    );
+    
+    StageBuffer->Flush();
+    CommandBuffer->End();
+
+    SubmitCommandBufferImmediate(CommandBuffer);
+    StageBuffer->Reset();     
 }
 
 void context::DestroyPipeline(pipelineHandle PipelineHandle)

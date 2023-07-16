@@ -232,6 +232,11 @@ vk::SamplerAddressMode SamplerWrapModeToNative(samplerWrapMode Mode)
 }
 
 
+vk::IndexType IndexTypeToNative(indexType Type)
+{
+    return (Type == indexType::Uint16) ? vk::IndexType::eUint16 : vk::IndexType::eUint32;
+}
+
 
 }
 

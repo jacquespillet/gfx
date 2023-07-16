@@ -118,6 +118,16 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage
     return Handle;
 }
 
+void context::CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz Offset)
+{
+    buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(BufferHandle);
+    
+    Buffer->Name = "";
+    std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(Buffer->ApiData);
+
+    Buffer->CopyData((u8*)Ptr, Size, Offset);
+}
+
 void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding){
 
 }

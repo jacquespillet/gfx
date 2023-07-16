@@ -647,5 +647,10 @@ enum class fillMode
     Count
 };
 
+enum class indexType
+{
+    Uint16,Uint32
+};
+
 
 }

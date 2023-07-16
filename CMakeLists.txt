@@ -13,7 +13,7 @@ add_compile_definitions(_GLFW_WIN32 GLFW_EXPOSE_NATIVE_WIN32 VK_USE_PLATFORM_WIN
 set(GFX_API_GL 0)
 set(GFX_API_VK 1)
 set(GFX_API_D3D12 2)
-set(GFX_API ${GFX_API_D3D12})
+set(GFX_API ${GFX_API_GL})
 
 add_definitions(-DGFX_GL=${GFX_API_GL})
 add_definitions(-DGFX_VK=${GFX_API_VK})
@@ -196,7 +196,8 @@ set(appCode
 )
 
 set(sourceCode
-        src/Main_HelloCube.cpp
+        # src/Main_HelloCube.cpp
+        src/Main_HelloTriangle_Indexed.cpp
 )
 
 set (sourceCode

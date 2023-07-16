@@ -97,6 +97,8 @@ struct context
     void SubmitCommandBufferImmediate(commandBuffer *CommandBuffer);
     void BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding);
 
+    void CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz Offset);
+
     void DestroyCommandBuffer(commandBuffer* Handle);
     void DestroySwapchain(swapchain *Swapchain);
     void DestroyPipeline(pipelineHandle Pipeline);

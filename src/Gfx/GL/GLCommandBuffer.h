@@ -7,8 +7,10 @@ namespace gfx
 enum class commandType 
 {
     DrawTriangles,
+    DrawIndexed,
     BindPipeline,
     BindVertexBuffer,
+    BindIndexBuffer,
     ClearColor,
     ClearDepth,
     SetViewport,
@@ -41,11 +43,21 @@ struct command
             bufferHandle VertexBufferHandle;
         } BindVertexBuffer;
         
+        struct indexBufferState
+        {
+            bufferHandle IndexBufferHandle;
+        } BindIndexBuffer;
+        
         struct drawTrianglesState
         {
             u32 Start;
             u32 Count;
         } DrawTriangles;
+                
+        struct drawIndexedState
+        {
+            u32 Count;
+        } DrawIndexed;
                 
         struct bindBufferState
         {
