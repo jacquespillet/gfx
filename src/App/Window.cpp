@@ -12,6 +12,9 @@ window::window(const windowCreateOptions &WindowCreateOptions)
         WindowCreateOptions.ErrorCallback("GLFW Context initialization failed");
         return;
     }
+
+    if(WindowCreateOptions.MultiSampling)
+        glfwWindowHint(GLFW_SAMPLES, 4);
 #if GFX_API == GFX_VK
     if(glfwVulkanSupported() != GLFW_TRUE)
     {

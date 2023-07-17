@@ -173,6 +173,7 @@ struct windowCreateOptions
 {
     b8 Resizable=true;
     b8 TitleBar=true;
+    b8 MultiSampling=false;
     std::function<void(const std::string&)> ErrorCallback = DefaultWindowCallback;
 
     v2i Size = v2f(800, 600);

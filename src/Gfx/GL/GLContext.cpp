@@ -92,6 +92,9 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
     GLData->CommandBuffer = std::make_shared<commandBuffer>();
     GLData->CommandBuffer->Initialize();
 
+    if(InitializeInfo.EnableMultisampling)
+        glEnable(GL_MULTISAMPLE);
+
     return Singleton;
 }
 

@@ -38,6 +38,8 @@ struct context
         std::vector<const char *> Extensions;
         std::vector<const char *> Layers;
 
+        b8 EnableMultisampling=false;
+
         const char *AppName = "DefaultApp";
         const char *EngineName = "DefaultEngine";
 
@@ -121,5 +123,7 @@ struct context
     renderPassOutput SwapchainOutput;
 
     std::shared_ptr<swapchain> Swapchain;
+
+    u32 MultiSampleCount=1;
 };
 }
