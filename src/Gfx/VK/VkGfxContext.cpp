@@ -543,7 +543,7 @@ vertexBufferHandle context::CreateEmptyVertexBuffer()
     return Handle;
 }
 
-bufferHandle context::CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage MemoryUsage)
+bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsage MemoryUsage)
 {
     bufferHandle Handle = ResourceManager.Buffers.ObtainResource();
     if(Handle == InvalidHandle)
@@ -554,6 +554,12 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage
     Buffer->ApiData = std::make_shared<vkBufferData>();
     std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
     *VkBufferData = vkBufferData(); 
+
+    //TODO: Use buffer->Init() here!
+    
+    //We assume that if the buffer is index or vertex, we'll copy to it
+    if(Usage & bufferUsage::IndexBuffer || Usage & bufferUsage::VertexBuffer)
+        Usage |= bufferUsage::TransferDestination;
     
     constexpr std::array BufferQueueFamilyIndices = {(u32)0};
     
@@ -1324,7 +1330,7 @@ void context::CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz
 
     CommandBuffer->Begin();
 
-    auto Allocation = StageBuffer->Submit((uint8_t*)Ptr, Size);
+    auto Allocation = StageBuffer->Submit((uint8_t*)Ptr, (u32)Size);
 
     CommandBuffer->CopyBuffer(
         gfx::bufferInfo {StageBuffer->GetBuffer(), Allocation.Offset},

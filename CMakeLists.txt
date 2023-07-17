@@ -13,13 +13,12 @@ add_compile_definitions(_GLFW_WIN32 GLFW_EXPOSE_NATIVE_WIN32 VK_USE_PLATFORM_WIN
 set(GFX_API_GL 0)
 set(GFX_API_VK 1)
 set(GFX_API_D3D12 2)
-set(GFX_API ${GFX_API_GL})
+set(GFX_API ${GFX_API_VK})
 
 add_definitions(-DGFX_GL=${GFX_API_GL})
 add_definitions(-DGFX_VK=${GFX_API_VK})
 add_definitions(-DGFX_D3D12=${GFX_API_D3D12})
 add_definitions(-DGFX_API=${GFX_API})
-# include_directories("common/")
 
 ################################################
 ##########      Library         ################
@@ -37,20 +36,6 @@ include_directories(${GLM_INC_DIR})
 set(STB_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/stb)
 include_directories(${STB_INC_DIR})
 
-# # tinygltf
-# set(GLTF_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/tinygltf)
-# include_directories(${GLTF_INC_DIR})
-
-# # Imgui
-# set(IMGUI_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui)
-# set(IMGUI_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_demo.cpp
-#                  ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_glfw.cpp
-#                  ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_vulkan.cpp
-#                  ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui.cpp
-#                  ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_draw.cpp
-#                  ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_widgets.cpp
-# )
-# include_directories(${IMGUI_INC_DIR})
 
 # Glfw
 set(GLFW_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/build/install/include)
@@ -63,13 +48,6 @@ set(JSON_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/json)
 include_directories(${JSON_INC_DIR})
 
 
-# # ASSIMP
-# set(ASSIMP_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/assimp/include)
-# set(ASSIMP_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/assimp/lib)
-# set(ASSIMP_DLL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/assimp/bin)
-# include_directories(${ASSIMP_INC_DIR})
-# link_directories(${ASSIMP_LIB_DIR})
-
 # # Glew
 set(GLEW_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/include)
 set(GLEW_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/Release/x64)
@@ -77,10 +55,6 @@ set(GLEW_DLL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/bin/Release/x64)
 include_directories(${GLEW_INC_DIR})
 link_directories(${GLEW_LIB_DIR})
 
-# volk
-# set(VOLK_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/volk_local/)
-# set(VOLK_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ext/volk_local/volk/volk.c)
-# include_directories(${VOLK_INC_DIR})
 
 # tlsf
 set(TLSF_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/tlsf)
@@ -125,20 +99,8 @@ include_directories(${DXC_INC_DIR})
 link_directories(${DXC_LIB_DIR})
 endif()
 
-# # Vma
-# set(WYHASH_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/wyhash)
-# include_directories(${WYHASH_INC_DIR})
-
-
-# # tlsf
-# set(TLSF_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/tlsf)
-# set(TLSF_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ext/tlsf/tlsf.c)
-# include_directories(${TLSF_INC_DIR})
-
-
-
 ################################################
-##########      Test              ##############
+##########      Code              ##############
 ################################################
 
 set(extCode    
@@ -195,83 +157,104 @@ set(appCode
         src/App/Window.cpp
 )
 
-set(sourceCode
-        # src/Main_HelloCube.cpp
-        src/Main_HelloTriangle_Indexed.cpp
-)
 
 set (sourceCode
-        ${sourceCode}
         ${extCode}
         ${commonCode}
         ${appCode}
 )
 
 if(${GFX_API} EQUAL ${GFX_API_VK})
-set (sourceCode
+        set(GFX_API_STR "VK")
+        set (sourceCode
         ${sourceCode}
         ${vkCode}
-)
+        )
 elseif(${GFX_API} EQUAL ${GFX_API_D3D12})
-set (sourceCode
+        set(GFX_API_STR "D3D12")
+        set (sourceCode
         ${sourceCode}
-        ${d3d12Code}
-)
+                ${d3d12Code}
+                )
 elseif(${GFX_API} EQUAL ${GFX_API_GL})
-set (sourceCode
-        ${sourceCode}
-        ${glCode}
-)
+        set(GFX_API_STR "GL")
+        set (sourceCode
+                ${sourceCode}
+                ${glCode}
+        )
 endif()
 
-
-
-Message(${sourceCode})
-add_executable(Main ${sourceCode})
-target_link_libraries(Main glfw3)
-
+################################################
+##########      Libs              ##############
+################################################
+set(commonLibs glfw3)
 if(${GFX_API} EQUAL ${GFX_API_VK})
-        target_link_libraries(Main vulkan-1)
-        target_link_libraries(Main debug VulkanMemoryAllocatord optimized VulkanMemoryAllocator)
-        target_link_libraries(Main 
-        ${GLSLANG_LIB_DIR}/OSDependentd.lib
-        ${GLSLANG_LIB_DIR}/SPIRVd.lib
-        ${GLSLANG_LIB_DIR}/glslangd.lib
-        ${GLSLANG_LIB_DIR}/MachineIndependentd.lib
-        ${GLSLANG_LIB_DIR}/SPVRemapperd.lib
-        ${GLSLANG_LIB_DIR}/GenericCodeGend.lib
-        ${GLSLANG_LIB_DIR}/glslang-default-resource-limitsd.lib
-        ${GLSLANG_LIB_DIR}/HLSLd.lib
-        ${GLSLANG_LIB_DIR}/OGLCompilerd.lib
+        set(gfxApiLibs ${gfxApiLibs} vulkan-1)
+        set(gfxApiLibs ${gfxApiLibs} debug VulkanMemoryAllocatord optimized VulkanMemoryAllocator)
+        set(gfxApiLibs
+                ${gfxApiLibs}  
+                ${GLSLANG_LIB_DIR}/OSDependentd.lib
+                ${GLSLANG_LIB_DIR}/SPIRVd.lib
+                ${GLSLANG_LIB_DIR}/glslangd.lib
+                ${GLSLANG_LIB_DIR}/MachineIndependentd.lib
+                ${GLSLANG_LIB_DIR}/SPVRemapperd.lib
+                ${GLSLANG_LIB_DIR}/GenericCodeGend.lib
+                ${GLSLANG_LIB_DIR}/glslang-default-resource-limitsd.lib
+                ${GLSLANG_LIB_DIR}/HLSLd.lib
+                ${GLSLANG_LIB_DIR}/OGLCompilerd.lib
         )
 endif()
 
 if(${GFX_API} EQUAL ${GFX_API_D3D12})
-        target_link_libraries(Main D3D12.lib)
-        target_link_libraries(Main DXGI.lib)
-        target_link_libraries(Main D3DCompiler.lib)
-        target_link_libraries(Main dxcompiler.lib)
-        install(FILES ${DXC_BIN_DIR}/dxil.dll
-                DESTINATION bin
-        )
+        set(gfxApiLibs ${gfxApiLibs} D3D12.lib)
+        set(gfxApiLibs ${gfxApiLibs} DXGI.lib)
+        set(gfxApiLibs ${gfxApiLibs} D3DCompiler.lib)
+        set(gfxApiLibs ${gfxApiLibs} dxcompiler.lib)
+        install(FILES ${DXC_BIN_DIR}/dxil.dll DESTINATION bin)
 endif()
 
 if(${GFX_API} EQUAL ${GFX_API_GL})
-        target_link_libraries(Main glew32)
-        target_link_libraries(Main opengl32)
-        install(FILES ${GLEW_DLL_DIR}/glew32.dll
-                DESTINATION bin
-        )
-
+        set(gfxApiLibs ${gfxApiLibs} glew32)
+        set(gfxApiLibs ${gfxApiLibs} opengl32)
+        install(FILES ${GLEW_DLL_DIR}/glew32.dll DESTINATION bin)
 endif()
 
-set_property(TARGET Main PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
 
-install(TARGETS Main
-        RUNTIME
-        DESTINATION bin)
+set(BUILD_ALL 0)
+
+if(${BUILD_ALL} EQUAL 1)
+        # HelloTriangleIndexed
+        set(targetName HelloTriangleIndexed_${GFX_API_STR})
+        set(mainCode ${sourceCode} src/Main_HelloTriangle_Indexed.cpp)
+        add_executable(${targetName} ${mainCode})
+        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
+        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
+
+        # HelloTriangle
+        set(targetName HelloTriangle_${GFX_API_STR})
+        set(mainCode ${sourceCode} src/Main_HelloTriangle_Indexed.cpp)
+        add_executable(${targetName} ${mainCode})
+        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
+        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
+
+        # HelloCube
+        set(targetName HelloCube_${GFX_API_STR})
+        set(mainCode ${sourceCode} src/Main_HelloCube.cpp)
+        add_executable(${targetName} ${mainCode})
+        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
+        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
+else()
+        # Main
+        set(targetName Main)
+        set(mainCode ${sourceCode} src/Main_HelloTriangle_Indexed.cpp)
+        add_executable(${targetName} ${mainCode})
+        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
+        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
+endif()
 
 
+
+# Install
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources/
         DESTINATION bin/resources
 )

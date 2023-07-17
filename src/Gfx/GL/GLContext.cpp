@@ -96,14 +96,7 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
 }
 
 
-// stageBuffer context::CreateStageBuffer(sz Size)
-// {
-//     stageBuffer Result;
-//     // Result.Init(Size);
-//     return Result;
-// }
-
-bufferHandle context::CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage MemoryUsage)
+bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsage MemoryUsage)
 {
     bufferHandle Handle = ResourceManager.Buffers.ObtainResource();
     if(Handle == InvalidHandle)

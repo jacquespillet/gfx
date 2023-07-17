@@ -72,7 +72,7 @@ struct context
 
     stageBuffer CreateStageBuffer(sz Size);
     vertexBufferHandle CreateEmptyVertexBuffer();
-    bufferHandle CreateBuffer(sz Size, bufferUsage::Bits Usage, memoryUsage MemoryUsage);
+    bufferHandle CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsage MemoryUsage);
     imageHandle CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo);
     imageHandle CreateImage(u32 Width, u32 Height, format Format, u8 *Pixels);
 

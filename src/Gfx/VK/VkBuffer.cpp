@@ -22,6 +22,10 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
     constexpr std::array BufferQueueFamilyIndices = {(u32)0};
     this->Destroy();
 
+    //We assume that if the buffer is index or vertex, we'll copy to it
+    if(Usage & bufferUsage::IndexBuffer || Usage & bufferUsage::VertexBuffer)
+        Usage |= bufferUsage::TransferDestination;
+
     //Set size, usage
     this->Size = ByteSize;
     vk::BufferCreateInfo BufferCreateInfo;
@@ -176,7 +180,7 @@ bufferHandle CreateVertexBuffer(f32 *Values, sz Count, sz Stride, const std::vec
 
     auto VertexAllocation = StageBuffer->Submit((uint8_t*)Values, (u32)Count * sizeof(f32));
 
-    Buffer->Init(VertexAllocation.Size, gfx::bufferUsage::VertexBuffer | gfx::bufferUsage::TransferDestination, gfx::memoryUsage::GpuOnly);
+    Buffer->Init(VertexAllocation.Size, gfx::bufferUsage::VertexBuffer, gfx::memoryUsage::GpuOnly);
   
     CommandBuffer->CopyBuffer(
         gfx::bufferInfo {StageBuffer->GetBuffer(), VertexAllocation.Offset},

@@ -333,7 +333,7 @@ struct application
 			CommandBuffer->BindUniformGroup(Uniforms, 0);
 
 			CommandBuffer->BindVertexBuffer(VertexBufferHandle);
-			CommandBuffer->DrawTriangles(0, 3); 
+			CommandBuffer->DrawArrays(0, 3); 
 			CommandBuffer->EndPass();
 			
 			CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
@@ -345,7 +345,7 @@ struct application
 			CommandBuffer->BindUniformGroup(Uniforms, 0);
 
 			CommandBuffer->BindVertexBuffer(VertexBufferHandle);
-			CommandBuffer->DrawTriangles(0, 3); 
+			CommandBuffer->DrawArrays(0, 3); 
 
 			CommandBuffer->EndPass();
 			
