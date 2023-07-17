@@ -211,16 +211,16 @@ void commandBuffer::SetScissor(s32 X, s32 Y, u32 Width, u32 Height)
     D12CommandBufferData->CommandList->RSSetScissorRects(1, &Scissor);
 }
 
-void commandBuffer::DrawArrays(uint32_t Start, uint32_t Count)
+void commandBuffer::DrawArrays(u32 Start, u32 Count, u32 InstanceCount)
 {
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
-    D12CommandBufferData->CommandList->DrawInstanced(Count, 1, Start, 0);
+    D12CommandBufferData->CommandList->DrawInstanced(Count, InstanceCount, Start, 0);
 }
 
-void commandBuffer::DrawIndexed(uint32_t Start, uint32_t Count)
+void commandBuffer::DrawIndexed(u32 Start, u32 Count, u32 InstanceCount)
 {
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
-    D12CommandBufferData->CommandList->DrawIndexedInstanced(Count, 1, Start, 0, 0);
+    D12CommandBufferData->CommandList->DrawIndexedInstanced(Count, InstanceCount, Start, 0, 0);
 
 }
 

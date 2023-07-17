@@ -13,7 +13,7 @@ add_compile_definitions(_GLFW_WIN32 GLFW_EXPOSE_NATIVE_WIN32 VK_USE_PLATFORM_WIN
 set(GFX_API_GL 0)
 set(GFX_API_VK 1)
 set(GFX_API_D3D12 2)
-set(GFX_API ${GFX_API_VK})
+set(GFX_API ${GFX_API_GL})
 
 add_definitions(-DGFX_GL=${GFX_API_GL})
 add_definitions(-DGFX_VK=${GFX_API_VK})
@@ -237,16 +237,30 @@ if(${BUILD_ALL} EQUAL 1)
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
 
+        # HelloTriangleMultiStram
+        set(targetName HelloTriangleMultiVertexStream_${GFX_API_STR})
+        set(mainCode ${sourceCode} src/Main_HelloTriangle_MultiVertexStreams.cpp)
+        add_executable(${targetName} ${mainCode})
+        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
+        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
+
         # HelloCube
         set(targetName HelloCube_${GFX_API_STR})
         set(mainCode ${sourceCode} src/Main_HelloCube.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
+        
+        # Instanced
+        set(targetName HelloTriangleInstanced)
+        set(mainCode ${sourceCode} src/Main_HelloTriangle_Instanced.cpp)
+        add_executable(${targetName} ${mainCode})
+        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
+        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
 else()
-        # Main
+        # Instanced
         set(targetName Main)
-        set(mainCode ${sourceCode} src/Main_HelloTriangle_Indexed.cpp)
+        set(mainCode ${sourceCode} src/Main_HelloTriangle_Instanced.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)

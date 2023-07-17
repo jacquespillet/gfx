@@ -344,7 +344,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     
     Framebuffer->RenderPass = context::Get()->ResourceManager.RenderPasses.ObtainResource();
     renderPass *RenderPass = (renderPass*) context::Get()->ResourceManager.RenderPasses.GetResource(Framebuffer->RenderPass);
-    RenderPass->Output.NumColorFormats = CreateInfo.ColorFormats.size();
+    RenderPass->Output.NumColorFormats = (u32)CreateInfo.ColorFormats.size();
     RenderPass->Output.DepthStencilFormat = CreateInfo.DepthFormat;
 
     assert(CreateInfo.ColorFormats.size() < commonConstants::MaxImageOutputs);
@@ -603,18 +603,17 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         u32 Offset=0;
         for(sz i=0; i<PipelineCreation.VertexInput.NumVertexAttributes; i++)
         {
-            InputElementDescriptors[i] = 
+            InputElementDescriptors[i] =   
             {
                 SemanticFromAttrib(PipelineCreation.VertexInput.VertexAttributes[i].Format),
                 PipelineCreation.VertexInput.VertexAttributes[i].SemanticIndex,
                 AttribFormatToNative(PipelineCreation.VertexInput.VertexAttributes[i].Format),
                 PipelineCreation.VertexInput.VertexAttributes[i].Binding,
                 PipelineCreation.VertexInput.VertexAttributes[i].Offset,
-                //VertexInputRateToNative(PipelineCreation.VertexInput.VertexStreams[i].InputRate), 
-                D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
-                0 
+                VertexInputRateToNative(PipelineCreation.VertexInput.VertexStreams[PipelineCreation.VertexInput.VertexAttributes[i].Binding].InputRate), 
+                (PipelineCreation.VertexInput.VertexStreams[PipelineCreation.VertexInput.VertexAttributes[i].Binding].InputRate == vertexInputRate::PerVertex) ? 0u : 1u
             };
-            Offset += PipelineCreation.VertexInput.VertexStreams[i].Stride;
+            Offset += PipelineCreation.VertexInput.VertexStreams[PipelineCreation.VertexInput.VertexAttributes[i].Binding].Stride;
         }
 
         // Describe and create the graphics pipeline state object (PSO).
@@ -753,13 +752,13 @@ void context::CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz
 
     CommandBuffer->Begin();
 
-    auto Allocation = StageBuffer.Submit((uint8_t*)Ptr, Size);
+    auto Allocation = StageBuffer.Submit((uint8_t*)Ptr, (u32)Size);
 
     CommandBuffer->CopyBuffer(
         gfx::bufferInfo {StageBuffer.GetBuffer(), Allocation.Offset},
         gfx::bufferInfo {Buffer, 0},
         Allocation.Size
-    );
+    );  
     
     StageBuffer.Flush();
     CommandBuffer->End();

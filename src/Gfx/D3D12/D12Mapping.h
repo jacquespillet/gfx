@@ -10,7 +10,7 @@ namespace gfx
 
 const char *SemanticFromAttrib(vertexComponentFormat::values Format);
 DXGI_FORMAT AttribFormatToNative(vertexComponentFormat::values Format);
-D3D12_INPUT_CLASSIFICATION  VertexInputRateToNative(vertexInputRate::values Rate);
+D3D12_INPUT_CLASSIFICATION  VertexInputRateToNative(vertexInputRate Rate);
 DXGI_FORMAT FormatToNative(format Format);
 
 

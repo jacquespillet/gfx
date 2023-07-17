@@ -29,7 +29,7 @@ struct vertexStream
 {
     u16 Binding=0;
     u16 Stride=0;
-    vertexInputRate::values InputRate = vertexInputRate::Count;
+    vertexInputRate InputRate = vertexInputRate::Count;
 };
 
 namespace vertexComponentFormat

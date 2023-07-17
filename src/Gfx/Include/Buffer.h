@@ -53,11 +53,13 @@ struct vertexStreamData
     u32 StreamIndex=0;
     bufferHandle Buffer=0;
     u32 AttributesCount=0;
+    vertexInputRate InputRate = vertexInputRate::PerVertex;
     vertexInputAttribute InputAttributes[commonConstants::MaxVertexAttributes];
 
     vertexStreamData &Reset();
     vertexStreamData &SetData(void *Data);
     vertexStreamData &SetSize(u32 Size);
+    vertexStreamData &SetInputRate(vertexInputRate InputRate);
     vertexStreamData &SetStride(u32 Stride);
     vertexStreamData &SetStreamIndex(u32 StreamIndex);
     vertexStreamData &AddAttribute(vertexInputAttribute Attribute);

@@ -44,8 +44,8 @@ struct commandBuffer
     void BindIndexBuffer(bufferHandle Buffer, u32 Offset, indexType IndexType);
     void SetViewport(f32 X, f32 Y, f32 Width, f32 Height);
     void SetScissor(s32 X, s32 Y, u32 Width, u32 Height);
-    void DrawArrays(uint32_t Start, uint32_t Count);
-    void DrawIndexed(uint32_t Start, uint32_t Count);
+    void DrawArrays(u32 Start, u32 Count, u32 InstanceCount=1);
+    void DrawIndexed(u32 Start, u32 Count, u32 InstanceCount=1);
 
     void BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Binding);
     

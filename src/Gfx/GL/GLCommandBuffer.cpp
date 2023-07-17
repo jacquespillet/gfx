@@ -81,12 +81,26 @@ void ExecuteBindIndexBuffer(const command &Command)
 void ExecuteDrawIndexed(const command &Command)
 {
     //TODO: Store the type of the indices and reset it right after.
-    glDrawElements(GL_TRIANGLES, Command.DrawIndexed.Count, GL_UNSIGNED_INT, nullptr);
+    if(Command.DrawIndexed.InstanceCount>1)
+    {
+        glDrawElementsInstanced(GL_TRIANGLES, Command.DrawIndexed.Count, GL_UNSIGNED_INT, nullptr, Command.DrawIndexed.InstanceCount);
+    }
+    else
+    {
+        glDrawElements(GL_TRIANGLES, Command.DrawIndexed.Count, GL_UNSIGNED_INT, nullptr);
+    }
 }
 
 void ExecuteDrawTriangles(const command &Command)
 {
-    glDrawArrays(GL_TRIANGLES, Command.DrawTriangles.Start, Command.DrawTriangles.Count);
+    if(Command.DrawIndexed.InstanceCount>1)
+    {
+        glDrawArraysInstanced(GL_TRIANGLES, Command.DrawTriangles.Start, Command.DrawTriangles.Count, Command.DrawTriangles.InstanceCount);
+    }
+    else
+    {
+        glDrawArrays(GL_TRIANGLES, Command.DrawTriangles.Start, Command.DrawTriangles.Count);
+    }
 }
 
 
@@ -242,24 +256,26 @@ void commandBuffer::SetScissor(s32 X, s32 Y, u32 Width, u32 Height)
     GLCommandBuffer->Commands.push_back(Command);
 }
 
-void commandBuffer::DrawArrays(uint32_t Start, uint32_t Count)
+void commandBuffer::DrawArrays(u32 Start, u32 Count, u32 InstanceCount)
 {
     GET_GL_COMMANDS
     command Command;
     Command.Type = commandType::DrawTriangles;
     Command.DrawTriangles.Start = Start;
     Command.DrawTriangles.Count = Count;
+    Command.DrawTriangles.InstanceCount = InstanceCount;
     Command.CommandFunction = (commandFunction)&ExecuteDrawTriangles;
     GLCommandBuffer->Commands.push_back(Command);
 }
 
 //TODO: Use Start
-void commandBuffer::DrawIndexed(uint32_t Start, uint32_t Count)
+void commandBuffer::DrawIndexed(u32 Start, u32 Count, u32 InstanceCount)
 {
     GET_GL_COMMANDS
     command Command;
     Command.Type = commandType::DrawIndexed;
     Command.DrawIndexed.Count = Count;
+    Command.DrawIndexed.InstanceCount = InstanceCount;
     Command.CommandFunction = (commandFunction)&ExecuteDrawIndexed;
     GLCommandBuffer->Commands.push_back(Command);
 }

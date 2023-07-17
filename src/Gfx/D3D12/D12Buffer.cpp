@@ -250,6 +250,12 @@ vertexStreamData &vertexStreamData::SetData(void *Data)
     return *this;
 }
 
+vertexStreamData &vertexStreamData::SetInputRate(vertexInputRate InputRate)
+{
+    this->InputRate = InputRate;
+    return *this;
+}
+
 vertexStreamData &vertexStreamData::SetSize(u32 Size)
 {
     this->Size = Size;

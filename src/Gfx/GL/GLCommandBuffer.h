@@ -52,11 +52,13 @@ struct command
         {
             u32 Start;
             u32 Count;
+            u32 InstanceCount;
         } DrawTriangles;
                 
         struct drawIndexedState
         {
             u32 Count;
+            u32 InstanceCount;
         } DrawIndexed;
                 
         struct bindBufferState

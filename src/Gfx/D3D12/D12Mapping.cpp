@@ -69,7 +69,7 @@ DXGI_FORMAT AttribFormatToNative(vertexComponentFormat::values Format)
     return VertexAttribFormatTable[(u32)Format];
 }
 
-D3D12_INPUT_CLASSIFICATION  VertexInputRateToNative(vertexInputRate::values Rate)
+D3D12_INPUT_CLASSIFICATION  VertexInputRateToNative(vertexInputRate Rate)
 {
     if(Rate == vertexInputRate::PerVertex)
     {

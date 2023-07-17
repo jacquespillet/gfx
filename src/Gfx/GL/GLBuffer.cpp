@@ -93,6 +93,12 @@ vertexStreamData &vertexStreamData::SetData(void *Data)
     return *this;
 }
 
+vertexStreamData &vertexStreamData::SetInputRate(vertexInputRate InputRate)
+{
+    this->InputRate = InputRate;
+    return *this;
+}
+
 vertexStreamData &vertexStreamData::SetSize(u32 Size)
 {
     this->Size = Size;
@@ -174,6 +180,7 @@ vertexBuffer &vertexBuffer::Create()
                                 (GLsizei)VertexStreams[i].Stride, 
                                 (void*)((uintptr_t)StartPtr));
             glEnableVertexAttribArray(VertexStreams[i].InputAttributes[j].InputIndex);
+            if(VertexStreams[i].InputRate == vertexInputRate::PerInstance) glVertexAttribDivisor(VertexStreams[i].InputAttributes[j].InputIndex, 1); 
             StartPtr += VertexStreams[i].InputAttributes[j].ElementCount * VertexStreams[i].InputAttributes[j].ElementSize;
         }
         glBindBuffer(GLBuffer->Target, 0);

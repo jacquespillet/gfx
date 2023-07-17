@@ -631,13 +631,10 @@ enum class samplerWrapMode
 };
 
 
-namespace vertexInputRate
-{
-enum values
+enum class vertexInputRate
 {
     PerVertex, PerInstance, Count
 };
-}
 
 enum class fillMode
 {

@@ -124,16 +124,16 @@ void commandBuffer::SetScissor(s32 OffsetX, s32 OffsetY, u32 Width, u32 Height)
 }
 
 
-void commandBuffer::DrawArrays(uint32_t Start, uint32_t Count)
+void commandBuffer::DrawArrays(u32 Start, u32 Count, u32 InstanceCount)
 {
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
-    CommandBuffer.draw(Count, 1, Start, 0);
+    CommandBuffer.draw(Count, InstanceCount, Start, 0);
 }
 
-void commandBuffer::DrawIndexed(uint32_t Start, uint32_t Count)
+void commandBuffer::DrawIndexed(u32 Start, u32 Count, u32 InstanceCount)
 {
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
-    CommandBuffer.drawIndexed(Count, 1, Start, 0, 0);
+    CommandBuffer.drawIndexed(Count, InstanceCount, Start, 0, 0);
 }
 
 void commandBuffer::EndPass()
