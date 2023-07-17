@@ -56,10 +56,20 @@ void commandBuffer::BeginPass(framebufferHandle FramebufferHandle, clearColorVal
     RenderArea.setOffset(vk::Offset2D(0, 0));
 
     std::array<float, 4> ClearColorsArray = { ClearColor.R, ClearColor.G, ClearColor.B, ClearColor.A};
-    vk::ClearValue ClearValue[2];
-    ClearValue[0].color.setFloat32(ClearColorsArray);
-    ClearValue[1].depthStencil.setDepth(DepthStencil.Depth);
-    ClearValue[1].depthStencil.setStencil(DepthStencil.Stencil);
+    vk::ClearValue ClearValue[3];
+    if(VkFramebufferData->IsMultiSampled)
+    {
+        ClearValue[0].color.setFloat32(ClearColorsArray);
+        ClearValue[1].color.setFloat32(ClearColorsArray);
+        ClearValue[2].depthStencil.setDepth(DepthStencil.Depth);
+        ClearValue[2].depthStencil.setStencil(DepthStencil.Stencil);
+    }
+    else
+    {
+        ClearValue[0].color.setFloat32(ClearColorsArray);
+        ClearValue[1].depthStencil.setDepth(DepthStencil.Depth);
+        ClearValue[1].depthStencil.setStencil(DepthStencil.Stencil);
+    }
 
     vk::RenderPassBeginInfo RenderPassBegin;
     RenderPassBegin.setRenderPass(VkRenderPassHandle)

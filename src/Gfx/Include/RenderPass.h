@@ -28,6 +28,7 @@ struct renderPassOutput
     renderPassOperation::values DepthOperation = renderPassOperation::DontCare;
     renderPassOperation::values StencilOperation = renderPassOperation::DontCare;
 
+    u32 SampleCount = 1;
     const char *Name;
 
     void Reset();

@@ -23,5 +23,5 @@ DECLARE_UNIFORM_TEXTURE(0, 4, Texture);
 void main() 
 {
     outputColor = FragColor + Data._Color0 + texture(Texture, FragColor.xy);
-    outputColor = vec4(1,0,0,1);
+    // outputColor = vec4(1,0,0,1);
 }

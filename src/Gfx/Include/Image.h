@@ -45,7 +45,7 @@ struct image
 
     std::shared_ptr<void> ApiData;
     image() = default;
-    void Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage);
+    void Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage, u32 SampleCount=1);
     void Init(const imageData &Image, const imageCreateInfo &CreateInfo);
         
     u32 GetMipLevelWidth(u32 MipLevel);

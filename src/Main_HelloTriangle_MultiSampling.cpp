@@ -281,6 +281,7 @@ struct application
 			// Begin recording commands into the command buffer
 			CommandBuffer->Begin();
 
+#if 1
 			CommandBuffer->BeginPass(OffscreenPass, {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
 			CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);
 			CommandBuffer->SetScissor(0, 0, Width, Height);
@@ -292,7 +293,8 @@ struct application
 			CommandBuffer->BindVertexBuffer(VertexBufferHandle);
 			CommandBuffer->DrawArrays(0, 3); 
 			CommandBuffer->EndPass();
-			
+#endif
+
 			CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
 			CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);
 			CommandBuffer->SetScissor(0, 0, Width, Height);

@@ -56,6 +56,13 @@ struct vkData
 
     std::unordered_map<std::string, renderPassHandle> RenderPassCache;
 
+
+    //Multisampling
+    b8 MultisamplingEnabled=false;
+    std::shared_ptr<image> MultiSampledColorImage;
+    std::shared_ptr<image> MultiSampledDepthStencilImage;
+    
+
     renderPass *GetRenderPass(const renderPassOutput &Output, std::string Name);
     
 };

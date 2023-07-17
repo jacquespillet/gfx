@@ -172,7 +172,7 @@ image::image(vk::Image VkImage, u32 Width, u32 Height, format Format)
 
 
 
-void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage)
+void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage, u32 SampleCount)
 {
     ApiData = std::make_shared<vkImageData>();
     std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(ApiData);
@@ -188,7 +188,7 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
     ImageCreateInfo.setImageType(vk::ImageType::e2D)
                     .setFormat(FormatToNative(Format))
                     .setExtent(vk::Extent3D(Width, Height, 1))
-                    .setSamples(vk::SampleCountFlagBits::e1)
+                    .setSamples(SampleCountToNative(SampleCount))
                     .setMipLevels(MipLevelCount)
                     .setArrayLayers(LayerCount)
                     .setTiling(vk::ImageTiling::eOptimal)

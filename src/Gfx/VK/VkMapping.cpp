@@ -237,6 +237,11 @@ vk::IndexType IndexTypeToNative(indexType Type)
     return (Type == indexType::Uint16) ? vk::IndexType::eUint16 : vk::IndexType::eUint32;
 }
 
+vk::SampleCountFlagBits SampleCountToNative(u32 SampleCount)
+{
+    if(SampleCount == 1) return vk::SampleCountFlagBits::e1;
+    else return vk::SampleCountFlagBits::e4;
+}
 
 }
 

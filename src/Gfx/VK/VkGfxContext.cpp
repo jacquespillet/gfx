@@ -70,6 +70,7 @@ bool GetSupportedDepthFormat(vk::PhysicalDevice PhysicalDevice, format *DepthFor
     return false;
 }
 
+//TODO: Pass a bool for multisampling in here
 void CreateSwapchainFramebuffer(std::shared_ptr<image> *ColorImages, std::shared_ptr<image> DepthStencilImage, renderPassHandle RenderPassHandle, sz ImagesCount, vkSwapchainData *VkSwapchainData)
 {
     auto Context = context::Get();
@@ -85,11 +86,27 @@ void CreateSwapchainFramebuffer(std::shared_ptr<image> *ColorImages, std::shared
     {
         std::shared_ptr<vkImageData> VkColorImage = std::static_pointer_cast<vkImageData>(ColorImages[i]->ApiData);
         std::shared_ptr<vkImageData> VkDepthImage = std::static_pointer_cast<vkImageData>(DepthStencilImage->ApiData);
-        std::vector<vk::ImageView> Attachments = 
+        
+        std::vector<vk::ImageView> Attachments;
+        if(VkData->MultisamplingEnabled)
         {
-            VkColorImage->DefaultImageViews.NativeView,
-            VkDepthImage->DefaultImageViews.NativeView,
-        };
+            std::shared_ptr<vkImageData> VkMultisampledColorImage = std::static_pointer_cast<vkImageData>(VkData->MultiSampledColorImage->ApiData);
+            std::shared_ptr<vkImageData> VkMultisampledDepthStencilImage = std::static_pointer_cast<vkImageData>(VkData->MultiSampledDepthStencilImage->ApiData);
+            Attachments = 
+            {
+                VkMultisampledColorImage->DefaultImageViews.NativeView,
+                VkColorImage->DefaultImageViews.NativeView,
+                VkMultisampledDepthStencilImage->DefaultImageViews.NativeView,
+            };
+        }
+        else
+        {
+            Attachments = 
+            {
+                VkColorImage->DefaultImageViews.NativeView,
+                VkDepthImage->DefaultImageViews.NativeView
+            };
+        }  
 
 
         vk::FramebufferCreateInfo FramebufferCreateInfo;
@@ -100,7 +117,6 @@ void CreateSwapchainFramebuffer(std::shared_ptr<image> *ColorImages, std::shared
                             .setLayers(1);
         
 
-        //TODO: Handle this : what happens when we resize ? Surely the old one doesn't get deleted.
         framebufferHandle FramebufferHandle = Context->ResourceManager.Framebuffers.ObtainResource();
         if(FramebufferHandle == InvalidHandle)
         {
@@ -116,12 +132,13 @@ void CreateSwapchainFramebuffer(std::shared_ptr<image> *ColorImages, std::shared
         VkFramebufferData->DepthStencilImage = DepthStencilImage;
         VkFramebufferData->ColorImages = ColorImages;
         VkFramebufferData->Handle = VkData->Device.createFramebuffer(FramebufferCreateInfo);
+        if(VkData->MultisamplingEnabled) VkFramebufferData->IsMultiSampled=true;
 
         VkSwapchainData->Framebuffers[i] = FramebufferHandle;
     }
 }
 
-
+//TODO: Use a single function for createswapchain and recreateswapchain
 std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
 {
     GET_CONTEXT(VkData, this);
@@ -188,11 +205,24 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
             std::make_shared<image>(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format));
     }
 
+
     format DepthFormat;
     bool FoundDepthFormat = GetSupportedDepthFormat(VkData->PhysicalDevice, &DepthFormat);
     std::shared_ptr<image> DepthStencil = std::make_shared<image>();
     DepthStencil->Init(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
+
+    //Multisampling : Create the color and depth images
+    if(VkData->MultisamplingEnabled)
+    {
+        VkData->MultiSampledColorImage = std::make_shared<image>();
+        VkData->MultiSampledColorImage->Init(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format), imageUsage::COLOR_ATTACHMENT, memoryUsage::GpuOnly, context::Get()->MultiSampleCount);
+        VkData->MultiSampledDepthStencilImage = std::make_shared<image>();
+        VkData->MultiSampledDepthStencilImage->Init(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly, context::Get()->MultiSampleCount);
+    }
+
+
     CreateSwapchainFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, SwapchainPassHandle, VkData->PresentImageCount, VkSwapchainData.get());
+
 
     return Swapchain;
 }
@@ -267,7 +297,17 @@ std::shared_ptr<swapchain> context::RecreateSwapchain(u32 Width, u32 Height, std
         std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(VkSwapchainData->SwapchainImages[i]->ApiData);
         VkData->Device.destroyImageView(VkImageData->DefaultImageViews.NativeView);
         
-        if(i==0) VkFramebufferData->DepthStencilImage->Destroy();        
+        if(i==0) 
+        {
+            VkFramebufferData->DepthStencilImage->Destroy();        
+            
+            //Destroy the multisampled render targets
+            if(VkFramebufferData->IsMultiSampled)
+            {
+                VkData->MultiSampledColorImage->Destroy();
+                VkData->MultiSampledDepthStencilImage->Destroy();
+            }
+        }
      
         VkSwapchainData->SwapchainImages[i] = 
             std::make_shared<image>(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format));
@@ -277,7 +317,19 @@ std::shared_ptr<swapchain> context::RecreateSwapchain(u32 Width, u32 Height, std
     bool FoundDepthFormat = GetSupportedDepthFormat(VkData->PhysicalDevice, &DepthFormat);
     std::shared_ptr<image> DepthStencil = std::make_shared<image>();
     DepthStencil->Init(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
+    
+    //Multisampling : Create the color and depth images
+    if(VkData->MultisamplingEnabled)
+    {
+        VkData->MultiSampledColorImage = std::make_shared<image>();
+        VkData->MultiSampledColorImage->Init(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format), imageUsage::COLOR_ATTACHMENT, memoryUsage::GpuOnly, context::Get()->MultiSampleCount);
+        VkData->MultiSampledDepthStencilImage = std::make_shared<image>();
+        VkData->MultiSampledDepthStencilImage->Init(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly, context::Get()->MultiSampleCount);
+    }
+    
     CreateSwapchainFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, SwapchainPassHandle, VkData->PresentImageCount,VkSwapchainData.get());
+
+
 
     Swapchain = OldSwapchain;
     return OldSwapchain;
@@ -294,9 +346,12 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
 
     Singleton->ApiContextData = std::make_shared<vkData>();
     Singleton->Window = &Window;
+    
     GET_CONTEXT(VkData, Singleton);
     CreateInstance(InitializeInfo, VkData.get());
-    
+    VkData->MultisamplingEnabled = InitializeInfo.EnableMultisampling;
+    Singleton->MultiSampleCount = (InitializeInfo.EnableMultisampling) ? 4 : 1;
+
       
     VkSurfaceKHR Surface;
     vk::Result Result = (vk::Result)glfwCreateWindowSurface(VkData->Instance, Window.GetHandle(), nullptr, &Surface);
@@ -325,6 +380,12 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
             continue;
         }
 
+        vk::SampleCountFlags Counts = Properties.limits.framebufferColorSampleCounts & Properties.limits.framebufferDepthSampleCounts;
+        if(InitializeInfo.EnableMultisampling && !(Counts & vk::SampleCountFlagBits::e4))
+        {
+            continue;
+        }
+
         auto QueueFamilyIndex = DetermineQueueFamilyIndex(VkData->Instance, PhysicalDevice, VkData->Surface);
         if(!QueueFamilyIndex.has_value())
         {
@@ -346,6 +407,7 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
     {
         InitializeInfo.InfoCallback((std::string("Selected physical device : ") + VkData->PhysicalDeviceProperties.deviceName.data()).c_str());
     }
+
 
     
     //Get present mode
@@ -379,6 +441,7 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
     Singleton->SwapchainOutput.Depth(DepthFormat, imageLayout::DepthStencilAttachmentOptimal);
     Singleton->SwapchainOutput.SetDepthStencilOperation(renderPassOperation::Clear, renderPassOperation::Clear);
     Singleton->SwapchainOutput.Name = AllocateCString("Swapchain");
+    Singleton->SwapchainOutput.SampleCount = InitializeInfo.EnableMultisampling ? 4 : 1;
     
     InitializeInfo.InfoCallback("Selected Surface format " + vk::to_string(VkData->SurfaceFormat.format));
 
@@ -799,8 +862,9 @@ descriptorSetLayoutHandle CreateDescriptorSetLayout(const descriptorSetLayoutCre
 vk::RenderPass CreateRenderPass(vkData *VkData, const renderPassOutput &Output)
 {
 
-    vk::AttachmentDescription ColorAttachments[8] = {};
-    vk::AttachmentReference ColorAttachmentsRefs[8] = {};
+    vk::AttachmentDescription ColorAttachments[16] = {};
+    vk::AttachmentReference ColorAttachmentsRefs[commonConstants::MaxImageOutputs] = {};
+    vk::AttachmentReference ColorAttachmentsResolveRefs[commonConstants::MaxImageOutputs] = {};
 
     vk::AttachmentLoadOp DepthOp, StencilOp;
     vk::ImageLayout DepthInitialLayout;
@@ -834,6 +898,7 @@ vk::RenderPass CreateRenderPass(vkData *VkData, const renderPassOutput &Output)
         break;
     }
 
+    //Create the color attachment descriptions and references
     u32 C = 0;
     for(; C < Output.NumColorFormats; ++C)
     {
@@ -858,26 +923,44 @@ vk::RenderPass CreateRenderPass(vkData *VkData, const renderPassOutput &Output)
 
         vk::AttachmentDescription &ColorAttachment = ColorAttachments[C];
         ColorAttachment.setFormat(FormatToNative(Output.ColorFormats[C]))
-                       .setSamples(vk::SampleCountFlagBits::e1)
+                       .setSamples(SampleCountToNative(Output.SampleCount))
                        .setLoadOp(ColorLoadOp)
                        .setStoreOp(vk::AttachmentStoreOp::eStore)
                        .setStencilLoadOp(StencilOp)
                        .setStencilStoreOp(vk::AttachmentStoreOp::eStore)
                        .setInitialLayout(ColorInitialLayout)
-                       .setFinalLayout(ImageLayoutToNative(Output.ColorFinalLayouts[C]));
+                       .setFinalLayout(Output.SampleCount > 1 ? vk::ImageLayout::eColorAttachmentOptimal : ImageLayoutToNative(Output.ColorFinalLayouts[C]));
 
         vk::AttachmentReference &Ref = ColorAttachmentsRefs[C];
         Ref.attachment = C;
         Ref.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+        if(Output.SampleCount>1)
+        {
+            vk::AttachmentDescription &ColorAttachment = ColorAttachments[C + Output.NumColorFormats];
+            ColorAttachment.setFormat(FormatToNative(Output.ColorFormats[C]))
+                        .setSamples(vk::SampleCountFlagBits::e1)
+                        .setLoadOp(ColorLoadOp)
+                        .setStoreOp(vk::AttachmentStoreOp::eStore)
+                        .setStencilLoadOp(StencilOp)
+                        .setStencilStoreOp(vk::AttachmentStoreOp::eStore)
+                        .setInitialLayout(ColorInitialLayout)
+                        .setFinalLayout(ImageLayoutToNative(Output.ColorFinalLayouts[C]));        
+        
+            vk::AttachmentReference &Ref = ColorAttachmentsResolveRefs[C];
+            Ref.attachment = C + Output.NumColorFormats;
+            Ref.layout = vk::ImageLayout::eColorAttachmentOptimal;
+        }
+
     }
 
-
+    //Create the depth attachment description
     vk::AttachmentDescription DepthAttachment{};
     vk::AttachmentReference DepthRef{};
     if(Output.DepthStencilFormat != format::UNDEFINED)
     {
         DepthAttachment.setFormat(FormatToNative(Output.DepthStencilFormat))
-                        .setSamples(vk::SampleCountFlagBits::e1)
+                        .setSamples(SampleCountToNative(Output.SampleCount))
                         .setLoadOp(DepthOp)
                         .setStoreOp(vk::AttachmentStoreOp::eStore)
                         .setStencilLoadOp(StencilOp)
@@ -885,33 +968,35 @@ vk::RenderPass CreateRenderPass(vkData *VkData, const renderPassOutput &Output)
                         .setInitialLayout(DepthInitialLayout)
                         .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
-        DepthRef.attachment = C;
+        DepthRef.attachment = Output.SampleCount > 1 ? Output.NumColorFormats * 2 : C;
         DepthRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
     }
 
     vk::SubpassDescription Subpass = {};
     Subpass.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
+    Subpass.setColorAttachmentCount(Output.NumColorFormats)
+           .setPColorAttachments(ColorAttachmentsRefs)
+           .setPResolveAttachments(Output.SampleCount > 1 ?  ColorAttachmentsResolveRefs : nullptr)
+           .setPDepthStencilAttachment(nullptr);
 
-    vk::AttachmentDescription Attachments[commonConstants::MaxImageOutputs + 1]{};
-    
-    for(u32 ActiveAttachments=0; ActiveAttachments < Output.NumColorFormats; ++ActiveAttachments)
+    vk::AttachmentDescription Attachments[commonConstants::MaxImageOutputs * 2 + 1]{};
+    u32 LastColorAttachment = Output.SampleCount > 1 ? Output.NumColorFormats * 2 : Output.NumColorFormats;
+
+    for(u32 ActiveAttachments=0; ActiveAttachments < LastColorAttachment; ++ActiveAttachments)
     {
         Attachments[ActiveAttachments] = ColorAttachments[ActiveAttachments];
     }
-    Subpass.setColorAttachmentCount(Output.NumColorFormats)
-           .setPColorAttachments(ColorAttachmentsRefs)
-           .setPDepthStencilAttachment(nullptr);
-
+    
     u32 DepthStencilCount=0;
     if(Output.DepthStencilFormat != format::UNDEFINED)
     {
-        Attachments[Subpass.colorAttachmentCount] = DepthAttachment;
+        Attachments[LastColorAttachment] = DepthAttachment;
         Subpass.setPDepthStencilAttachment(&DepthRef);
         DepthStencilCount=1;
     }
 
     vk::RenderPassCreateInfo RenderPassCreateInfo;
-    RenderPassCreateInfo.setAttachmentCount(Output.NumColorFormats + DepthStencilCount)
+    RenderPassCreateInfo.setAttachmentCount(Output.NumColorFormats + DepthStencilCount + (Output.SampleCount > 1 ? Output.NumColorFormats : 0))
                         .setPAttachments(Attachments)
                         .setSubpassCount(1)
                         .setPSubpasses(&Subpass);
@@ -1128,7 +1213,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 
         vk::PipelineMultisampleStateCreateInfo MultisampleState;
         MultisampleState.setSampleShadingEnable(VK_FALSE)
-                        .setRasterizationSamples(vk::SampleCountFlagBits::e1)
+                        .setRasterizationSamples(SampleCountToNative(PipelineCreation.RenderPass.SampleCount))
                         .setMinSampleShading(1.0f)
                         .setPSampleMask(nullptr)
                         .setAlphaToCoverageEnable(VK_FALSE)
@@ -1207,7 +1292,8 @@ renderPassHandle context::GetDefaultRenderPass()
 
 framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &CreateInfo)
 {
-    //PARAMETERS
+    auto Context = context::Get();
+    GET_CONTEXT(VkData, Context);
 
     //Create the render pass
     GET_CONTEXT(VKData, this);
@@ -1222,32 +1308,26 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     RenderPassOutput.Name = "Foo";
     renderPass *RenderPass = VKData->GetRenderPass(RenderPassOutput, "Foo");
     RenderPass->Output = RenderPassOutput;
-
-    auto Context = context::Get();
-    GET_CONTEXT(VkData, Context);
-
-
     vk::RenderPass VkRenderPass = std::static_pointer_cast<vkRenderPassData>(RenderPass->ApiData)->NativeHandle;
-    
-    //Create colorImage
+
+    //Create color images
     std::shared_ptr<image> *ColorImages = (std::shared_ptr<image>*)AllocateMemory(sizeof(std::shared_ptr<image>) * CreateInfo.ColorFormats.size());
     std::vector<vk::ImageView> Attachments(CreateInfo.ColorFormats.size() + 1);
-
-    //Create depthImage
     for (sz i = 0; i < CreateInfo.ColorFormats.size(); i++)
     {
-        //Create color image
         ColorImages[i] = std::make_shared<image>();
         ColorImages[i]->Init(CreateInfo.Width, CreateInfo.Height, CreateInfo.ColorFormats[i], imageUsage::COLOR_ATTACHMENT, memoryUsage::GpuOnly);
         std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(ColorImages[i]->ApiData);
         Attachments[i] = VKImage->DefaultImageViews.NativeView;
     }
+
+    //Create depth image
     std::shared_ptr<image> DepthImage = std::make_shared<image>();
     DepthImage->Init(CreateInfo.Width, CreateInfo.Height, CreateInfo.DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
     std::shared_ptr<vkImageData> VKDepthImage = std::static_pointer_cast<vkImageData>(DepthImage->ApiData);
     Attachments[Attachments.size()-1] = VKDepthImage->DefaultImageViews.NativeView;
 
-
+    //Create the framebuffer
     vk::FramebufferCreateInfo FramebufferCreateInfo;
     FramebufferCreateInfo.setRenderPass(VkRenderPass)
                         .setAttachments(Attachments)
@@ -1255,8 +1335,6 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
                         .setWidth(CreateInfo.Width)
                         .setHeight(CreateInfo.Height)
                         .setLayers(1);
-    
-
     framebufferHandle FramebufferHandle = Context->ResourceManager.Framebuffers.ObtainResource();
     if(FramebufferHandle == InvalidHandle)
     {
@@ -1445,10 +1523,18 @@ void context::DestroySwapchain()
         std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(VkSwapchainData->SwapchainImages[i]->ApiData);
         VkData->Device.destroyImageView(VkImageData->DefaultImageViews.NativeView);
 
+
         if(i==0) //Only 1 depth buffer
         {
             VkFramebufferData->DepthStencilImage->Destroy();
-        }        
+            
+            //Destroy the multisampled render targets
+            if(VkFramebufferData->IsMultiSampled)
+            {
+                VkData->MultiSampledColorImage->Destroy();
+                VkData->MultiSampledDepthStencilImage->Destroy();
+            }
+        }  
     }
     VkData->Device.destroySwapchainKHR(VkSwapchainData->Handle);
 }
