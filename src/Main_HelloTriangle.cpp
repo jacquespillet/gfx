@@ -309,7 +309,7 @@ struct application
 		float t = 0;
 		while(!Window->ShouldClose())
 		{
-			t += 0.01f;
+			t += 0.1f;
 			UniformData1.Color0.r = (cos(t) + 1.0f) * 0.5f;
 			gfx::buffer *Buffer = (gfx::buffer*)(Uniforms->Uniforms[0].Resource);
 			Buffer->CopyData((uint8_t*)&UniformData1, sizeof(uniformData), 0);

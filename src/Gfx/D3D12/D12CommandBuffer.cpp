@@ -135,24 +135,52 @@ void commandBuffer::BeginPass(framebufferHandle FramebufferHandle, clearColorVal
     if(D12FramebufferData->IsSwapchain)
         D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12FramebufferData->RenderTargets[D12FramebufferData->CurrentTarget].Get() , D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
     
-    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(D12FramebufferData->RenderTargetViewHeap->GetCPUDescriptorHandleForHeapStart(), D12FramebufferData->CurrentTarget, D12FramebufferData->RTVDescriptorSize);
     
-    D12CommandBufferData->CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &D12FramebufferData->DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart());    
-    D12CommandBufferData->CommandList->ClearRenderTargetView(rtvHandle, (f32*)&ClearColor, 0, nullptr);    
-    D12CommandBufferData->CommandList->ClearDepthStencilView(D12FramebufferData->DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, DepthStencil.Depth, (u8)DepthStencil.Stencil, 0, nullptr);
+    if(D12FramebufferData->IsSwapchain && D12FramebufferData->IsMultiSampled)
+    {
+        //Get the descriptors for the multisampled buffers
+        CD3DX12_CPU_DESCRIPTOR_HANDLE ColorHandle(D12FramebufferData->RenderTargetViewHeap->GetCPUDescriptorHandleForHeapStart(), D12FramebufferData->RenderTargetsCount, D12FramebufferData->RTVDescriptorSize);
+        CD3DX12_CPU_DESCRIPTOR_HANDLE DepthHandle(D12FramebufferData->DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart(), 1, D12FramebufferData->DSVDescriptorSize);
+        D12CommandBufferData->CommandList->OMSetRenderTargets(1, &ColorHandle, FALSE, &DepthHandle);    
+        // D12CommandBufferData->CommandList->OMSetRenderTargets(1, &ColorHandle, FALSE, &D12FramebufferData->DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart());    
+        D12CommandBufferData->CommandList->ClearRenderTargetView(ColorHandle, (f32*)&ClearColor, 0, nullptr);    
+        D12CommandBufferData->CommandList->ClearDepthStencilView(DepthHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, DepthStencil.Depth, (u8)DepthStencil.Stencil, 0, nullptr);
+    }
+    else
+    {
+        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(D12FramebufferData->RenderTargetViewHeap->GetCPUDescriptorHandleForHeapStart(), D12FramebufferData->CurrentTarget, D12FramebufferData->RTVDescriptorSize);
+        D12CommandBufferData->CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &D12FramebufferData->DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart());    
+        D12CommandBufferData->CommandList->ClearRenderTargetView(rtvHandle, (f32*)&ClearColor, 0, nullptr);    
+        D12CommandBufferData->CommandList->ClearDepthStencilView(D12FramebufferData->DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, DepthStencil.Depth, (u8)DepthStencil.Stencil, 0, nullptr);
+    }
 
     
 }
 
 void commandBuffer::EndPass()
 {
-    
+    GET_CONTEXT(D12Data, context::Get());
+
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
     std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(D12CommandBufferData->CurrentFramebuffer->ApiData);
 
-    // Indicate that the back buffer will now be used to present.
     if(D12FramebufferData->IsSwapchain)
-        D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12FramebufferData->RenderTargets[D12FramebufferData->CurrentTarget].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+    {
+        if(D12FramebufferData->IsMultiSampled)
+        {
+            D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12Data->MultisampledColorImage.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_RESOLVE_SOURCE));
+            D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12FramebufferData->RenderTargets[D12FramebufferData->CurrentTarget].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_RESOLVE_DEST));
+            D12CommandBufferData->CommandList->ResolveSubresource(D12FramebufferData->RenderTargets[D12FramebufferData->CurrentTarget].Get(), 0, D12Data->MultisampledColorImage.Get(), 0, D12FramebufferData->ColorFormats[0]);
+            D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12Data->MultisampledColorImage.Get(), D3D12_RESOURCE_STATE_RESOLVE_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
+            D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12FramebufferData->RenderTargets[D12FramebufferData->CurrentTarget].Get(), D3D12_RESOURCE_STATE_RESOLVE_DEST, D3D12_RESOURCE_STATE_PRESENT));
+        }
+        else
+        {
+            // Indicate that the back buffer will now be used to present.
+            D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12FramebufferData->RenderTargets[D12FramebufferData->CurrentTarget].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+        }
+
+    }
 }
 
 void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)

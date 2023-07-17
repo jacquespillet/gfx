@@ -127,6 +127,7 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
     Singleton->ApiContextData = std::make_shared<d3d12Data>();
     GET_CONTEXT(D12Data, Singleton);
     D12Data->Debug = InitializeInfo.Debug;
+    D12Data->MultisamplingEnabled = InitializeInfo.EnableMultisampling;
     
     Singleton->Window = &Window;
     UINT dxgiFactoryFlags = 0;
@@ -245,6 +246,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     RenderPass->Output.NumColorFormats = 1;
     RenderPass->Output.ColorFormats[0] = SwapchainFormat;
     RenderPass->Output.DepthStencilFormat = DepthFormat;
+    RenderPass->Output.SampleCount = D12Data->MultisamplingEnabled ? 4 : 1;
     SwapchainOutput = RenderPass->Output;
 
     // Describe and create the swap chain.
@@ -256,6 +258,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     swapChainDesc.SampleDesc.Count = 1;
+    swapChainDesc.SampleDesc.Quality = 0;
 
     
 
@@ -279,13 +282,67 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     {
         ThrowIfFailed(D12SwapchainData->SwapChain->GetBuffer(n, IID_PPV_ARGS(&D12SwapchainData->Buffers[n])));
     }
+
+    if (D12Data->MultisamplingEnabled)
+    {
+
+        //Create color multisampled texture
+        D3D12_RESOURCE_DESC textureDesc = {};
+        textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+        textureDesc.Width = Width;
+        textureDesc.Height = Height;
+        textureDesc.Format = FormatToNative(SwapchainFormat);
+        textureDesc.SampleDesc.Count = 4;  // Number of samples per pixel
+        textureDesc.SampleDesc.Quality = 0;  // Default quality level
+        textureDesc.DepthOrArraySize = 1;
+        textureDesc.MipLevels=1;
+        textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+        D3D12_HEAP_PROPERTIES heapProperties = {};
+        heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+        D3D12_CLEAR_VALUE ClearColors = {};
+        ClearColors.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        ClearColors.Color[0] = 0.5f;
+        ClearColors.Color[1] = 0.0f;
+        ClearColors.Color[2] = 0.8f;
+        ClearColors.Color[3] = 1.0f;
+        D12Data->Device->CreateCommittedResource(
+            &heapProperties,  // Desired heap properties
+            D3D12_HEAP_FLAG_NONE,
+            &textureDesc,
+            D3D12_RESOURCE_STATE_RENDER_TARGET,
+            &ClearColors,
+            IID_PPV_ARGS(&D12Data->MultisampledColorImage)
+        );
+
+        //Create depth multisampled texture
+        textureDesc.Format = FormatToNative(DepthFormat);
+        textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+        D3D12_CLEAR_VALUE ClearDepthStencil;
+        ClearDepthStencil.Format = textureDesc.Format;
+        ClearDepthStencil.DepthStencil.Depth = 1.0f;
+        ClearDepthStencil.DepthStencil.Stencil = 0;
+
+        D12Data->Device->CreateCommittedResource(
+            &heapProperties,  // Desired heap properties
+            D3D12_HEAP_FLAG_NONE,
+            &textureDesc,
+            D3D12_RESOURCE_STATE_DEPTH_WRITE,
+            &ClearDepthStencil,
+            IID_PPV_ARGS(&D12Data->MultisampledDepthImage)
+        );
+    }
+
     
     D12FramebufferData->RenderTargetsCount = d12Constants::FrameCount;
+    D12FramebufferData->IsMultiSampled = D12Data->MultisamplingEnabled;
+    D12FramebufferData->IsSwapchain=true;
+    D12FramebufferData->ColorFormats.push_back(FormatToNative(SwapchainFormat));
     D12FramebufferData->CreateHeaps();
     D12FramebufferData->SetRenderTargets(D12SwapchainData->Buffers, d12Constants::FrameCount);
     D12FramebufferData->BuildDescriptors();
     D12FramebufferData->CreateDepthBuffer(Width, Height, DepthFormat);
-    D12FramebufferData->IsSwapchain=true;
 
     this->Swapchain = Swapchain;
     
@@ -346,6 +403,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     renderPass *RenderPass = (renderPass*) context::Get()->ResourceManager.RenderPasses.GetResource(Framebuffer->RenderPass);
     RenderPass->Output.NumColorFormats = (u32)CreateInfo.ColorFormats.size();
     RenderPass->Output.DepthStencilFormat = CreateInfo.DepthFormat;
+    RenderPass->Output.SampleCount=1;
 
     assert(CreateInfo.ColorFormats.size() < commonConstants::MaxImageOutputs);
     
@@ -664,11 +722,12 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         psoDesc.RasterizerState.CullMode = CullModeToNative(PipelineCreation.Rasterization.CullMode);
         psoDesc.RasterizerState.FrontCounterClockwise = FrontFaceToNative(PipelineCreation.Rasterization.FrontFace);
         psoDesc.RasterizerState.FillMode = FillModeToNative(PipelineCreation.Rasterization.Fill);
-
+        psoDesc.RasterizerState.MultisampleEnable = PipelineCreation.RenderPass.SampleCount > 1 ? TRUE : FALSE;
+        psoDesc.SampleDesc.Count = PipelineCreation.RenderPass.SampleCount;
+        psoDesc.SampleDesc.Quality = 0;
 
         psoDesc.SampleMask = UINT_MAX;
         psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-        psoDesc.SampleDesc.Count = 1;
         ThrowIfFailed(D12Data->Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&D12PipelineData->PipelineState)));
 
         for(sz i=0; i<InputElementDescriptors.size(); i++)

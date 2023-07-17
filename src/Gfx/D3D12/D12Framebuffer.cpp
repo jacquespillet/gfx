@@ -15,7 +15,7 @@ void d3d12FramebufferData::CreateHeaps()
 
     // Describe and create a render target view (RTV) descriptor heap.
     D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-    rtvHeapDesc.NumDescriptors = RenderTargetsCount;
+    rtvHeapDesc.NumDescriptors = RenderTargetsCount + (IsMultiSampled ? 1 : 0);
     rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
     rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     ThrowIfFailed(D12Data->Device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&RenderTargetViewHeap)));
@@ -23,11 +23,12 @@ void d3d12FramebufferData::CreateHeaps()
         
 
     D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc;
-    dsvHeapDesc.NumDescriptors = 1;  //Un seul depth buffer
+    dsvHeapDesc.NumDescriptors = 1 + (IsMultiSampled ? 1 : 0);  //Un seul depth buffer
     dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;  //Depth/stencil view type
     dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;   
     dsvHeapDesc.NodeMask = 0;  
     ThrowIfFailed(D12Data->Device->CreateDescriptorHeap(&dsvHeapDesc,IID_PPV_ARGS(&DepthBufferViewHeap)));         
+    DSVDescriptorSize = D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 }
 
 void d3d12FramebufferData::SetRenderTargets(ComPtr<ID3D12Resource> *Buffers, u32 Count)
@@ -50,6 +51,13 @@ void d3d12FramebufferData::BuildDescriptors()
         D12Data->Device->CreateRenderTargetView(RenderTargets[n].Get(), nullptr, rtvHandle);
         rtvHandle.Offset(1, RTVDescriptorSize);
     }   
+
+    if (IsSwapchain && IsMultiSampled )
+    {
+        D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+        rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;  // Use multisample view
+        D12Data->Device->CreateRenderTargetView(D12Data->MultisampledColorImage.Get(), &rtvDesc, rtvHandle);
+    }
 }
 
 void d3d12FramebufferData::CreateDepthBuffer(u32 Width, u32 Height, format Format)
@@ -80,7 +88,17 @@ void d3d12FramebufferData::CreateDepthBuffer(u32 Width, u32 Height, format Forma
                                                         D3D12_HEAP_FLAG_NONE,  &depthStencilDesc,  D3D12_RESOURCE_STATE_DEPTH_WRITE,  
                                                         &optClear,  IID_PPV_ARGS(DepthStencilBuffer.GetAddressOf())));   
 
-    D12Data->Device->CreateDepthStencilView( DepthStencilBuffer.Get(),  nullptr,   DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart());
+    CD3DX12_CPU_DESCRIPTOR_HANDLE DSVHandle(DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart());
+
+    D12Data->Device->CreateDepthStencilView( DepthStencilBuffer.Get(),  nullptr, DSVHandle);
+    DSVHandle.Offset(1, DSVDescriptorSize);
+
+    if(IsSwapchain && IsMultiSampled)
+    {
+        D3D12_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
+        DSVDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;  // Use multisample view
+        D12Data->Device->CreateDepthStencilView(D12Data->MultisampledDepthImage.Get(), &DSVDesc, DSVHandle);
+    }
                                                              
 }
 
