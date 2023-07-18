@@ -69,7 +69,7 @@ struct context
     std::shared_ptr<commandBuffer> GetCurrentFrameCommandBuffer();
     stageBuffer *GetStageBuffer();
     
-    std::shared_ptr<swapchain> CreateSwapchain(u32 Width, u32 Height);
+    std::shared_ptr<swapchain> CreateSwapchain(u32 Width, u32 Height, std::shared_ptr<swapchain> OldSwapchain);
     std::shared_ptr<swapchain> RecreateSwapchain(u32 Width, u32 Height, std::shared_ptr<swapchain> OldSwapchain);
 
     stageBuffer CreateStageBuffer(sz Size);

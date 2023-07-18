@@ -137,16 +137,18 @@ void CreateSwapchainFramebuffer(std::shared_ptr<image> *ColorImages, std::shared
     }
 }
 
-//TODO: Use a single function for createswapchain and recreateswapchain
-std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
+std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::shared_ptr<swapchain> OldSwapchain)
 {
     GET_CONTEXT(VkData, this);
+    b8 Create = OldSwapchain == nullptr;
+    b8 Recreate = !Create;
 
-    Swapchain = std::make_shared<swapchain>();
-
-    Swapchain->ApiData = std::make_shared<vkSwapchainData>();
+    if(Create)
+    {
+        Swapchain = std::make_shared<swapchain>();
+        Swapchain->ApiData = std::make_shared<vkSwapchainData>();
+    }
     std::shared_ptr<vkSwapchainData> VkSwapchainData = std::static_pointer_cast<vkSwapchainData>(Swapchain->ApiData);
-    *VkSwapchainData = {};
 
     VkData->Device.waitIdle();
 
@@ -163,7 +165,9 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
         VkData->SurfaceExtent = vk::Extent2D(1,1);
         return nullptr;
     }
+
     VkSwapchainData->ImageCount = VkData->PresentImageCount;
+    
     //Create a swapchain
     vk::SwapchainCreateInfoKHR SwapchainCreateInfo;
     SwapchainCreateInfo.setSurface(VkData->Surface)
@@ -178,12 +182,35 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
                        .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
                        .setPresentMode(VkData->SurfacePresentMode)
                        .setClipped(true);
+    if(Recreate) SwapchainCreateInfo.setOldSwapchain(VkSwapchainData->Handle);
     VkSwapchainData->Handle = VkData->Device.createSwapchainKHR(SwapchainCreateInfo);
     
     //Destroy old one
-    if(SwapchainCreateInfo.oldSwapchain)
+    if(Recreate)
     {
         VkData->Device.destroySwapchainKHR(SwapchainCreateInfo.oldSwapchain);
+        for(u32 i=0; i<VkData->PresentImageCount; i++)
+        {
+            framebuffer *Framebuffer = (framebuffer *) ResourceManager.Framebuffers.GetResource(VkSwapchainData->Framebuffers[i]);
+            std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
+            VkData->Device.destroyFramebuffer(VkFramebufferData->Handle);
+            ResourceManager.Framebuffers.ReleaseResource(VkSwapchainData->Framebuffers[i]);
+            
+            std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(VkSwapchainData->SwapchainImages[i]->ApiData);
+            VkData->Device.destroyImageView(VkImageData->DefaultImageViews.NativeView);
+            
+            if(i==0) 
+            {
+                VkFramebufferData->DepthStencilImage->Destroy();        
+                
+                //Destroy the multisampled render targets
+                if(VkFramebufferData->IsMultiSampled)
+                {
+                    VkData->MultiSampledColorImage->Destroy();
+                    VkData->MultiSampledDepthStencilImage->Destroy();
+                }
+            }        
+        }          
     }
     auto SwapchainImages = VkData->Device.getSwapchainImagesKHR(VkSwapchainData->Handle);
 
@@ -193,10 +220,9 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     {
         VkSwapchainData->SwapchainImageUsages[i] = imageUsage::UNKNOWN;
     }
-    renderPassHandle SwapchainPassHandle = GetDefaultRenderPass();
-    renderPass *SwapchainPass = (renderPass *)ResourceManager.RenderPasses.GetResource(SwapchainPassHandle);
-    std::shared_ptr<vkRenderPassData> VkSwapchainPass = std::static_pointer_cast<vkRenderPassData>(SwapchainPass->ApiData);
 
+    renderPassHandle SwapchainPassHandle = GetDefaultRenderPass();
+    
     //Initialize texture representations of swapchain images
     for(u32 i=0; i<VkData->PresentImageCount; i++)
     {
@@ -226,115 +252,6 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
 
     return Swapchain;
 }
-
-
-std::shared_ptr<swapchain> context::RecreateSwapchain(u32 Width, u32 Height, std::shared_ptr<swapchain> OldSwapchain)
-{
-    GET_CONTEXT(VkData, this);
-
-    assert(OldSwapchain);
-    assert(OldSwapchain->ApiData);
-
-    std::shared_ptr<vkSwapchainData> VkSwapchainData = std::static_pointer_cast<vkSwapchainData>(OldSwapchain->ApiData);
-
-    VkData->Device.waitIdle();
-
-    //Get width and height
-    auto SurfaceCapabilities = VkData->PhysicalDevice.getSurfaceCapabilitiesKHR(VkData->Surface);
-    VkData->SurfaceExtent = vk::Extent2D(
-        std::clamp(Width, SurfaceCapabilities.minImageExtent.width, SurfaceCapabilities.maxImageExtent.width),
-        std::clamp(Height, SurfaceCapabilities.minImageExtent.height, SurfaceCapabilities.maxImageExtent.height)
-    );
-
-    //Disable rendering if surface size is 0
-    if(VkData->SurfaceExtent == vk::Extent2D(0,0))
-    {
-        VkData->SurfaceExtent = vk::Extent2D(1,1);
-        return nullptr;
-    }
-
-    //Create a swapchain
-    vk::SwapchainCreateInfoKHR SwapchainCreateInfo;
-    SwapchainCreateInfo.setSurface(VkData->Surface)
-                       .setMinImageCount(VkData->PresentImageCount)
-                       .setImageFormat(VkData->SurfaceFormat.format)
-                       .setImageColorSpace(VkData->SurfaceFormat.colorSpace)
-                       .setImageExtent(VkData->SurfaceExtent)
-                       .setImageArrayLayers(1)
-                       .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst)
-                       .setImageSharingMode(vk::SharingMode::eExclusive)
-                       .setPreTransform(SurfaceCapabilities.currentTransform)
-                       .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
-                       .setPresentMode(VkData->SurfacePresentMode)
-                       .setClipped(true)
-                       .setOldSwapchain(VkSwapchainData->Handle);
-    VkSwapchainData->Handle = VkData->Device.createSwapchainKHR(SwapchainCreateInfo);
-    
-    //Destroy old one
-    if(SwapchainCreateInfo.oldSwapchain)
-    {
-        VkData->Device.destroySwapchainKHR(SwapchainCreateInfo.oldSwapchain);
-    }
-    auto SwapchainImages = VkData->Device.getSwapchainImagesKHR(VkSwapchainData->Handle);
-
-     //reinitialize internal buffers
-    VkData->PresentImageCount = (u32)SwapchainImages.size();
-    for (size_t i = 0; i < VkData->PresentImageCount; i++)
-    {
-        VkSwapchainData->SwapchainImageUsages[i] = imageUsage::UNKNOWN;
-    }
-
-    renderPassHandle SwapchainPassHandle = GetDefaultRenderPass();
-
-    //Initialize texture representations of swapchain images
-    for(u32 i=0; i<VkData->PresentImageCount; i++)
-    {
-        framebuffer *Framebuffer = (framebuffer *) ResourceManager.Framebuffers.GetResource(VkSwapchainData->Framebuffers[i]);
-        std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
-        VkData->Device.destroyFramebuffer(VkFramebufferData->Handle);
-        ResourceManager.Framebuffers.ReleaseResource(VkSwapchainData->Framebuffers[i]);
-        
-        std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(VkSwapchainData->SwapchainImages[i]->ApiData);
-        VkData->Device.destroyImageView(VkImageData->DefaultImageViews.NativeView);
-        
-        if(i==0) 
-        {
-            VkFramebufferData->DepthStencilImage->Destroy();        
-            
-            //Destroy the multisampled render targets
-            if(VkFramebufferData->IsMultiSampled)
-            {
-                VkData->MultiSampledColorImage->Destroy();
-                VkData->MultiSampledDepthStencilImage->Destroy();
-            }
-        }
-     
-        VkSwapchainData->SwapchainImages[i] = 
-            std::make_shared<image>(SwapchainImages[i], VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format));
-    }
-
-    format DepthFormat;
-    bool FoundDepthFormat = GetSupportedDepthFormat(VkData->PhysicalDevice, &DepthFormat);
-    std::shared_ptr<image> DepthStencil = std::make_shared<image>();
-    DepthStencil->Init(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
-    
-    //Multisampling : Create the color and depth images
-    if(VkData->MultisamplingEnabled)
-    {
-        VkData->MultiSampledColorImage = std::make_shared<image>();
-        VkData->MultiSampledColorImage->Init(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format), imageUsage::COLOR_ATTACHMENT, memoryUsage::GpuOnly, context::Get()->MultiSampleCount);
-        VkData->MultiSampledDepthStencilImage = std::make_shared<image>();
-        VkData->MultiSampledDepthStencilImage->Init(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly, context::Get()->MultiSampleCount);
-    }
-    
-    CreateSwapchainFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, SwapchainPassHandle, VkData->PresentImageCount,VkSwapchainData.get());
-
-
-
-    Swapchain = OldSwapchain;
-    return OldSwapchain;
-}
-
 
 std::shared_ptr<context> context::Initialize(context::initializeInfo &InitializeInfo, app::window &Window)
 {
@@ -590,7 +507,7 @@ std::shared_ptr<commandBuffer> context::CreateCommandBuffer()
 
 void context::OnResize(u32 NewWidth, u32 NewHeight)
 {
-    RecreateSwapchain(NewWidth, NewHeight, Swapchain);
+    CreateSwapchain(NewWidth, NewHeight, Swapchain);
 }
 
 

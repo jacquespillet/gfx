@@ -92,7 +92,7 @@ struct application
 		
 		// gfx::memory::Get()->Init();
 		
-		bool UseMultisampling=false;
+		bool UseMultisampling=true;
 
 		app::windowCreateOptions WindowCreateOptions;
 		WindowCreateOptions.Position = app::v2f(300, 100);
@@ -118,7 +118,7 @@ struct application
 		ContextInitialize.EnableMultisampling = UseMultisampling;
 		GfxContext = gfx::context::Initialize(ContextInitialize, *Window);
 
-		Swapchain = GfxContext->CreateSwapchain(Width, Height);
+		Swapchain = GfxContext->CreateSwapchain(Width, Height, nullptr);
 		
 		gfx::imageData ImageData = gfx::ImageFromFile("resources/Textures/Debug.jpg");
 		gfx::imageCreateInfo ImageCreateInfo = 
