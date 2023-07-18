@@ -26,7 +26,7 @@ struct vkImageData
 
     void Init(const image &Image, imageUsage::value ImageUsage, memoryUsage MemoryUsage);
     void InitViews(const image &Image, const vk::Image &VkImage, format Format);
-    void InitSampler(const imageCreateInfo &CreateInfo);
+    void InitSampler(const imageCreateInfo &CreateInfo, u32 MipLevelCount);
 };
 
 

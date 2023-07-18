@@ -19,6 +19,8 @@ struct imageCreateInfo
     samplerWrapMode WrapR = samplerWrapMode::ClampToBorder;
     b8 GenerateMipmaps = false;
     compareOperation DepthCompareOp = compareOperation::Less;
+
+    u8 MipLevelCount=1;
     // static textureCreateInfo Default();
 };
 

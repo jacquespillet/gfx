@@ -55,6 +55,6 @@ DECLARE_UNIFORM_TEXTURE(0, 4, Texture);
 
 void main() 
 {
-    outputColor = vec4(Input.FragUV,0,0) + Data._Color0 + SampleTexture(Texture, Input.FragUV);
+    outputColor = SampleTexture(Texture, Input.FragUV);
 }
 #endif

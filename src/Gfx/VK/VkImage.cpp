@@ -152,7 +152,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     context::Get()->SubmitCommandBufferImmediate(VkData->ImmediateCommandBuffer.get());
     VkData->StageBuffer.Reset();
 
-    VKImage->InitSampler(CreateInfo);
+    VKImage->InitSampler(CreateInfo, MipLevelCount);
 }
 
 image::image(vk::Image VkImage, u32 Width, u32 Height, format Format)
@@ -291,7 +291,7 @@ void vkImageData::InitViews(const image &Image, const vk::Image &VkImage, format
     }    
 }
 
-void vkImageData::InitSampler(const imageCreateInfo &CreateInfo)
+void vkImageData::InitSampler(const imageCreateInfo &CreateInfo, u32 MipLevelCount)
 {
     vk::SamplerCreateInfo SamplerCreateInfo;
     SamplerCreateInfo.setMagFilter(SamplerFilterToNative(CreateInfo.MinFilter))
@@ -300,6 +300,8 @@ void vkImageData::InitSampler(const imageCreateInfo &CreateInfo)
                      .setAddressModeU(SamplerWrapModeToNative(CreateInfo.WrapR))
                      .setAddressModeV(SamplerWrapModeToNative(CreateInfo.WrapS))
                      .setAddressModeW(SamplerWrapModeToNative(CreateInfo.WrapT))
+                     .setMinLod(0)
+                     .setMaxLod(MipLevelCount)
                      .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
     
     auto Vulkan = context::Get();
