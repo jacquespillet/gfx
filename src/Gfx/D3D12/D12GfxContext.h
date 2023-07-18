@@ -35,8 +35,6 @@ struct d3d12Data
 
     //Multisampling
     b8 MultisamplingEnabled=false;
-    ComPtr<ID3D12Resource> MultisampledColorImage;
-    ComPtr<ID3D12Resource> MultisampledDepthImage;
 
     D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorAt(sz Index);
     D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorAt(sz Index);

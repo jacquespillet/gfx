@@ -33,6 +33,13 @@ struct d3d12FramebufferData
 
     b8 IsMultiSampled=false;
 
+
+    ComPtr<ID3D12Resource> MultisampledColorImage;
+    ComPtr<ID3D12Resource> MultisampledDepthImage;
+    u32 MultisampledColorImageIndex;
+    u32 MultisampledDepthImageIndex;
+
+    
     void CreateHeaps();
     void SetRenderTargets(ComPtr<ID3D12Resource> *Buffers, u32 Count);
     void BuildDescriptors();

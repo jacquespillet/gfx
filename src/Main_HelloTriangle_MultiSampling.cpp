@@ -92,7 +92,7 @@ struct application
 		
 		// gfx::memory::Get()->Init();
 		
-		bool UseMultisampling=true;
+		bool UseMultisampling=false;
 
 		app::windowCreateOptions WindowCreateOptions;
 		WindowCreateOptions.Position = app::v2f(300, 100);

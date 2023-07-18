@@ -54,10 +54,10 @@ void d3d12FramebufferData::BuildDescriptors()
 
     if (IsSwapchain && IsMultiSampled )
     {
-        //TODO: Store the index more properly here...
         D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
         rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;  // Use multisample view
-        D12Data->Device->CreateRenderTargetView(D12Data->MultisampledColorImage.Get(), &rtvDesc, rtvHandle);
+        D12Data->Device->CreateRenderTargetView(MultisampledColorImage.Get(), &rtvDesc, rtvHandle);
+        MultisampledColorImageIndex = RenderTargetsCount;
     }
 }
 
@@ -98,7 +98,8 @@ void d3d12FramebufferData::CreateDepthBuffer(u32 Width, u32 Height, format Forma
     {
         D3D12_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
         DSVDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;  // Use multisample view
-        D12Data->Device->CreateDepthStencilView(D12Data->MultisampledDepthImage.Get(), &DSVDesc, DSVHandle);
+        D12Data->Device->CreateDepthStencilView(MultisampledDepthImage.Get(), &DSVDesc, DSVHandle);
+        MultisampledDepthImageIndex = 1;
     }
                                                              
 }

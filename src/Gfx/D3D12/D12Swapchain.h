@@ -17,6 +17,7 @@ struct d3d12SwapchainData
     ComPtr<ID3D12Resource> Buffers[d12Constants::FrameCount] = {};
 
 
+
     u32 GetFrameIndex()
     {
         return this->FrameIndex;

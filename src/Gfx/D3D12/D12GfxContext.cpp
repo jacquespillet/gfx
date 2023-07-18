@@ -282,7 +282,6 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
         ThrowIfFailed(D12SwapchainData->SwapChain->GetBuffer(n, IID_PPV_ARGS(&D12SwapchainData->Buffers[n])));
     }
 
-    //TODO: Clean that up : The buffers must be in the swapchain data 
     if (D12Data->MultisamplingEnabled)
     {
 
@@ -312,7 +311,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
             &textureDesc,
             D3D12_RESOURCE_STATE_RENDER_TARGET,
             &ClearColors,
-            IID_PPV_ARGS(&D12Data->MultisampledColorImage)
+            IID_PPV_ARGS(&D12FramebufferData->MultisampledColorImage)
         );
 
         //Create depth multisampled texture
@@ -330,7 +329,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
             &textureDesc,
             D3D12_RESOURCE_STATE_DEPTH_WRITE,
             &ClearDepthStencil,
-            IID_PPV_ARGS(&D12Data->MultisampledDepthImage)
+            IID_PPV_ARGS(&D12FramebufferData->MultisampledDepthImage)
         );
     }
 
