@@ -27,7 +27,7 @@ layout (location = 0) out PSInput Output;
 void main() 
 {
     vec3 pos = position * 0.1f;
-    gl_Position = vec4(pos +  InstancePositions[gl_InstanceID].xyz,1.0);
+    gl_Position = vec4(pos +  InstancePositions[InstanceIndex].xyz,1.0);
     Output.FragColor = color;
 }
 #endif

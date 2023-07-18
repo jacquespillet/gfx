@@ -40,13 +40,22 @@ void uniformGroup::Update()
                                 .setDstArrayElement(0)
                                 .setDescriptorCount(1);
 
-            if(Uniforms[i].Type == uniformType::Buffer)
+            if(Uniforms[i].Type == uniformType::UniformBuffer)
             {
                 buffer* Buffer = (buffer*)(Uniforms[i].Resource);
                 std::shared_ptr<vkBufferData> VKBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
                 
                 DescriptorBuffers.push_back(vk::DescriptorBufferInfo(VKBuffer->Handle, 0, Buffer->Size));
                 DescriptorWrite.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+                                   .setPBufferInfo(&DescriptorBuffers[DescriptorBuffers.size()-1]);
+            }
+            if(Uniforms[i].Type == uniformType::StorageBuffer)
+            {
+                buffer* Buffer = (buffer*)(Uniforms[i].Resource);
+                std::shared_ptr<vkBufferData> VKBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
+                
+                DescriptorBuffers.push_back(vk::DescriptorBufferInfo(VKBuffer->Handle, 0, Buffer->Size));
+                DescriptorWrite.setDescriptorType(vk::DescriptorType::eStorageBuffer)
                                    .setPBufferInfo(&DescriptorBuffers[DescriptorBuffers.size()-1]);
             }
             else if(Uniforms[i].Type == uniformType::Texture2d)
