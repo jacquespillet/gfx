@@ -586,24 +586,7 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsag
     std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
     *VkBufferData = vkBufferData(); 
 
-    //TODO: Use buffer->Init() here!
-    
-    //We assume that if the buffer is index or vertex, we'll copy to it
-    if(Usage & bufferUsage::IndexBuffer || Usage & bufferUsage::VertexBuffer)
-        Usage |= bufferUsage::TransferDestination;
-    
-    constexpr std::array BufferQueueFamilyIndices = {(u32)0};
-    
-    //Set size, usage
-    Buffer->Size = Size;
-    vk::BufferCreateInfo BufferCreateInfo;
-    BufferCreateInfo.setSize(Buffer->Size)
-                    .setUsage((vk::BufferUsageFlags)Usage)
-                    .setSharingMode(vk::SharingMode::eExclusive)
-                    .setQueueFamilyIndices(BufferQueueFamilyIndices);
-
-    //Allocate with vma
-    VkBufferData->Allocation = gfx::AllocateBuffer(BufferCreateInfo, MemoryUsage, &VkBufferData->Handle);    
+    Buffer->Init(Size, Usage, MemoryUsage);
 
     return Handle;
 }
