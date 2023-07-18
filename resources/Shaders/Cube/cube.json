@@ -36,12 +36,12 @@
 				{
 					"language": "GLSL",
 					"stage" : "vertex",
-					"shader" : "cube.vert"
+					"shader" : "cube.glsl"
 				},
 				{
 					"language": "GLSL",
 					"stage" : "fragment",
-					"shader" : "cube.frag"
+					"shader" : "cube.glsl"
 				},
 				{
 					"language": "HLSL",

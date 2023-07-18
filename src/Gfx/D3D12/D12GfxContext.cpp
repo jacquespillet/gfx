@@ -214,7 +214,7 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsag
 }
 
 
-std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
+std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::shared_ptr<swapchain> OldSwapchain)
 {
     GET_CONTEXT(D12Data, this);    
     
@@ -518,6 +518,7 @@ ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_
         // DXC_ARG_WARNINGS_ARE_ERRORS,
         DXC_ARG_ALL_RESOURCES_BOUND
     };
+
     if(Stage.Stage == shaderStageFlags::Vertex)
     {
         CompileArgs.push_back(L"-E");

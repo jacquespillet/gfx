@@ -9,6 +9,11 @@
 					"stream_binding":0,
 					"stream_rate":"Vertex",
 					"stream_stride":28
+				},
+				{
+					"stream_binding":1,
+					"stream_rate":"Instance",
+					"stream_stride":8
 				}
 			],
 			"vertex_input" : [
@@ -25,6 +30,13 @@
 					"attribute_offset" : 12,
 					"attribute_format" : "Float4",
 					"name" : "Position"
+				},
+				{
+					"vertex_stream" : 1,
+					"attribute_location" : 2,
+					"attribute_offset" : 0,
+					"attribute_format" : "Float2",
+					"name" : "InstancePosition"
 				}
 			],
 			"render_pass" : "Swapchain",
@@ -36,22 +48,22 @@
 				{
 					"language": "GLSL",
 					"stage" : "vertex",
-					"shader" : "triangle.vert"
+					"shader" : "triangleInstanced.glsl"
 				},
 				{
 					"language": "GLSL",
 					"stage" : "fragment",
-					"shader" : "triangle.frag"
+					"shader" : "triangleInstanced.glsl"
 				},
 				{
 					"language": "HLSL",
 					"stage" : "vertex",
-					"shader" : "shaders.hlsl"
+					"shader" : "triangleInstanced.hlsl"
 				},
 				{
 					"language": "HLSL",
 					"stage" : "fragment",
-					"shader" : "shaders.hlsl"
+					"shader" : "triangleInstanced.hlsl"
 				}				
 			]
 		}

@@ -218,8 +218,8 @@ struct application
 		OffscreenPass = GfxContext->CreateFramebuffer(FramebufferCreateInfo);
 		SwapchainPass = GfxContext->GetDefaultRenderPass();
 		
-		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/Cube.json");
-		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/Cube.json", OffscreenPass);
+		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/Cube/Cube.json");
+		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/Cube/Cube.json", OffscreenPass);
 
 
 		UniformBufferHandle1 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);

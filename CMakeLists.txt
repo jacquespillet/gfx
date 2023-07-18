@@ -13,12 +13,15 @@ add_compile_definitions(_GLFW_WIN32 GLFW_EXPOSE_NATIVE_WIN32 VK_USE_PLATFORM_WIN
 set(GFX_API_GL 0)
 set(GFX_API_VK 1)
 set(GFX_API_D3D12 2)
-set(GFX_API ${GFX_API_GL})
+set(GFX_API ${GFX_API_VK})
 
 add_definitions(-DGFX_GL=${GFX_API_GL})
 add_definitions(-DGFX_VK=${GFX_API_VK})
 add_definitions(-DGFX_D3D12=${GFX_API_D3D12})
 add_definitions(-DGFX_API=${GFX_API})
+
+set(BUILD_ALL 1)
+
 
 ################################################
 ##########      Library         ################
@@ -220,7 +223,6 @@ if(${GFX_API} EQUAL ${GFX_API_GL})
 endif()
 
 
-set(BUILD_ALL 0)
 
 if(${BUILD_ALL} EQUAL 1)
         # HelloTriangleIndexed
@@ -252,25 +254,18 @@ if(${BUILD_ALL} EQUAL 1)
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
         
         # Instanced
-        set(targetName HelloTriangleInstanced)
+        set(targetName HelloTriangleInstanced_${GFX_API_STR})
         set(mainCode ${sourceCode} src/Main_HelloTriangle_Instanced.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
         
         # Multisampling
-        set(targetName HelloTriangleMSAA)
+        set(targetName HelloTriangleMSAA_${GFX_API_STR})
         set(mainCode ${sourceCode} src/Main_HelloTriangle_MultiSampling.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
-        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
-        
-        # DrawIndexed
-        set(targetName HelloTriangleDrawIndexed)
-        set(mainCode ${sourceCode} src/Main_HelloTriangle_Indexed.cpp)
-        add_executable(${targetName} ${mainCode})
-        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
-        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
+        install(TARGETS ${targetName} RUNTIME DESTINATION bin)  
 else()
         
         # Multisampling

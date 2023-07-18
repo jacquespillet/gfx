@@ -41,22 +41,22 @@
 				{
 					"language": "GLSL",
 					"stage" : "vertex",
-					"shader" : "triangle.vert"
+					"shader" : "triangle.glsl"
 				},
 				{
 					"language": "GLSL",
 					"stage" : "fragment",
-					"shader" : "triangle.frag"
+					"shader" : "triangle.glsl"
 				},
 				{
 					"language": "HLSL",
 					"stage" : "vertex",
-					"shader" : "shaders.hlsl"
+					"shader" : "triangle.hlsl"
 				},
 				{
 					"language": "HLSL",
 					"stage" : "fragment",
-					"shader" : "shaders.hlsl"
+					"shader" : "triangle.hlsl"
 				}				
 			]
 		}

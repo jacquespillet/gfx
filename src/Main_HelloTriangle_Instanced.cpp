@@ -190,8 +190,8 @@ struct application
 		OffscreenPass = GfxContext->CreateFramebuffer(FramebufferCreateInfo);
 		SwapchainPass = GfxContext->GetDefaultRenderPass();
 	
-		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle_Instanced.json", OffscreenPass);
-		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle_Instanced.json");
+		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/Instancing/Triangle_Instanced.json", OffscreenPass);
+		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/Instancing/Triangle_Instanced.json");
 
 
 		UniformBufferHandle1 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);

@@ -14,3 +14,8 @@ CUSTOM_DEFINES
 #elif GRAPHICS_API==GL
 #define DECLARE_UNIFORM_TEXTURE(Set, Binding, Name) layout(binding = Binding) uniform sampler2D Name;
 #endif
+
+#define mul(Elem1, Elem2) Elem1 * Elem2
+
+// #define SampleTexture(Texture, Sampler, UV) texture(Texture, UV)
+#define SampleTexture(Texture, UV) texture(Texture, UV)

@@ -171,8 +171,8 @@ struct application
 		OffscreenPass = GfxContext->CreateFramebuffer(FramebufferCreateInfo);
 		SwapchainPass = GfxContext->GetDefaultRenderPass();
 		
-		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle_MultiStream.json", OffscreenPass);
-		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle_MultiStream.json");
+		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle/Triangle_MultiStream.json", OffscreenPass);
+		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle/Triangle_MultiStream.json");
 
 
 		UniformBufferHandle1 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);

@@ -1256,6 +1256,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     }
     RenderPassOutput.Depth(CreateInfo.DepthFormat, imageLayout::DepthAttachmentOptimal);
     RenderPassOutput.SetDepthStencilOperation(renderPassOperation::Clear, renderPassOperation::Clear);
+    //TODO: Remove foo here
     RenderPassOutput.Name = "Foo";
     renderPass *RenderPass = VKData->GetRenderPass(RenderPassOutput, "Foo");
     RenderPass->Output = RenderPassOutput;
