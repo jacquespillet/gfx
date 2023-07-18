@@ -25,6 +25,9 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
     //We assume that if the buffer is index or vertex, we'll copy to it
     if(Usage & bufferUsage::IndexBuffer || Usage & bufferUsage::VertexBuffer)
         Usage |= bufferUsage::TransferDestination;
+    
+    if(Usage & bufferUsage::StorageBuffer && MemoryUsage == memoryUsage::GpuOnly)
+        Usage |= bufferUsage::TransferDestination;
 
     //Set size, usage
     this->Size = ByteSize;

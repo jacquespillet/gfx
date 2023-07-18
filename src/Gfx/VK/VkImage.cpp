@@ -301,7 +301,7 @@ void vkImageData::InitSampler(const imageCreateInfo &CreateInfo, u32 MipLevelCou
                      .setAddressModeV(SamplerWrapModeToNative(CreateInfo.WrapS))
                      .setAddressModeW(SamplerWrapModeToNative(CreateInfo.WrapT))
                      .setMinLod(0)
-                     .setMaxLod(MipLevelCount)
+                     .setMaxLod((f32)MipLevelCount)
                      .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
     
     auto Vulkan = context::Get();

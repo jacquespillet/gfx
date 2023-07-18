@@ -140,7 +140,9 @@ void buffer::FlushMemory(size_t ByteSize, size_t Offset)
 }
 
 
-
+//TODO: 
+//When memory usage is gpu only, use a staging buffer
+//otherwise use memcpy
 void buffer::CopyData(const uint8_t *Data, size_t ByteSize, size_t Offset)
 {
     assert(ByteSize + Offset <= this->Size);

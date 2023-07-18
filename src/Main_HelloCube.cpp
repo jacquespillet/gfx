@@ -247,25 +247,25 @@ struct application
 		Uniforms->Initialize();
 		Uniforms->Uniforms.push_back({
 			"Buffer",
-			gfx::uniformType::Buffer,
+			gfx::uniformType::UniformBuffer,
 			0,
 			UniformBuffer1,
 		});
 		Uniforms->Uniforms.push_back({
 			"Buffer",
-			gfx::uniformType::Buffer,
+			gfx::uniformType::UniformBuffer,
 			1,
 			UniformBuffer2,
 		});
 		Uniforms->Uniforms.push_back({
 			"Buffer",
-			gfx::uniformType::Buffer,
+			gfx::uniformType::UniformBuffer,
 			2,
 			UniformBuffer3,
 		});
 		Uniforms->Uniforms.push_back({
 			"Buffer",
-			gfx::uniformType::Buffer,
+			gfx::uniformType::UniformBuffer,
 			3,
 			UniformBuffer4,
 		});
@@ -277,7 +277,7 @@ struct application
 		});
 		Uniforms->Uniforms.push_back({
 			"Matrices",
-			gfx::uniformType::Buffer,
+			gfx::uniformType::UniformBuffer,
 			5,
 			SceneMatricesBuffer,
 		});
