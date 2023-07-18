@@ -59,8 +59,6 @@ struct vkData
 
     //Multisampling
     b8 MultisamplingEnabled=false;
-    std::shared_ptr<image> MultiSampledColorImage;
-    std::shared_ptr<image> MultiSampledDepthStencilImage;
     
 
     renderPass *GetRenderPass(const renderPassOutput &Output, std::string Name);

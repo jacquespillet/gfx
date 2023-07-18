@@ -157,11 +157,11 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
 
 image::image(vk::Image VkImage, u32 Width, u32 Height, format Format)
 {
-    ApiData = std::make_shared<vkImageData>();
+    this->ApiData = std::make_shared<vkImageData>();
 
-    Extent.Width = Width;
-    Extent.Height = Height;
-    Format = Format;
+    this->Extent.Width = Width;
+    this->Extent.Height = Height;
+    this->Format = Format;
 
     std::shared_ptr<vkImageData> ImageData = std::static_pointer_cast<vkImageData>(ApiData);
     ImageData->Allocation = {};

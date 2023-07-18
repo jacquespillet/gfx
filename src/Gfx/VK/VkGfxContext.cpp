@@ -83,14 +83,33 @@ void CreateSwapchainFramebuffer(std::shared_ptr<image> *ColorImages, std::shared
      
     for (size_t i = 0; i < ImagesCount; i++)
     {
+        framebufferHandle FramebufferHandle = Context->ResourceManager.Framebuffers.ObtainResource();
+        if(FramebufferHandle == InvalidHandle)
+        {
+            assert(false);
+            return;
+        }
+        framebuffer *Framebuffer = (framebuffer*)Context->ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+        Framebuffer->Width = ColorImages[i]->Extent.Width;
+        Framebuffer->Height = ColorImages[i]->Extent.Height;
+        Framebuffer->ApiData = std::make_shared<vkFramebufferData>();
+        std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
+        if(VkData->MultisamplingEnabled) VkFramebufferData->IsMultiSampled=true;
+
         std::shared_ptr<vkImageData> VkColorImage = std::static_pointer_cast<vkImageData>(ColorImages[i]->ApiData);
         std::shared_ptr<vkImageData> VkDepthImage = std::static_pointer_cast<vkImageData>(DepthStencilImage->ApiData);
-        
+
         std::vector<vk::ImageView> Attachments;
-        if(VkData->MultisamplingEnabled)
+        if(VkFramebufferData->IsMultiSampled)
         {
-            std::shared_ptr<vkImageData> VkMultisampledColorImage = std::static_pointer_cast<vkImageData>(VkData->MultiSampledColorImage->ApiData);
-            std::shared_ptr<vkImageData> VkMultisampledDepthStencilImage = std::static_pointer_cast<vkImageData>(VkData->MultiSampledDepthStencilImage->ApiData);
+
+            VkFramebufferData->MultiSampledColorImage = std::make_shared<image>();
+            VkFramebufferData->MultiSampledColorImage->Init(Framebuffer->Width, Framebuffer->Height, ColorImages[i]->Format, imageUsage::COLOR_ATTACHMENT, memoryUsage::GpuOnly, context::Get()->MultiSampleCount);
+            VkFramebufferData->MultiSampledDepthStencilImage = std::make_shared<image>();
+            VkFramebufferData->MultiSampledDepthStencilImage->Init(Framebuffer->Width, Framebuffer->Height, DepthStencilImage->Format, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly, context::Get()->MultiSampleCount);
+                    
+            std::shared_ptr<vkImageData> VkMultisampledColorImage = std::static_pointer_cast<vkImageData>(VkFramebufferData->MultiSampledColorImage->ApiData);
+            std::shared_ptr<vkImageData> VkMultisampledDepthStencilImage = std::static_pointer_cast<vkImageData>(VkFramebufferData->MultiSampledDepthStencilImage->ApiData);
             Attachments = 
             {
                 VkMultisampledColorImage->DefaultImageViews.NativeView,
@@ -114,24 +133,10 @@ void CreateSwapchainFramebuffer(std::shared_ptr<image> *ColorImages, std::shared
                             .setWidth(ColorImages[i]->Extent.Width)
                             .setHeight(ColorImages[i]->Extent.Height)
                             .setLayers(1);
-        
-
-        framebufferHandle FramebufferHandle = Context->ResourceManager.Framebuffers.ObtainResource();
-        if(FramebufferHandle == InvalidHandle)
-        {
-            assert(false);
-            return;
-        }
-        framebuffer *Framebuffer = (framebuffer*)Context->ResourceManager.Framebuffers.GetResource(FramebufferHandle);
-        Framebuffer->Width = ColorImages[i]->Extent.Width;
-        Framebuffer->Height = ColorImages[i]->Extent.Height;
-        Framebuffer->ApiData = std::make_shared<vkFramebufferData>();
         Framebuffer->RenderPass = RenderPassHandle;
-        std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
         VkFramebufferData->DepthStencilImage = DepthStencilImage;
         VkFramebufferData->ColorImages = ColorImages;
         VkFramebufferData->Handle = VkData->Device.createFramebuffer(FramebufferCreateInfo);
-        if(VkData->MultisamplingEnabled) VkFramebufferData->IsMultiSampled=true;
 
         VkSwapchainData->Framebuffers[i] = FramebufferHandle;
     }
@@ -199,16 +204,17 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
             std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(VkSwapchainData->SwapchainImages[i]->ApiData);
             VkData->Device.destroyImageView(VkImageData->DefaultImageViews.NativeView);
             
+            //Destroy the multisampled render targets
+            if(VkFramebufferData->IsMultiSampled)
+            {
+                VkFramebufferData->MultiSampledColorImage->Destroy();
+                VkFramebufferData->MultiSampledDepthStencilImage->Destroy();
+            }
+
             if(i==0) 
             {
                 VkFramebufferData->DepthStencilImage->Destroy();        
                 
-                //Destroy the multisampled render targets
-                if(VkFramebufferData->IsMultiSampled)
-                {
-                    VkData->MultiSampledColorImage->Destroy();
-                    VkData->MultiSampledDepthStencilImage->Destroy();
-                }
             }        
         }          
     }
@@ -235,17 +241,6 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
     bool FoundDepthFormat = GetSupportedDepthFormat(VkData->PhysicalDevice, &DepthFormat);
     std::shared_ptr<image> DepthStencil = std::make_shared<image>();
     DepthStencil->Init(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
-
-    //Multisampling : Create the color and depth images
-    //TODO: Clean that : the images should go in the swapchain data
-    if(VkData->MultisamplingEnabled)
-    {
-        VkData->MultiSampledColorImage = std::make_shared<image>();
-        VkData->MultiSampledColorImage->Init(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, FormatFromNative(VkData->SurfaceFormat.format), imageUsage::COLOR_ATTACHMENT, memoryUsage::GpuOnly, context::Get()->MultiSampleCount);
-        VkData->MultiSampledDepthStencilImage = std::make_shared<image>();
-        VkData->MultiSampledDepthStencilImage->Init(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly, context::Get()->MultiSampleCount);
-    }
-
 
     CreateSwapchainFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, SwapchainPassHandle, VkData->PresentImageCount, VkSwapchainData.get());
 
@@ -1497,16 +1492,16 @@ void context::DestroySwapchain()
         VkData->Device.destroyImageView(VkImageData->DefaultImageViews.NativeView);
 
 
+        //Destroy the multisampled render targets
+        if(VkFramebufferData->IsMultiSampled)
+        {
+            VkFramebufferData->MultiSampledColorImage->Destroy();
+            VkFramebufferData->MultiSampledDepthStencilImage->Destroy();
+        }
         if(i==0) //Only 1 depth buffer
         {
             VkFramebufferData->DepthStencilImage->Destroy();
             
-            //Destroy the multisampled render targets
-            if(VkFramebufferData->IsMultiSampled)
-            {
-                VkData->MultiSampledColorImage->Destroy();
-                VkData->MultiSampledDepthStencilImage->Destroy();
-            }
         }  
     }
     VkData->Device.destroySwapchainKHR(VkSwapchainData->Handle);
