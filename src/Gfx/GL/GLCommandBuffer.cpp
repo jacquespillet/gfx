@@ -6,6 +6,7 @@
 #include "GLCommandBuffer.h"
 #include "GLBuffer.h"
 #include "GLImage.h"
+#include "GLMapping.h"
 #include "GLPipeline.h"
 #include "GLShader.h"
 #include "GLFramebuffer.h"
@@ -80,14 +81,14 @@ void ExecuteBindIndexBuffer(const command &Command)
 
 void ExecuteDrawIndexed(const command &Command)
 {
-    //TODO: Store the type of the indices and reset it right after.
+    GLuint Offset = Command.DrawIndexed.Offset * (GLuint) IndexTypeSize(Command.DrawIndexed.IndexType);
     if(Command.DrawIndexed.InstanceCount>1)
     {
-        glDrawElementsInstanced(GL_TRIANGLES, Command.DrawIndexed.Count, GL_UNSIGNED_INT, nullptr, Command.DrawIndexed.InstanceCount);
+        glDrawElementsInstanced(GL_TRIANGLES, Command.DrawIndexed.Count, IndexTypeToNative(Command.DrawIndexed.IndexType), reinterpret_cast<void*>(Offset), Command.DrawIndexed.InstanceCount);
     }
     else
     {
-        glDrawElements(GL_TRIANGLES, Command.DrawIndexed.Count, GL_UNSIGNED_INT, nullptr);
+        glDrawElements(GL_TRIANGLES, Command.DrawIndexed.Count, IndexTypeToNative(Command.DrawIndexed.IndexType), reinterpret_cast<void*>(Offset));
     }
 }
 
@@ -217,7 +218,6 @@ void commandBuffer::BindVertexBuffer(vertexBufferHandle Buffer)
     GLCommandBuffer->Commands.push_back(Command);
 }
 
-//TODO: Use offset and index type
 void commandBuffer::BindIndexBuffer(bufferHandle Buffer, u32 Offset, indexType IndexType)
 {
     GET_GL_COMMANDS
@@ -226,6 +226,9 @@ void commandBuffer::BindIndexBuffer(bufferHandle Buffer, u32 Offset, indexType I
     Command.BindIndexBuffer.IndexBufferHandle = Buffer;
     Command.CommandFunction = (commandFunction)&ExecuteBindIndexBuffer;
     GLCommandBuffer->Commands.push_back(Command);
+
+    GLCommandBuffer->IndexType = IndexType;
+    GLCommandBuffer->IndexBufferOffset = Offset;
 }
 
 void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height)
@@ -268,7 +271,6 @@ void commandBuffer::DrawArrays(u32 Start, u32 Count, u32 InstanceCount)
     GLCommandBuffer->Commands.push_back(Command);
 }
 
-//TODO: Use Start
 void commandBuffer::DrawIndexed(u32 Start, u32 Count, u32 InstanceCount)
 {
     GET_GL_COMMANDS
@@ -276,8 +278,12 @@ void commandBuffer::DrawIndexed(u32 Start, u32 Count, u32 InstanceCount)
     Command.Type = commandType::DrawIndexed;
     Command.DrawIndexed.Count = Count;
     Command.DrawIndexed.InstanceCount = InstanceCount;
+    Command.DrawIndexed.IndexType = GLCommandBuffer->IndexType; 
+    Command.DrawIndexed.Offset = GLCommandBuffer->IndexBufferOffset + Start; 
     Command.CommandFunction = (commandFunction)&ExecuteDrawIndexed;
-    GLCommandBuffer->Commands.push_back(Command);
+    
+    GLCommandBuffer->IndexType = indexType::Uint16;
+    GLCommandBuffer->IndexBufferOffset=0;
 }
     
 void commandBuffer::End()

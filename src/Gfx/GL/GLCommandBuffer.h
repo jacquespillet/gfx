@@ -59,6 +59,8 @@ struct command
         {
             u32 Count;
             u32 InstanceCount;
+            indexType IndexType;
+            u32 Offset;
         } DrawIndexed;
                 
         struct bindBufferState
@@ -103,6 +105,8 @@ struct glCommandBuffer
     std::vector<command> Commands;
     b8 IsRecording=false;
 
+    indexType IndexType = indexType::Uint16;
+    u32 IndexBufferOffset=0;
     
 };
 

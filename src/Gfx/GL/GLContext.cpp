@@ -202,7 +202,7 @@ imageHandle context::CreateImage(const imageData &ImageData, const imageCreateIn
 }
 
 
-std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
+std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::shared_ptr<swapchain> OldSwapchain)
 {
     GET_CONTEXT(GLData, this);    
     

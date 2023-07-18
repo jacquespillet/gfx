@@ -705,5 +705,14 @@ GLenum FrontFaceToNative(frontFace Mode)
     return (Mode == frontFace::Clockwise) ? GL_CW : GL_CCW;
 }
 
+GLenum IndexTypeToNative(indexType Type)
+{
+    return Type == indexType::Uint16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
+}
+
+sz IndexTypeSize(indexType Type)
+{
+    return Type == indexType::Uint16 ? sizeof(uint16_t) : sizeof(uint32_t);
+}
 
 }

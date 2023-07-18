@@ -195,7 +195,7 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
                     .setUsage((vk::ImageUsageFlags)ImageUsage)
                     .setSharingMode(vk::SharingMode::eExclusive)
                     .setInitialLayout(vk::ImageLayout::eUndefined);
-
+        
     // if(Options & imageOptions::CUBEMAP)
     // {
     //     ImageCreateInfo.setFlags(vk::ImageCreateFlagBits::eCubeCompatible);
