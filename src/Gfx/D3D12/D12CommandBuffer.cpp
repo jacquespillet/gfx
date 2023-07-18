@@ -262,7 +262,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
 
     for(sz i=0; i< Group->Uniforms.size(); i++)
     {
-        if(Group->Uniforms[i].Type == uniformType::Buffer)
+        if(Group->Uniforms[i].Type == uniformType::UniformBuffer)
         {
             buffer* BufferData = (buffer*)(Group->Uniforms[i].Resource);
             std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(BufferData->ApiData);
@@ -272,6 +272,18 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
                 u32 RootParamIndex = D12Pipeline->BindingRootParamMapping[Group->Uniforms[i].Binding];
                 D3D12_GPU_VIRTUAL_ADDRESS VirtualAddress = D12BufferData->Handle->GetGPUVirtualAddress();
                 D12CommandBufferData->CommandList->SetGraphicsRootConstantBufferView(RootParamIndex, VirtualAddress);
+            }
+        }
+        if(Group->Uniforms[i].Type == uniformType::StorageBuffer)
+        {
+            buffer* BufferData = (buffer*)(Group->Uniforms[i].Resource);
+            std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(BufferData->ApiData);
+            
+            if(D12Pipeline->UsedRootParams[Group->Uniforms[i].Binding])
+            {
+                u32 RootParamIndex = D12Pipeline->BindingRootParamMapping[Group->Uniforms[i].Binding];
+                D3D12_GPU_VIRTUAL_ADDRESS VirtualAddress = D12BufferData->Handle->GetGPUVirtualAddress();
+                D12CommandBufferData->CommandList->SetGraphicsRootUnorderedAccessView(RootParamIndex, VirtualAddress);
             }
         }
         if(Group->Uniforms[i].Type == uniformType::Texture2d)

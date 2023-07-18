@@ -57,10 +57,13 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
     D12BufferData->ResourceState = InitialResourceState;
     D12BufferData->HeapType = HeapType;
 
+    D3D12_RESOURCE_DESC BufferDesc = CD3DX12_RESOURCE_DESC::Buffer(this->Size);
+    if(Usage == bufferUsage::StorageBuffer) BufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+
     ThrowIfFailed(D12Data->Device->CreateCommittedResource(
         &CD3DX12_HEAP_PROPERTIES(HeapType),
         D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(this->Size),
+        &BufferDesc,
         InitialResourceState,
         nullptr,
         IID_PPV_ARGS(&D12BufferData->Handle)));
@@ -81,6 +84,25 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
         D12Data->Device->CreateConstantBufferView(&cbvDesc, D12Data->GetCPUDescriptorAt(D12BufferData->OffsetInHeap));
 
         // Allocate descriptors by incrementing the handles
+        D12Data->CurrentHeapOffset++;   
+    }
+    if(Usage == bufferUsage::StorageBuffer)
+    {
+        D12BufferData->OffsetInHeap = D12Data->CurrentHeapOffset;
+
+        //TODO: This should be an argument
+        u32 Stride = 4 * 4;
+
+        D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc = {};
+        UAVDesc.Format = DXGI_FORMAT_UNKNOWN;
+        UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+        UAVDesc.Buffer.FirstElement = 0;
+        UAVDesc.Buffer.NumElements = ByteSize / Stride; // Number of elements in the buffer
+        UAVDesc.Buffer.StructureByteStride = Stride; // Size of each element in bytes
+        UAVDesc.Buffer.CounterOffsetInBytes = 0;
+        UAVDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+        D12Data->Device->CreateUnorderedAccessView(D12BufferData->Handle.Get(), nullptr, &UAVDesc, D12Data->GetCPUDescriptorAt(D12BufferData->OffsetInHeap));        
+        
         D12Data->CurrentHeapOffset++;   
     }
 

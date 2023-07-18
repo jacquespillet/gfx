@@ -139,35 +139,11 @@ struct application
 			.SetStreamIndex(0)
 			.AddAttribute({sizeof(float), 3, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 0})
 			.AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::COLOR, 0, 1});
-		
-		float InstancePositions[] = 
-		{
-			0.0f, 0.0f,
-			0.1f, 0.1f,
-			0.2f, 0.2f,
-			0.3f, 0.3f,
-			0.4f, 0.4f,
-			0.5f, 0.5f,
-			0.6f, 0.6f,
-			0.7f, 0.7f,
-			0.8f, 0.8f,
-			0.9f, 0.9f,
-		};
-
-		gfx::vertexStreamData VertexStream2 = {};
-		VertexStream2
-			.SetSize(sizeof(InstancePositions))
-			.SetStride(2 * sizeof(float))
-			.SetData(&InstancePositions)
-			.SetStreamIndex(1)
-			.SetInputRate(gfx::vertexInputRate::PerInstance)
-			.AddAttribute({sizeof(float), 2, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 1, 2});
-		
+			
 
 		gfx::vertexBufferCreateInfo VertexBufferCreateInfo = {};
 		VertexBufferCreateInfo.Init()
-							  .AddVertexStream(VertexStream1)
-							  .AddVertexStream(VertexStream2);
+							  .AddVertexStream(VertexStream1);
 		VertexBufferHandle = GfxContext->CreateVertexBuffer(VertexBufferCreateInfo);
 		
 
@@ -205,9 +181,10 @@ struct application
 				i++;
 			}
 		}
-		StorageBufferHandle = GfxContext->CreateBuffer(InstanceCount * sizeof(glm::vec4), gfx::bufferUsage::StorageBuffer, gfx::memoryUsage::CpuToGpu);
+		StorageBufferHandle = GfxContext->CreateBuffer(InstanceCount * sizeof(glm::vec4), gfx::bufferUsage::StorageBuffer, gfx::memoryUsage::GpuOnly);
 		gfx::buffer *StorageBuffer = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(StorageBufferHandle);
-		StorageBuffer->CopyData((uint8_t*)InstancePositionsVec.data(), InstanceCount * sizeof(glm::vec4), 0);
+		// StorageBuffer->CopyData((uint8_t*)InstancePositionsVec.data(), InstanceCount * sizeof(glm::vec4), 0);
+		GfxContext->CopyDataToBuffer(StorageBufferHandle, InstancePositionsVec.data(), InstanceCount * sizeof(glm::vec4), 0);
 
 		//That's the content of a descriptor set  
 		Uniforms = std::make_shared<gfx::uniformGroup>();

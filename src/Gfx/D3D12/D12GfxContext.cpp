@@ -604,12 +604,22 @@ ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_
         if (shaderInputBindDesc.Type == D3D_SIT_CBUFFER)
         {
             BindingRootParamMapping[shaderInputBindDesc.BindPoint] = static_cast<uint32_t>(OutRootParams.size());
-            ID3D12ShaderReflectionConstantBuffer* shaderReflectionConstantBuffer = shaderReflection->GetConstantBufferByIndex(i);
-            D3D12_SHADER_BUFFER_DESC constantBufferDesc{};
-            shaderReflectionConstantBuffer->GetDesc(&constantBufferDesc);
 
             D3D12_ROOT_PARAMETER rootParameter = {};
             rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+            rootParameter.Descriptor = {};
+            rootParameter.Descriptor.ShaderRegister = shaderInputBindDesc.BindPoint,
+            rootParameter.Descriptor.RegisterSpace = shaderInputBindDesc.Space,
+            // rootParameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE,
+            
+            OutRootParams.push_back(rootParameter);
+        }
+        if (shaderInputBindDesc.Type == D3D_SIT_UAV_RWSTRUCTURED)
+        {
+            BindingRootParamMapping[shaderInputBindDesc.BindPoint] = static_cast<uint32_t>(OutRootParams.size());
+
+            D3D12_ROOT_PARAMETER rootParameter = {};
+            rootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_UAV;
             rootParameter.Descriptor = {};
             rootParameter.Descriptor.ShaderRegister = shaderInputBindDesc.BindPoint,
             rootParameter.Descriptor.RegisterSpace = shaderInputBindDesc.Space,

@@ -436,7 +436,7 @@ struct bufferUsage
         UniformTexelBuffer = D3D12_RESOURCE_STATE_COMMON,
         StorageTexelBuffer = D3D12_RESOURCE_STATE_COMMON,
         UniformBuffer = D3D12_RESOURCE_STATE_COMMON,
-        StorageBuffer = D3D12_RESOURCE_STATE_COMMON,
+        StorageBuffer = D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
         IndexBuffer = D3D12_RESOURCE_STATE_INDEX_BUFFER,
         VertexBuffer = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
         IndirectBuffer = D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
