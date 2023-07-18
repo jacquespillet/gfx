@@ -6,7 +6,13 @@ CUSTOM_DEFINES
 #if GRAPHICS_API==VK
 #define DECLARE_UNIFORM_BUFFER(Set, Binding, Name) layout (set = Set, binding = Binding) uniform Name
 #elif GRAPHICS_API==GL
-#define DECLARE_UNIFORM_BUFFER(Set, Binding, Name) layout (std430, binding = Binding) buffer Name 
+#define DECLARE_UNIFORM_BUFFER(Set, Binding, Name) layout (std140, binding = Binding) uniform Name 
+#endif
+
+#if GRAPHICS_API==VK
+#define DECLARE_STORAGE_BUFFER(Set, Binding, Name) layout (set = Set, binding = Binding) buffer Name
+#elif GRAPHICS_API==GL
+#define DECLARE_STORAGE_BUFFER(Set, Binding, Name) layout (std430, binding = Binding) buffer Name 
 #endif
 
 #if GRAPHICS_API==VK

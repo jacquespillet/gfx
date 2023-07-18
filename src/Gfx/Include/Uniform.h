@@ -8,7 +8,8 @@ namespace gfx
 
 enum uniformType
 {
-    Buffer,
+    UniformBuffer,
+    StorageBuffer,
     Texture2d,
     Float,
     Int,

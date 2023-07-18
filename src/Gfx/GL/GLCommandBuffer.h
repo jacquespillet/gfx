@@ -69,6 +69,12 @@ struct command
             GLuint Buffer;
         } BindUniformBuffer;
                 
+        struct bindStorageBufferState
+        {
+            u32 Binding;
+            GLuint Buffer;
+        } BindStorageBuffer;
+                
         struct bindImageState
         {
             u32 Binding;

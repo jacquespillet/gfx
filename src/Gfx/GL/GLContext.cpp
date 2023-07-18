@@ -322,12 +322,10 @@ void context::EndFrame()
 void context::Present()
 {
     this->Window->Present();
+    GET_CONTEXT(GLData, this);
+    GLData->CheckErrors();
 }
 
-// void context::SubmitCommandBufferImmediate(commandBuffer *CommandBuffer)
-// {
-    
-// }
 
 pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 {

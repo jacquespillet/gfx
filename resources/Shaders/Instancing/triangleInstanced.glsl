@@ -7,6 +7,12 @@ struct PSInput
 };
 
 
+DECLARE_STORAGE_BUFFER(0, 2, StorageBuffer)
+{
+    vec4 InstancePositions[];
+};
+
+
 /////////////////////////////////
 //////////VERTEX/////////////////
 /////////////////////////////////
@@ -20,7 +26,8 @@ layout (location = 0) out PSInput Output;
 
 void main() 
 {
-    gl_Position = vec4(position + vec3(instancePosition, 0), 1.0);
+    vec3 pos = position * 0.1f;
+    gl_Position = vec4(pos +  InstancePositions[gl_InstanceID].xyz,1.0);
     Output.FragColor = color;
 }
 #endif
@@ -35,15 +42,17 @@ layout (location = 0) in PSInput Input;
 
 layout(location = 0) out vec4 outputColor; 
 
-struct uniformData
+
+DECLARE_UNIFORM_BUFFER(0, 0, UniformData)
 {
     vec4 _Color0;
     vec4 _Color1;
 };
 
-DECLARE_UNIFORM_BUFFER(0, 0, UniformData)
+DECLARE_UNIFORM_BUFFER(0, 3, UniformData2)
 {
-    uniformData Data;
+    vec4 _Color2;
+    vec4 _Color3;
 };
 
 DECLARE_UNIFORM_TEXTURE(0, 4, Texture);
@@ -51,7 +60,7 @@ DECLARE_UNIFORM_TEXTURE(0, 4, Texture);
 
 void main() 
 {
-    outputColor = Input.FragColor + Data._Color0 + texture(Texture, Input.FragColor.xy);
+    outputColor = Input.FragColor + _Color0 + _Color2 + texture(Texture, Input.FragColor.xy);
 }
 #endif
 

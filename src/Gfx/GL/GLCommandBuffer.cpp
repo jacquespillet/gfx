@@ -51,7 +51,13 @@ void ExecuteBeginPass(const command &Command)
     glClear(GL_STENCIL_BUFFER_BIT);
     glClearStencil(Command.BeginPass.ClearStencil);
 }
+
 void ExecuteBindUniformBuffer(const command &Command)
+{
+    glBindBufferBase(GL_UNIFORM_BUFFER, Command.BindUniformBuffer.Binding, Command.BindUniformBuffer.Buffer);
+}
+
+void ExecuteBindStorageBuffer(const command &Command)
 {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, Command.BindUniformBuffer.Binding, Command.BindUniformBuffer.Buffer);
 }
@@ -304,7 +310,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
     
     for(sz i=0; i< Group->Uniforms.size(); i++)
     {
-        if(Group->Uniforms[i].Type == uniformType::Buffer)
+        if(Group->Uniforms[i].Type == uniformType::UniformBuffer)
         {
             buffer* BufferData = (buffer*)(Group->Uniforms[i].Resource);
             std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(BufferData->ApiData);
@@ -314,6 +320,18 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             Command.BindUniformBuffer.Binding = Group->Uniforms[i].Binding;
             Command.BindUniformBuffer.Buffer = GLBuffer->Handle;
             Command.CommandFunction = (commandFunction)&ExecuteBindUniformBuffer;
+            GLCommandBuffer->Commands.push_back(Command);
+        }
+        if(Group->Uniforms[i].Type == uniformType::StorageBuffer)
+        {
+            buffer* BufferData = (buffer*)(Group->Uniforms[i].Resource);
+            std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(BufferData->ApiData);
+
+            command Command;
+            Command.Type = commandType::DrawTriangles;
+            Command.BindStorageBuffer.Binding = Group->Uniforms[i].Binding;
+            Command.BindStorageBuffer.Buffer = GLBuffer->Handle;
+            Command.CommandFunction = (commandFunction)&ExecuteBindStorageBuffer;
             GLCommandBuffer->Commands.push_back(Command);
         }
         if(Group->Uniforms[i].Type == uniformType::Texture2d)
