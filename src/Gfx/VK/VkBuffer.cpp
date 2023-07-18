@@ -154,48 +154,6 @@ void stageBuffer::Destroy()
     context::Get()->ResourceManager.Buffers.ReleaseResource(BufferHandle);
 }
 
-bufferHandle CreateVertexBuffer(f32 *Values, sz Count, sz Stride, const std::vector<vertexInputAttribute> &Attributes)
-{
-    context *Context = context::Get();
-
-    bufferHandle Handle = Context->ResourceManager.Buffers.ObtainResource();
-    if(Handle == InvalidHandle)
-    {
-        return Handle;
-    }
-
-    buffer *Buffer = (buffer*)Context->ResourceManager.Buffers.GetResource(Handle);
-    
-    Buffer->Name = "";
-    Buffer->ApiData = std::make_shared<vkBufferData>();
-    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
-    *VkBufferData = vkBufferData();
-
-    auto VulkanContext = context::Get();
-    
-    auto StageBuffer = VulkanContext->GetStageBuffer();
-    auto CommandBuffer = VulkanContext->GetImmediateCommandBuffer();
-
-    CommandBuffer->Begin();
-
-    auto VertexAllocation = StageBuffer->Submit((uint8_t*)Values, (u32)Count * sizeof(f32));
-
-    Buffer->Init(VertexAllocation.Size, gfx::bufferUsage::VertexBuffer, gfx::memoryUsage::GpuOnly);
-  
-    CommandBuffer->CopyBuffer(
-        gfx::bufferInfo {StageBuffer->GetBuffer(), VertexAllocation.Offset},
-        gfx::bufferInfo {Buffer, 0},
-        VertexAllocation.Size
-    );
-    
-    StageBuffer->Flush();
-    CommandBuffer->End();
-
-    VulkanContext->SubmitCommandBufferImmediate(CommandBuffer);
-    StageBuffer->Reset();     
-
-    return Handle;
-}
 
 
 vertexStreamData &vertexStreamData::Reset()
@@ -242,40 +200,25 @@ vertexStreamData &vertexStreamData::AddAttribute(vertexInputAttribute Attribute)
     return *this;
 }
 
-vertexBuffer &vertexBuffer::Init()
+vertexBufferCreateInfo &vertexBufferCreateInfo::Init()
 {
     Reset();
     return *this;
 }
 
-vertexBuffer &vertexBuffer::Reset()
+vertexBufferCreateInfo &vertexBufferCreateInfo::Reset()
 {
     NumVertexStreams=0;
     for (sz i = 0; i < commonConstants::MaxVertexStreams; i++)
     {
         this->VertexStreams[i].StreamIndex = (u32)-1;
     }
-    ApiData = nullptr;
     return *this;
 }
 
-vertexBuffer &vertexBuffer::AddVertexStream(vertexStreamData StreamData)
+vertexBufferCreateInfo &vertexBufferCreateInfo::AddVertexStream(vertexStreamData StreamData)
 {
     this->VertexStreams[NumVertexStreams++] = StreamData;   
-    return *this;
-}
-
-vertexBuffer &vertexBuffer::Create()
-{
-    GET_CONTEXT(VkData, context::Get());
-    for(sz i=0; i<NumVertexStreams; i++)
-    {
-        std::vector<vertexInputAttribute> Attributes(VertexStreams[i].AttributesCount);
-        memcpy(&Attributes[0], &VertexStreams[i].InputAttributes, VertexStreams[i].AttributesCount * sizeof(vertexInputAttribute));
-
-        VertexStreams[i].Buffer = CreateVertexBuffer((f32*)VertexStreams[i].Data, VertexStreams[i].Size, VertexStreams[i].Stride, Attributes);
-    }
-    
     return *this;
 }
 

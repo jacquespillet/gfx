@@ -70,7 +70,6 @@ bool GetSupportedDepthFormat(vk::PhysicalDevice PhysicalDevice, format *DepthFor
     return false;
 }
 
-//TODO: Pass a bool for multisampling in here
 void CreateSwapchainFramebuffer(std::shared_ptr<image> *ColorImages, std::shared_ptr<image> DepthStencilImage, renderPassHandle RenderPassHandle, sz ImagesCount, vkSwapchainData *VkSwapchainData)
 {
     auto Context = context::Get();
@@ -212,6 +211,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     DepthStencil->Init(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
 
     //Multisampling : Create the color and depth images
+    //TODO: Clean that : the images should go in the swapchain data
     if(VkData->MultisamplingEnabled)
     {
         VkData->MultiSampledColorImage = std::make_shared<image>();
@@ -594,13 +594,69 @@ void context::OnResize(u32 NewWidth, u32 NewHeight)
 }
 
 
-vertexBufferHandle context::CreateEmptyVertexBuffer()
+bufferHandle CreateVertexBufferStream(f32 *Values, sz Count, sz Stride, const std::vector<vertexInputAttribute> &Attributes)
 {
-    vertexBufferHandle Handle = context::Get()->ResourceManager.VertexBuffers.ObtainResource();
+    context *Context = context::Get();
+
+    bufferHandle Handle = Context->ResourceManager.Buffers.ObtainResource();
+    if(Handle == InvalidHandle)
+    {
+        return Handle;
+    }
+
+    buffer *Buffer = (buffer*)Context->ResourceManager.Buffers.GetResource(Handle);
+    
+    Buffer->Name = "";
+    Buffer->ApiData = std::make_shared<vkBufferData>();
+    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
+    *VkBufferData = vkBufferData();
+
+    auto VulkanContext = context::Get();
+    
+    auto StageBuffer = VulkanContext->GetStageBuffer();
+    auto CommandBuffer = VulkanContext->GetImmediateCommandBuffer();
+
+    CommandBuffer->Begin();
+
+    auto VertexAllocation = StageBuffer->Submit((uint8_t*)Values, (u32)Count * sizeof(f32));
+
+    Buffer->Init(VertexAllocation.Size, gfx::bufferUsage::VertexBuffer, gfx::memoryUsage::GpuOnly);
+  
+    CommandBuffer->CopyBuffer(
+        gfx::bufferInfo {StageBuffer->GetBuffer(), VertexAllocation.Offset},
+        gfx::bufferInfo {Buffer, 0},
+        VertexAllocation.Size
+    );
+    
+    StageBuffer->Flush();
+    CommandBuffer->End();
+
+    VulkanContext->SubmitCommandBufferImmediate(CommandBuffer);
+    StageBuffer->Reset();     
+
+    return Handle;
+}
+
+vertexBufferHandle context::CreateVertexBuffer(const vertexBufferCreateInfo &CreateInfo)
+{
+    GET_CONTEXT(VkData, context::Get());
+    
+    vertexBufferHandle Handle = this->ResourceManager.VertexBuffers.ObtainResource();
     if(Handle == InvalidHandle)
     {
         assert(false);
         return Handle;
+    }
+    vertexBuffer *VertexBuffer = (vertexBuffer*) this->ResourceManager.VertexBuffers.GetResource(Handle);
+    VertexBuffer->NumVertexStreams = CreateInfo.NumVertexStreams;
+    memcpy(&VertexBuffer->VertexStreams[0], &CreateInfo.VertexStreams[0], commonConstants::MaxVertexStreams * sizeof(vertexStreamData));
+    
+    for(sz i=0; i<VertexBuffer->NumVertexStreams; i++)
+    {
+        std::vector<vertexInputAttribute> Attributes(VertexBuffer->VertexStreams[i].AttributesCount);
+        memcpy(&Attributes[0], &CreateInfo.VertexStreams[i].InputAttributes, VertexBuffer->VertexStreams[i].AttributesCount * sizeof(vertexInputAttribute));
+
+        VertexBuffer->VertexStreams[i].Buffer = CreateVertexBufferStream((f32*)VertexBuffer->VertexStreams[i].Data, VertexBuffer->VertexStreams[i].Size, VertexBuffer->VertexStreams[i].Stride, Attributes);
     }
     
     return Handle;

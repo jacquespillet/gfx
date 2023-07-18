@@ -153,13 +153,11 @@ struct application
 			.SetStreamIndex(1)
 			.AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, true, gfx::attributeSemantic::COLOR, 1, 1});
 		
-		//TODO: This is not ideal....
-		VertexBufferHandle = GfxContext->CreateEmptyVertexBuffer();
-		gfx::vertexBuffer *VertexBuffer = (gfx::vertexBuffer*) GfxContext->ResourceManager.VertexBuffers.GetResource(VertexBufferHandle);
-		VertexBuffer->Init()
-					.AddVertexStream(VertexStream1)
-					.AddVertexStream(VertexStream2)
-					.Create();  
+		gfx::vertexBufferCreateInfo VertexBufferCreateInfo = {};
+		VertexBufferCreateInfo.Init()
+							  .AddVertexStream(VertexStream1)
+							  .AddVertexStream(VertexStream2);
+		VertexBufferHandle = GfxContext->CreateVertexBuffer(VertexBufferCreateInfo);
 
 
 		

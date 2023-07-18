@@ -272,7 +272,6 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
         &swapChain
         ));
 
-    // This sample does not support fullscreen transitions.
     ThrowIfFailed(D12Data->Factory->MakeWindowAssociation(Window->GetNativeWindow(), DXGI_MWA_NO_ALT_ENTER));
     ThrowIfFailed(swapChain.As(&D12SwapchainData->SwapChain));
     D12SwapchainData->SetFrameIndex(D12SwapchainData->SwapChain->GetCurrentBackBufferIndex());
@@ -283,6 +282,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
         ThrowIfFailed(D12SwapchainData->SwapChain->GetBuffer(n, IID_PPV_ARGS(&D12SwapchainData->Buffers[n])));
     }
 
+    //TODO: Clean that up : The buffers must be in the swapchain data 
     if (D12Data->MultisamplingEnabled)
     {
 
@@ -351,15 +351,70 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height)
     return Swapchain;
 }
 
-vertexBufferHandle context::CreateEmptyVertexBuffer()
+bufferHandle CreateVertexBufferStream(f32 *Values, sz ByteSize, sz Stride, const std::vector<vertexInputAttribute> &Attributes)
 {
-    vertexBufferHandle Handle = context::Get()->ResourceManager.VertexBuffers.ObtainResource();
+    context *Context = context::Get();
+    GET_CONTEXT(D12Data, Context);
+    bufferHandle Handle = Context->ResourceManager.Buffers.ObtainResource();
+    if(Handle == InvalidHandle)
+    {
+        return Handle;
+    }
+
+    //Create vertex buffer
+    buffer *Buffer = (buffer*)Context->ResourceManager.Buffers.GetResource(Handle);
+    Buffer->Init(ByteSize, bufferUsage::VertexBuffer, memoryUsage::GpuOnly);
+    Buffer->Name = "";
+    std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);    
+
+    //Copy data to stage buffer
+    D12Data->ImmediateCommandBuffer->Begin();
+    auto VertexAllocation = D12Data->StageBuffer.Submit((uint8_t*)Values, (u32)ByteSize);
+    
+    //Copy stage buffer to vertex buffer
+    D12Data->ImmediateCommandBuffer->CopyBuffer(
+        bufferInfo {D12Data->StageBuffer.GetBuffer(), VertexAllocation.Offset},
+        bufferInfo {Buffer, 0},
+        VertexAllocation.Size
+    );
+    
+    //Submit command buffer
+    D12Data->StageBuffer.Flush();
+    D12Data->ImmediateCommandBuffer->End();
+    Context->SubmitCommandBufferImmediate(D12Data->ImmediateCommandBuffer.get());
+    D12Data->StageBuffer.Reset(); 
+
+    // Initialize the vertex buffer view.
+    D12BufferData->VertexBufferView.BufferLocation = D12BufferData->Handle->GetGPUVirtualAddress();
+    D12BufferData->VertexBufferView.StrideInBytes = (u32)Stride;
+    D12BufferData->VertexBufferView.SizeInBytes = (u32)ByteSize;   
+    
+    return Handle;
+}
+
+
+vertexBufferHandle context::CreateVertexBuffer(const vertexBufferCreateInfo &CreateInfo)
+{
+    GET_CONTEXT(VkData, context::Get());
+    
+    vertexBufferHandle Handle = this->ResourceManager.VertexBuffers.ObtainResource();
     if(Handle == InvalidHandle)
     {
         assert(false);
         return Handle;
     }
+    vertexBuffer *VertexBuffer = (vertexBuffer*) this->ResourceManager.VertexBuffers.GetResource(Handle);
+    VertexBuffer->NumVertexStreams = CreateInfo.NumVertexStreams;
+    memcpy(&VertexBuffer->VertexStreams[0], &CreateInfo.VertexStreams[0], commonConstants::MaxVertexStreams * sizeof(vertexStreamData));
     
+    for(sz i=0; i<VertexBuffer->NumVertexStreams; i++)
+    {
+        std::vector<vertexInputAttribute> Attributes(VertexBuffer->VertexStreams[i].AttributesCount);
+        memcpy(&Attributes[0], &CreateInfo.VertexStreams[i].InputAttributes, VertexBuffer->VertexStreams[i].AttributesCount * sizeof(vertexInputAttribute));
+
+        VertexBuffer->VertexStreams[i].Buffer = CreateVertexBufferStream((f32*)VertexBuffer->VertexStreams[i].Data, VertexBuffer->VertexStreams[i].Size, VertexBuffer->VertexStreams[i].Stride, Attributes);
+    }
+
     return Handle;
 }
 
@@ -776,6 +831,7 @@ void context::OnResize(u32 NewWidth, u32 NewHeight)
 {
     //TODO:
     //Does it just work ? idk
+    //No it doesn't : it doesn't resize the back buffers, so they get interpolated instead.
 }
 
 void context::Present()
@@ -875,6 +931,8 @@ void context::Cleanup()
     D12Data->StageBuffer.Destroy();
     
     ResourceManager.Destroy();
+
+    D12Data->Device->Release();
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE d3d12Data::GetCPUDescriptorAt(sz Index)

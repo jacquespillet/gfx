@@ -10,8 +10,6 @@
 #include "Gfx/Api.h"  
 #include "App/App.h"
 
-#define MULTISTREAM 0
-
 
 void WindowErrorCallback(const std::string &errorMessage)
 {
@@ -134,43 +132,7 @@ struct application
 		gfx::image *Texture1 = (gfx::image*) GfxContext->ResourceManager.Images.GetResource(TextureHandle1);
 		gfx::image *Texture2 = (gfx::image*) GfxContext->ResourceManager.Images.GetResource(TextureHandle2);
 
-#if MULTISTREAM
-		float vertices[] =
-		{
-			0.0f, 0.25f, 0.0f,
-			0.25f, -0.25f, 0.0f,
-			-0.25f, -0.25f, 0.0f
-		};
-		float Colors[] =
-		{
-			1.0f, 0.0f, 0.0f, 1.0f,
-			0.0f, 1.0f, 0.0f, 1.0f,
-			0.0f, 0.0f, 1.0f, 1.0f
-		};
 
-		gfx::vertexStreamData VertexStream1 = {};
-		VertexStream1
-			.SetSize(sizeof(vertices))
-			.SetStride(3 * sizeof(float))
-			.SetData(&vertices)
-			.SetStreamIndex(0)
-			.AddAttribute({sizeof(float), 3, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 0});
-		gfx::vertexStreamData VertexStream2 = {};
-		VertexStream2
-			.SetSize(sizeof(Colors))
-			.SetStride(4 * sizeof(float))
-			.SetData(&Colors)
-			.SetStreamIndex(1)
-			.AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, true, gfx::attributeSemantic::COLOR, 1, 1});
-		
-		//TODO: This is not ideal....
-		VertexBufferHandle = GfxContext->CreateEmptyVertexBuffer();
-		gfx::vertexBuffer *VertexBuffer = (gfx::vertexBuffer*) GfxContext->ResourceManager.VertexBuffers.GetResource(VertexBufferHandle);
-		VertexBuffer->Init()
-					.AddVertexStream(VertexStream1)
-					.AddVertexStream(VertexStream2)
-					.Create();  
-#else
 		float vertices[] =
 		{
 			0.0f, 0.25f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
@@ -187,15 +149,10 @@ struct application
 			.AddAttribute({sizeof(float), 3, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 0})
 			.AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::COLOR, 0, 1});
 		
-		//TODO: This is not ideal....
-		VertexBufferHandle = GfxContext->CreateEmptyVertexBuffer();
-		gfx::vertexBuffer *VertexBuffer = (gfx::vertexBuffer*) GfxContext->ResourceManager.VertexBuffers.GetResource(VertexBufferHandle);
-		VertexBuffer->Init()
-					.AddVertexStream(VertexStream1)
-					.Create();
-#endif
-
-		
+		gfx::vertexBufferCreateInfo VertexBufferCreateInfo = {};
+		VertexBufferCreateInfo.Init()
+							  .AddVertexStream(VertexStream1);
+		VertexBufferHandle = GfxContext->CreateVertexBuffer(VertexBufferCreateInfo);
 
 		gfx::framebufferCreateInfo FramebufferCreateInfo = 
 		{
@@ -206,14 +163,8 @@ struct application
 		OffscreenPass = GfxContext->CreateFramebuffer(FramebufferCreateInfo);
 		SwapchainPass = GfxContext->GetDefaultRenderPass();
 		
-#if MULTISTREAM
-		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle_MultiStream.json", OffscreenPass);
-		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle_MultiStream.json");
-#else
 		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json", OffscreenPass);
 		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle.json");
-#endif
-
 
 		UniformBufferHandle1 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
 		gfx::buffer *UniformBuffer1 = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle1);

@@ -54,6 +54,7 @@ void d3d12FramebufferData::BuildDescriptors()
 
     if (IsSwapchain && IsMultiSampled )
     {
+        //TODO: Store the index more properly here...
         D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
         rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;  // Use multisample view
         D12Data->Device->CreateRenderTargetView(D12Data->MultisampledColorImage.Get(), &rtvDesc, rtvHandle);

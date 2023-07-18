@@ -152,12 +152,10 @@ struct application
 			.AddAttribute({sizeof(float), 3, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 0})
 			.AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::COLOR, 0, 1});
 		
-		//TODO: This is not ideal....
-		VertexBufferHandle = GfxContext->CreateEmptyVertexBuffer();
-		gfx::vertexBuffer *VertexBuffer = (gfx::vertexBuffer*) GfxContext->ResourceManager.VertexBuffers.GetResource(VertexBufferHandle);
-		VertexBuffer->Init()
-					.AddVertexStream(VertexStream1)
-					.Create();
+		gfx::vertexBufferCreateInfo VertexBufferCreateInfo = {};
+		VertexBufferCreateInfo.Init()
+							  .AddVertexStream(VertexStream1);
+		VertexBufferHandle = GfxContext->CreateVertexBuffer(VertexBufferCreateInfo);
 
 		gfx::framebufferCreateInfo FramebufferCreateInfo = 
 		{

@@ -65,17 +65,22 @@ struct vertexStreamData
     vertexStreamData &AddAttribute(vertexInputAttribute Attribute);
 };
 
+struct vertexBufferCreateInfo
+{
+    vertexStreamData VertexStreams[commonConstants::MaxVertexStreams];
+    u32 NumVertexStreams=0;
+
+    vertexBufferCreateInfo &Init();
+    vertexBufferCreateInfo &Reset();
+    vertexBufferCreateInfo &AddVertexStream(vertexStreamData StreamData);
+};
+
 struct vertexBuffer
 {
     vertexStreamData VertexStreams[commonConstants::MaxVertexStreams];
     u32 NumVertexStreams=0;
 
     std::shared_ptr<void> ApiData = nullptr;
-
-    vertexBuffer &Init();
-    vertexBuffer &Reset();
-    vertexBuffer &AddVertexStream(vertexStreamData StreamData);
-    vertexBuffer &Create();
 };
 
 }

@@ -173,13 +173,12 @@ struct application
 			.SetInputRate(gfx::vertexInputRate::PerInstance)
 			.AddAttribute({sizeof(float), 2, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 1, 2});
 		
-		//TODO: This is not ideal....
-		VertexBufferHandle = GfxContext->CreateEmptyVertexBuffer();
-		gfx::vertexBuffer *VertexBuffer = (gfx::vertexBuffer*) GfxContext->ResourceManager.VertexBuffers.GetResource(VertexBufferHandle);
-		VertexBuffer->Init()
-					.AddVertexStream(VertexStream1)
-					.AddVertexStream(VertexStream2)
-					.Create();
+
+		gfx::vertexBufferCreateInfo VertexBufferCreateInfo = {};
+		VertexBufferCreateInfo.Init()
+							  .AddVertexStream(VertexStream1)
+							  .AddVertexStream(VertexStream2);
+		VertexBufferHandle = GfxContext->CreateVertexBuffer(VertexBufferCreateInfo);
 		
 
 		gfx::framebufferCreateInfo FramebufferCreateInfo = 
