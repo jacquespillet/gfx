@@ -192,6 +192,26 @@ void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
     D12CommandBufferData->CommandList->SetPipelineState(D12PipelineData->PipelineState.Get());
 }
 
+void commandBuffer::BindComputePipeline(pipelineHandle PipelineHandle)
+{
+    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
+    
+    pipeline *Pipeline = (pipeline*)context::Get()->ResourceManager.Pipelines.GetResource(PipelineHandle);
+    std::shared_ptr<d3d12PipelineData> D12PipelineData = std::static_pointer_cast<d3d12PipelineData>(Pipeline->ApiData);
+
+    D12CommandBufferData->CurrentPipeline = Pipeline;
+    // Set necessary state.
+    D12CommandBufferData->CommandList->SetComputeRootSignature(D12PipelineData->RootSignature.Get());
+    D12CommandBufferData->CommandList->SetPipelineState(D12PipelineData->PipelineState.Get());    
+}
+
+
+void commandBuffer::Dispatch(u32 NumGroupX, u32 NumGroupY, u32 NumGroupZ)
+{
+    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
+    D12CommandBufferData->CommandList->Dispatch(NumGroupX, NumGroupY, NumGroupZ);
+}
+
 void commandBuffer::BindIndexBuffer(bufferHandle BufferHandle, u32 Offset, indexType IndexType)
 {
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
@@ -258,6 +278,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
     std::shared_ptr<d3d12PipelineData> D12Pipeline = std::static_pointer_cast<d3d12PipelineData>(D12CommandBufferData->CurrentPipeline->ApiData);
     
+
     GET_CONTEXT(D12Data, context::Get());
 
     for(sz i=0; i< Group->Uniforms.size(); i++)
@@ -271,7 +292,11 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             {
                 u32 RootParamIndex = D12Pipeline->BindingRootParamMapping[Group->Uniforms[i].Binding];
                 D3D12_GPU_VIRTUAL_ADDRESS VirtualAddress = D12BufferData->Handle->GetGPUVirtualAddress();
-                D12CommandBufferData->CommandList->SetGraphicsRootConstantBufferView(RootParamIndex, VirtualAddress);
+
+                if(D12Pipeline->IsCompute)
+                    D12CommandBufferData->CommandList->SetComputeRootConstantBufferView(RootParamIndex, VirtualAddress);
+                else
+                    D12CommandBufferData->CommandList->SetGraphicsRootConstantBufferView(RootParamIndex, VirtualAddress);
             }
         }
         if(Group->Uniforms[i].Type == uniformType::StorageBuffer)
@@ -283,7 +308,11 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             {
                 u32 RootParamIndex = D12Pipeline->BindingRootParamMapping[Group->Uniforms[i].Binding];
                 D3D12_GPU_VIRTUAL_ADDRESS VirtualAddress = D12BufferData->Handle->GetGPUVirtualAddress();
-                D12CommandBufferData->CommandList->SetGraphicsRootUnorderedAccessView(RootParamIndex, VirtualAddress);
+
+                if(D12Pipeline->IsCompute)
+                    D12CommandBufferData->CommandList->SetComputeRootUnorderedAccessView(RootParamIndex, VirtualAddress);
+                else
+                    D12CommandBufferData->CommandList->SetGraphicsRootUnorderedAccessView(RootParamIndex, VirtualAddress);
             }
         }
         if(Group->Uniforms[i].Type == uniformType::Texture2d)
@@ -294,7 +323,10 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             if(D12Pipeline->UsedRootParams[Group->Uniforms[i].Binding])
             {
                 u32 RootParamIndex = D12Pipeline->BindingRootParamMapping[Group->Uniforms[i].Binding];
-                D12CommandBufferData->CommandList->SetGraphicsRootDescriptorTable(RootParamIndex, D12Data->GetGPUDescriptorAt(D12ImageData->OffsetInHeap));
+                if(D12Pipeline->IsCompute)
+                    D12CommandBufferData->CommandList->SetComputeRootDescriptorTable(RootParamIndex, D12Data->GetGPUDescriptorAt(D12ImageData->OffsetInHeap));
+                else
+                    D12CommandBufferData->CommandList->SetGraphicsRootDescriptorTable(RootParamIndex, D12Data->GetGPUDescriptorAt(D12ImageData->OffsetInHeap));
             }
         }
     }

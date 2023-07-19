@@ -16,11 +16,14 @@ struct d3d12PipelineData
 
     ComPtr<IDxcBlob> vertexShader;
     ComPtr<IDxcBlob> pixelShader;
+    ComPtr<IDxcBlob> computeShader;
     
     std::vector<D3D12_ROOT_PARAMETER> RootParams;
     b8 UsedRootParams[d12Constants::MaxResourceBindings]; 
     
     std::unordered_map<u32, u32> BindingRootParamMapping;
+
+    b8 IsCompute=false;
 };
 
 }

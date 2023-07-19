@@ -514,6 +514,7 @@ ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_
 
     std::vector<LPCWSTR> CompileArgs =
     {
+        //TODO: COlumn major and remove from macros.hlsl
         DXC_ARG_PACK_MATRIX_ROW_MAJOR,
         // DXC_ARG_WARNINGS_ARE_ERRORS,
         DXC_ARG_ALL_RESOURCES_BOUND
@@ -532,6 +533,13 @@ ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_
         CompileArgs.push_back(L"PSMain");
         CompileArgs.push_back(L"-T");
         CompileArgs.push_back(L"ps_6_0");
+    }
+    else if(Stage.Stage ==  shaderStageFlags::Compute)
+    {
+        CompileArgs.push_back(L"-E");
+        CompileArgs.push_back(L"CSMain");
+        CompileArgs.push_back(L"-T");
+        CompileArgs.push_back(L"cs_6_0");
     }
 
     
@@ -600,7 +608,7 @@ ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_
     {
         D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{};
         ThrowIfFailed(shaderReflection->GetResourceBindingDesc(i, &shaderInputBindDesc));
-
+        //TODO: Else if
         if (shaderInputBindDesc.Type == D3D_SIT_CBUFFER)
         {
             BindingRootParamMapping[shaderInputBindDesc.BindPoint] = static_cast<uint32_t>(OutRootParams.size());
@@ -671,8 +679,15 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         std::vector<CD3DX12_DESCRIPTOR_RANGE> DescriptorRanges;
         D12PipelineData->RootParams.clear();
         D12PipelineData->BindingRootParamMapping.clear();
-        D12PipelineData->vertexShader = CompileShader(PipelineCreation.Shaders.Stages[0], D12PipelineData->RootParams, D12PipelineData->BindingRootParamMapping, DescriptorRanges);
-        D12PipelineData->pixelShader = CompileShader(PipelineCreation.Shaders.Stages[1], D12PipelineData->RootParams, D12PipelineData->BindingRootParamMapping, DescriptorRanges);
+        for(u32 i=0; i<PipelineCreation.Shaders.StagesCount; i++)
+        {
+            if(PipelineCreation.Shaders.Stages[i].Stage == shaderStageFlags::Vertex)
+                D12PipelineData->vertexShader = CompileShader(PipelineCreation.Shaders.Stages[i], D12PipelineData->RootParams, D12PipelineData->BindingRootParamMapping, DescriptorRanges);
+            if(PipelineCreation.Shaders.Stages[i].Stage == shaderStageFlags::Fragment)
+                D12PipelineData->pixelShader = CompileShader(PipelineCreation.Shaders.Stages[i], D12PipelineData->RootParams, D12PipelineData->BindingRootParamMapping, DescriptorRanges);
+            if(PipelineCreation.Shaders.Stages[i].Stage == shaderStageFlags::Compute)
+                D12PipelineData->computeShader = CompileShader(PipelineCreation.Shaders.Stages[i], D12PipelineData->RootParams, D12PipelineData->BindingRootParamMapping, DescriptorRanges);
+        }
 
         memset(&D12PipelineData->UsedRootParams[0], 0, d12Constants::MaxResourceBindings * sizeof(b8));
         for(sz i=0; i<D12PipelineData->RootParams.size(); i++)
@@ -721,84 +736,101 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     }
 
     {   
-        //Input 
-        std::vector<D3D12_INPUT_ELEMENT_DESC> InputElementDescriptors(PipelineCreation.VertexInput.NumVertexAttributes);        
-        u32 Offset=0;
-        for(sz i=0; i<PipelineCreation.VertexInput.NumVertexAttributes; i++)
+
+        if(!PipelineCreation.IsCompute)
         {
-            InputElementDescriptors[i] =   
+            //Input 
+            std::vector<D3D12_INPUT_ELEMENT_DESC> InputElementDescriptors(PipelineCreation.VertexInput.NumVertexAttributes);        
+            u32 Offset=0;
+            for(sz i=0; i<PipelineCreation.VertexInput.NumVertexAttributes; i++)
             {
-                SemanticFromAttrib(PipelineCreation.VertexInput.VertexAttributes[i].Format),
-                PipelineCreation.VertexInput.VertexAttributes[i].SemanticIndex,
-                AttribFormatToNative(PipelineCreation.VertexInput.VertexAttributes[i].Format),
-                PipelineCreation.VertexInput.VertexAttributes[i].Binding,
-                PipelineCreation.VertexInput.VertexAttributes[i].Offset,
-                VertexInputRateToNative(PipelineCreation.VertexInput.VertexStreams[PipelineCreation.VertexInput.VertexAttributes[i].Binding].InputRate), 
-                (PipelineCreation.VertexInput.VertexStreams[PipelineCreation.VertexInput.VertexAttributes[i].Binding].InputRate == vertexInputRate::PerVertex) ? 0u : 1u
-            };
-            Offset += PipelineCreation.VertexInput.VertexStreams[PipelineCreation.VertexInput.VertexAttributes[i].Binding].Stride;
-        }
-
-        // Describe and create the graphics pipeline state object (PSO).
-        D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-        psoDesc.InputLayout = { InputElementDescriptors.data(), (u32)InputElementDescriptors.size() };
-        psoDesc.pRootSignature = D12PipelineData->RootSignature.Get();
-
-        psoDesc.VS.BytecodeLength = D12PipelineData->vertexShader->GetBufferSize();
-        psoDesc.VS.pShaderBytecode = D12PipelineData->vertexShader->GetBufferPointer();
-        psoDesc.PS.BytecodeLength = D12PipelineData->pixelShader->GetBufferSize();
-        psoDesc.PS.pShaderBytecode = D12PipelineData->pixelShader->GetBufferPointer();
-
-        psoDesc.DepthStencilState.DepthFunc = DepthFuncToNative(PipelineCreation.DepthStencil.DepthComparison);
-        psoDesc.DepthStencilState.DepthEnable = (b8)(PipelineCreation.DepthStencil.DepthEnable);
-        psoDesc.DepthStencilState.StencilEnable = (b8)(PipelineCreation.DepthStencil.StencilEnable);
-        psoDesc.DepthStencilState.DepthWriteMask = DepthWriteToNative(PipelineCreation.DepthStencil.DepthWriteEnable);
-        psoDesc.DepthStencilState.FrontFace = StencilStateToNative(PipelineCreation.DepthStencil.Front);
-        psoDesc.DepthStencilState.BackFace = StencilStateToNative(PipelineCreation.DepthStencil.Back);
-        
-        psoDesc.NumRenderTargets = PipelineCreation.RenderPass.NumColorFormats;
-        psoDesc.DSVFormat = FormatToNative(PipelineCreation.RenderPass.DepthStencilFormat);
-
-        psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-        for(sz i=0; i<psoDesc.NumRenderTargets; i++)
-        {
-            psoDesc.BlendState.RenderTarget[i].SrcBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].SourceColor);
-            psoDesc.BlendState.RenderTarget[i].DestBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].DestinationColor);
-            if(PipelineCreation.BlendState.BlendStates[i].SeparateBlend)
-            {
-                psoDesc.BlendState.RenderTarget[i].SrcBlendAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].SourceAlpha);
-                psoDesc.BlendState.RenderTarget[i].DestBlendAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].DestinationAlpha);
-            }
-            else
-            {
-                psoDesc.BlendState.RenderTarget[i].SrcBlendAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].SourceColor);
-                psoDesc.BlendState.RenderTarget[i].DestBlendAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].DestinationColor);
+                InputElementDescriptors[i] =   
+                {
+                    SemanticFromAttrib(PipelineCreation.VertexInput.VertexAttributes[i].Format),
+                    PipelineCreation.VertexInput.VertexAttributes[i].SemanticIndex,
+                    AttribFormatToNative(PipelineCreation.VertexInput.VertexAttributes[i].Format),
+                    PipelineCreation.VertexInput.VertexAttributes[i].Binding,
+                    PipelineCreation.VertexInput.VertexAttributes[i].Offset,
+                    VertexInputRateToNative(PipelineCreation.VertexInput.VertexStreams[PipelineCreation.VertexInput.VertexAttributes[i].Binding].InputRate), 
+                    (PipelineCreation.VertexInput.VertexStreams[PipelineCreation.VertexInput.VertexAttributes[i].Binding].InputRate == vertexInputRate::PerVertex) ? 0u : 1u
+                };
+                Offset += PipelineCreation.VertexInput.VertexStreams[PipelineCreation.VertexInput.VertexAttributes[i].Binding].Stride;
             }
 
-            psoDesc.BlendState.RenderTarget[i].BlendOp = BlendOperationToNative(PipelineCreation.BlendState.BlendStates[i].ColorOp);
-            psoDesc.BlendState.RenderTarget[i].BlendOpAlpha = BlendOperationToNative(PipelineCreation.BlendState.BlendStates[i].AlphaOp);
-            psoDesc.BlendState.RenderTarget[i].BlendEnable = (b8)PipelineCreation.BlendState.BlendStates[i].BlendEnabled;
-            psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = BlendWriteMaskToNative(PipelineCreation.BlendState.BlendStates[i].ColorWriteMask);
+            // Describe and create the graphics pipeline state object (PSO).
+            D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+            psoDesc.InputLayout = { InputElementDescriptors.data(), (u32)InputElementDescriptors.size() };
+            psoDesc.pRootSignature = D12PipelineData->RootSignature.Get();
+
+            psoDesc.VS.BytecodeLength = D12PipelineData->vertexShader->GetBufferSize();
+            psoDesc.VS.pShaderBytecode = D12PipelineData->vertexShader->GetBufferPointer();
+            psoDesc.PS.BytecodeLength = D12PipelineData->pixelShader->GetBufferSize();
+            psoDesc.PS.pShaderBytecode = D12PipelineData->pixelShader->GetBufferPointer();
+
+            psoDesc.DepthStencilState.DepthFunc = DepthFuncToNative(PipelineCreation.DepthStencil.DepthComparison);
+            psoDesc.DepthStencilState.DepthEnable = (b8)(PipelineCreation.DepthStencil.DepthEnable);
+            psoDesc.DepthStencilState.StencilEnable = (b8)(PipelineCreation.DepthStencil.StencilEnable);
+            psoDesc.DepthStencilState.DepthWriteMask = DepthWriteToNative(PipelineCreation.DepthStencil.DepthWriteEnable);
+            psoDesc.DepthStencilState.FrontFace = StencilStateToNative(PipelineCreation.DepthStencil.Front);
+            psoDesc.DepthStencilState.BackFace = StencilStateToNative(PipelineCreation.DepthStencil.Back);
             
-            psoDesc.RTVFormats[i] = FormatToNative(PipelineCreation.RenderPass.ColorFormats[i]);
+            psoDesc.NumRenderTargets = PipelineCreation.RenderPass.NumColorFormats;
+            psoDesc.DSVFormat = FormatToNative(PipelineCreation.RenderPass.DepthStencilFormat);
+
+            psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+            for(sz i=0; i<psoDesc.NumRenderTargets; i++)
+            {
+                psoDesc.BlendState.RenderTarget[i].SrcBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].SourceColor);
+                psoDesc.BlendState.RenderTarget[i].DestBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].DestinationColor);
+                if(PipelineCreation.BlendState.BlendStates[i].SeparateBlend)
+                {
+                    psoDesc.BlendState.RenderTarget[i].SrcBlendAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].SourceAlpha);
+                    psoDesc.BlendState.RenderTarget[i].DestBlendAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].DestinationAlpha);
+                }
+                else
+                {
+                    psoDesc.BlendState.RenderTarget[i].SrcBlendAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].SourceColor);
+                    psoDesc.BlendState.RenderTarget[i].DestBlendAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].DestinationColor);
+                }
+
+                psoDesc.BlendState.RenderTarget[i].BlendOp = BlendOperationToNative(PipelineCreation.BlendState.BlendStates[i].ColorOp);
+                psoDesc.BlendState.RenderTarget[i].BlendOpAlpha = BlendOperationToNative(PipelineCreation.BlendState.BlendStates[i].AlphaOp);
+                psoDesc.BlendState.RenderTarget[i].BlendEnable = (b8)PipelineCreation.BlendState.BlendStates[i].BlendEnabled;
+                psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = BlendWriteMaskToNative(PipelineCreation.BlendState.BlendStates[i].ColorWriteMask);
+                
+                psoDesc.RTVFormats[i] = FormatToNative(PipelineCreation.RenderPass.ColorFormats[i]);
+            }
+            
+            psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+            psoDesc.RasterizerState.CullMode = CullModeToNative(PipelineCreation.Rasterization.CullMode);
+            psoDesc.RasterizerState.FrontCounterClockwise = FrontFaceToNative(PipelineCreation.Rasterization.FrontFace);
+            psoDesc.RasterizerState.FillMode = FillModeToNative(PipelineCreation.Rasterization.Fill);
+            psoDesc.RasterizerState.MultisampleEnable = PipelineCreation.RenderPass.SampleCount > 1 ? TRUE : FALSE;
+            psoDesc.SampleDesc.Count = PipelineCreation.RenderPass.SampleCount;
+            psoDesc.SampleDesc.Quality = 0;
+
+            psoDesc.SampleMask = UINT_MAX;
+            psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+            ThrowIfFailed(D12Data->Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&D12PipelineData->PipelineState)));
+            
+            D12PipelineData->IsCompute = false;
+            for(sz i=0; i<InputElementDescriptors.size(); i++)
+            {
+                DeallocateMemory((void*)InputElementDescriptors[i].SemanticName);
+            }
         }
-        
-        psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-        psoDesc.RasterizerState.CullMode = CullModeToNative(PipelineCreation.Rasterization.CullMode);
-        psoDesc.RasterizerState.FrontCounterClockwise = FrontFaceToNative(PipelineCreation.Rasterization.FrontFace);
-        psoDesc.RasterizerState.FillMode = FillModeToNative(PipelineCreation.Rasterization.Fill);
-        psoDesc.RasterizerState.MultisampleEnable = PipelineCreation.RenderPass.SampleCount > 1 ? TRUE : FALSE;
-        psoDesc.SampleDesc.Count = PipelineCreation.RenderPass.SampleCount;
-        psoDesc.SampleDesc.Quality = 0;
-
-        psoDesc.SampleMask = UINT_MAX;
-        psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-        ThrowIfFailed(D12Data->Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&D12PipelineData->PipelineState)));
-
-        for(sz i=0; i<InputElementDescriptors.size(); i++)
+        else
         {
-            DeallocateMemory((void*)InputElementDescriptors[i].SemanticName);
+            D12PipelineData->IsCompute = true;
+            // Describe the compute pipeline state
+            D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
+            psoDesc.pRootSignature = D12PipelineData->RootSignature.Get(); // The root signature for the compute shader
+            psoDesc.CS.BytecodeLength = D12PipelineData->computeShader->GetBufferSize();
+            psoDesc.CS.pShaderBytecode = D12PipelineData->computeShader->GetBufferPointer();
+            
+            ThrowIfFailed(D12Data->Device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&D12PipelineData->PipelineState)));
         }
+
     }    
 
     return Handle;
