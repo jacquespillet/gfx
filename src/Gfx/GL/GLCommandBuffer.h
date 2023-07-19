@@ -97,11 +97,16 @@ struct command
             u32 Height;
         } Scissor;
         
-
         struct graphicsPipelineState
         {
             pipelineHandle Pipeline;
         } BindGraphicsPipeline;
+        
+        struct dispatchComputeState
+        {
+            u32 NumGroupX, NumGroupY, NumGroupZ;
+        } DispatchCompute;
+
     };
 };
 

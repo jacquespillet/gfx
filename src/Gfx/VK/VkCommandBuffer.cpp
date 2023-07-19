@@ -96,6 +96,26 @@ void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
     
 }
 
+void commandBuffer::BindComputePipeline(pipelineHandle PipelineHandle)
+{
+    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
+
+    pipeline *Pipeline = (pipeline*)context::Get()->ResourceManager.Pipelines.GetResource(PipelineHandle);
+    std::shared_ptr<vkPipelineData> VkPipeline = std::static_pointer_cast<vkPipelineData>(Pipeline->ApiData);
+
+    vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
+    CommandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, VkPipeline->NativeHandle);
+
+    VkCommandBufferData->BoundPipeline = PipelineHandle;
+}
+
+void commandBuffer::Dispatch(u32 NumGroupX, u32 NumGroupY, u32 NumGroupZ)
+{
+    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
+    vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
+    CommandBuffer.dispatch(NumGroupX, NumGroupY, NumGroupZ);
+}
+
 void commandBuffer::BindIndexBuffer(bufferHandle BufferHandle, u32 Offset, indexType IndexType)
 {
     buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
@@ -253,7 +273,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
     pipeline *Pipeline = (pipeline*)context::Get()->ResourceManager.Pipelines.GetResource(VkCommandBufferData->BoundPipeline);
     std::shared_ptr<vkPipelineData> VkPipeline = std::static_pointer_cast<vkPipelineData>(Pipeline->ApiData);
     std::shared_ptr<vkUniformData> VkUniformData = std::static_pointer_cast<vkUniformData>(Group->ApiData);
-    VkCommandBufferData->Handle.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, VkPipeline->PipelineLayout, Binding, 1, &VkUniformData->DescriptorInfos[VkCommandBufferData->BoundPipeline].DescriptorSet, 0, 0);
+    VkCommandBufferData->Handle.bindDescriptorSets(VkPipeline->BindPoint, VkPipeline->PipelineLayout, Binding, 1, &VkUniformData->DescriptorInfos[VkCommandBufferData->BoundPipeline].DescriptorSet, 0, 0);
 }
 
 

@@ -40,6 +40,7 @@ struct glShaderProgram
     std::shared_ptr<glShader> VertexShader = nullptr;
     std::shared_ptr<glShader> GeometryShader = nullptr;
     std::shared_ptr<glShader> FragmentShader = nullptr;
+    std::shared_ptr<glShader> ComputeShader = nullptr;
     
 
     void Bind();

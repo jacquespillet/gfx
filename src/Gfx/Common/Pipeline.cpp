@@ -259,10 +259,14 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
             else if(Name == "fragment")
                 PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::Fragment);
             else if(Name == "compute")
+            {
                 PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::Compute);
+                PipelineCreation.IsCompute=true;
+            }
         }
     }
-
+    if(PipelineCreation.IsCompute) return;
+    
     json VertexStreams = PipelineJSON["vertex_streams"];
     if(VertexStreams.is_array())
     {

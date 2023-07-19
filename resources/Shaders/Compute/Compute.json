@@ -1,0 +1,21 @@
+{
+	"name" : "main",
+	"pipelines" : 
+	[
+		{
+			"name" : "Compute",
+			"shaders" : [
+				{
+					"language": "GLSL",
+					"stage" : "compute",
+					"shader" : "compute.glsl"
+				},
+				{
+					"language": "HLSL",
+					"stage" : "compute",
+					"shader" : "compute.hlsl"
+				}				
+			]
+		}
+	]
+}

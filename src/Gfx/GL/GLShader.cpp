@@ -87,28 +87,40 @@ void glShaderProgram::SetCodeForStage(const char *Code, shaderStageFlags::value 
         this->FragmentShader = std::make_shared<glShader>();
         this->FragmentShader->SetSource(Code, Stage);
         break;
+    case shaderStageFlags::Compute:
+        this->ComputeShader = std::make_shared<glShader>();
+        this->ComputeShader->SetSource(Code, Stage);
+        break;
     }
 }
 
 
 void glShaderProgram::Compile()
 {
-    if(FragmentShader != nullptr && !FragmentShader->Compiled) FragmentShader->Compile();
-    if(GeometryShader != nullptr && !GeometryShader->Compiled) GeometryShader->Compile();
-    if(VertexShader != nullptr && !VertexShader->Compiled) VertexShader->Compile();
+    if(ComputeShader != nullptr && !ComputeShader->Compiled)
+    {
+        ComputeShader->Compile();
+        ProgramShaderObject = glCreateProgram();
+	    glAttachShader(ProgramShaderObject, ComputeShader->ShaderObject);
+		glLinkProgram(ProgramShaderObject);
+    }
+    else
+    {
+        if(FragmentShader != nullptr && !FragmentShader->Compiled) FragmentShader->Compile();
+        if(GeometryShader != nullptr && !GeometryShader->Compiled) GeometryShader->Compile();
+        if(VertexShader != nullptr && !VertexShader->Compiled) VertexShader->Compile();
 
-	bool HasGeometry= (GeometryShader != nullptr && GeometryShader->Compiled); 
-
-	
-	//link vertex and fragment shader to create shader program object
-	ProgramShaderObject = glCreateProgram();
-	glAttachShader(ProgramShaderObject, VertexShader->ShaderObject);
-	glAttachShader(ProgramShaderObject, FragmentShader->ShaderObject);
-	if(HasGeometry) glAttachShader(ProgramShaderObject, GeometryShader->ShaderObject);
-	glLinkProgram(ProgramShaderObject);
-	printf("Shader:Compile: checking shader status\n");
+        bool HasGeometry= (GeometryShader != nullptr && GeometryShader->Compiled); 
+        //link vertex and fragment shader to create shader program object
+        ProgramShaderObject = glCreateProgram();
+        glAttachShader(ProgramShaderObject, VertexShader->ShaderObject);
+        glAttachShader(ProgramShaderObject, FragmentShader->ShaderObject);
+        if(HasGeometry) glAttachShader(ProgramShaderObject, GeometryShader->ShaderObject);
+        glLinkProgram(ProgramShaderObject);
+    }
 	
 	//Check status of shader and log any compile time errors
+    printf("Shader:Compile: checking shader status\n");
 	int LinkStatus;
 	glGetProgramiv(ProgramShaderObject, GL_LINK_STATUS, &LinkStatus);
 	if (LinkStatus != GL_TRUE) 

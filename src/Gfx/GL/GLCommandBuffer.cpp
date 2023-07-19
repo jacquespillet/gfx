@@ -170,6 +170,20 @@ void ExecuteBindGraphicsPipeline(const command &Command)
 
 }
 
+void ExecuteBindComputePipeline(const command &Command)
+{
+    pipeline *Pipeline = (pipeline*)context::Get()->ResourceManager.Pipelines.GetResource(Command.BindGraphicsPipeline.Pipeline);
+    std::shared_ptr<glPipeline> GLPipeline = std::static_pointer_cast<glPipeline>(Pipeline->ApiData);
+    
+    glUseProgram(GLPipeline->ShaderProgram->ProgramShaderObject);
+}
+
+void ExecuteDispatchCompute(const command &Command)
+{
+    glDispatchCompute(Command.DispatchCompute.NumGroupX, Command.DispatchCompute.NumGroupY, Command.DispatchCompute.NumGroupZ);
+}
+
+
 void commandBuffer::Begin()
 {
     GET_GL_COMMANDS
@@ -214,6 +228,30 @@ void commandBuffer::BindGraphicsPipeline(pipelineHandle Pipeline)
     Command.CommandFunction = (commandFunction)&ExecuteBindGraphicsPipeline;
     GLCommandBuffer->Commands.push_back(Command);
 }
+
+void commandBuffer::BindComputePipeline(pipelineHandle Pipeline)
+{
+    GET_GL_COMMANDS
+    command Command;
+    Command.Type = commandType::BindPipeline;
+    Command.BindGraphicsPipeline.Pipeline = Pipeline;
+    Command.CommandFunction = (commandFunction)&ExecuteBindComputePipeline;
+    GLCommandBuffer->Commands.push_back(Command);
+}
+
+
+void commandBuffer::Dispatch(u32 NumGroupX, u32 NumGroupY, u32 NumGroupZ)
+{
+    GET_GL_COMMANDS
+    command Command;
+    Command.Type = commandType::BindPipeline;
+    Command.DispatchCompute.NumGroupX = NumGroupX;
+    Command.DispatchCompute.NumGroupY = NumGroupY;
+    Command.DispatchCompute.NumGroupZ = NumGroupZ;
+    Command.CommandFunction = (commandFunction)&ExecuteDispatchCompute;
+    GLCommandBuffer->Commands.push_back(Command);
+}
+
 void commandBuffer::BindVertexBuffer(vertexBufferHandle Buffer)
 {
     GET_GL_COMMANDS

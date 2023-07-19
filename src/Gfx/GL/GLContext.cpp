@@ -352,33 +352,35 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     
     GLData->CheckErrors();
 
-    //Depth stencil state
-    GLPipeline->DepthStencil.FrontStencilOp = StencilStateToNative(PipelineCreation.DepthStencil.Front);
-    GLPipeline->DepthStencil.BackStencilOp = StencilStateToNative(PipelineCreation.DepthStencil.Back);
-    GLPipeline->DepthStencil.DepthEnable = PipelineCreation.DepthStencil.DepthEnable;
-    GLPipeline->DepthStencil.DepthWrite = PipelineCreation.DepthStencil.DepthWriteEnable;
-    GLPipeline->DepthStencil.StencilEnable = PipelineCreation.DepthStencil.StencilEnable;
-    GLPipeline->DepthStencil.DepthComparison = CompareOpToNative(PipelineCreation.DepthStencil.DepthComparison);
-
-    //Blend state
-    GLPipeline->Blend.Enabled=false;
-    if(PipelineCreation.BlendState.ActiveStates>0)
+    if(!PipelineCreation.IsCompute)
     {
-        GLPipeline->Blend.Enabled=true;
-        GLPipeline->Blend.BlendSourceColor = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].SourceColor);
-        GLPipeline->Blend.BlendDestColor = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].DestinationColor);
-        GLPipeline->Blend.BlendSourceAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].SourceAlpha);
-        GLPipeline->Blend.BlendDestAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].DestinationAlpha);
-        GLPipeline->Blend.ColorOp = BlendOpToNative(PipelineCreation.BlendState.BlendStates[0].ColorOp);
-        GLPipeline->Blend.AlphaOp = BlendOpToNative(PipelineCreation.BlendState.BlendStates[0].AlphaOp);
-        GLPipeline->Blend.Separate = PipelineCreation.BlendState.BlendStates[0].SeparateBlend;
+        //Depth stencil state
+        GLPipeline->DepthStencil.FrontStencilOp = StencilStateToNative(PipelineCreation.DepthStencil.Front);
+        GLPipeline->DepthStencil.BackStencilOp = StencilStateToNative(PipelineCreation.DepthStencil.Back);
+        GLPipeline->DepthStencil.DepthEnable = PipelineCreation.DepthStencil.DepthEnable;
+        GLPipeline->DepthStencil.DepthWrite = PipelineCreation.DepthStencil.DepthWriteEnable;
+        GLPipeline->DepthStencil.StencilEnable = PipelineCreation.DepthStencil.StencilEnable;
+        GLPipeline->DepthStencil.DepthComparison = CompareOpToNative(PipelineCreation.DepthStencil.DepthComparison);
+
+        //Blend state
+        GLPipeline->Blend.Enabled=false;
+        if(PipelineCreation.BlendState.ActiveStates>0)
+        {
+            GLPipeline->Blend.Enabled=true;
+            GLPipeline->Blend.BlendSourceColor = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].SourceColor);
+            GLPipeline->Blend.BlendDestColor = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].DestinationColor);
+            GLPipeline->Blend.BlendSourceAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].SourceAlpha);
+            GLPipeline->Blend.BlendDestAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].DestinationAlpha);
+            GLPipeline->Blend.ColorOp = BlendOpToNative(PipelineCreation.BlendState.BlendStates[0].ColorOp);
+            GLPipeline->Blend.AlphaOp = BlendOpToNative(PipelineCreation.BlendState.BlendStates[0].AlphaOp);
+            GLPipeline->Blend.Separate = PipelineCreation.BlendState.BlendStates[0].SeparateBlend;
+        }
+
+        //Rasterizer state
+        GLPipeline->Rasterizer.CullMode = CullModeToNative(PipelineCreation.Rasterization.CullMode);
+        GLPipeline->Rasterizer.FillMode = FillModeToNative(PipelineCreation.Rasterization.Fill);
+        GLPipeline->Rasterizer.FrontFace = FrontFaceToNative(PipelineCreation.Rasterization.FrontFace);
     }
-
-    //Rasterizer state
-    GLPipeline->Rasterizer.CullMode = CullModeToNative(PipelineCreation.Rasterization.CullMode);
-    GLPipeline->Rasterizer.FillMode = FillModeToNative(PipelineCreation.Rasterization.Fill);
-    GLPipeline->Rasterizer.FrontFace = FrontFaceToNative(PipelineCreation.Rasterization.FrontFace);
-
 
     return Handle;
 }
@@ -429,6 +431,7 @@ void context::DestroyPipeline(pipelineHandle PipelineHandle)
     if(VkPipelineData->ShaderProgram->VertexShader != nullptr) glDeleteShader(VkPipelineData->ShaderProgram->VertexShader->ShaderObject);
     if(VkPipelineData->ShaderProgram->GeometryShader != nullptr) glDeleteShader(VkPipelineData->ShaderProgram->GeometryShader->ShaderObject);
     if(VkPipelineData->ShaderProgram->FragmentShader != nullptr) glDeleteShader(VkPipelineData->ShaderProgram->FragmentShader->ShaderObject);
+    if(VkPipelineData->ShaderProgram->ComputeShader != nullptr) glDeleteShader(VkPipelineData->ShaderProgram->ComputeShader->ShaderObject);
 
     glDeleteProgram(VkPipelineData->ShaderProgram->ProgramShaderObject);
 

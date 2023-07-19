@@ -40,12 +40,14 @@ struct commandBuffer
     void Begin();
     void BeginPass(framebufferHandle Framebuffer, clearColorValues ClearColor, clearDepthStencilValues DepthStencil);
     void BindGraphicsPipeline(pipelineHandle Pipeline);
+    void BindComputePipeline(pipelineHandle Pipeline);
     void BindVertexBuffer(vertexBufferHandle Buffer);
     void BindIndexBuffer(bufferHandle Buffer, u32 Offset, indexType IndexType);
     void SetViewport(f32 X, f32 Y, f32 Width, f32 Height);
     void SetScissor(s32 X, s32 Y, u32 Width, u32 Height);
     void DrawArrays(u32 Start, u32 Count, u32 InstanceCount=1);
     void DrawIndexed(u32 Start, u32 Count, u32 InstanceCount=1);
+    void Dispatch(u32 NumGroupX, u32 NumGroupY, u32 NumGroupZ);
 
     void BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Binding);
     

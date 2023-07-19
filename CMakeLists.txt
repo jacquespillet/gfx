@@ -269,7 +269,7 @@ if(${BUILD_ALL} EQUAL 1)
         
         # Storage buffer
         set(targetName HelloTriangleStorageBuffer_${GFX_API_STR})
-        set(mainCode ${sourceCode} src/Main_HelloCompute.cpp)
+        set(mainCode ${sourceCode} src/Main_HelloTriangle_StorageBuffer.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
@@ -277,7 +277,7 @@ else()
         
         # Storage buffer
         set(targetName Main)
-        set(mainCode ${sourceCode} src/Main_HelloTriangle_Instanced.cpp)
+        set(mainCode ${sourceCode} src/Main_HelloTriangle_Compute.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)

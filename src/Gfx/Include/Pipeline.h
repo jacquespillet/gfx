@@ -187,6 +187,7 @@ struct pipelineCreation
     blendStateCreation BlendState;
     rasterizationCreation Rasterization;
 
+    b8 IsCompute = false;
     const char *Name;
 };
 
