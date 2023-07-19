@@ -154,12 +154,11 @@ struct application
 							  .AddVertexStream(VertexStream1);
 		VertexBufferHandle = GfxContext->CreateVertexBuffer(VertexBufferCreateInfo);
 
-		gfx::framebufferCreateInfo FramebufferCreateInfo = 
-		{
-			1024, 1024,
-			{gfx::format::R8G8B8A8_UNORM},
-			gfx::format::D24_UNORM_S8_UINT
-		};
+		gfx::framebufferCreateInfo FramebufferCreateInfo = {};
+		FramebufferCreateInfo.SetSize(1024, 1024)
+							 .AddColorFormat(gfx::format::R8G8B8A8_UNORM)
+							 .SetDepthFormat(gfx::format::D24_UNORM_S8_UINT)
+							 .SetClearColor(1, 0, 0, 0);
 		OffscreenPass = GfxContext->CreateFramebuffer(FramebufferCreateInfo);
 		SwapchainPass = GfxContext->GetDefaultRenderPass();
 		

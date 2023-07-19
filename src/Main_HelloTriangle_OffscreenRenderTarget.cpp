@@ -115,20 +115,17 @@ struct application
 		VertexBufferHandle = GfxContext->CreateVertexBuffer(VertexBufferCreateInfo);
 
 		//TODO: Use setters here
-		gfx::framebufferCreateInfo FramebufferCreateInfo = 
-		{
-			1024, 1024,
-			{gfx::format::R8G8B8A8_UNORM},
-			gfx::format::D24_UNORM_S8_UINT,
-			{1,0,0,0},
-		};
+		gfx::framebufferCreateInfo FramebufferCreateInfo = {};
+		FramebufferCreateInfo.SetSize(1024, 1024)
+							 .AddColorFormat(gfx::format::R8G8B8A8_UNORM)
+							 .SetDepthFormat(gfx::format::D24_UNORM_S8_UINT)
+							 .SetClearColor(1, 0, 0, 0);
 		OffscreenFramebufferHandle = GfxContext->CreateFramebuffer(FramebufferCreateInfo);
 		gfx::framebuffer *OffscreenFramebuffer = (gfx::framebuffer*) GfxContext->ResourceManager.Framebuffers.GetResource(OffscreenFramebufferHandle);
 		
 		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/OffscreenRenderTarget/TriangleOffscreen.json", OffscreenFramebufferHandle);
 		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/OffscreenRenderTarget/Triangle.json");
   
-		//TODO: Add methods to do add uniforms here
 		//That's the content of a descriptor set
 		UniformsOffscreen = std::make_shared<gfx::uniformGroup>();
 		UniformsOffscreen->Reset()

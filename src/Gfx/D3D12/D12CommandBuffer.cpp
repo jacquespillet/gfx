@@ -305,7 +305,6 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
 
     for(sz i=0; i< Group->Uniforms.size(); i++)
     {
-        //TODO : ELSEIF
         if(Group->Uniforms[i].Type == uniformType::UniformBuffer)
         {
             buffer* BufferData = Group->GetBuffer((u32)i);
@@ -322,7 +321,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
                     D12CommandBufferData->CommandList->SetGraphicsRootConstantBufferView(RootParamIndex, VirtualAddress);
             }
         }
-        if(Group->Uniforms[i].Type == uniformType::StorageBuffer)
+        else if(Group->Uniforms[i].Type == uniformType::StorageBuffer)
         {
             buffer* BufferData = Group->GetBuffer((u32)i);
             std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(BufferData->ApiData);
@@ -338,7 +337,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
                     D12CommandBufferData->CommandList->SetGraphicsRootUnorderedAccessView(RootParamIndex, VirtualAddress);
             }
         }
-        if(Group->Uniforms[i].Type == uniformType::Texture2d)
+        else if(Group->Uniforms[i].Type == uniformType::Texture2d)
         {
             image* ImageData = Group->GetTexture((u32)i);
             std::shared_ptr<d3d12ImageData> D12ImageData = std::static_pointer_cast<d3d12ImageData>(ImageData->ApiData);
@@ -352,7 +351,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
                     D12CommandBufferData->CommandList->SetGraphicsRootDescriptorTable(RootParamIndex, D12Data->GetGPUDescriptorAt(D12ImageData->OffsetInHeap));
             }
         }
-        if(Group->Uniforms[i].Type == uniformType::FramebufferRenderTarget)
+        else if(Group->Uniforms[i].Type == uniformType::FramebufferRenderTarget)
         {
             framebuffer* FramebufferData = Group->GetFramebuffer((u32)i);
             std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(FramebufferData->ApiData);

@@ -348,7 +348,6 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
     
     for(sz i=0; i< Group->Uniforms.size(); i++)
     {
-        //TODO : else if
         if(Group->Uniforms[i].Type == uniformType::UniformBuffer)
         {
             buffer* BufferData = Group->GetBuffer(i);
@@ -361,7 +360,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             Command.CommandFunction = (commandFunction)&ExecuteBindUniformBuffer;
             GLCommandBuffer->Commands.push_back(Command);
         }
-        if(Group->Uniforms[i].Type == uniformType::StorageBuffer)
+        else if(Group->Uniforms[i].Type == uniformType::StorageBuffer)
         {
             buffer* BufferData  = Group->GetBuffer(i);
             std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(BufferData->ApiData);
@@ -373,7 +372,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             Command.CommandFunction = (commandFunction)&ExecuteBindStorageBuffer;
             GLCommandBuffer->Commands.push_back(Command);
         }
-        if(Group->Uniforms[i].Type == uniformType::Texture2d)
+        else if(Group->Uniforms[i].Type == uniformType::Texture2d)
         {
             image* ImageData  = Group->GetTexture(i);
             std::shared_ptr<glImage> GLImage = std::static_pointer_cast<glImage>(ImageData->ApiData);
@@ -385,7 +384,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             Command.CommandFunction = (commandFunction)&ExecuteBindUniformImage;
             GLCommandBuffer->Commands.push_back(Command);
         }
-        if(Group->Uniforms[i].Type == uniformType::FramebufferRenderTarget)
+        else if(Group->Uniforms[i].Type == uniformType::FramebufferRenderTarget)
         {
             framebuffer* Framebuffer = Group->GetFramebuffer(i);
             std::shared_ptr<glFramebufferData> GLFramebuffer = std::static_pointer_cast<glFramebufferData>(Framebuffer->ApiData);

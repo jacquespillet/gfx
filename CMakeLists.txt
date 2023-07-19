@@ -153,6 +153,7 @@ set(commonCode
         src/Gfx/Common/ResourceManager.cpp
         src/Gfx/Common/Uniform.cpp
         src/Gfx/Common/Image.cpp
+        src/Gfx/Common/Framebuffer.cpp
         src/Gfx/Common/Pipeline.cpp
         src/Gfx/Common/Util.cpp
         src/Gfx/Common/Memory.cpp
