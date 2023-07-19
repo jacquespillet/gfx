@@ -16,7 +16,7 @@ void virtualFramesProvider::Init()
     context *Context = context::Get();
     std::shared_ptr<d3d12Data> D12Data = std::static_pointer_cast<d3d12Data>(Context->ApiContextData);
     std::shared_ptr<swapchain> Swapchain = Context->Swapchain;
-    std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
+    GET_API_DATA(D12SwapchainData, d3d12SwapchainData, Swapchain);
 
     // Create frame resources.
     {
@@ -56,7 +56,7 @@ void virtualFramesProvider::WaitForPreviousFrame()
     context *Context = context::Get();
     std::shared_ptr<d3d12Data> D12Data = std::static_pointer_cast<d3d12Data>(Context->ApiContextData);
     std::shared_ptr<swapchain> Swapchain = Context->Swapchain;
-    std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
+    GET_API_DATA(D12SwapchainData, d3d12SwapchainData, Swapchain);
 
 
     // Schedule a Signal command in the queue.
@@ -74,7 +74,7 @@ void virtualFramesProvider::StartFrame()
 {
     context *Context = context::Get();
     std::shared_ptr<swapchain> Swapchain = Context->Swapchain;
-    std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
+    GET_API_DATA(D12SwapchainData, d3d12SwapchainData, Swapchain);
 
     // Command list allocators can only be reset when the associated 
     // command lists have finished execution on the GPU; apps should use 

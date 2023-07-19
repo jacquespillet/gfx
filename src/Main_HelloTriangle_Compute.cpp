@@ -182,7 +182,7 @@ struct application
 				i++;
 			}
 		}
-		StorageBufferHandle = GfxContext->CreateBuffer(InstanceCount * sizeof(glm::vec4), gfx::bufferUsage::StorageBuffer, gfx::memoryUsage::GpuOnly);
+		StorageBufferHandle = GfxContext->CreateBuffer(InstanceCount * sizeof(glm::vec4), gfx::bufferUsage::StorageBuffer, gfx::memoryUsage::GpuOnly, sizeof(glm::vec4));
 		gfx::buffer *StorageBuffer = GfxContext->GetBuffer(StorageBufferHandle);
 		GfxContext->CopyDataToBuffer(StorageBufferHandle, InstancePositionsVec.data(), InstanceCount * sizeof(glm::vec4), 0);
 		

@@ -33,7 +33,7 @@ std::shared_ptr<commandBuffer> CreateD3D12CommandBuffer(ComPtr<ID3D12CommandAllo
 
 void commandBuffer::Begin()
 {
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
     ThrowIfFailed(D12CommandBufferData->CommandList->Reset(D12CommandBufferData->CommandAllocator.Get(), nullptr));
 
     GET_CONTEXT(D12Data, context::Get());
@@ -44,7 +44,7 @@ void commandBuffer::Begin()
 
 ID3D12Resource *GetBufferHandle(buffer *Buffer)
 {
-    std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);
+    GET_API_DATA(D12BufferData, d3d12BufferData, Buffer);
     return D12BufferData->Handle.Get();
 }
 
@@ -55,7 +55,7 @@ ID3D12Resource *GetImageHandle(image *Image)
 }
 void commandBuffer::CopyBuffer(const bufferInfo &Source, const bufferInfo &Destination, size_t ByteSize)
 {
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
     
     assert(Source.Resource->Size >= Source.Offset + ByteSize);
     assert(Destination.Resource->Size >= Destination.Offset + ByteSize);
@@ -85,7 +85,7 @@ void commandBuffer::CopyBuffer(const bufferInfo &Source, const bufferInfo &Desti
 
 void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo &Destination)
 {
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
     
     ID3D12Resource *SourceHandle = GetBufferHandle(Source.Resource);
     ID3D12Resource *DestHandle = GetImageHandle(Destination.Resource);
@@ -117,7 +117,7 @@ void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo 
 
 void commandBuffer::TransferLayout(const image &Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout)
 {
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
 
     std::shared_ptr<d3d12ImageData> D12ImageData = std::static_pointer_cast<d3d12ImageData>(Texture.ApiData);
     CD3DX12_RESOURCE_BARRIER barrier1 = CD3DX12_RESOURCE_BARRIER::Transition(D12ImageData->Handle.Get(),
@@ -127,7 +127,7 @@ void commandBuffer::TransferLayout(const image &Texture, imageUsage::bits OldLay
 
 void commandBuffer::BeginPass(framebufferHandle FramebufferHandle, clearColorValues ClearColor, clearDepthStencilValues DepthStencil)
 {
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
 
     framebuffer *Framebuffer = context::Get()->GetFramebuffer(FramebufferHandle);
     std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(Framebuffer->ApiData);
@@ -161,7 +161,7 @@ void commandBuffer::EndPass()
 {
     GET_CONTEXT(D12Data, context::Get());
 
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
     std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(D12CommandBufferData->CurrentFramebuffer->ApiData);
 
     //Copy to the srvs so they can get sampled
@@ -202,7 +202,7 @@ void commandBuffer::EndPass()
 
 void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
 {
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
     
     pipeline *Pipeline = context::Get()->GetPipeline(PipelineHandle);
     std::shared_ptr<d3d12PipelineData> D12PipelineData = std::static_pointer_cast<d3d12PipelineData>(Pipeline->ApiData);
@@ -216,7 +216,7 @@ void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
 
 void commandBuffer::BindComputePipeline(pipelineHandle PipelineHandle)
 {
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
     
     pipeline *Pipeline = context::Get()->GetPipeline(PipelineHandle);
     std::shared_ptr<d3d12PipelineData> D12PipelineData = std::static_pointer_cast<d3d12PipelineData>(Pipeline->ApiData);
@@ -230,13 +230,13 @@ void commandBuffer::BindComputePipeline(pipelineHandle PipelineHandle)
 
 void commandBuffer::Dispatch(u32 NumGroupX, u32 NumGroupY, u32 NumGroupZ)
 {
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
     D12CommandBufferData->CommandList->Dispatch(NumGroupX, NumGroupY, NumGroupZ);
 }
 
 void commandBuffer::BindIndexBuffer(bufferHandle BufferHandle, u32 Offset, indexType IndexType)
 {
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
     buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
     std::shared_ptr<d3d12BufferData> D12Buffer = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);
     D12Buffer->IndexBufferView.Format = IndexTypeToNative(IndexType);
@@ -246,7 +246,7 @@ void commandBuffer::BindIndexBuffer(bufferHandle BufferHandle, u32 Offset, index
 
 void commandBuffer::BindVertexBuffer(vertexBufferHandle BufferHandle)
 {
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
     vertexBuffer *VertexBuffer = context::Get()->GetVertexBuffer(BufferHandle);
     
     
@@ -255,7 +255,7 @@ void commandBuffer::BindVertexBuffer(vertexBufferHandle BufferHandle)
     for(u32 i=0; i<VertexBuffer->NumVertexStreams; i++)
     {
         buffer *Buffer = context::Get()->GetBuffer(VertexBuffer->VertexStreams[i].Buffer);
-        std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);
+        GET_API_DATA(D12BufferData, d3d12BufferData, Buffer);
 
         u64 Offsets[] = {0};
         D12CommandBufferData->CommandList->IASetVertexBuffers(VertexBuffer->VertexStreams[i].StreamIndex, 1, &D12BufferData->VertexBufferView);
@@ -264,40 +264,40 @@ void commandBuffer::BindVertexBuffer(vertexBufferHandle BufferHandle)
 
 void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height)
 {
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
     CD3DX12_VIEWPORT Viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, (float)Width, (float)Height);
     D12CommandBufferData->CommandList->RSSetViewports(1, &Viewport);
 }
 
 void commandBuffer::SetScissor(s32 X, s32 Y, u32 Width, u32 Height)
 {
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
     CD3DX12_RECT Scissor = CD3DX12_RECT(0, 0, (LONG)Width, (LONG)Height);
     D12CommandBufferData->CommandList->RSSetScissorRects(1, &Scissor);
 }
 
 void commandBuffer::DrawArrays(u32 Start, u32 Count, u32 InstanceCount)
 {
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
     D12CommandBufferData->CommandList->DrawInstanced(Count, InstanceCount, Start, 0);
 }
 
 void commandBuffer::DrawIndexed(u32 Start, u32 Count, u32 InstanceCount)
 {
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
     D12CommandBufferData->CommandList->DrawIndexedInstanced(Count, InstanceCount, Start, 0, 0);
 
 }
 
 void commandBuffer::End()
 {
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
     ThrowIfFailed(D12CommandBufferData->CommandList->Close());
 }
 
 void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Binding)
 {
-    std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
     std::shared_ptr<d3d12PipelineData> D12Pipeline = std::static_pointer_cast<d3d12PipelineData>(D12CommandBufferData->CurrentPipeline->ApiData);
     
 

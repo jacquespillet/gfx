@@ -40,7 +40,7 @@ void ExecuteSetScissor(const command &Command)
 void ExecuteBeginPass(const command &Command)
 {
     framebuffer *Framebuffer = context::Get()->GetFramebuffer(Command.BeginPass.FramebufferHandle);
-    std::shared_ptr<glFramebufferData> GLFramebuffer = std::static_pointer_cast<glFramebufferData>(Framebuffer->ApiData);
+    GET_API_DATA(GLFramebuffer, glFramebufferData, Framebuffer)
 
     glBindFramebuffer(GL_FRAMEBUFFER, GLFramebuffer->Handle);
 
@@ -71,8 +71,7 @@ void ExecuteBindVertexBuffer(const command &Command)
 {
     bufferHandle VertexBufferHandle = Command.BindVertexBuffer.VertexBufferHandle;
     vertexBuffer *VertexBuffer = context::Get()->GetVertexBuffer(VertexBufferHandle);
-    std::shared_ptr<glVertexBuffer> GLVertexBuffer = std::static_pointer_cast<glVertexBuffer>(VertexBuffer->ApiData);
-
+    GET_API_DATA(GLVertexBuffer, glVertexBuffer, VertexBuffer);
     glBindVertexArray(GLVertexBuffer->VAO);
 }
 
@@ -80,8 +79,7 @@ void ExecuteBindIndexBuffer(const command &Command)
 {
     bufferHandle IndexBufferHandle = Command.BindIndexBuffer.IndexBufferHandle;
     buffer *IndexBuffer = context::Get()->GetBuffer(IndexBufferHandle);
-    std::shared_ptr<glBuffer> GLIndexBuffer = std::static_pointer_cast<glBuffer>(IndexBuffer->ApiData);
-
+    GET_API_DATA(GLIndexBuffer, glBuffer, IndexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLIndexBuffer->Handle);
 }
 
@@ -116,8 +114,7 @@ void ExecuteBindGraphicsPipeline(const command &Command)
     glEnable(GL_SCISSOR_TEST);
 
     pipeline *Pipeline = context::Get()->GetPipeline(Command.BindGraphicsPipeline.Pipeline);
-    std::shared_ptr<glPipeline> GLPipeline = std::static_pointer_cast<glPipeline>(Pipeline->ApiData);
-    
+    GET_API_DATA(GLPipeline, glPipeline, Pipeline);
     glUseProgram(GLPipeline->ShaderProgram->ProgramShaderObject);
 
     //Bind depth stencil
@@ -173,8 +170,7 @@ void ExecuteBindGraphicsPipeline(const command &Command)
 void ExecuteBindComputePipeline(const command &Command)
 {
     pipeline *Pipeline = context::Get()->GetPipeline(Command.BindGraphicsPipeline.Pipeline);
-    std::shared_ptr<glPipeline> GLPipeline = std::static_pointer_cast<glPipeline>(Pipeline->ApiData);
-    
+    GET_API_DATA(GLPipeline, glPipeline, Pipeline);
     glUseProgram(GLPipeline->ShaderProgram->ProgramShaderObject);
 }
 
@@ -351,8 +347,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
         if(Group->Uniforms[i].Type == uniformType::UniformBuffer)
         {
             buffer* BufferData = Group->GetBuffer(i);
-            std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(BufferData->ApiData);
-
+            GET_API_DATA(GLBuffer, glBuffer, BufferData);
             command Command;
             Command.Type = commandType::BindUniforms;
             Command.BindUniformBuffer.Binding = Group->Uniforms[i].Binding;
@@ -363,7 +358,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
         else if(Group->Uniforms[i].Type == uniformType::StorageBuffer)
         {
             buffer* BufferData  = Group->GetBuffer(i);
-            std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(BufferData->ApiData);
+            GET_API_DATA(GLBuffer, glBuffer, BufferData);
 
             command Command;
             Command.Type = commandType::BindUniforms;
@@ -375,7 +370,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
         else if(Group->Uniforms[i].Type == uniformType::Texture2d)
         {
             image* ImageData  = Group->GetTexture(i);
-            std::shared_ptr<glImage> GLImage = std::static_pointer_cast<glImage>(ImageData->ApiData);
+            GET_API_DATA(GLImage, glImage, ImageData);
 
             command Command;
             Command.Type = commandType::BindUniforms;
@@ -387,7 +382,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
         else if(Group->Uniforms[i].Type == uniformType::FramebufferRenderTarget)
         {
             framebuffer* Framebuffer = Group->GetFramebuffer(i);
-            std::shared_ptr<glFramebufferData> GLFramebuffer = std::static_pointer_cast<glFramebufferData>(Framebuffer->ApiData);
+            GET_API_DATA(GLFramebuffer, glFramebufferData, Framebuffer)
             
 
             command Command;

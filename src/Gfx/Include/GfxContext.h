@@ -77,7 +77,8 @@ struct context
 
     stageBuffer CreateStageBuffer(sz Size);
     vertexBufferHandle CreateVertexBuffer(const vertexBufferCreateInfo &CreateInfo);
-    bufferHandle CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsage MemoryUsage);
+   
+    bufferHandle CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsage MemoryUsage, sz Stride = 0);
     imageHandle CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo);
     imageHandle CreateImage(u32 Width, u32 Height, format Format, u8 *Pixels);
 

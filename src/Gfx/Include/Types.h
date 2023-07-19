@@ -43,6 +43,8 @@ typedef glm::ivec3 v3i;
 typedef glm::ivec4 v4i;
 typedef glm::mat4 m4x4;
 
+#define GET_API_DATA(VarName, VarType, Object) std::shared_ptr<VarType> VarName = std::static_pointer_cast<VarType>(Object->ApiData);
+
 
 
 #if GFX_API==GFX_VK

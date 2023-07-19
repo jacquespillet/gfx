@@ -15,8 +15,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     this->MipLevelCount = CreateInfo.GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
 
     this->ApiData = std::make_shared<glImage>();
-    std::shared_ptr<glImage> GLImage = std::static_pointer_cast<glImage>(this->ApiData);
-
+    GET_API_DATA(GLImage, glImage, this);
     glGenTextures(1, &GLImage->Handle);
     glBindTexture(GL_TEXTURE_2D, GLImage->Handle);
 

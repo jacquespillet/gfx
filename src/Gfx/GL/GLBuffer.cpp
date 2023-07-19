@@ -9,10 +9,12 @@
 
 namespace gfx
 {
-void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryUsage)
+void buffer::Init(size_t ByteSize, sz Stride, bufferUsage::value Usage, memoryUsage MemoryUsage)
 {
-    std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(ApiData);
+    GET_API_DATA(GLBuffer, glBuffer, this); 
+    
     this->Size = ByteSize;
+    this->Stride = Stride;
     this->MemoryUsage = MemoryUsage;
 
     glGenBuffers(1, &GLBuffer->Handle);
@@ -26,7 +28,7 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
 
 void buffer::CopyData(const uint8_t *Data, size_t ByteSize, size_t Offset)
 {
-    std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(ApiData);
+    GET_API_DATA(GLBuffer, glBuffer, this); 
     glBindBuffer(GLBuffer->Target, GLBuffer->Handle);
 
     if(MemoryUsage == memoryUsage::GpuOnly)
@@ -59,7 +61,7 @@ void buffer::CopyData(const uint8_t *Data, size_t ByteSize, size_t Offset)
 
 u8 *buffer::MapMemory()
 {
-    std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(this->ApiData);
+    GET_API_DATA(GLBuffer, glBuffer, this); 
 
     //If unmapped, map it
     if(this->MappedData == nullptr)
@@ -72,7 +74,7 @@ u8 *buffer::MapMemory()
 
 void buffer::UnmapMemory()
 {
-    std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(this->ApiData);
+    GET_API_DATA(GLBuffer, glBuffer, this); 
     glUnmapBuffer(GLBuffer->Target);
     this->MappedData=nullptr;
 }

@@ -12,13 +12,12 @@ namespace gfx
 
 vk::Buffer GetBufferHandle(buffer *Buffer)
 {
-    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
+    GET_API_DATA(VkBufferData, vkBufferData, Buffer);
     return VkBufferData->Handle;
 }
 
-void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryUsage)
+void buffer::Init(size_t ByteSize, sz Stride, bufferUsage::value Usage, memoryUsage MemoryUsage)
 {
-
     constexpr std::array BufferQueueFamilyIndices = {(u32)0};
     this->Destroy();
 
@@ -31,6 +30,8 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
 
     //Set size, usage
     this->Size = ByteSize;
+    this->Stride = Stride;
+
     vk::BufferCreateInfo BufferCreateInfo;
     BufferCreateInfo.setSize(Size)
                     .setUsage((vk::BufferUsageFlags)Usage)
@@ -38,13 +39,13 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
                     .setQueueFamilyIndices(BufferQueueFamilyIndices);
 
     //Allocate with vma
-    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(this->ApiData);
+    GET_API_DATA(VkBufferData, vkBufferData, this);
     VkBufferData->Allocation = gfx::AllocateBuffer(BufferCreateInfo, MemoryUsage, &VkBufferData->Handle);    
 }
 
 u8 *buffer::MapMemory()
 {
-    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(this->ApiData);
+    GET_API_DATA(VkBufferData, vkBufferData, this);
 
     //If unmapped, map it
     if(this->MappedData == nullptr)
@@ -57,7 +58,7 @@ u8 *buffer::MapMemory()
 
 void buffer::UnmapMemory()
 {
-    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(this->ApiData);
+    GET_API_DATA(VkBufferData, vkBufferData, this);
     //Unmap and reset pointer
     gfx::UnmapMemory(VkBufferData->Allocation);
     this->MappedData=nullptr;
@@ -66,14 +67,14 @@ void buffer::UnmapMemory()
 
 void buffer::FlushMemory(size_t ByteSize, size_t Offset)
 {
-    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(this->ApiData);
+    GET_API_DATA(VkBufferData, vkBufferData, this);
     gfx::FlushMemory(VkBufferData->Allocation, ByteSize, Offset);
 }
 
 
 void buffer::Destroy()
 {
-    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(this->ApiData);
+    GET_API_DATA(VkBufferData, vkBufferData, this);
     if(VkBufferData && VkBufferData->Handle)
     {
         if(this->MappedData != nullptr)

@@ -117,8 +117,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
 
     context *VulkanContext = context::Get();
     ApiData = std::make_shared<vkImageData>();
-    std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(ApiData);
-
+    GET_API_DATA(VKImage, vkImageData, this);
 
     imageUsage::value ImageUsage = imageUsage::TRANSFER_DESTINATION | imageUsage::SHADER_READ; 
     if(CreateInfo.GenerateMipmaps) ImageUsage |= imageUsage::TRANSFER_SOURCE;
@@ -163,7 +162,8 @@ image::image(vk::Image VkImage, u32 Width, u32 Height, format Format)
     this->Extent.Height = Height;
     this->Format = Format;
 
-    std::shared_ptr<vkImageData> ImageData = std::static_pointer_cast<vkImageData>(ApiData);
+    GET_API_DATA(ImageData, vkImageData, this);
+
     ImageData->Allocation = {};
     ImageData->InitViews(*this, VkImage, Format);
 }
@@ -175,7 +175,7 @@ image::image(vk::Image VkImage, u32 Width, u32 Height, format Format)
 void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage, u32 SampleCount)
 {
     ApiData = std::make_shared<vkImageData>();
-    std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(ApiData);
+    GET_API_DATA(VkImageData, vkImageData, this);
     
     this->MipLevelCount = 1;
     this->LayerCount = 1;
@@ -231,7 +231,7 @@ vk::ImageSubresourceLayers GetDefaultImageSubresourceLayers(const image &Image, 
 
 vk::ImageMemoryBarrier GetImageMemoryBarrier(const image &Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout)
 {
-    std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(Texture.ApiData);
+    GET_API_DATA(VkImageData, vkImageData, (&Texture));
 
     auto SubResourceRange = GetDefaultImageSubresourceRange(Texture);
     vk::ImageMemoryBarrier Barrier;
@@ -334,7 +334,7 @@ void vkImageData::InitSamplerDefault()
 void image::Destroy()
 {
     GET_CONTEXT(VkData, context::Get());
-    std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(ApiData);
+    GET_API_DATA(VkImageData, vkImageData, this);
 
     VkData->Device.destroyImageView(VkImageData->DefaultImageViews.NativeView);
     if(VkImageData->DefaultImageViews.DepthOnlyViewSet)

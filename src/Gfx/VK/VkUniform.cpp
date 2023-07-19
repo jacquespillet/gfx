@@ -18,8 +18,7 @@ uniformGroup &uniformGroup::Reset()
 uniformGroup & uniformGroup::Update()
 {
     GET_CONTEXT(VkData, context::Get());
-    std::shared_ptr<vkUniformData> VkUniformData = std::static_pointer_cast<vkUniformData>(this->ApiData);
-
+    GET_API_DATA(VkUniformData, vkUniformData, this);
     
 
     for(auto &Binding : Bindings)
@@ -46,25 +45,25 @@ uniformGroup & uniformGroup::Update()
             if(Uniforms[i].Type == uniformType::UniformBuffer)
             {
                 buffer* Buffer = GetBuffer(i);
-                std::shared_ptr<vkBufferData> VKBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
+                GET_API_DATA(VkBuffer, vkBufferData, Buffer);
                 
-                DescriptorBuffers.push_back(vk::DescriptorBufferInfo(VKBuffer->Handle, 0, Buffer->Size));
+                DescriptorBuffers.push_back(vk::DescriptorBufferInfo(VkBuffer->Handle, 0, Buffer->Size));
                 DescriptorWrite.setDescriptorType(vk::DescriptorType::eUniformBuffer)
                                    .setPBufferInfo(&DescriptorBuffers[DescriptorBuffers.size()-1]);
             }
             if(Uniforms[i].Type == uniformType::StorageBuffer)
             {
                 buffer* Buffer = GetBuffer(i);
-                std::shared_ptr<vkBufferData> VKBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
+                GET_API_DATA(VkBuffer, vkBufferData, Buffer);
                 
-                DescriptorBuffers.push_back(vk::DescriptorBufferInfo(VKBuffer->Handle, 0, Buffer->Size));
+                DescriptorBuffers.push_back(vk::DescriptorBufferInfo(VkBuffer->Handle, 0, Buffer->Size));
                 DescriptorWrite.setDescriptorType(vk::DescriptorType::eStorageBuffer)
                                    .setPBufferInfo(&DescriptorBuffers[DescriptorBuffers.size()-1]);
             }
             else if(Uniforms[i].Type == uniformType::Texture2d)
             {
                 image* Image = GetTexture(i);
-                std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(Image->ApiData);
+                GET_API_DATA(VKImage, vkImageData, Image);
                     // vk::DescriptorImageInfo DescriptorImageInfo(Texture->GetSampler(), Texture->GetNativeView(imageView::NATIVE), vk::ImageLayout::eShaderReadOnlyOptimal);
 
                 DescriptorImages.push_back(vk::DescriptorImageInfo(VKImage->Sampler, VKImage->DefaultImageViews.NativeView, vk::ImageLayout::eShaderReadOnlyOptimal));
@@ -74,7 +73,7 @@ uniformGroup & uniformGroup::Update()
             else if(Uniforms[i].Type == uniformType::FramebufferRenderTarget)
             {
                 framebuffer* Framebuffer = GetFramebuffer(i);
-                std::shared_ptr<vkFramebufferData> VKFramebuffer = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
+                GET_API_DATA(VKFramebuffer, vkFramebufferData, Framebuffer);
                 // vk::DescriptorImageInfo DescriptorImageInfo(Textur   e->GetSampler(), Texture->GetNativeView(imageView::NATIVE), vk::ImageLayout::eShaderReadOnlyOptimal);
 
                 std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(VKFramebuffer->ColorImages[Uniforms[i].ResourceIndex]->ApiData);

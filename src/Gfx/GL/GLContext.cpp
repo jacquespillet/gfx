@@ -99,7 +99,7 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
 }
 
 
-bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsage MemoryUsage)
+bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsage MemoryUsage, sz Stride)
 {
     bufferHandle Handle = ResourceManager.Buffers.ObtainResource();
     if(Handle == InvalidHandle)
@@ -108,16 +108,14 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsag
     }
     buffer *Buffer = GetBuffer(Handle);
     Buffer->ApiData = std::make_shared<glBuffer>();
-    std::shared_ptr<glBuffer> D12BufferData = std::static_pointer_cast<glBuffer>(Buffer->ApiData);
     
-    Buffer->Init(Size, Usage, MemoryUsage);
+    Buffer->Init(Size, Stride, Usage, MemoryUsage);
     return Handle;
 }
 
 void context::CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz Offset)
 {
     buffer *Buffer = GetBuffer(BufferHandle);
-    std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(Buffer->ApiData);
     Buffer->CopyData((u8*)Ptr, Size, Offset);
 }
 
@@ -140,7 +138,8 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     Framebuffer->Width = CreateInfo.Width;
     Framebuffer->Height = CreateInfo.Height;
     Framebuffer->ApiData = std::make_shared<glFramebufferData>();
-    std::shared_ptr<glFramebufferData> GLFramebufferData = std::static_pointer_cast<glFramebufferData>(Framebuffer->ApiData);
+    
+    GET_API_DATA(GLFramebufferData, glFramebufferData, Framebuffer);
 
     GLFramebufferData->ColorTextures.resize(CreateInfo.ColorFormats.size());
 
@@ -211,8 +210,8 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
     }
     framebuffer *SwapchainFramebuffer = Singleton->GetFramebuffer(GLData->SwapchainFramebuffer);
     SwapchainFramebuffer->ApiData = std::make_shared<glFramebufferData>();
-    std::shared_ptr<glFramebufferData> GLFramebufferData = std::static_pointer_cast<glFramebufferData>(SwapchainFramebuffer->ApiData);
-    
+
+    GET_API_DATA(GLFramebufferData, glFramebufferData, SwapchainFramebuffer);
     GLint FramebufferHandle;
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &FramebufferHandle);
 
@@ -243,7 +242,7 @@ vertexBufferHandle context::CreateVertexBuffer(const vertexBufferCreateInfo &Cre
     memcpy(&VertexBuffer->VertexStreams[0], &CreateInfo.VertexStreams[0], commonConstants::MaxVertexStreams * sizeof(vertexStreamData));
     
     VertexBuffer->ApiData = std::make_shared<glVertexBuffer>();
-    std::shared_ptr<glVertexBuffer> GLVertexBuffer = std::static_pointer_cast<glVertexBuffer>(VertexBuffer->ApiData);
+    GET_API_DATA(GLVertexBuffer, glVertexBuffer, VertexBuffer);
 
     //Create the vao
     glGenVertexArrays(1, &GLVertexBuffer->VAO);
@@ -256,12 +255,12 @@ vertexBufferHandle context::CreateVertexBuffer(const vertexBufferCreateInfo &Cre
         buffer *Buffer = context::Get()->GetBuffer(GLVertexBuffer->VertexBuffers[i]);
         Buffer->ApiData = std::make_shared<glBuffer>();
 
-        Buffer->Init(VertexBuffer->VertexStreams[i].Size, bufferUsage::VertexBuffer, memoryUsage::GpuOnly);
+        Buffer->Init(VertexBuffer->VertexStreams[i].Size, 1, bufferUsage::VertexBuffer, memoryUsage::GpuOnly);
         GLData->CheckErrors();
         Buffer->CopyData((u8*)VertexBuffer->VertexStreams[i].Data, VertexBuffer->VertexStreams[i].Size, 0);
         GLData->CheckErrors();
-        std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(Buffer->ApiData);
-        
+        GET_API_DATA(GLBuffer, glBuffer, Buffer);
+
         glBindBuffer(GLBuffer->Target, GLBuffer->Handle);
         
         u32 StartPtr=0;
@@ -302,7 +301,8 @@ framebufferHandle context::GetSwapchainFramebuffer()
 
     framebuffer *SwapchainFramebuffer = Singleton->GetFramebuffer(GLData->SwapchainFramebuffer);
     SwapchainFramebuffer->ApiData = std::make_shared<glFramebufferData>();
-    std::shared_ptr<glFramebufferData> GLFramebufferData = std::static_pointer_cast<glFramebufferData>(SwapchainFramebuffer->ApiData);
+    GET_API_DATA(GLFramebufferData, glFramebufferData, SwapchainFramebuffer);
+    
     return GLFramebufferData->Handle;
 }
 
@@ -335,8 +335,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     }
     pipeline *Pipeline = GetPipeline(Handle);
     Pipeline->ApiData = std::make_shared<glPipeline>();
-    std::shared_ptr<glPipeline> GLPipeline = std::static_pointer_cast<glPipeline>(Pipeline->ApiData);
-
+    GET_API_DATA(GLPipeline, glPipeline, Pipeline);
     //Compile and link shaders
 
     GLPipeline->ShaderProgram = std::make_shared<glShaderProgram>();
@@ -421,15 +420,14 @@ void context::DestroyPipeline(pipelineHandle PipelineHandle)
 {
     GET_CONTEXT(GLData, this);    
     pipeline *Pipeline = GetPipeline(PipelineHandle);
-    std::shared_ptr<glPipeline> VkPipelineData = std::static_pointer_cast<glPipeline>(Pipeline->ApiData);
+    GET_API_DATA(GLPipelineData, glPipeline, Pipeline);
 
+    if(GLPipelineData->ShaderProgram->VertexShader != nullptr) glDeleteShader(GLPipelineData->ShaderProgram->VertexShader->ShaderObject);
+    if(GLPipelineData->ShaderProgram->GeometryShader != nullptr) glDeleteShader(GLPipelineData->ShaderProgram->GeometryShader->ShaderObject);
+    if(GLPipelineData->ShaderProgram->FragmentShader != nullptr) glDeleteShader(GLPipelineData->ShaderProgram->FragmentShader->ShaderObject);
+    if(GLPipelineData->ShaderProgram->ComputeShader != nullptr) glDeleteShader(GLPipelineData->ShaderProgram->ComputeShader->ShaderObject);
 
-    if(VkPipelineData->ShaderProgram->VertexShader != nullptr) glDeleteShader(VkPipelineData->ShaderProgram->VertexShader->ShaderObject);
-    if(VkPipelineData->ShaderProgram->GeometryShader != nullptr) glDeleteShader(VkPipelineData->ShaderProgram->GeometryShader->ShaderObject);
-    if(VkPipelineData->ShaderProgram->FragmentShader != nullptr) glDeleteShader(VkPipelineData->ShaderProgram->FragmentShader->ShaderObject);
-    if(VkPipelineData->ShaderProgram->ComputeShader != nullptr) glDeleteShader(VkPipelineData->ShaderProgram->ComputeShader->ShaderObject);
-
-    glDeleteProgram(VkPipelineData->ShaderProgram->ProgramShaderObject);
+    glDeleteProgram(GLPipelineData->ShaderProgram->ProgramShaderObject);
 
     ResourceManager.Pipelines.ReleaseResource(PipelineHandle);
 
@@ -439,7 +437,8 @@ void context::DestroyPipeline(pipelineHandle PipelineHandle)
 void context::DestroyBuffer(bufferHandle BufferHandle)
 {
     buffer *Buffer = GetBuffer(BufferHandle);
-    std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(Buffer->ApiData);
+    GET_API_DATA(GLBuffer, glBuffer, Buffer);
+
     glDeleteBuffers(1, &GLBuffer->Handle);
     ResourceManager.Buffers.ReleaseResource(BufferHandle);
 }
@@ -452,7 +451,7 @@ void context::DestroyVertexBuffer(vertexBufferHandle VertexBufferHandle)
         DestroyBuffer(VertexBuffer->VertexStreams[i].Buffer);
     }
     
-    std::shared_ptr<glVertexBuffer> GLVertexBuffer = std::static_pointer_cast<glVertexBuffer>(VertexBuffer->ApiData);
+    GET_API_DATA(GLVertexBuffer, glVertexBuffer, VertexBuffer);
     glDeleteVertexArrays(1, &GLVertexBuffer->VAO);
 
     ResourceManager.VertexBuffers.ReleaseResource(VertexBufferHandle);
@@ -461,7 +460,7 @@ void context::DestroyVertexBuffer(vertexBufferHandle VertexBufferHandle)
 void context::DestroyImage(imageHandle ImageHandle)
 {
     image *Image = GetImage(ImageHandle);
-    std::shared_ptr<glImage> GLImage = std::static_pointer_cast<glImage>(Image->ApiData);
+    GET_API_DATA(GLImage, glImage, Image);
     glDeleteTextures(1, &GLImage->Handle);
     ResourceManager.Images.ReleaseResource(ImageHandle);
 }
@@ -475,7 +474,7 @@ void context::DestroySwapchain()
 void context::DestroyFramebuffer(framebufferHandle FramebufferHandle)
 {
     framebuffer *Framebuffer = GetFramebuffer(FramebufferHandle);
-    std::shared_ptr<glFramebufferData> GLFramebuffer = std::static_pointer_cast<glFramebufferData>(Framebuffer->ApiData);
+    GET_API_DATA(GLFramebuffer, glFramebufferData, Framebuffer)
     
     glDeleteTextures((GLsizei)GLFramebuffer->ColorTextures.size(), GLFramebuffer->ColorTextures.data());
     glDeleteTextures(1, &GLFramebuffer->DepthTexture);

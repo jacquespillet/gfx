@@ -198,7 +198,7 @@ stageBuffer context::CreateStageBuffer(sz Size)
     return Result;
 }
 
-bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsage MemoryUsage)
+bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsage MemoryUsage, sz Stride)
 {
     bufferHandle Handle = ResourceManager.Buffers.ObtainResource();
     if(Handle == InvalidHandle)
@@ -207,9 +207,9 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsag
     }
     buffer *Buffer = GetBuffer(Handle);
     Buffer->ApiData = std::make_shared<d3d12BufferData>();
-    std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);
+    GET_API_DATA(D12BufferData, d3d12BufferData, Buffer);
     
-    Buffer->Init(Size, Usage, MemoryUsage);
+    Buffer->Init(Size, Stride, Usage, MemoryUsage);
     return Handle;
 }
 
@@ -225,7 +225,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
     Swapchain->Width = Width;
     Swapchain->Height = Height;
     Swapchain->ApiData = std::make_shared<d3d12SwapchainData>();
-    std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
+    GET_API_DATA(D12SwapchainData, d3d12SwapchainData, Swapchain);
 
 
     D12SwapchainData->FramebufferHandle = ResourceManager.Framebuffers.ObtainResource();
@@ -367,9 +367,9 @@ bufferHandle CreateVertexBufferStream(f32 *Values, sz ByteSize, sz Stride, const
 
     //Create vertex buffer
     buffer *Buffer = Context->GetBuffer(Handle);
-    Buffer->Init(ByteSize, bufferUsage::VertexBuffer, memoryUsage::GpuOnly);
+    Buffer->Init(ByteSize, 1, bufferUsage::VertexBuffer, memoryUsage::GpuOnly);
     Buffer->Name = "";
-    std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);    
+    GET_API_DATA(D12BufferData, d3d12BufferData, Buffer);    
 
     //Copy data to stage buffer
     D12Data->ImmediateCommandBuffer->Begin();
@@ -619,7 +619,6 @@ ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_
     {
         D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{};
         ThrowIfFailed(shaderReflection->GetResourceBindingDesc(i, &shaderInputBindDesc));
-        //TODO: Else if
         if (shaderInputBindDesc.Type == D3D_SIT_CBUFFER)
         {
             BindingRootParamMapping[shaderInputBindDesc.BindPoint] = static_cast<uint32_t>(OutRootParams.size());
@@ -633,7 +632,7 @@ ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_
             
             OutRootParams.push_back(rootParameter);
         }
-        if (shaderInputBindDesc.Type == D3D_SIT_UAV_RWSTRUCTURED)
+        else if (shaderInputBindDesc.Type == D3D_SIT_UAV_RWSTRUCTURED)
         {
             BindingRootParamMapping[shaderInputBindDesc.BindPoint] = static_cast<uint32_t>(OutRootParams.size());
 
@@ -646,7 +645,7 @@ ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_
             
             OutRootParams.push_back(rootParameter);
         }
-        if (shaderInputBindDesc.Type == D3D_SIT_TEXTURE)
+        else if (shaderInputBindDesc.Type == D3D_SIT_TEXTURE)
         {
             // For now, each individual texture belongs in its own descriptor table. This can cause the root signature to quickly exceed the 64WORD size limit.
             BindingRootParamMapping[shaderInputBindDesc.BindPoint] = static_cast<uint32_t>(OutRootParams.size());
@@ -868,7 +867,7 @@ renderPassHandle context::GetDefaultRenderPass()
 
 framebufferHandle context::GetSwapchainFramebuffer()
 {
-    std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
+    GET_API_DATA(D12SwapchainData, d3d12SwapchainData, Swapchain);
     return D12SwapchainData->FramebufferHandle;
 }  
   
@@ -965,7 +964,7 @@ void context::DestroyFramebuffer(framebufferHandle FramebufferHandle)
 }
 void context::DestroySwapchain()
 {
-    std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
+    GET_API_DATA(D12SwapchainData, d3d12SwapchainData, Swapchain);
     framebuffer *Framebuffer = GetFramebuffer(D12SwapchainData->FramebufferHandle);
     ResourceManager.RenderPasses.ReleaseResource(Framebuffer->RenderPass);
     ResourceManager.Framebuffers.ReleaseResource(D12SwapchainData->FramebufferHandle);

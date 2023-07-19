@@ -93,11 +93,11 @@ void CreateSwapchainFramebuffer(std::shared_ptr<image> *ColorImages, std::shared
         Framebuffer->Width = ColorImages[i]->Extent.Width;
         Framebuffer->Height = ColorImages[i]->Extent.Height;
         Framebuffer->ApiData = std::make_shared<vkFramebufferData>();
-        std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
+        GET_API_DATA(VkFramebufferData, vkFramebufferData, Framebuffer);
         if(VkData->MultisamplingEnabled) VkFramebufferData->IsMultiSampled=true;
 
-        std::shared_ptr<vkImageData> VkColorImage = std::static_pointer_cast<vkImageData>(ColorImages[i]->ApiData);
-        std::shared_ptr<vkImageData> VkDepthImage = std::static_pointer_cast<vkImageData>(DepthStencilImage->ApiData);
+        GET_API_DATA(VkColorImage, vkImageData, ColorImages[i]);
+        GET_API_DATA(VkDepthImage, vkImageData, DepthStencilImage);
 
         std::vector<vk::ImageView> Attachments;
         if(VkFramebufferData->IsMultiSampled)
@@ -107,9 +107,10 @@ void CreateSwapchainFramebuffer(std::shared_ptr<image> *ColorImages, std::shared
             VkFramebufferData->MultiSampledColorImage->Init(Framebuffer->Width, Framebuffer->Height, ColorImages[i]->Format, imageUsage::COLOR_ATTACHMENT, memoryUsage::GpuOnly, context::Get()->MultiSampleCount);
             VkFramebufferData->MultiSampledDepthStencilImage = std::make_shared<image>();
             VkFramebufferData->MultiSampledDepthStencilImage->Init(Framebuffer->Width, Framebuffer->Height, DepthStencilImage->Format, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly, context::Get()->MultiSampleCount);
-                    
-            std::shared_ptr<vkImageData> VkMultisampledColorImage = std::static_pointer_cast<vkImageData>(VkFramebufferData->MultiSampledColorImage->ApiData);
-            std::shared_ptr<vkImageData> VkMultisampledDepthStencilImage = std::static_pointer_cast<vkImageData>(VkFramebufferData->MultiSampledDepthStencilImage->ApiData);
+            
+            GET_API_DATA(VkMultisampledColorImage, vkImageData, VkFramebufferData->MultiSampledColorImage);
+            GET_API_DATA(VkMultisampledDepthStencilImage, vkImageData, VkFramebufferData->MultiSampledDepthStencilImage);
+
             Attachments = 
             {
                 VkMultisampledColorImage->DefaultImageViews.NativeView,
@@ -153,7 +154,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
         Swapchain = std::make_shared<swapchain>();
         Swapchain->ApiData = std::make_shared<vkSwapchainData>();
     }
-    std::shared_ptr<vkSwapchainData> VkSwapchainData = std::static_pointer_cast<vkSwapchainData>(Swapchain->ApiData);
+    GET_API_DATA(VkSwapchainData, vkSwapchainData, Swapchain);
 
     VkData->Device.waitIdle();
 
@@ -197,11 +198,11 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
         for(u32 i=0; i<VkData->PresentImageCount; i++)
         {
             framebuffer *Framebuffer = GetFramebuffer(VkSwapchainData->Framebuffers[i]);
-            std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
+            GET_API_DATA(VkFramebufferData, vkFramebufferData, Framebuffer);
             VkData->Device.destroyFramebuffer(VkFramebufferData->Handle);
             ResourceManager.Framebuffers.ReleaseResource(VkSwapchainData->Framebuffers[i]);
             
-            std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(VkSwapchainData->SwapchainImages[i]->ApiData);
+            GET_API_DATA(VkImageData, vkImageData, VkSwapchainData->SwapchainImages[i]);
             VkData->Device.destroyImageView(VkImageData->DefaultImageViews.NativeView);
             
             //Destroy the multisampled render targets
@@ -520,7 +521,7 @@ bufferHandle CreateVertexBufferStream(f32 *Values, sz Count, sz Stride, const st
     
     Buffer->Name = "";
     Buffer->ApiData = std::make_shared<vkBufferData>();
-    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
+    GET_API_DATA(VkBufferData, vkBufferData, Buffer);
     *VkBufferData = vkBufferData();
 
     auto VulkanContext = context::Get();
@@ -532,7 +533,7 @@ bufferHandle CreateVertexBufferStream(f32 *Values, sz Count, sz Stride, const st
 
     auto VertexAllocation = StageBuffer->Submit((uint8_t*)Values, (u32)Count * sizeof(f32));
 
-    Buffer->Init(VertexAllocation.Size, gfx::bufferUsage::VertexBuffer, gfx::memoryUsage::GpuOnly);
+    Buffer->Init(VertexAllocation.Size, 1, gfx::bufferUsage::VertexBuffer, gfx::memoryUsage::GpuOnly);
   
     CommandBuffer->CopyBuffer(
         gfx::bufferInfo {StageBuffer->GetBuffer(), VertexAllocation.Offset},
@@ -574,7 +575,7 @@ vertexBufferHandle context::CreateVertexBuffer(const vertexBufferCreateInfo &Cre
     return Handle;
 }
 
-bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsage MemoryUsage)
+bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsage MemoryUsage, sz Stride)
 {
     bufferHandle Handle = ResourceManager.Buffers.ObtainResource();
     if(Handle == InvalidHandle)
@@ -583,10 +584,10 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsag
     }
     buffer *Buffer = GetBuffer(Handle);
     Buffer->ApiData = std::make_shared<vkBufferData>();
-    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
+    GET_API_DATA(VkBufferData, vkBufferData, Buffer);
     *VkBufferData = vkBufferData(); 
 
-    Buffer->Init(Size, Usage, MemoryUsage);
+    Buffer->Init(Size, Stride, Usage, MemoryUsage);
 
     return Handle;
 }
@@ -650,7 +651,7 @@ stageBuffer *context::GetStageBuffer()
 void context::SubmitCommandBufferImmediate(commandBuffer *CommandBuffer)
 {
     GET_CONTEXT(VkData, this);
-    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(CommandBuffer->ApiData);
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, CommandBuffer);
 
     vk::SubmitInfo SubmitInfo;
     SubmitInfo.setCommandBuffers(VkCommandBufferData->Handle);
@@ -663,7 +664,7 @@ void context::SubmitCommandBufferImmediate(commandBuffer *CommandBuffer)
 void context::SubmitCommandBuffer(commandBuffer *CommandBuffer)
 {
     GET_CONTEXT(VkData, this);
-    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(CommandBuffer->ApiData);
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, CommandBuffer);
 
     vk::SubmitInfo SubmitInfo;
     SubmitInfo.setCommandBuffers(VkCommandBufferData->Handle);
@@ -695,7 +696,7 @@ shaderStateHandle CreateShaderState(const shaderStateCreation &Creation)
     
     shader *ShaderState = Context->GetShader(Handle);
     ShaderState->ApiData = std::make_shared<vkShaderData>();
-    std::shared_ptr<vkShaderData> VkShaderData = std::static_pointer_cast<vkShaderData>(ShaderState->ApiData);
+    GET_API_DATA(VkShaderData, vkShaderData, ShaderState);
 
     ShaderState->GraphicsPipeline = true;
     ShaderState->ActiveShaders=0;
@@ -975,7 +976,7 @@ renderPass *vkData::GetRenderPass(const renderPassOutput &Output, std::string Na
     renderPass *RenderPass = context::Get()->GetRenderPass(RenderPassHandle);
     RenderPass->Name = Name;
     RenderPass->ApiData = std::make_shared<vkRenderPassData>();
-    std::shared_ptr<vkRenderPassData> VkRenderPassData = std::static_pointer_cast<vkRenderPassData>(RenderPass->ApiData);
+    GET_API_DATA(VkRenderPassData, vkRenderPassData, RenderPass);
     VkRenderPassData->NativeHandle =  CreateRenderPass(this, Output);
 
 
@@ -1036,10 +1037,10 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 
     pipeline *Pipeline = GetPipeline(Handle);
     Pipeline->ApiData = std::make_shared<vkPipelineData>();
-    std::shared_ptr<vkPipelineData> VkPipelineData = std::static_pointer_cast<vkPipelineData>(Pipeline->ApiData);
+    GET_API_DATA(VkPipelineData, vkPipelineData, Pipeline);
 
     shader *ShaderStateData = GetShader(ShaderState);
-    std::shared_ptr<vkShaderData> VkShaderData = std::static_pointer_cast<vkShaderData>(ShaderStateData->ApiData);
+    GET_API_DATA(VkShaderData, vkShaderData, ShaderStateData);
 
     VkPipelineData->ShaderState = ShaderState;
     vk::DescriptorSetLayout Layouts[vkConstants::MaxDescriptorSetLayouts];
@@ -1204,7 +1205,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         PipelineCreateInfo.setPViewportState(&ViewportState);
 
         renderPass *RenderPass = VkData->GetRenderPass(PipelineCreation.RenderPass, std::string(PipelineCreation.RenderPass.Name));
-        std::shared_ptr<vkRenderPassData> VkRenderPassData = std::static_pointer_cast<vkRenderPassData>(RenderPass->ApiData);
+        GET_API_DATA(VkRenderPassData, vkRenderPassData, RenderPass);
         PipelineCreateInfo.setRenderPass(VkRenderPassData->NativeHandle);
 
         vk::DynamicState DynamicStates[] = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
@@ -1269,14 +1270,14 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     {
         ColorImages[i] = std::make_shared<image>();
         ColorImages[i]->Init(CreateInfo.Width, CreateInfo.Height, CreateInfo.ColorFormats[i], imageUsage::COLOR_ATTACHMENT, memoryUsage::GpuOnly);
-        std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(ColorImages[i]->ApiData);
+        GET_API_DATA(VKImage, vkImageData, ColorImages[i]);
         Attachments[i] = VKImage->DefaultImageViews.NativeView;
     }
 
     //Create depth image
     std::shared_ptr<image> DepthImage = std::make_shared<image>();
     DepthImage->Init(CreateInfo.Width, CreateInfo.Height, CreateInfo.DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
-    std::shared_ptr<vkImageData> VKDepthImage = std::static_pointer_cast<vkImageData>(DepthImage->ApiData);
+    GET_API_DATA(VKDepthImage, vkImageData, DepthImage);
     Attachments[Attachments.size()-1] = VKDepthImage->DefaultImageViews.NativeView;
 
     //Create the framebuffer
@@ -1298,7 +1299,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     Framebuffer->Height = CreateInfo.Height;
     Framebuffer->ApiData = std::make_shared<vkFramebufferData>();
     Framebuffer->RenderPass = VKData->RenderPassCache["Foo"];   
-    std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
+    GET_API_DATA(VkFramebufferData, vkFramebufferData, Framebuffer);
     VkFramebufferData->DepthStencilImage = DepthImage;
     VkFramebufferData->ColorImages = ColorImages;
     VkFramebufferData->ColorImagesCount = (u32)CreateInfo.ColorFormats.size();
@@ -1309,7 +1310,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
 
 framebufferHandle context::GetSwapchainFramebuffer()
 {
-    std::shared_ptr<vkSwapchainData> VkSwapchainData = std::static_pointer_cast<vkSwapchainData>(Swapchain->ApiData);
+    GET_API_DATA(VkSwapchainData, vkSwapchainData, Swapchain);
     framebufferHandle Framebuffer = VkSwapchainData->Framebuffers[VkSwapchainData->CurrentIndex];
     return Framebuffer;
 }
@@ -1329,9 +1330,8 @@ vk::DescriptorSet AllocateDescriptorSet(vk::DescriptorSetLayout SetLayout, std::
 void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding){
     GET_CONTEXT(VkData, this);
     pipeline *Pipeline = GetPipeline(PipelineHandle);
-    std::shared_ptr<vkPipelineData> VkPipeline = std::static_pointer_cast<vkPipelineData>(Pipeline->ApiData);
-    std::shared_ptr<vkUniformData> VkUniformData = std::static_pointer_cast<vkUniformData>(Uniforms->ApiData);
-
+    GET_API_DATA(VkPipeline, vkPipelineData, Pipeline);
+    GET_API_DATA(VkUniformData, vkUniformData, Uniforms);
 
     if(VkUniformData->DescriptorInfos.find(PipelineHandle) == VkUniformData->DescriptorInfos.end())
     {
@@ -1353,7 +1353,7 @@ void context::CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz
     buffer *Buffer = GetBuffer(BufferHandle);
     
     Buffer->Name = "";
-    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
+    GET_API_DATA(VkBufferData, vkBufferData, Buffer);
     
     auto StageBuffer = GetStageBuffer();
     auto CommandBuffer = GetImmediateCommandBuffer();
@@ -1380,11 +1380,11 @@ void context::DestroyPipeline(pipelineHandle PipelineHandle)
     GET_CONTEXT(VkData, this);
     
     pipeline *Pipeline = GetPipeline(PipelineHandle);
-    std::shared_ptr<vkPipelineData> VkPipelineData = std::static_pointer_cast<vkPipelineData>(Pipeline->ApiData);
+    GET_API_DATA(VkPipelineData, vkPipelineData, Pipeline);
     
     
     shader *Shader = GetShader(VkPipelineData->ShaderState);
-    std::shared_ptr<vkShaderData> VkShaderData = std::static_pointer_cast<vkShaderData>(Shader->ApiData);
+    GET_API_DATA(VkShaderData, vkShaderData, Shader);
     for (size_t i = 0; i < Shader->ActiveShaders; i++)
     {
         VkData->Device.destroyShaderModule(VkShaderData->ShaderStageCreateInfo[i].module);
@@ -1413,7 +1413,7 @@ void context::DestroyBuffer(bufferHandle BufferHandle)
     GET_CONTEXT(VkData, this);
 
     buffer *Buffer = GetBuffer(BufferHandle);
-    std::shared_ptr<vkBufferData> VkBufferData = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
+    GET_API_DATA(VkBufferData, vkBufferData, Buffer);
     vmaDestroyBuffer(VkData->Allocator, VkBufferData->Handle, VkBufferData->Allocation);
     ResourceManager.Buffers.ReleaseResource(BufferHandle);
 }
@@ -1434,7 +1434,7 @@ void context::DestroyImage(imageHandle ImageHandle)
 {
     GET_CONTEXT(VkData, this);
     image *Image = GetImage(ImageHandle);
-    std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(Image->ApiData);
+    GET_API_DATA(VkImageData, vkImageData, Image);
     Image->Destroy();
     ResourceManager.Images.ReleaseResource(ImageHandle);
 }
@@ -1443,7 +1443,7 @@ void context::DestroyFramebuffer(framebufferHandle FramebufferHandle)
 {
     GET_CONTEXT(VkData, this);
     framebuffer *Framebuffer = GetFramebuffer(FramebufferHandle);
-    std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
+    GET_API_DATA(VkFramebufferData, vkFramebufferData, Framebuffer);
 
     for (sz i = 0; i < VkFramebufferData->ColorImagesCount; i++)
     {
@@ -1462,17 +1462,17 @@ void context::DestroySwapchain()
 {
     GET_CONTEXT(VkData, this);
     
-    std::shared_ptr<vkSwapchainData> VkSwapchainData = std::static_pointer_cast<vkSwapchainData>(Swapchain->ApiData);
+    GET_API_DATA(VkSwapchainData, vkSwapchainData, Swapchain);
     
     // //Destroy Framebuffers
     for (sz i = 0; i <VkSwapchainData->ImageCount; i++)
     {
         framebuffer *Framebuffer = GetFramebuffer(VkSwapchainData->Framebuffers[i]);
-        std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
+        GET_API_DATA(VkFramebufferData, vkFramebufferData, Framebuffer);
         VkData->Device.destroyFramebuffer(VkFramebufferData->Handle);
         ResourceManager.Framebuffers.ReleaseResource(VkSwapchainData->Framebuffers[i]);
         
-        std::shared_ptr<vkImageData> VkImageData = std::static_pointer_cast<vkImageData>(VkSwapchainData->SwapchainImages[i]->ApiData);
+        GET_API_DATA(VkImageData, vkImageData, VkSwapchainData->SwapchainImages[i]);
         VkData->Device.destroyImageView(VkImageData->DefaultImageViews.NativeView);
 
 

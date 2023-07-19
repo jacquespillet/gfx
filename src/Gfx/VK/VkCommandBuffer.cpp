@@ -20,7 +20,7 @@ std::shared_ptr<commandBuffer> CreateVkCommandBuffer(vk::CommandBuffer VkCommand
 {
     std::shared_ptr<commandBuffer>  CommandBuffer = std::make_shared<commandBuffer>();
     CommandBuffer->ApiData = std::make_shared<vkCommandBufferData>();
-    std::shared_ptr<vkCommandBufferData> VkData = std::static_pointer_cast<vkCommandBufferData>(CommandBuffer->ApiData);
+    GET_API_DATA(VkData, vkCommandBufferData, CommandBuffer);
     VkData->Handle = VkCommandBuffer;
 
 
@@ -29,7 +29,7 @@ std::shared_ptr<commandBuffer> CreateVkCommandBuffer(vk::CommandBuffer VkCommand
 
 void commandBuffer::Begin()
 {
-    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
     
     vk::CommandBufferBeginInfo CommandBufferBeginInfo;
     CommandBufferBeginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
@@ -41,14 +41,14 @@ void commandBuffer::BeginPass(framebufferHandle FramebufferHandle, clearColorVal
     context *Context = context::Get();
     GET_CONTEXT(VkData, Context);
 
-    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
 
     framebuffer *Framebuffer = Context->GetFramebuffer(FramebufferHandle);
-    std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
+    GET_API_DATA(VkFramebufferData, vkFramebufferData, Framebuffer);
     vk::Framebuffer VkFramebufferHandle = VkFramebufferData->Handle;
 
     renderPass *RenderPass = Context->GetRenderPass(Framebuffer->RenderPass);
-    std::shared_ptr<vkRenderPassData> VkRenderPassData = std::static_pointer_cast<vkRenderPassData>(RenderPass->ApiData);
+    GET_API_DATA(VkRenderPassData, vkRenderPassData, RenderPass);
     vk::RenderPass VkRenderPassHandle = VkRenderPassData->NativeHandle;
 
     vk::Rect2D RenderArea;
@@ -84,10 +84,10 @@ void commandBuffer::BeginPass(framebufferHandle FramebufferHandle, clearColorVal
 
 void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
 {
-    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
 
     pipeline *Pipeline = context::Get()->GetPipeline(PipelineHandle);
-    std::shared_ptr<vkPipelineData> VkPipeline = std::static_pointer_cast<vkPipelineData>(Pipeline->ApiData);
+    GET_API_DATA(VkPipeline, vkPipelineData, Pipeline);
 
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
     CommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, VkPipeline->NativeHandle);
@@ -98,10 +98,10 @@ void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
 
 void commandBuffer::BindComputePipeline(pipelineHandle PipelineHandle)
 {
-    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
 
     pipeline *Pipeline = context::Get()->GetPipeline(PipelineHandle);
-    std::shared_ptr<vkPipelineData> VkPipeline = std::static_pointer_cast<vkPipelineData>(Pipeline->ApiData);
+    GET_API_DATA(VkPipeline, vkPipelineData, Pipeline);
 
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
     CommandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, VkPipeline->NativeHandle);
@@ -111,7 +111,7 @@ void commandBuffer::BindComputePipeline(pipelineHandle PipelineHandle)
 
 void commandBuffer::Dispatch(u32 NumGroupX, u32 NumGroupY, u32 NumGroupZ)
 {
-    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
     CommandBuffer.dispatch(NumGroupX, NumGroupY, NumGroupZ);
 }
@@ -119,7 +119,7 @@ void commandBuffer::Dispatch(u32 NumGroupX, u32 NumGroupY, u32 NumGroupZ)
 void commandBuffer::BindIndexBuffer(bufferHandle BufferHandle, u32 Offset, indexType IndexType)
 {
     buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
-    std::shared_ptr<vkBufferData> VkBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
+    GET_API_DATA(VkBuffer, vkBufferData, Buffer);
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
     CommandBuffer.bindIndexBuffer(VkBuffer->Handle, Offset, IndexTypeToNative(IndexType));
 }
@@ -132,7 +132,7 @@ void commandBuffer::BindVertexBuffer(vertexBufferHandle BufferHandle)
     for(u32 i=0; i<VertexBuffer->NumVertexStreams; i++)
     {
         buffer *Buffer = context::Get()->GetBuffer(VertexBuffer->VertexStreams[i].Buffer);
-        std::shared_ptr<vkBufferData> VkBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
+        GET_API_DATA(VkBuffer, vkBufferData, Buffer);
 
         u64 Offsets[] = {0};
         CommandBuffer.bindVertexBuffers(VertexBuffer->VertexStreams[i].StreamIndex, 1, &VkBuffer->Handle, Offsets);
@@ -174,14 +174,14 @@ void commandBuffer::EndPass()
 
 void commandBuffer::End()
 {
-    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
     VkCommandBufferData->Handle.end();
 }
 
 
 void commandBuffer::CopyBuffer(const bufferInfo &Source, const bufferInfo &Destination, size_t ByteSize)
 {
-    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
     
     assert(Source.Resource->Size >= Source.Offset + ByteSize);
     assert(Destination.Resource->Size >= Destination.Offset + ByteSize);
@@ -199,9 +199,9 @@ void commandBuffer::CopyBuffer(const bufferInfo &Source, const bufferInfo &Desti
 
 void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo &Destination)
 {
-    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
-    std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(Destination.Resource->ApiData);
-    std::shared_ptr<vkBufferData> VKBuffer = std::static_pointer_cast<vkBufferData>(Source.Resource->ApiData);
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
+    GET_API_DATA(VKImage, vkImageData, Destination.Resource);
+    GET_API_DATA(VKBuffer, vkBufferData, Source.Resource);
 
     if(Destination.Usage != imageUsage::TRANSFER_DESTINATION)
     {
@@ -249,8 +249,8 @@ void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo 
 
 void commandBuffer::TransferLayout(const image &Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout)
 {
-    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
-    std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(Texture.ApiData);
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
+    GET_API_DATA(VKImage, vkImageData, (&Texture));
 
     auto Barrier = GetImageMemoryBarrier(Texture, OldLayout, NewLayout);
     VkCommandBufferData->Handle.pipelineBarrier(
@@ -269,10 +269,10 @@ void commandBuffer::TransferLayout(const image &Texture, imageUsage::bits OldLay
 
 void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Binding)
 {
-    std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
     pipeline *Pipeline = context::Get()->GetPipeline(VkCommandBufferData->BoundPipeline);
-    std::shared_ptr<vkPipelineData> VkPipeline = std::static_pointer_cast<vkPipelineData>(Pipeline->ApiData);
-    std::shared_ptr<vkUniformData> VkUniformData = std::static_pointer_cast<vkUniformData>(Group->ApiData);
+    GET_API_DATA(VkPipeline, vkPipelineData, Pipeline);
+    GET_API_DATA(VkUniformData, vkUniformData, Group);
     VkCommandBufferData->Handle.bindDescriptorSets(VkPipeline->BindPoint, VkPipeline->PipelineLayout, Binding, 1, &VkUniformData->DescriptorInfos[VkCommandBufferData->BoundPipeline].DescriptorSet, 0, 0);
 }
 

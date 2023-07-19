@@ -11,12 +11,13 @@ struct buffer
 {
     const char *Name;
     sz Size;
+    sz Stride;
     u8 *MappedData;
     
     std::shared_ptr<void> ApiData;
 
     memoryUsage MemoryUsage;
-    void Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryUsage);
+    void Init(size_t ByteSize, sz Stride, bufferUsage::value Usage, memoryUsage MemoryUsage);
     void CopyData(const uint8_t *Data, size_t ByteSize, size_t Offset);
     u8 *MapMemory();
     void UnmapMemory();

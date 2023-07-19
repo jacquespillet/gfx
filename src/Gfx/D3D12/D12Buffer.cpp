@@ -27,9 +27,10 @@ static sz CalcConstantBufferByteSize(sz byteSize)
     return (byteSize + 255) & ~255;
 }
 
-void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryUsage)
+void buffer::Init(size_t ByteSize, sz Stride, bufferUsage::value Usage, memoryUsage MemoryUsage)
 {
     this->Size = ByteSize;
+    this->Stride = Stride;
     if(Usage == bufferUsage::UniformBuffer)
     {
         this->Size = CalcConstantBufferByteSize(ByteSize);
@@ -89,9 +90,6 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
     if(Usage == bufferUsage::StorageBuffer)
     {
         D12BufferData->OffsetInHeap = D12Data->CurrentHeapOffset;
-
-        //TODO: This should be an argument
-        u32 Stride = 4 * 4;
 
         D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc = {};
         UAVDesc.Format = DXGI_FORMAT_UNKNOWN;
