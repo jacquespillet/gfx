@@ -333,11 +333,16 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
         );
     }
 
-    
+    //TODO: Refactor all that
+    D12FramebufferData->Width = Width;
+    D12FramebufferData->Height = Height;
     D12FramebufferData->RenderTargetsCount = d12Constants::FrameCount;
     D12FramebufferData->IsMultiSampled = D12Data->MultisamplingEnabled;
     D12FramebufferData->IsSwapchain=true;
-    D12FramebufferData->ColorFormats.push_back(FormatToNative(SwapchainFormat));
+    D12FramebufferData->ColorFormatsNative.push_back(FormatToNative(SwapchainFormat));
+    D12FramebufferData->ColorFormatsNative.push_back(FormatToNative(SwapchainFormat));
+    D12FramebufferData->ColorFormats.push_back(SwapchainFormat);
+    D12FramebufferData->ColorFormats.push_back(SwapchainFormat);
     D12FramebufferData->CreateHeaps();
     D12FramebufferData->SetRenderTargets(D12SwapchainData->Buffers, d12Constants::FrameCount);
     D12FramebufferData->BuildDescriptors();
@@ -463,6 +468,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     
     for(sz i=0; i<CreateInfo.ColorFormats.size(); i++)
     {
+        //TODO: Use image.INit() here
         RenderPass->Output.ColorFormats[i] = CreateInfo.ColorFormats[i];
 
         D3D12_RESOURCE_DESC desc = {};
@@ -483,15 +489,20 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
 
         D3D12_CLEAR_VALUE clearValue = {};
         clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        clearValue.Color[0] = 0.5f;
-        clearValue.Color[1] = 0.0f;
-        clearValue.Color[2] = 0.8f;
-        clearValue.Color[3] = 1.0f;
+        clearValue.Color[0] = CreateInfo.ClearValues[0];
+        clearValue.Color[1] = CreateInfo.ClearValues[1];
+        clearValue.Color[2] = CreateInfo.ClearValues[2];
+        clearValue.Color[3] = CreateInfo.ClearValues[3];
         
         D12Data->Device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&D12FramebufferData->RenderTargets[i]));
+        D12FramebufferData->RenderTargetsSRV[i].Init(CreateInfo.Width, CreateInfo.Height, CreateInfo.ColorFormats[i], imageUsage::COLOR_ATTACHMENT, memoryUsage::GpuOnly);
     }
 
+    //TODO : Refactor that
+    D12FramebufferData->Width = CreateInfo.Width;
+    D12FramebufferData->Height = CreateInfo.Height;
     D12FramebufferData->RenderTargetsCount = (u32)CreateInfo.ColorFormats.size();
+    D12FramebufferData->ColorFormats = CreateInfo.ColorFormats;
     D12FramebufferData->CreateHeaps();
     D12FramebufferData->BuildDescriptors();
     D12FramebufferData->CreateDepthBuffer(CreateInfo.Width, CreateInfo.Height, CreateInfo.DepthFormat);

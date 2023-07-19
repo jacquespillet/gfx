@@ -17,6 +17,7 @@ struct framebufferCreateInfo
     u32 Height = 1024;
     std::vector<format> ColorFormats = { format::R8G8B8A8_UNORM};
     format DepthFormat = format::D24_UNORM_S8_UINT;
+    f32 ClearValues[4];
     static framebufferCreateInfo Default(u32 Width, u32 Height){
         return
         {

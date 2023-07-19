@@ -25,9 +25,11 @@ struct d3d12FramebufferData
     
     ComPtr<ID3D12Resource> RenderTargets[commonConstants::MaxImageOutputs] = {};
     ComPtr<ID3D12Resource> DepthStencilBuffer;  
+    image RenderTargetsSRV[commonConstants::MaxImageOutputs] = {};
         
     DXGI_FORMAT DepthStencilFormat =DXGI_FORMAT_D24_UNORM_S8_UINT;
-    std::vector<DXGI_FORMAT> ColorFormats;
+    std::vector<DXGI_FORMAT> ColorFormatsNative;
+    std::vector<format> ColorFormats;
 
     b8 IsSwapchain=false;
 
@@ -38,6 +40,8 @@ struct d3d12FramebufferData
     ComPtr<ID3D12Resource> MultisampledDepthImage;
     u32 MultisampledColorImageIndex;
     u32 MultisampledDepthImageIndex;
+
+    u32 Width, Height;
 
     
     void CreateHeaps();

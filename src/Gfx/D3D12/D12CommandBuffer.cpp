@@ -82,6 +82,7 @@ void commandBuffer::CopyBuffer(const bufferInfo &Source, const bufferInfo &Desti
     if(TransitionDestination) D12DestinationHandle->Transition(D12CommandBufferData->CommandList.Get(), DestinationInitialState);
 }
 
+
 void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo &Destination)
 {
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(this->ApiData);
@@ -163,11 +164,32 @@ void commandBuffer::EndPass()
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
     std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(D12CommandBufferData->CurrentFramebuffer->ApiData);
 
+    //Copy to the srvs so they can get sampled
+    if(!D12FramebufferData->IsSwapchain)
+    {
+        for (size_t i = 0; i < D12FramebufferData->RenderTargetsCount; i++)
+        {
+            ID3D12Resource *Source = D12FramebufferData->RenderTargets[i].Get();
+            ID3D12Resource *Dest = std::static_pointer_cast<d3d12ImageData>(D12FramebufferData->RenderTargetsSRV[i].ApiData)->Handle.Get();
+
+            D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(Source, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE));
+            D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(Dest, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
+
+            // Copy the source texture to the destination texture
+            D12CommandBufferData->CommandList->CopyResource(Dest, Source);
+
+            // Transition the resource states back
+            D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(Source, D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));   
+            D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(Dest, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+        }
+    }
+    
+
     if(D12FramebufferData->IsMultiSampled)
     {
         D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12FramebufferData->MultisampledColorImage.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_RESOLVE_SOURCE));
         D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12FramebufferData->RenderTargets[D12FramebufferData->CurrentTarget].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_RESOLVE_DEST));
-        D12CommandBufferData->CommandList->ResolveSubresource(D12FramebufferData->RenderTargets[D12FramebufferData->CurrentTarget].Get(), 0, D12FramebufferData->MultisampledColorImage.Get(), 0, D12FramebufferData->ColorFormats[0]);
+        D12CommandBufferData->CommandList->ResolveSubresource(D12FramebufferData->RenderTargets[D12FramebufferData->CurrentTarget].Get(), 0, D12FramebufferData->MultisampledColorImage.Get(), 0, D12FramebufferData->ColorFormatsNative[0]);
         D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12FramebufferData->MultisampledColorImage.Get(), D3D12_RESOURCE_STATE_RESOLVE_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
         D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12FramebufferData->RenderTargets[D12FramebufferData->CurrentTarget].Get(), D3D12_RESOURCE_STATE_RESOLVE_DEST, D12FramebufferData->IsSwapchain ? D3D12_RESOURCE_STATE_PRESENT : D3D12_RESOURCE_STATE_RENDER_TARGET));
     }
@@ -243,14 +265,14 @@ void commandBuffer::BindVertexBuffer(vertexBufferHandle BufferHandle)
 void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height)
 {
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
-    CD3DX12_VIEWPORT Viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, (float)context::Get()->Swapchain->Width, (float)context::Get()->Swapchain->Height);
+    CD3DX12_VIEWPORT Viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, (float)Width, (float)Height);
     D12CommandBufferData->CommandList->RSSetViewports(1, &Viewport);
 }
 
 void commandBuffer::SetScissor(s32 X, s32 Y, u32 Width, u32 Height)
 {
     std::shared_ptr<d3d12CommandBufferData> D12CommandBufferData = std::static_pointer_cast<d3d12CommandBufferData>(ApiData);
-    CD3DX12_RECT Scissor = CD3DX12_RECT(0, 0, (LONG)context::Get()->Swapchain->Width, (LONG)context::Get()->Swapchain->Height);
+    CD3DX12_RECT Scissor = CD3DX12_RECT(0, 0, (LONG)Width, (LONG)Height);
     D12CommandBufferData->CommandList->RSSetScissorRects(1, &Scissor);
 }
 
@@ -283,6 +305,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
 
     for(sz i=0; i< Group->Uniforms.size(); i++)
     {
+        //TODO : ELSEIF
         if(Group->Uniforms[i].Type == uniformType::UniformBuffer)
         {
             buffer* BufferData = (buffer*)(Group->Uniforms[i].Resource);
@@ -327,6 +350,20 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
                     D12CommandBufferData->CommandList->SetComputeRootDescriptorTable(RootParamIndex, D12Data->GetGPUDescriptorAt(D12ImageData->OffsetInHeap));
                 else
                     D12CommandBufferData->CommandList->SetGraphicsRootDescriptorTable(RootParamIndex, D12Data->GetGPUDescriptorAt(D12ImageData->OffsetInHeap));
+            }
+        }
+        if(Group->Uniforms[i].Type == uniformType::FramebufferRenderTarget)
+        {
+            framebuffer* FramebufferData = (framebuffer*)(Group->Uniforms[i].Resource);
+            std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(FramebufferData->ApiData);
+            std::shared_ptr<d3d12ImageData> ImageData = std::static_pointer_cast<d3d12ImageData>(D12FramebufferData->RenderTargetsSRV[Group->Uniforms[i].ResourceIndex].ApiData);
+            if(D12Pipeline->UsedRootParams[Group->Uniforms[i].Binding])
+            {
+                u32 RootParamIndex = D12Pipeline->BindingRootParamMapping[Group->Uniforms[i].Binding];
+                if(D12Pipeline->IsCompute)
+                    D12CommandBufferData->CommandList->SetComputeRootDescriptorTable(RootParamIndex, D12Data->GetGPUDescriptorAt(ImageData->OffsetInHeap));
+                else
+                    D12CommandBufferData->CommandList->SetGraphicsRootDescriptorTable(RootParamIndex, D12Data->GetGPUDescriptorAt(ImageData->OffsetInHeap));
             }
         }
     }

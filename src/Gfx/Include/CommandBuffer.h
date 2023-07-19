@@ -52,6 +52,7 @@ struct commandBuffer
     void BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Binding);
     
     void CopyBufferToImage(const bufferInfo &Source, const imageInfo &Destination);
+    void CopyImageToImage(const imageInfo &Source, const imageInfo &Destination);
     void CopyBuffer(const bufferInfo &Source, const bufferInfo &Destination, size_t ByteSize);
     void TransferLayout(const image &Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout);
     

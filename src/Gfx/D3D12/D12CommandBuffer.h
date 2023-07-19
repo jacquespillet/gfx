@@ -20,6 +20,8 @@ struct d3d12CommandBufferData
     framebuffer *CurrentFramebuffer=nullptr;
 
     pipeline *CurrentPipeline = nullptr;
+
+    ComPtr<ID3D12DescriptorHeap> CurrentHeap;
 };
 
 std::shared_ptr<commandBuffer> CreateD3D12CommandBuffer(ComPtr<ID3D12CommandAllocator> CommandAllocator);

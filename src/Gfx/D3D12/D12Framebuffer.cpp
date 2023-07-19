@@ -37,6 +37,7 @@ void d3d12FramebufferData::SetRenderTargets(ComPtr<ID3D12Resource> *Buffers, u32
     for (UINT n = 0; n < Count; n++)
     {
         this->RenderTargets[n] = Buffers[n];
+        this->RenderTargetsSRV[n].Init(Width, Height, ColorFormats[n], imageUsage::COLOR_ATTACHMENT, memoryUsage::GpuOnly);
     }        
 }
 

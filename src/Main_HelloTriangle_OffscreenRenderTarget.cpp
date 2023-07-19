@@ -114,11 +114,13 @@ struct application
 							  .AddVertexStream(VertexStream1);
 		VertexBufferHandle = GfxContext->CreateVertexBuffer(VertexBufferCreateInfo);
 
+		//TODO: Use setters here
 		gfx::framebufferCreateInfo FramebufferCreateInfo = 
 		{
 			1024, 1024,
 			{gfx::format::R8G8B8A8_UNORM},
-			gfx::format::D24_UNORM_S8_UINT
+			gfx::format::D24_UNORM_S8_UINT,
+			{1,0,0,0},
 		};
 		OffscreenFramebufferHandle = GfxContext->CreateFramebuffer(FramebufferCreateInfo);
 		gfx::framebuffer *OffscreenFramebuffer = (gfx::framebuffer*) GfxContext->ResourceManager.Framebuffers.GetResource(OffscreenFramebufferHandle);
@@ -196,7 +198,7 @@ struct application
 
 			CommandBuffer->SetViewport(0.0f, 0.0f, (float)1024, (float)1024);
 			CommandBuffer->SetScissor(0, 0, 1024, 1024);
-			CommandBuffer->BeginPass(OffscreenFramebufferHandle, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0});
+			CommandBuffer->BeginPass(OffscreenFramebufferHandle, {1.0f, 0.0f, 0.0f, 0.0f}, {1.0f, 0});
 
 			CommandBuffer->BindGraphicsPipeline(PipelineHandleOffscreen);
 			

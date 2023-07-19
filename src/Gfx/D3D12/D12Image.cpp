@@ -14,6 +14,42 @@ using namespace Microsoft::WRL;
 namespace gfx
 {
 
+void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage, u32 SampleCount)
+{
+    std::shared_ptr<d3d12Data> D12Data = std::static_pointer_cast<d3d12Data>(context::Get()->ApiContextData);
+
+    Extent.Width = Width;
+    Extent.Height = Height;
+    Format = Format;
+    MipLevelCount = 1;
+
+    context *VulkanContext = context::Get();
+
+    ApiData = std::make_shared<d3d12ImageData>();
+    std::shared_ptr<d3d12ImageData> D12Image = std::static_pointer_cast<d3d12ImageData>(ApiData);
+        
+    D12Image->ResourceState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
+    CD3DX12_RESOURCE_DESC TextureDesc = CD3DX12_RESOURCE_DESC::Tex2D(FormatToNative(Format), Width, Height, 1, MipLevelCount);
+    D12Data->Device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE,
+        &TextureDesc, D12Image->ResourceState, nullptr,
+        IID_PPV_ARGS(&D12Image->Handle));
+
+    D12Image->OffsetInHeap = D12Data->CurrentHeapOffset;
+
+    // Create the shader resource view (SRV)
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = FormatToNative(Format);
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = MipLevelCount;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    D12Data->Device->CreateShaderResourceView(D12Image->Handle.Get(), &srvDesc, D12Data->GetCPUDescriptorAt(D12Image->OffsetInHeap));    
+    
+    // Allocate descriptors by incrementing the handles
+    D12Data->CurrentHeapOffset++;
+}
+
 void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
 {
     std::shared_ptr<d3d12Data> D12Data = std::static_pointer_cast<d3d12Data>(context::Get()->ApiContextData);
