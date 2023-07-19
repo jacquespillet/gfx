@@ -90,7 +90,7 @@ struct application
 			true
 		};
 		TextureHandle1 = GfxContext->CreateImage(ImageData, ImageCreateInfo);
-		gfx::image *Texture1 = (gfx::image*) GfxContext->ResourceManager.Images.GetResource(TextureHandle1);
+		gfx::image *Texture1 = GfxContext->GetImage(TextureHandle1);
 
 
 		float vertices[] =
@@ -120,7 +120,7 @@ struct application
 							 .SetDepthFormat(gfx::format::D24_UNORM_S8_UINT)
 							 .SetClearColor(1, 0, 0, 0);
 		OffscreenFramebufferHandle = GfxContext->CreateFramebuffer(FramebufferCreateInfo);
-		gfx::framebuffer *OffscreenFramebuffer = (gfx::framebuffer*) GfxContext->ResourceManager.Framebuffers.GetResource(OffscreenFramebufferHandle);
+		gfx::framebuffer *OffscreenFramebuffer = GfxContext->GetFramebuffer(OffscreenFramebufferHandle);
 		
 		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/OffscreenRenderTarget/TriangleOffscreen.json", OffscreenFramebufferHandle);
 		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/OffscreenRenderTarget/Triangle.json");

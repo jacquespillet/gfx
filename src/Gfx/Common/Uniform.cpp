@@ -54,15 +54,15 @@ uniformGroup &uniformGroup::AddFramebufferRenderTarget(u32 Binding, framebufferH
 
 buffer *uniformGroup::GetBuffer(u32 Index)
 {
-    return (buffer*)context::Get()->ResourceManager.Buffers.GetResource(Uniforms[Index].ResourceHandle);
+    return context::Get()->GetBuffer(Uniforms[Index].ResourceHandle);
 }
 image *uniformGroup::GetTexture(u32 Index)
 {
-    return (image*)context::Get()->ResourceManager.Images.GetResource(Uniforms[Index].ResourceHandle);
+    return context::Get()->GetImage(Uniforms[Index].ResourceHandle);
 }
 framebuffer *uniformGroup::GetFramebuffer(u32 Index)
 {
-    return (framebuffer*)context::Get()->ResourceManager.Framebuffers.GetResource(Uniforms[Index].ResourceHandle);
+    return context::Get()->GetFramebuffer(Uniforms[Index].ResourceHandle);
 }
 
 void uniformGroup::UpdateBuffer(u32 Index, void *Data, u32 Size, u32 Offset)

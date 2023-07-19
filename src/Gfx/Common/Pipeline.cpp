@@ -465,8 +465,8 @@ pipelineHandle context::CreatePipelineFromFile(const char *FileName, framebuffer
         }
         else
         {
-            framebuffer *Framebuffer = (framebuffer*) context::Get()->ResourceManager.Framebuffers.GetResource(FramebufferHandle);
-            renderPass *RenderPass = (renderPass*) context::Get()->ResourceManager.RenderPasses.GetResource(Framebuffer->RenderPass);
+            framebuffer *Framebuffer = context::Get()->GetFramebuffer(FramebufferHandle);
+            renderPass *RenderPass = context::Get()->GetRenderPass(Framebuffer->RenderPass);
             
             PipelineCreations[i].RenderPass = RenderPass->Output;
         }

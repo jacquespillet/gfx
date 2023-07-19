@@ -33,6 +33,7 @@ typedef uint32_t imageHandle;
 typedef uint32_t renderPassHandle;
 typedef uint32_t framebufferHandle;
 typedef uint32_t vertexBufferHandle;
+typedef uint32_t shaderStateHandle;
 
 typedef glm::vec2 v2f;
 typedef glm::vec3 v3f;
@@ -45,9 +46,7 @@ typedef glm::mat4 m4x4;
 
 
 #if GFX_API==GFX_VK
-typedef uint32_t shaderStateHandle;
 typedef uint32_t descriptorSetLayoutHandle;
-
 #endif
 
 static const u32 InvalidHandle = 0xffffffff;

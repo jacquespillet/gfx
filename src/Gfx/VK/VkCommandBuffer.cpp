@@ -43,11 +43,11 @@ void commandBuffer::BeginPass(framebufferHandle FramebufferHandle, clearColorVal
 
     std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
 
-    framebuffer *Framebuffer = (framebuffer*) Context->ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+    framebuffer *Framebuffer = Context->GetFramebuffer(FramebufferHandle);
     std::shared_ptr<vkFramebufferData> VkFramebufferData = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
     vk::Framebuffer VkFramebufferHandle = VkFramebufferData->Handle;
 
-    renderPass *RenderPass = (renderPass*) Context->ResourceManager.RenderPasses.GetResource(Framebuffer->RenderPass);
+    renderPass *RenderPass = Context->GetRenderPass(Framebuffer->RenderPass);
     std::shared_ptr<vkRenderPassData> VkRenderPassData = std::static_pointer_cast<vkRenderPassData>(RenderPass->ApiData);
     vk::RenderPass VkRenderPassHandle = VkRenderPassData->NativeHandle;
 
@@ -86,7 +86,7 @@ void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
 {
     std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
 
-    pipeline *Pipeline = (pipeline*)context::Get()->ResourceManager.Pipelines.GetResource(PipelineHandle);
+    pipeline *Pipeline = context::Get()->GetPipeline(PipelineHandle);
     std::shared_ptr<vkPipelineData> VkPipeline = std::static_pointer_cast<vkPipelineData>(Pipeline->ApiData);
 
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
@@ -100,7 +100,7 @@ void commandBuffer::BindComputePipeline(pipelineHandle PipelineHandle)
 {
     std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
 
-    pipeline *Pipeline = (pipeline*)context::Get()->ResourceManager.Pipelines.GetResource(PipelineHandle);
+    pipeline *Pipeline = context::Get()->GetPipeline(PipelineHandle);
     std::shared_ptr<vkPipelineData> VkPipeline = std::static_pointer_cast<vkPipelineData>(Pipeline->ApiData);
 
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
@@ -118,7 +118,7 @@ void commandBuffer::Dispatch(u32 NumGroupX, u32 NumGroupY, u32 NumGroupZ)
 
 void commandBuffer::BindIndexBuffer(bufferHandle BufferHandle, u32 Offset, indexType IndexType)
 {
-    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
+    buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
     std::shared_ptr<vkBufferData> VkBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
     CommandBuffer.bindIndexBuffer(VkBuffer->Handle, Offset, IndexTypeToNative(IndexType));
@@ -126,12 +126,12 @@ void commandBuffer::BindIndexBuffer(bufferHandle BufferHandle, u32 Offset, index
 
 void commandBuffer::BindVertexBuffer(vertexBufferHandle BufferHandle)
 {
-    vertexBuffer *VertexBuffer = (vertexBuffer*)context::Get()->ResourceManager.VertexBuffers.GetResource(BufferHandle);
+    vertexBuffer *VertexBuffer = context::Get()->GetVertexBuffer(BufferHandle);
 
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
     for(u32 i=0; i<VertexBuffer->NumVertexStreams; i++)
     {
-        buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(VertexBuffer->VertexStreams[i].Buffer);
+        buffer *Buffer = context::Get()->GetBuffer(VertexBuffer->VertexStreams[i].Buffer);
         std::shared_ptr<vkBufferData> VkBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
 
         u64 Offsets[] = {0};
@@ -270,7 +270,7 @@ void commandBuffer::TransferLayout(const image &Texture, imageUsage::bits OldLay
 void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Binding)
 {
     std::shared_ptr<vkCommandBufferData> VkCommandBufferData = std::static_pointer_cast<vkCommandBufferData>(this->ApiData);
-    pipeline *Pipeline = (pipeline*)context::Get()->ResourceManager.Pipelines.GetResource(VkCommandBufferData->BoundPipeline);
+    pipeline *Pipeline = context::Get()->GetPipeline(VkCommandBufferData->BoundPipeline);
     std::shared_ptr<vkPipelineData> VkPipeline = std::static_pointer_cast<vkPipelineData>(Pipeline->ApiData);
     std::shared_ptr<vkUniformData> VkUniformData = std::static_pointer_cast<vkUniformData>(Group->ApiData);
     VkCommandBufferData->Handle.bindDescriptorSets(VkPipeline->BindPoint, VkPipeline->PipelineLayout, Binding, 1, &VkUniformData->DescriptorInfos[VkCommandBufferData->BoundPipeline].DescriptorSet, 0, 0);

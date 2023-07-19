@@ -205,7 +205,7 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsag
     {
         return Handle;
     }
-    buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(Handle);
+    buffer *Buffer = GetBuffer(Handle);
     Buffer->ApiData = std::make_shared<d3d12BufferData>();
     std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);
     
@@ -234,7 +234,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
         assert(false);
         return nullptr;
     }
-    framebuffer *Framebuffer = (framebuffer*)ResourceManager.Framebuffers.GetResource(D12SwapchainData->FramebufferHandle);
+    framebuffer *Framebuffer = GetFramebuffer(D12SwapchainData->FramebufferHandle);
     Framebuffer->Width = Width;
     Framebuffer->Height = Height;
     Framebuffer->ApiData = std::make_shared<d3d12FramebufferData>();
@@ -242,7 +242,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
 
 
     Framebuffer->RenderPass = context::Get()->ResourceManager.RenderPasses.ObtainResource();
-    renderPass *RenderPass = (renderPass*) context::Get()->ResourceManager.RenderPasses.GetResource(Framebuffer->RenderPass);
+    renderPass *RenderPass = context::Get()->GetRenderPass(Framebuffer->RenderPass);
     RenderPass->Output.NumColorFormats = 1;
     RenderPass->Output.ColorFormats[0] = SwapchainFormat;
     RenderPass->Output.DepthStencilFormat = DepthFormat;
@@ -366,7 +366,7 @@ bufferHandle CreateVertexBufferStream(f32 *Values, sz ByteSize, sz Stride, const
     }
 
     //Create vertex buffer
-    buffer *Buffer = (buffer*)Context->ResourceManager.Buffers.GetResource(Handle);
+    buffer *Buffer = Context->GetBuffer(Handle);
     Buffer->Init(ByteSize, bufferUsage::VertexBuffer, memoryUsage::GpuOnly);
     Buffer->Name = "";
     std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(Buffer->ApiData);    
@@ -407,7 +407,7 @@ vertexBufferHandle context::CreateVertexBuffer(const vertexBufferCreateInfo &Cre
         assert(false);
         return Handle;
     }
-    vertexBuffer *VertexBuffer = (vertexBuffer*) this->ResourceManager.VertexBuffers.GetResource(Handle);
+    vertexBuffer *VertexBuffer = GetVertexBuffer(Handle);
     VertexBuffer->NumVertexStreams = CreateInfo.NumVertexStreams;
     memcpy(&VertexBuffer->VertexStreams[0], &CreateInfo.VertexStreams[0], commonConstants::MaxVertexStreams * sizeof(vertexStreamData));
     
@@ -452,14 +452,14 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
         assert(false);
         return InvalidHandle;
     }
-    framebuffer *Framebuffer = (framebuffer*)ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+    framebuffer *Framebuffer = GetFramebuffer(FramebufferHandle);
     Framebuffer->Width = CreateInfo.Width;
     Framebuffer->Height = CreateInfo.Height;
     Framebuffer->ApiData = std::make_shared<d3d12FramebufferData>();
     std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(Framebuffer->ApiData);
     
     Framebuffer->RenderPass = context::Get()->ResourceManager.RenderPasses.ObtainResource();
-    renderPass *RenderPass = (renderPass*) context::Get()->ResourceManager.RenderPasses.GetResource(Framebuffer->RenderPass);
+    renderPass *RenderPass = context::Get()->GetRenderPass(Framebuffer->RenderPass);
     RenderPass->Output.NumColorFormats = (u32)CreateInfo.ColorFormats.size();
     RenderPass->Output.DepthStencilFormat = CreateInfo.DepthFormat;
     RenderPass->Output.SampleCount=1;
@@ -679,7 +679,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     {
         return Handle;
     }
-    pipeline *Pipeline = (pipeline*)ResourceManager.Pipelines.GetResource(Handle);
+    pipeline *Pipeline = GetPipeline(Handle);
     Pipeline->ApiData = std::make_shared<d3d12PipelineData>();
     std::shared_ptr<d3d12PipelineData> D12PipelineData = std::static_pointer_cast<d3d12PipelineData>(Pipeline->ApiData);
 
@@ -854,7 +854,7 @@ imageHandle context::CreateImage(const imageData &ImageData, const imageCreateIn
     {
         return ImageHandle;
     }
-    image *Image = (image*)ResourceManager.Images.GetResource(ImageHandle);
+    image *Image = GetImage(ImageHandle);
     *Image = image();
     Image->Init(ImageData, CreateInfo);
     return ImageHandle;
@@ -911,7 +911,7 @@ void context::CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz
 {
     GET_CONTEXT(D12Data, this);
     
-    buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(BufferHandle);
+    buffer *Buffer = GetBuffer(BufferHandle);
     
     Buffer->Name = "";
 
@@ -937,7 +937,7 @@ void context::CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz
 
 void context::DestroyVertexBuffer(bufferHandle VertexBufferHandle)
 {
-    vertexBuffer *VertexBuffer = (vertexBuffer *) ResourceManager.VertexBuffers.GetResource(VertexBufferHandle);
+    vertexBuffer *VertexBuffer = GetVertexBuffer(VertexBufferHandle);
     for (sz i = 0; i < VertexBuffer->NumVertexStreams; i++)
     {
         DestroyBuffer(VertexBuffer->VertexStreams[i].Buffer);
@@ -959,14 +959,14 @@ void context::DestroyImage(imageHandle ImageHandle)
 }
 void context::DestroyFramebuffer(framebufferHandle FramebufferHandle)
 {
-    framebuffer *Framebuffer = (framebuffer*)ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+    framebuffer *Framebuffer = GetFramebuffer(FramebufferHandle);
     ResourceManager.RenderPasses.ReleaseResource(Framebuffer->RenderPass);
     ResourceManager.Framebuffers.ReleaseResource(FramebufferHandle);
 }
 void context::DestroySwapchain()
 {
     std::shared_ptr<d3d12SwapchainData> D12SwapchainData = std::static_pointer_cast<d3d12SwapchainData>(Swapchain->ApiData);
-    framebuffer *Framebuffer = (framebuffer*)ResourceManager.Framebuffers.GetResource(D12SwapchainData->FramebufferHandle);
+    framebuffer *Framebuffer = GetFramebuffer(D12SwapchainData->FramebufferHandle);
     ResourceManager.RenderPasses.ReleaseResource(Framebuffer->RenderPass);
     ResourceManager.Framebuffers.ReleaseResource(D12SwapchainData->FramebufferHandle);
 }

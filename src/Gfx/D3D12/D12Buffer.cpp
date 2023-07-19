@@ -169,7 +169,7 @@ stageBuffer::stageBuffer(sz Size)
 
 stageBuffer::allocation stageBuffer::Submit(const uint8_t *Data, u32 ByteSize)
 {
-    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
+    buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
     
     assert(this->CurrentOffset + ByteSize <= Buffer->Size);
 
@@ -186,7 +186,7 @@ stageBuffer::allocation stageBuffer::Submit(const uint8_t *Data, u32 ByteSize)
 
 void stageBuffer::Flush()
 {
-    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
+    buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
     Buffer->FlushMemory(this->CurrentOffset, 0);
 }
 
@@ -198,14 +198,14 @@ void stageBuffer::Reset()
 void stageBuffer::Init(sz Size)
 {
     BufferHandle = context::Get()->CreateBuffer(Size, bufferUsage::TransferSource, memoryUsage::CpuToGpu);    
-    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
+    buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
     this->CurrentOffset=0;
     Buffer->MapMemory();
 }
 
 buffer *stageBuffer::GetBuffer()
 {
-    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
+    buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
     return Buffer;
 }
 

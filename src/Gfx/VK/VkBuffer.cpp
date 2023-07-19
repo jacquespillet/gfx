@@ -111,21 +111,21 @@ stageBuffer::stageBuffer(sz Size)
 }
 buffer *stageBuffer::GetBuffer()
 {
-    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
+    buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
     return Buffer;
 }
 
 void stageBuffer::Init(sz Size)
 {
     BufferHandle = context::Get()->CreateBuffer(Size, bufferUsage::TransferSource, memoryUsage::CpuToGpu);    
-    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
+    buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
     this->CurrentOffset=0;
     Buffer->MapMemory();
 }
 
 stageBuffer::allocation stageBuffer::Submit(const uint8_t *Data, u32 ByteSize)
 {
-    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
+    buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
     assert(this->CurrentOffset + ByteSize <= Buffer->Size);
 
     if(Data != nullptr)
@@ -140,7 +140,7 @@ stageBuffer::allocation stageBuffer::Submit(const uint8_t *Data, u32 ByteSize)
 
 void stageBuffer::Flush()
 {
-    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
+    buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
     Buffer->FlushMemory(this->CurrentOffset, 0);
 }
 
@@ -151,7 +151,7 @@ void stageBuffer::Reset()
 
 void stageBuffer::Destroy()
 {
-    buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(BufferHandle);
+    buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
     Buffer->Destroy();
     GET_CONTEXT(VkData, context::Get());
     context::Get()->ResourceManager.Buffers.ReleaseResource(BufferHandle);

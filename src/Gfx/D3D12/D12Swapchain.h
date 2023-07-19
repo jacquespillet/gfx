@@ -25,7 +25,7 @@ struct d3d12SwapchainData
     void SetFrameIndex(u32 _FrameIndex)
     {
         this->FrameIndex = _FrameIndex;
-        framebuffer *Framebuffer = (framebuffer*) context::Get()->ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+        framebuffer *Framebuffer = context::Get()->GetFramebuffer(FramebufferHandle);
         std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(Framebuffer->ApiData);
         D12FramebufferData->CurrentTarget = _FrameIndex;
     }

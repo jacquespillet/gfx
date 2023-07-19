@@ -13,7 +13,7 @@ add_compile_definitions(_GLFW_WIN32 GLFW_EXPOSE_NATIVE_WIN32 VK_USE_PLATFORM_WIN
 set(GFX_API_GL 0)
 set(GFX_API_VK 1)
 set(GFX_API_D3D12 2)
-set(GFX_API ${GFX_API_GL})
+set(GFX_API ${GFX_API_D3D12})
 
 add_definitions(-DGFX_GL=${GFX_API_GL})
 add_definitions(-DGFX_VK=${GFX_API_VK})
@@ -157,6 +157,7 @@ set(commonCode
         src/Gfx/Common/Pipeline.cpp
         src/Gfx/Common/Util.cpp
         src/Gfx/Common/Memory.cpp
+        src/Gfx/Common/Context.cpp
 )
 set(appCode
         src/App/Window.cpp

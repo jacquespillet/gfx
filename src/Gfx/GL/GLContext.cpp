@@ -106,7 +106,7 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsag
     {
         return Handle;
     }
-    buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(Handle);
+    buffer *Buffer = GetBuffer(Handle);
     Buffer->ApiData = std::make_shared<glBuffer>();
     std::shared_ptr<glBuffer> D12BufferData = std::static_pointer_cast<glBuffer>(Buffer->ApiData);
     
@@ -116,7 +116,7 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsag
 
 void context::CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz Offset)
 {
-    buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(BufferHandle);
+    buffer *Buffer = GetBuffer(BufferHandle);
     std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(Buffer->ApiData);
     Buffer->CopyData((u8*)Ptr, Size, Offset);
 }
@@ -136,7 +136,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
         assert(false);
         return InvalidHandle;
     }
-    framebuffer *Framebuffer = (framebuffer*)ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+    framebuffer *Framebuffer = GetFramebuffer(FramebufferHandle);
     Framebuffer->Width = CreateInfo.Width;
     Framebuffer->Height = CreateInfo.Height;
     Framebuffer->ApiData = std::make_shared<glFramebufferData>();
@@ -192,7 +192,7 @@ imageHandle context::CreateImage(const imageData &ImageData, const imageCreateIn
     {
         return ImageHandle;
     }
-    image *Image = (image*)ResourceManager.Images.GetResource(ImageHandle);
+    image *Image = GetImage(ImageHandle);
     *Image = image();
     Image->Init(ImageData, CreateInfo);
     return ImageHandle;
@@ -209,7 +209,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
     {
         assert(false);
     }
-    framebuffer *SwapchainFramebuffer = (framebuffer*)Singleton->ResourceManager.Framebuffers.GetResource(GLData->SwapchainFramebuffer);
+    framebuffer *SwapchainFramebuffer = Singleton->GetFramebuffer(GLData->SwapchainFramebuffer);
     SwapchainFramebuffer->ApiData = std::make_shared<glFramebufferData>();
     std::shared_ptr<glFramebufferData> GLFramebufferData = std::static_pointer_cast<glFramebufferData>(SwapchainFramebuffer->ApiData);
     
@@ -238,7 +238,7 @@ vertexBufferHandle context::CreateVertexBuffer(const vertexBufferCreateInfo &Cre
     }
     
 
-    vertexBuffer *VertexBuffer = (vertexBuffer*)this->ResourceManager.VertexBuffers.GetResource(Handle);
+    vertexBuffer *VertexBuffer = GetVertexBuffer(Handle);
     VertexBuffer->NumVertexStreams = CreateInfo.NumVertexStreams;
     memcpy(&VertexBuffer->VertexStreams[0], &CreateInfo.VertexStreams[0], commonConstants::MaxVertexStreams * sizeof(vertexStreamData));
     
@@ -253,7 +253,7 @@ vertexBufferHandle context::CreateVertexBuffer(const vertexBufferCreateInfo &Cre
     for(sz i=0; i<VertexBuffer->NumVertexStreams; i++)
     {
         GLVertexBuffer->VertexBuffers[i] = context::Get()->ResourceManager.Buffers.ObtainResource();
-        buffer *Buffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(GLVertexBuffer->VertexBuffers[i]);
+        buffer *Buffer = context::Get()->GetBuffer(GLVertexBuffer->VertexBuffers[i]);
         Buffer->ApiData = std::make_shared<glBuffer>();
 
         Buffer->Init(VertexBuffer->VertexStreams[i].Size, bufferUsage::VertexBuffer, memoryUsage::GpuOnly);
@@ -300,7 +300,7 @@ framebufferHandle context::GetSwapchainFramebuffer()
 {
     GET_CONTEXT(GLData, this);
 
-    framebuffer *SwapchainFramebuffer = (framebuffer*)Singleton->ResourceManager.Framebuffers.GetResource(GLData->SwapchainFramebuffer);
+    framebuffer *SwapchainFramebuffer = Singleton->GetFramebuffer(GLData->SwapchainFramebuffer);
     SwapchainFramebuffer->ApiData = std::make_shared<glFramebufferData>();
     std::shared_ptr<glFramebufferData> GLFramebufferData = std::static_pointer_cast<glFramebufferData>(SwapchainFramebuffer->ApiData);
     return GLFramebufferData->Handle;
@@ -333,7 +333,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     {
         return Handle;
     }
-    pipeline *Pipeline = (pipeline*)ResourceManager.Pipelines.GetResource(Handle);
+    pipeline *Pipeline = GetPipeline(Handle);
     Pipeline->ApiData = std::make_shared<glPipeline>();
     std::shared_ptr<glPipeline> GLPipeline = std::static_pointer_cast<glPipeline>(Pipeline->ApiData);
 
@@ -420,7 +420,7 @@ void context::OnResize(u32 NewWidth, u32 NewHeight)
 void context::DestroyPipeline(pipelineHandle PipelineHandle)
 {
     GET_CONTEXT(GLData, this);    
-    pipeline *Pipeline = (pipeline *) ResourceManager.Pipelines.GetResource(PipelineHandle);
+    pipeline *Pipeline = GetPipeline(PipelineHandle);
     std::shared_ptr<glPipeline> VkPipelineData = std::static_pointer_cast<glPipeline>(Pipeline->ApiData);
 
 
@@ -438,7 +438,7 @@ void context::DestroyPipeline(pipelineHandle PipelineHandle)
 
 void context::DestroyBuffer(bufferHandle BufferHandle)
 {
-    buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(BufferHandle);
+    buffer *Buffer = GetBuffer(BufferHandle);
     std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(Buffer->ApiData);
     glDeleteBuffers(1, &GLBuffer->Handle);
     ResourceManager.Buffers.ReleaseResource(BufferHandle);
@@ -446,7 +446,7 @@ void context::DestroyBuffer(bufferHandle BufferHandle)
 
 void context::DestroyVertexBuffer(vertexBufferHandle VertexBufferHandle)
 {
-    vertexBuffer *VertexBuffer = (vertexBuffer *) ResourceManager.VertexBuffers.GetResource(VertexBufferHandle);
+    vertexBuffer *VertexBuffer = GetVertexBuffer(VertexBufferHandle);
     for (sz i = 0; i < VertexBuffer->NumVertexStreams; i++)
     {
         DestroyBuffer(VertexBuffer->VertexStreams[i].Buffer);
@@ -460,7 +460,7 @@ void context::DestroyVertexBuffer(vertexBufferHandle VertexBufferHandle)
 
 void context::DestroyImage(imageHandle ImageHandle)
 {
-    image *Image = (image*)ResourceManager.Images.GetResource(ImageHandle);
+    image *Image = GetImage(ImageHandle);
     std::shared_ptr<glImage> GLImage = std::static_pointer_cast<glImage>(Image->ApiData);
     glDeleteTextures(1, &GLImage->Handle);
     ResourceManager.Images.ReleaseResource(ImageHandle);
@@ -474,7 +474,7 @@ void context::DestroySwapchain()
 
 void context::DestroyFramebuffer(framebufferHandle FramebufferHandle)
 {
-    framebuffer *Framebuffer = (framebuffer*)ResourceManager.Framebuffers.GetResource(FramebufferHandle);
+    framebuffer *Framebuffer = GetFramebuffer(FramebufferHandle);
     std::shared_ptr<glFramebufferData> GLFramebuffer = std::static_pointer_cast<glFramebufferData>(Framebuffer->ApiData);
     
     glDeleteTextures((GLsizei)GLFramebuffer->ColorTextures.size(), GLFramebuffer->ColorTextures.data());

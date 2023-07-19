@@ -129,8 +129,8 @@ struct application
 		};
 		TextureHandle1 = GfxContext->CreateImage(ImageData, ImageCreateInfo);
 		TextureHandle2 = GfxContext->CreateImage(ImageData, ImageCreateInfo);
-		gfx::image *Texture1 = (gfx::image*) GfxContext->ResourceManager.Images.GetResource(TextureHandle1);
-		gfx::image *Texture2 = (gfx::image*) GfxContext->ResourceManager.Images.GetResource(TextureHandle2);
+		gfx::image *Texture1 = GfxContext->GetImage(TextureHandle1);
+		gfx::image *Texture2 = GfxContext->GetImage(TextureHandle2);
 
 
 		float vertices[] =
@@ -166,19 +166,19 @@ struct application
 		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle/Triangle.json");
 
 		UniformBufferHandle1 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
-		gfx::buffer *UniformBuffer1 = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle1);
+		gfx::buffer *UniformBuffer1 = GfxContext->GetBuffer(UniformBufferHandle1);
 		UniformBuffer1->CopyData((uint8_t*)&UniformData1, sizeof(uniformData), 0);
 
 		UniformBufferHandle2 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
-		gfx::buffer *UniformBuffer2 = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle2);
+		gfx::buffer *UniformBuffer2 = GfxContext->GetBuffer(UniformBufferHandle2);
 		UniformBuffer2->CopyData((uint8_t*)&UniformData2, sizeof(uniformData), 0);
   
 		UniformBufferHandle3 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
-		gfx::buffer *UniformBuffer3 = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle3);
+		gfx::buffer *UniformBuffer3 = GfxContext->GetBuffer(UniformBufferHandle3);
 		UniformBuffer3->CopyData((uint8_t*)&UniformData3, sizeof(uniformData), 0);
 
 		UniformBufferHandle4 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
-		gfx::buffer *UniformBuffer4 = (gfx::buffer*) GfxContext->ResourceManager.Buffers.GetResource(UniformBufferHandle4);
+		gfx::buffer *UniformBuffer4 = GfxContext->GetBuffer(UniformBufferHandle4);
 		UniformBuffer4->CopyData((uint8_t*)&UniformData4, sizeof(uniformData), 0);
 
 		//That's the content of a descriptor set

@@ -39,7 +39,7 @@ void ExecuteSetScissor(const command &Command)
 
 void ExecuteBeginPass(const command &Command)
 {
-    framebuffer *Framebuffer = (framebuffer*)context::Get()->ResourceManager.Framebuffers.GetResource(Command.BeginPass.FramebufferHandle);
+    framebuffer *Framebuffer = context::Get()->GetFramebuffer(Command.BeginPass.FramebufferHandle);
     std::shared_ptr<glFramebufferData> GLFramebuffer = std::static_pointer_cast<glFramebufferData>(Framebuffer->ApiData);
 
     glBindFramebuffer(GL_FRAMEBUFFER, GLFramebuffer->Handle);
@@ -70,7 +70,7 @@ void ExecuteBindUniformImage(const command &Command)
 void ExecuteBindVertexBuffer(const command &Command)
 {
     bufferHandle VertexBufferHandle = Command.BindVertexBuffer.VertexBufferHandle;
-    vertexBuffer *VertexBuffer = (vertexBuffer*)context::Get()->ResourceManager.VertexBuffers.GetResource(VertexBufferHandle);
+    vertexBuffer *VertexBuffer = context::Get()->GetVertexBuffer(VertexBufferHandle);
     std::shared_ptr<glVertexBuffer> GLVertexBuffer = std::static_pointer_cast<glVertexBuffer>(VertexBuffer->ApiData);
 
     glBindVertexArray(GLVertexBuffer->VAO);
@@ -79,7 +79,7 @@ void ExecuteBindVertexBuffer(const command &Command)
 void ExecuteBindIndexBuffer(const command &Command)
 {
     bufferHandle IndexBufferHandle = Command.BindIndexBuffer.IndexBufferHandle;
-    buffer *IndexBuffer = (buffer*)context::Get()->ResourceManager.Buffers.GetResource(IndexBufferHandle);
+    buffer *IndexBuffer = context::Get()->GetBuffer(IndexBufferHandle);
     std::shared_ptr<glBuffer> GLIndexBuffer = std::static_pointer_cast<glBuffer>(IndexBuffer->ApiData);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLIndexBuffer->Handle);
@@ -115,7 +115,7 @@ void ExecuteBindGraphicsPipeline(const command &Command)
 {
     glEnable(GL_SCISSOR_TEST);
 
-    pipeline *Pipeline = (pipeline*)context::Get()->ResourceManager.Pipelines.GetResource(Command.BindGraphicsPipeline.Pipeline);
+    pipeline *Pipeline = context::Get()->GetPipeline(Command.BindGraphicsPipeline.Pipeline);
     std::shared_ptr<glPipeline> GLPipeline = std::static_pointer_cast<glPipeline>(Pipeline->ApiData);
     
     glUseProgram(GLPipeline->ShaderProgram->ProgramShaderObject);
@@ -172,7 +172,7 @@ void ExecuteBindGraphicsPipeline(const command &Command)
 
 void ExecuteBindComputePipeline(const command &Command)
 {
-    pipeline *Pipeline = (pipeline*)context::Get()->ResourceManager.Pipelines.GetResource(Command.BindGraphicsPipeline.Pipeline);
+    pipeline *Pipeline = context::Get()->GetPipeline(Command.BindGraphicsPipeline.Pipeline);
     std::shared_ptr<glPipeline> GLPipeline = std::static_pointer_cast<glPipeline>(Pipeline->ApiData);
     
     glUseProgram(GLPipeline->ShaderProgram->ProgramShaderObject);

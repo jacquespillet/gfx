@@ -16,8 +16,6 @@ namespace app
 struct window;
 }
 
-//TODO: Implement Getters for all resource types in resource manager
-
 //TODO: Implement a GET_API_DATA() macro
 
 namespace gfx
@@ -27,6 +25,7 @@ struct swapchain;
 struct pipeline;
 struct stageBuffer;
 struct framebufferCreateInfo;
+struct shader;
 
 inline void DefaultCallback(const std::string&) {}
 
@@ -97,8 +96,6 @@ struct context
 
     framebufferHandle CreateFramebuffer(const framebufferCreateInfo &CreateInfo);
     
-    pipeline *GetPipeline(pipelineHandle Handle);   
-
     void SubmitCommandBuffer(commandBuffer *CommandBuffer);
     void SubmitCommandBufferImmediate(commandBuffer *CommandBuffer);
     void BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding);
@@ -113,6 +110,14 @@ struct context
     void DestroyVertexBuffer(vertexBufferHandle Buffer);
     void DestroyImage(imageHandle Buffer);
     void DestroySwapchain();
+
+    buffer *GetBuffer(bufferHandle Handle);
+    vertexBuffer *GetVertexBuffer(vertexBufferHandle Handle);
+    image *GetImage(imageHandle Handle);
+    pipeline *GetPipeline(pipelineHandle Handle);
+    shader *GetShader(shaderStateHandle Handle);
+    renderPass *GetRenderPass(renderPassHandle Handle);
+    framebuffer *GetFramebuffer(framebufferHandle Handle);
 
 
     void Cleanup();
