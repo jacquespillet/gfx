@@ -13,7 +13,8 @@ void buffer::Init(size_t ByteSize, bufferUsage::value Usage, memoryUsage MemoryU
 {
     std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(ApiData);
     this->Size = ByteSize;
-    
+    this->MemoryUsage = MemoryUsage;
+
     glGenBuffers(1, &GLBuffer->Handle);
     GLBuffer->Target = BufferTargetFromUsage(Usage);
     GLBuffer->Usage = BufferUsageFromUsage(Usage);
@@ -28,30 +29,31 @@ void buffer::CopyData(const uint8_t *Data, size_t ByteSize, size_t Offset)
     std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(ApiData);
     glBindBuffer(GLBuffer->Target, GLBuffer->Handle);
 
-
-#if 0
-    sz CopySize = ByteSize - Offset;
-    if(CopySize == this->Size)
+    if(MemoryUsage == memoryUsage::GpuOnly)
     {
-        glBufferData(GLBuffer->Target, CopySize, Data, GLBuffer->Usage);
+        sz CopySize = ByteSize - Offset;
+        if(CopySize == this->Size)
+        {
+            glBufferData(GLBuffer->Target, CopySize, Data, GLBuffer->Usage);
+        }
+        else
+        {
+            glBufferSubData(GLBuffer->Target, Offset, ByteSize, Data);
+        }
     }
     else
     {
-        glBufferSubData(GLBuffer->Target, Offset, ByteSize, Data);
+        if(this->MappedData == nullptr)
+        {
+            this->MappedData = MapMemory();
+            memcpy(this->MappedData + Offset, Data, ByteSize);
+            UnmapMemory();
+        }
+        else
+        {
+            memcpy(this->MappedData + Offset, Data, ByteSize);
+        }
     }
-#else
-    if(this->MappedData == nullptr)
-    {
-        this->MappedData = MapMemory();
-        memcpy(this->MappedData + Offset, Data, ByteSize);
-        UnmapMemory();
-    }
-    else
-    {
-        memcpy(this->MappedData + Offset, Data, ByteSize);
-    }
-
-#endif
     glBindBuffer(GLBuffer->Target, 0);
 }
 

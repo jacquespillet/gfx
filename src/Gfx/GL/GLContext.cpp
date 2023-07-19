@@ -114,14 +114,10 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsag
     return Handle;
 }
 
-//TODO: Use glBufferData if memory is gpu only
 void context::CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz Offset)
 {
     buffer *Buffer = (buffer*)ResourceManager.Buffers.GetResource(BufferHandle);
-    
-    Buffer->Name = "";
     std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(Buffer->ApiData);
-
     Buffer->CopyData((u8*)Ptr, Size, Offset);
 }
 

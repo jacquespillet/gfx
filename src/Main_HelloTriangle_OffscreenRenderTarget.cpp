@@ -114,7 +114,6 @@ struct application
 							  .AddVertexStream(VertexStream1);
 		VertexBufferHandle = GfxContext->CreateVertexBuffer(VertexBufferCreateInfo);
 
-		//TODO: Use setters here
 		gfx::framebufferCreateInfo FramebufferCreateInfo = {};
 		FramebufferCreateInfo.SetSize(1024, 1024)
 							 .AddColorFormat(gfx::format::R8G8B8A8_UNORM)
