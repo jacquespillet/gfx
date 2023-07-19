@@ -308,7 +308,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
         //TODO : ELSEIF
         if(Group->Uniforms[i].Type == uniformType::UniformBuffer)
         {
-            buffer* BufferData = (buffer*)(Group->Uniforms[i].Resource);
+            buffer* BufferData = Group->GetBuffer((u32)i);
             std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(BufferData->ApiData);
             
             if(D12Pipeline->UsedRootParams[Group->Uniforms[i].Binding])
@@ -324,7 +324,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
         }
         if(Group->Uniforms[i].Type == uniformType::StorageBuffer)
         {
-            buffer* BufferData = (buffer*)(Group->Uniforms[i].Resource);
+            buffer* BufferData = Group->GetBuffer((u32)i);
             std::shared_ptr<d3d12BufferData> D12BufferData = std::static_pointer_cast<d3d12BufferData>(BufferData->ApiData);
             
             if(D12Pipeline->UsedRootParams[Group->Uniforms[i].Binding])
@@ -340,7 +340,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
         }
         if(Group->Uniforms[i].Type == uniformType::Texture2d)
         {
-            image* ImageData = (image*)(Group->Uniforms[i].Resource);
+            image* ImageData = Group->GetTexture((u32)i);
             std::shared_ptr<d3d12ImageData> D12ImageData = std::static_pointer_cast<d3d12ImageData>(ImageData->ApiData);
             
             if(D12Pipeline->UsedRootParams[Group->Uniforms[i].Binding])
@@ -354,7 +354,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
         }
         if(Group->Uniforms[i].Type == uniformType::FramebufferRenderTarget)
         {
-            framebuffer* FramebufferData = (framebuffer*)(Group->Uniforms[i].Resource);
+            framebuffer* FramebufferData = Group->GetFramebuffer((u32)i);
             std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(FramebufferData->ApiData);
             std::shared_ptr<d3d12ImageData> ImageData = std::static_pointer_cast<d3d12ImageData>(D12FramebufferData->RenderTargetsSRV[Group->Uniforms[i].ResourceIndex].ApiData);
             if(D12Pipeline->UsedRootParams[Group->Uniforms[i].Binding])

@@ -351,7 +351,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
         //TODO : else if
         if(Group->Uniforms[i].Type == uniformType::UniformBuffer)
         {
-            buffer* BufferData = (buffer*)(Group->Uniforms[i].Resource);
+            buffer* BufferData = Group->GetBuffer(i);
             std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(BufferData->ApiData);
 
             command Command;
@@ -363,7 +363,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
         }
         if(Group->Uniforms[i].Type == uniformType::StorageBuffer)
         {
-            buffer* BufferData = (buffer*)(Group->Uniforms[i].Resource);
+            buffer* BufferData  = Group->GetBuffer(i);
             std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(BufferData->ApiData);
 
             command Command;
@@ -375,7 +375,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
         }
         if(Group->Uniforms[i].Type == uniformType::Texture2d)
         {
-            image* ImageData = (image*)(Group->Uniforms[i].Resource);
+            image* ImageData  = Group->GetTexture(i);
             std::shared_ptr<glImage> GLImage = std::static_pointer_cast<glImage>(ImageData->ApiData);
 
             command Command;
@@ -387,7 +387,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
         }
         if(Group->Uniforms[i].Type == uniformType::FramebufferRenderTarget)
         {
-            framebuffer* Framebuffer = (framebuffer*)(Group->Uniforms[i].Resource);
+            framebuffer* Framebuffer = Group->GetFramebuffer(i);
             std::shared_ptr<glFramebufferData> GLFramebuffer = std::static_pointer_cast<glFramebufferData>(Framebuffer->ApiData);
             
 

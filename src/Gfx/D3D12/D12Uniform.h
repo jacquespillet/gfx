@@ -6,14 +6,8 @@
 
 namespace gfx
 {
-struct descriptorInfo
-{
-    
-};
 
 struct d3d12UniformData
 {
-    std::unordered_map<pipelineHandle, descriptorInfo> DescriptorInfos;
-    b8 Initialized=false;
 };    
 }

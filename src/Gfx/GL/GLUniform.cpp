@@ -3,14 +3,14 @@
 
 namespace gfx
 {
-void uniformGroup::Initialize()
+uniformGroup &uniformGroup::Reset()
 {
-
+    return *this;
 }
 
-void uniformGroup::Update()
+uniformGroup &uniformGroup::Update()
 {
-
+    return *this;
 }
 
 }

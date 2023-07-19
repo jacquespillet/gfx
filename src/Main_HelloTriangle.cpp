@@ -184,37 +184,13 @@ struct application
 
 		//That's the content of a descriptor set
 		Uniforms = std::make_shared<gfx::uniformGroup>();
-		Uniforms->Initialize();
-		Uniforms->Uniforms.push_back({
-			"Buffer",
-			gfx::uniformType::UniformBuffer,
-			0,
-			UniformBuffer1,
-		});
-		Uniforms->Uniforms.push_back({
-			"Buffer",
-			gfx::uniformType::UniformBuffer,
-			1,
-			UniformBuffer2,
-		});
-		Uniforms->Uniforms.push_back({
-			"Buffer",
-			gfx::uniformType::UniformBuffer,
-			2,
-			UniformBuffer3,
-		});
-		Uniforms->Uniforms.push_back({
-			"Buffer",
-			gfx::uniformType::UniformBuffer,
-			3,
-			UniformBuffer4,
-		});
-		Uniforms->Uniforms.push_back({
-			"Image",
-			gfx::uniformType::Texture2d,
-			4,
-			Texture1,
-		});
+		Uniforms->Reset()
+				.AddUniformBuffer(0, UniformBufferHandle1)
+				.AddUniformBuffer(1, UniformBufferHandle2)
+				.AddUniformBuffer(2, UniformBufferHandle3)
+				.AddUniformBuffer(3, UniformBufferHandle4)
+				.AddTexture(4, TextureHandle1);
+		
 		//Tell the context that we'll be using this uniforms with this pipeline at binding 0
 		//It's possible to bind a uniform group to multiple pipelines.
 		GfxContext->BindUniformsToPipeline(Uniforms, PipelineHandleOffscreen, 0);
@@ -262,8 +238,7 @@ struct application
 		{
 			t += 0.1f;
 			UniformData1.Color0.r = (cos(t) + 1.0f) * 0.5f;
-			gfx::buffer *Buffer = (gfx::buffer*)(Uniforms->Uniforms[0].Resource);
-			Buffer->CopyData((uint8_t*)&UniformData1, sizeof(uniformData), 0);
+			Uniforms->UpdateBuffer(0, &UniformData1, sizeof(uniformData), 0);
 
 			Window->PollEvents();
 			GfxContext->StartFrame();

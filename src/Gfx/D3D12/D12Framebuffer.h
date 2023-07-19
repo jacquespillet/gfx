@@ -13,7 +13,6 @@ namespace gfx
 
 struct d3d12FramebufferData
 {
-
     u32 CurrentTarget=0;
     u32 RenderTargetsCount=0;
     
@@ -24,10 +23,13 @@ struct d3d12FramebufferData
     u32 DSVDescriptorSize=0;
     
     ComPtr<ID3D12Resource> RenderTargets[commonConstants::MaxImageOutputs] = {};
-    ComPtr<ID3D12Resource> DepthStencilBuffer;  
+    //TODO: Use imageHandles here
     image RenderTargetsSRV[commonConstants::MaxImageOutputs] = {};
+    ComPtr<ID3D12Resource> DepthStencilBuffer;  
         
     DXGI_FORMAT DepthStencilFormat =DXGI_FORMAT_D24_UNORM_S8_UINT;
+    
+    //TODO: Don't do that!
     std::vector<DXGI_FORMAT> ColorFormatsNative;
     std::vector<format> ColorFormats;
 

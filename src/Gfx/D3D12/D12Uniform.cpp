@@ -6,14 +6,14 @@
 
 namespace gfx
 {
-void uniformGroup::Initialize()
+uniformGroup &uniformGroup::Reset()
 {
-    this->ApiData = std::make_shared<d3d12UniformData>();
+    return *this;
 }
 
-void uniformGroup::Update()
+uniformGroup &uniformGroup::Update()
 {
-
+    return *this;
 }
 
 }

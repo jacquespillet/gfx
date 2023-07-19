@@ -16,6 +16,10 @@ namespace app
 struct window;
 }
 
+//TODO: Implement Getters for all resource types in resource manager
+
+//TODO: Implement a GET_API_DATA() macro
+
 namespace gfx
 {
 struct commandBuffer;

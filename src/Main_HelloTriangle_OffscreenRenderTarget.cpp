@@ -128,28 +128,19 @@ struct application
 		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/OffscreenRenderTarget/TriangleOffscreen.json", OffscreenFramebufferHandle);
 		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/OffscreenRenderTarget/Triangle.json");
   
-	
+		//TODO: Add methods to do add uniforms here
 		//That's the content of a descriptor set
 		UniformsOffscreen = std::make_shared<gfx::uniformGroup>();
-		UniformsOffscreen->Initialize();
-		UniformsOffscreen->Uniforms.push_back({
-			"Image",
-			gfx::uniformType::Texture2d,
-			4,
-			Texture1,
-		});
+		UniformsOffscreen->Reset()
+						 .AddTexture(4, TextureHandle1);
+		
 		GfxContext->BindUniformsToPipeline(UniformsOffscreen, PipelineHandleOffscreen, 0);
 		UniformsOffscreen->Update();
 
 		UniformsFinalRender = std::make_shared<gfx::uniformGroup>();
-		UniformsFinalRender->Initialize();
-		UniformsFinalRender->Uniforms.push_back({
-			"Image",
-			gfx::uniformType::FramebufferRenderTarget,
-			4,
-			OffscreenFramebuffer,
-			0
-		});
+		UniformsFinalRender->Reset()
+							.AddFramebufferRenderTarget(4, OffscreenFramebufferHandle, 0);
+							
 		GfxContext->BindUniformsToPipeline(UniformsFinalRender, PipelineHandleSwapchain, 0);
 		UniformsFinalRender->Update();
 		

@@ -27,19 +27,36 @@ enum uniformType
 
 struct uniform
 {
-    char *Name;
     uniformType Type;
     u32 Binding=0;
-    void* Resource;
+    u32 ResourceHandle;
     u32 ResourceIndex=0;
 };
 
+struct buffer;
+struct image;
+struct framebuffer;
+
 struct uniformGroup
 {
-    std::vector<uniform> Uniforms;
     std::unordered_map<pipelineHandle, u32> Bindings; //Store where this uniform group is bound in each pipeline
-    void Initialize();
-    void Update();
+    std::vector<uniform> Uniforms;
+    
+    uniformGroup &Reset();
+    
+    uniformGroup &AddUniformBuffer(u32 Binding, bufferHandle Resource);
+    uniformGroup &AddStorageBuffer(u32 Binding, bufferHandle Resource);
+    uniformGroup &AddTexture(u32 Binding, imageHandle Resource);
+    uniformGroup &AddFramebufferRenderTarget(u32 Binding, framebufferHandle Resource, u32 TargetIndex);
+
+    uniformGroup &Update();
+    
+    buffer *GetBuffer(u32 Index);
+    image *GetTexture(u32 Index);
+    framebuffer *GetFramebuffer(u32 Index);
+
+    void UpdateBuffer(u32 Index, void *Data, u32 Size, u32 Offset);
+
 
     std::shared_ptr<void> ApiData;
 };

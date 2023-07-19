@@ -13,14 +13,14 @@ add_compile_definitions(_GLFW_WIN32 GLFW_EXPOSE_NATIVE_WIN32 VK_USE_PLATFORM_WIN
 set(GFX_API_GL 0)
 set(GFX_API_VK 1)
 set(GFX_API_D3D12 2)
-set(GFX_API ${GFX_API_D3D12})
+set(GFX_API ${GFX_API_GL})
 
 add_definitions(-DGFX_GL=${GFX_API_GL})
 add_definitions(-DGFX_VK=${GFX_API_VK})
 add_definitions(-DGFX_D3D12=${GFX_API_D3D12})
 add_definitions(-DGFX_API=${GFX_API})
 
-set(BUILD_ALL 0)
+set(BUILD_ALL 1)
 
 
 ################################################
@@ -151,6 +151,7 @@ set(glCode
         
 set(commonCode
         src/Gfx/Common/ResourceManager.cpp
+        src/Gfx/Common/Uniform.cpp
         src/Gfx/Common/Image.cpp
         src/Gfx/Common/Pipeline.cpp
         src/Gfx/Common/Util.cpp
@@ -280,9 +281,17 @@ if(${BUILD_ALL} EQUAL 1)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
+        
+        
+        # Offscreen
+        set(targetName HelloTriangleOffscreen_${GFX_API_STR})
+        set(mainCode ${sourceCode} src/Main_HelloTriangle_OffscreenRenderTarget.cpp)
+        add_executable(${targetName} ${mainCode})
+        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
+        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
 else()
         
-        # Compute
+        # Offscreen
         set(targetName Main)
         set(mainCode ${sourceCode} src/Main_HelloTriangle_OffscreenRenderTarget.cpp)
         add_executable(${targetName} ${mainCode})

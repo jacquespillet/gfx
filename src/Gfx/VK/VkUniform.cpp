@@ -9,12 +9,13 @@
 
 namespace gfx
 {
-void uniformGroup::Initialize()
+uniformGroup &uniformGroup::Reset()
 {
     this->ApiData = std::make_shared<vkUniformData>();
+    return *this;
 }
 
-void uniformGroup::Update()
+uniformGroup & uniformGroup::Update()
 {
     GET_CONTEXT(VkData, context::Get());
     std::shared_ptr<vkUniformData> VkUniformData = std::static_pointer_cast<vkUniformData>(this->ApiData);
@@ -44,7 +45,7 @@ void uniformGroup::Update()
 
             if(Uniforms[i].Type == uniformType::UniformBuffer)
             {
-                buffer* Buffer = (buffer*)(Uniforms[i].Resource);
+                buffer* Buffer = GetBuffer(i);
                 std::shared_ptr<vkBufferData> VKBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
                 
                 DescriptorBuffers.push_back(vk::DescriptorBufferInfo(VKBuffer->Handle, 0, Buffer->Size));
@@ -53,7 +54,7 @@ void uniformGroup::Update()
             }
             if(Uniforms[i].Type == uniformType::StorageBuffer)
             {
-                buffer* Buffer = (buffer*)(Uniforms[i].Resource);
+                buffer* Buffer = GetBuffer(i);
                 std::shared_ptr<vkBufferData> VKBuffer = std::static_pointer_cast<vkBufferData>(Buffer->ApiData);
                 
                 DescriptorBuffers.push_back(vk::DescriptorBufferInfo(VKBuffer->Handle, 0, Buffer->Size));
@@ -62,7 +63,7 @@ void uniformGroup::Update()
             }
             else if(Uniforms[i].Type == uniformType::Texture2d)
             {
-                image* Image = (image*)(Uniforms[i].Resource);
+                image* Image = GetTexture(i);
                 std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(Image->ApiData);
                     // vk::DescriptorImageInfo DescriptorImageInfo(Texture->GetSampler(), Texture->GetNativeView(imageView::NATIVE), vk::ImageLayout::eShaderReadOnlyOptimal);
 
@@ -72,7 +73,7 @@ void uniformGroup::Update()
             }
             else if(Uniforms[i].Type == uniformType::FramebufferRenderTarget)
             {
-                framebuffer* Framebuffer = (framebuffer*)(Uniforms[i].Resource);
+                framebuffer* Framebuffer = GetFramebuffer(i);
                 std::shared_ptr<vkFramebufferData> VKFramebuffer = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
                 // vk::DescriptorImageInfo DescriptorImageInfo(Textur   e->GetSampler(), Texture->GetNativeView(imageView::NATIVE), vk::ImageLayout::eShaderReadOnlyOptimal);
 
@@ -88,6 +89,7 @@ void uniformGroup::Update()
         VkData->Device.updateDescriptorSets(DescriptorWrites, {});
     }
 
+    return *this;
 }
 
 }
