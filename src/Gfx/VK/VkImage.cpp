@@ -183,6 +183,7 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
     this->Extent.Width = Width;
     this->Extent.Height = Height;
     
+    if(ImageUsage == imageUsage::COLOR_ATTACHMENT) ImageUsage |= imageUsage::SHADER_READ;
 
     vk::ImageCreateInfo ImageCreateInfo;
     ImageCreateInfo.setImageType(vk::ImageType::e2D)
@@ -203,6 +204,7 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
 
     VkImageData->Allocation = gfx::AllocateImage(ImageCreateInfo, MemoryUsage, &VkImageData->Handle);
     VkImageData->InitViews(*this, VkImageData->Handle,  Format);
+    VkImageData->InitSamplerDefault();
 }
 
 vk::ImageSubresourceRange GetDefaultImageSubresourceRange(const image &Image)
@@ -302,6 +304,25 @@ void vkImageData::InitSampler(const imageCreateInfo &CreateInfo, u32 MipLevelCou
                      .setAddressModeW(SamplerWrapModeToNative(CreateInfo.WrapT))
                      .setMinLod(0)
                      .setMaxLod((f32)MipLevelCount)
+                     .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
+    
+    auto Vulkan = context::Get();
+    GET_CONTEXT(VkData, context::Get());
+
+    this->Sampler = VkData->Device.createSampler(SamplerCreateInfo);
+}
+
+void vkImageData::InitSamplerDefault()
+{
+    vk::SamplerCreateInfo SamplerCreateInfo;
+    SamplerCreateInfo.setMagFilter(vk::Filter::eLinear)
+                     .setMinFilter(vk::Filter::eLinear)
+                     .setMipmapMode(vk::SamplerMipmapMode::eNearest)
+                     .setAddressModeU(vk::SamplerAddressMode::eClampToBorder)
+                     .setAddressModeV(vk::SamplerAddressMode::eClampToBorder)
+                     .setAddressModeW(vk::SamplerAddressMode::eClampToBorder)
+                     .setMinLod(0)
+                     .setMaxLod(1.0f)
                      .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
     
     auto Vulkan = context::Get();

@@ -1252,7 +1252,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     RenderPassOutput.Reset();
     for (sz i = 0; i < CreateInfo.ColorFormats.size(); i++)
     {
-        RenderPassOutput.Color(CreateInfo.ColorFormats[i], imageLayout::ColorAttachmentOptimal, renderPassOperation::Clear);
+        RenderPassOutput.Color(CreateInfo.ColorFormats[i], imageLayout::ShaderReadOnlyOptimal, renderPassOperation::Clear);
     }
     RenderPassOutput.Depth(CreateInfo.DepthFormat, imageLayout::DepthAttachmentOptimal);
     RenderPassOutput.SetDepthStencilOperation(renderPassOperation::Clear, renderPassOperation::Clear);

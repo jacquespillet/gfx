@@ -1,9 +1,11 @@
 #include "../Include/Uniform.h"
 #include "../Include/GfxContext.h"
+#include "../Include/Framebuffer.h"
 #include "VkUniform.h"
 #include "VkCommon.h"
 #include "VkGfxContext.h"
 #include "vkImage.h"
+#include "vkFramebuffer.h"
 
 namespace gfx
 {
@@ -64,6 +66,17 @@ void uniformGroup::Update()
                 std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(Image->ApiData);
                     // vk::DescriptorImageInfo DescriptorImageInfo(Texture->GetSampler(), Texture->GetNativeView(imageView::NATIVE), vk::ImageLayout::eShaderReadOnlyOptimal);
 
+                DescriptorImages.push_back(vk::DescriptorImageInfo(VKImage->Sampler, VKImage->DefaultImageViews.NativeView, vk::ImageLayout::eShaderReadOnlyOptimal));
+                DescriptorWrite.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+                                   .setPImageInfo(&DescriptorImages[DescriptorImages.size()-1]);
+            }
+            else if(Uniforms[i].Type == uniformType::FramebufferRenderTarget)
+            {
+                framebuffer* Framebuffer = (framebuffer*)(Uniforms[i].Resource);
+                std::shared_ptr<vkFramebufferData> VKFramebuffer = std::static_pointer_cast<vkFramebufferData>(Framebuffer->ApiData);
+                // vk::DescriptorImageInfo DescriptorImageInfo(Textur   e->GetSampler(), Texture->GetNativeView(imageView::NATIVE), vk::ImageLayout::eShaderReadOnlyOptimal);
+
+                std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(VKFramebuffer->ColorImages[Uniforms[i].ResourceIndex]->ApiData);
                 DescriptorImages.push_back(vk::DescriptorImageInfo(VKImage->Sampler, VKImage->DefaultImageViews.NativeView, vk::ImageLayout::eShaderReadOnlyOptimal));
                 DescriptorWrite.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
                                    .setPImageInfo(&DescriptorImages[DescriptorImages.size()-1]);

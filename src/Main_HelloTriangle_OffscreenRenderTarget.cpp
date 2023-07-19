@@ -148,7 +148,7 @@ struct application
 			OffscreenFramebuffer,
 			0
 		});
-		GfxContext->BindUniformsToPipeline(UniformsFinalRender, PipelineHandleSwapchain, 1);
+		GfxContext->BindUniformsToPipeline(UniformsFinalRender, PipelineHandleSwapchain, 0);
 		UniformsFinalRender->Update();
 		
 	}
