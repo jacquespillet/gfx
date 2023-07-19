@@ -11,13 +11,15 @@ enum class commandType
     BindPipeline,
     BindVertexBuffer,
     BindIndexBuffer,
+    BindUniforms,
     ClearColor,
     ClearDepth,
     SetViewport,
     SetScissor,
     BeginPass,
     EndPass,
-    CopyBuffer
+    CopyBuffer,
+    Dispatch
 };
 
 struct command;

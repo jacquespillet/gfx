@@ -22,6 +22,7 @@ enum uniformType
     Vec2ui,
     Vec3ui,
     Vec4ui,
+    FramebufferRenderTarget,
 };
 
 struct uniform
@@ -30,6 +31,7 @@ struct uniform
     uniformType Type;
     u32 Binding=0;
     void* Resource;
+    u32 ResourceIndex=0;
 };
 
 struct uniformGroup

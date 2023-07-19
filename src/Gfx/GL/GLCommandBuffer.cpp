@@ -44,12 +44,12 @@ void ExecuteBeginPass(const command &Command)
 
     glBindFramebuffer(GL_FRAMEBUFFER, GLFramebuffer->Handle);
 
-    glClear(GL_COLOR_BUFFER_BIT);
     glClearColor(Command.BeginPass.ClearColor[0], Command.BeginPass.ClearColor[1], Command.BeginPass.ClearColor[2], Command.BeginPass.ClearColor[3]);
-    glClear(GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
     glClearDepth(Command.BeginPass.ClearDepth);
-    glClear(GL_STENCIL_BUFFER_BIT);
+    glClear(GL_DEPTH_BUFFER_BIT);
     glClearStencil(Command.BeginPass.ClearStencil);
+    glClear(GL_STENCIL_BUFFER_BIT);
 }
 
 void ExecuteBindUniformBuffer(const command &Command)
@@ -100,7 +100,7 @@ void ExecuteDrawIndexed(const command &Command)
 
 void ExecuteDrawTriangles(const command &Command)
 {
-    if(Command.DrawIndexed.InstanceCount>1)
+    if(Command.DrawTriangles.InstanceCount>1)
     {
         glDrawArraysInstanced(GL_TRIANGLES, Command.DrawTriangles.Start, Command.DrawTriangles.Count, Command.DrawTriangles.InstanceCount);
     }
@@ -244,7 +244,7 @@ void commandBuffer::Dispatch(u32 NumGroupX, u32 NumGroupY, u32 NumGroupZ)
 {
     GET_GL_COMMANDS
     command Command;
-    Command.Type = commandType::BindPipeline;
+    Command.Type = commandType::Dispatch;
     Command.DispatchCompute.NumGroupX = NumGroupX;
     Command.DispatchCompute.NumGroupY = NumGroupY;
     Command.DispatchCompute.NumGroupZ = NumGroupZ;
@@ -348,13 +348,14 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
     
     for(sz i=0; i< Group->Uniforms.size(); i++)
     {
+        //TODO : else if
         if(Group->Uniforms[i].Type == uniformType::UniformBuffer)
         {
             buffer* BufferData = (buffer*)(Group->Uniforms[i].Resource);
             std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(BufferData->ApiData);
 
             command Command;
-            Command.Type = commandType::DrawTriangles;
+            Command.Type = commandType::BindUniforms;
             Command.BindUniformBuffer.Binding = Group->Uniforms[i].Binding;
             Command.BindUniformBuffer.Buffer = GLBuffer->Handle;
             Command.CommandFunction = (commandFunction)&ExecuteBindUniformBuffer;
@@ -366,7 +367,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             std::shared_ptr<glBuffer> GLBuffer = std::static_pointer_cast<glBuffer>(BufferData->ApiData);
 
             command Command;
-            Command.Type = commandType::DrawTriangles;
+            Command.Type = commandType::BindUniforms;
             Command.BindStorageBuffer.Binding = Group->Uniforms[i].Binding;
             Command.BindStorageBuffer.Buffer = GLBuffer->Handle;
             Command.CommandFunction = (commandFunction)&ExecuteBindStorageBuffer;
@@ -378,9 +379,22 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             std::shared_ptr<glImage> GLImage = std::static_pointer_cast<glImage>(ImageData->ApiData);
 
             command Command;
-            Command.Type = commandType::DrawTriangles;
+            Command.Type = commandType::BindUniforms;
             Command.BindUniformImage.Binding = Group->Uniforms[i].Binding;
             Command.BindUniformImage.Image = GLImage->Handle;
+            Command.CommandFunction = (commandFunction)&ExecuteBindUniformImage;
+            GLCommandBuffer->Commands.push_back(Command);
+        }
+        if(Group->Uniforms[i].Type == uniformType::FramebufferRenderTarget)
+        {
+            framebuffer* Framebuffer = (framebuffer*)(Group->Uniforms[i].Resource);
+            std::shared_ptr<glFramebufferData> GLFramebuffer = std::static_pointer_cast<glFramebufferData>(Framebuffer->ApiData);
+            
+
+            command Command;
+            Command.Type = commandType::BindUniforms;
+            Command.BindUniformImage.Binding = Group->Uniforms[i].Binding;
+            Command.BindUniformImage.Image = GLFramebuffer->ColorTextures[Group->Uniforms[i].ResourceIndex];
             Command.CommandFunction = (commandFunction)&ExecuteBindUniformImage;
             GLCommandBuffer->Commands.push_back(Command);
         }

@@ -1,0 +1,59 @@
+{
+	"name" : "main",
+	"pipelines" : [
+		{
+			"name" : "Triangle",
+			"vertex_streams":
+			[
+				{
+					"stream_binding":0,
+					"stream_rate":"Vertex",
+					"stream_stride":28
+				}
+			],
+			"vertex_input" : [
+				{
+					"vertex_stream" : 0,
+					"attribute_location" : 0,
+					"attribute_offset" : 0,
+					"attribute_format" : "Float3",
+					"name" : "Position"
+				},
+				{
+					"vertex_stream" : 0,
+					"attribute_location" : 1,
+					"attribute_offset" : 12,
+					"attribute_format" : "Float4",
+					"name" : "Position"
+				}
+			],
+			"render_pass" : "Swapchain",
+			"depth" : {
+				"write" : true,
+				"test" : "less_or_equal"
+			},
+			"shaders" : [
+				{
+					"language": "GLSL",
+					"stage" : "vertex",
+					"shader" : "triangleOffscreen.glsl"
+				},
+				{
+					"language": "GLSL",
+					"stage" : "fragment",
+					"shader" : "triangleOffscreen.glsl"
+				},
+				{
+					"language": "HLSL",
+					"stage" : "vertex",
+					"shader" : "triangleOffscreen.hlsl"
+				},
+				{
+					"language": "HLSL",
+					"stage" : "fragment",
+					"shader" : "triangleOffscreen.hlsl"
+				}				
+			]
+		}
+	]
+}
