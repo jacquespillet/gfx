@@ -16,7 +16,6 @@ namespace app
 struct window;
 }
 
-//TODO: Implement a GET_API_DATA() macro
 
 namespace gfx
 {
@@ -82,12 +81,6 @@ struct context
     imageHandle CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo);
     imageHandle CreateImage(u32 Width, u32 Height, format Format, u8 *Pixels);
 
-    //TODO: return a technique struct with multiple passes and pipelines
-    // struct technique
-    // {
-    //     std::vector<pipelineHandle> Passes;
-    // }
-    
     pipelineHandle CreatePipelineFromFile(const char *FileName, framebufferHandle Framebuffer = InvalidHandle); 
     pipelineHandle CreatePipeline(const pipelineCreation &PipelineCreation);
 

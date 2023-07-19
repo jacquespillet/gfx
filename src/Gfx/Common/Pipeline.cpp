@@ -422,6 +422,7 @@ pipelineHandle context::CreatePipelineFromFile(const char *FileName, framebuffer
         Name.get_to(NameString);
     } 
 
+    //TODO: Only have 1 pipeline in a json file.
     json Pipelines = Data["pipelines"];
     if(Pipelines.is_array())
     {
@@ -456,7 +457,6 @@ pipelineHandle context::CreatePipelineFromFile(const char *FileName, framebuffer
             WriteFileString("Shader", PipelineCreation.Shaders.Stages[0].Code);
         }
     }
-    //TODO: Return an array of pipelines here
     for(u32 i=0; i<PipelineCreations.size(); i++)
     {
         if(FramebufferHandle == InvalidHandle)
@@ -480,8 +480,6 @@ pipelineHandle context::CreatePipelineFromFile(const char *FileName, framebuffer
         
         return pipeline;
     }
-
-
     return InvalidHandle;    
 }    
 

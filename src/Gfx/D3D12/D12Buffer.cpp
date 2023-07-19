@@ -31,6 +31,8 @@ void buffer::Init(size_t ByteSize, sz Stride, bufferUsage::value Usage, memoryUs
 {
     this->Size = ByteSize;
     this->Stride = Stride;
+    this->MemoryUsage = MemoryUsage;
+
     if(Usage == bufferUsage::UniformBuffer)
     {
         this->Size = CalcConstantBufferByteSize(ByteSize);
@@ -138,24 +140,47 @@ void buffer::FlushMemory(size_t ByteSize, size_t Offset)
 }
 
 
-//TODO: 
-//When memory usage is gpu only, use a staging buffer
-//otherwise use memcpy
 void buffer::CopyData(const uint8_t *Data, size_t ByteSize, size_t Offset)
 {
+    GET_CONTEXT(D12Data, context::Get());
+
     assert(ByteSize + Offset <= this->Size);
 
-    if(this->MappedData == nullptr)
+    if(MemoryUsage == memoryUsage::GpuOnly)
     {
-        (void)this->MapMemory();
-        std::memcpy((void*)(this->MappedData + Offset), (const void*)Data, ByteSize);
-        this->FlushMemory(ByteSize, Offset);
-        this->UnmapMemory();
+        auto StageBuffer = D12Data->StageBuffer;
+        auto CommandBuffer = D12Data->ImmediateCommandBuffer;
+
+        CommandBuffer->Begin();
+
+        auto Allocation = StageBuffer.Submit((uint8_t*)Data, (u32)ByteSize);
+
+        CommandBuffer->CopyBuffer(
+            gfx::bufferInfo {StageBuffer.GetBuffer(), Allocation.Offset},
+            gfx::bufferInfo {this, 0},
+            Allocation.Size
+        );  
+        
+        StageBuffer.Flush();
+        CommandBuffer->End();
+
+        context::Get()->SubmitCommandBufferImmediate(CommandBuffer.get());
+        StageBuffer.Reset();    
     }
     else
     {
-        std::memcpy((void*)(this->MappedData + Offset), (const void*)Data, ByteSize);
-    }    
+        if(this->MappedData == nullptr)
+        {
+            (void)this->MapMemory();
+            std::memcpy((void*)(this->MappedData + Offset), (const void*)Data, ByteSize);
+            this->FlushMemory(ByteSize, Offset);
+            this->UnmapMemory();
+        }
+        else
+        {
+            std::memcpy((void*)(this->MappedData + Offset), (const void*)Data, ByteSize);
+        }
+    }
 }
 
 

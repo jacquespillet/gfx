@@ -239,7 +239,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
     Framebuffer->Height = Height;
     Framebuffer->ApiData = std::make_shared<d3d12FramebufferData>();
     std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(Framebuffer->ApiData);
-
+    D12FramebufferData->Framebuffer = Framebuffer;
 
     Framebuffer->RenderPass = context::Get()->ResourceManager.RenderPasses.ObtainResource();
     renderPass *RenderPass = context::Get()->GetRenderPass(Framebuffer->RenderPass);
@@ -333,20 +333,11 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
         );
     }
 
-    //TODO: Refactor all that
-    D12FramebufferData->Width = Width;
-    D12FramebufferData->Height = Height;
-    D12FramebufferData->RenderTargetsCount = d12Constants::FrameCount;
     D12FramebufferData->IsMultiSampled = D12Data->MultisamplingEnabled;
-    D12FramebufferData->IsSwapchain=true;
-    D12FramebufferData->ColorFormatsNative.push_back(FormatToNative(SwapchainFormat));
-    D12FramebufferData->ColorFormatsNative.push_back(FormatToNative(SwapchainFormat));
-    D12FramebufferData->ColorFormats.push_back(SwapchainFormat);
-    D12FramebufferData->ColorFormats.push_back(SwapchainFormat);
+    D12FramebufferData->SetSwapchainRenderTargets(D12SwapchainData->Buffers, d12Constants::FrameCount, SwapchainFormat);
     D12FramebufferData->CreateHeaps();
-    D12FramebufferData->SetRenderTargets(D12SwapchainData->Buffers, d12Constants::FrameCount);
-    D12FramebufferData->BuildDescriptors();
     D12FramebufferData->CreateDepthBuffer(Width, Height, DepthFormat);
+    D12FramebufferData->CreateDescriptors();
 
     this->Swapchain = Swapchain;
     
@@ -453,12 +444,14 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
         return InvalidHandle;
     }
     framebuffer *Framebuffer = GetFramebuffer(FramebufferHandle);
+    Framebuffer->ApiData = std::make_shared<d3d12FramebufferData>();
+    GET_API_DATA(D12FramebufferData, d3d12FramebufferData, Framebuffer);
+    D12FramebufferData->Framebuffer = Framebuffer;
+
     Framebuffer->Width = CreateInfo.Width;
     Framebuffer->Height = CreateInfo.Height;
-    Framebuffer->ApiData = std::make_shared<d3d12FramebufferData>();
-    std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(Framebuffer->ApiData);
-    
     Framebuffer->RenderPass = context::Get()->ResourceManager.RenderPasses.ObtainResource();
+
     renderPass *RenderPass = context::Get()->GetRenderPass(Framebuffer->RenderPass);
     RenderPass->Output.NumColorFormats = (u32)CreateInfo.ColorFormats.size();
     RenderPass->Output.DepthStencilFormat = CreateInfo.DepthFormat;
@@ -468,46 +461,14 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     
     for(sz i=0; i<CreateInfo.ColorFormats.size(); i++)
     {
-        //TODO: Use image.INit() here
         RenderPass->Output.ColorFormats[i] = CreateInfo.ColorFormats[i];
-
-        D3D12_RESOURCE_DESC desc = {};
-        desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-        desc.Alignment = 0;
-        desc.Width = CreateInfo.Width;
-        desc.Height = CreateInfo.Height;
-        desc.DepthOrArraySize = 1;
-        desc.MipLevels = 1;
-        desc.Format = FormatToNative(CreateInfo.ColorFormats[i]);
-        desc.SampleDesc.Count = 1;
-        desc.SampleDesc.Quality = 0;
-        desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-        desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-
-        D3D12_HEAP_PROPERTIES heapProperties = {};
-        heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
-
-        D3D12_CLEAR_VALUE clearValue = {};
-        clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        clearValue.Color[0] = CreateInfo.ClearValues[0];
-        clearValue.Color[1] = CreateInfo.ClearValues[1];
-        clearValue.Color[2] = CreateInfo.ClearValues[2];
-        clearValue.Color[3] = CreateInfo.ClearValues[3];
-        
-        D12Data->Device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&D12FramebufferData->RenderTargets[i]));
-        D12FramebufferData->RenderTargetsSRV[i].Init(CreateInfo.Width, CreateInfo.Height, CreateInfo.ColorFormats[i], imageUsage::COLOR_ATTACHMENT, memoryUsage::GpuOnly);
+        D12FramebufferData->AddRenderTarget(CreateInfo.ColorFormats[i], &CreateInfo.ClearValues[0]);
     }
-
-    //TODO : Refactor that
-    D12FramebufferData->Width = CreateInfo.Width;
-    D12FramebufferData->Height = CreateInfo.Height;
-    D12FramebufferData->RenderTargetsCount = (u32)CreateInfo.ColorFormats.size();
-    D12FramebufferData->ColorFormats = CreateInfo.ColorFormats;
     D12FramebufferData->CreateHeaps();
-    D12FramebufferData->BuildDescriptors();
     D12FramebufferData->CreateDepthBuffer(CreateInfo.Width, CreateInfo.Height, CreateInfo.DepthFormat);
+    D12FramebufferData->CreateDescriptors();
 
-    
+
     return FramebufferHandle;
     
 }
@@ -525,8 +486,7 @@ ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_
 
     std::vector<LPCWSTR> CompileArgs =
     {
-        //TODO: COlumn major and remove from macros.hlsl
-        DXC_ARG_PACK_MATRIX_ROW_MAJOR,
+        DXC_ARG_PACK_MATRIX_COLUMN_MAJOR,
         // DXC_ARG_WARNINGS_ARE_ERRORS,
         DXC_ARG_ALL_RESOURCES_BOUND
     };
@@ -912,8 +872,6 @@ void context::CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz
     
     buffer *Buffer = GetBuffer(BufferHandle);
     
-    Buffer->Name = "";
-
     auto StageBuffer = D12Data->StageBuffer;
     auto CommandBuffer = D12Data->ImmediateCommandBuffer;
 
@@ -959,6 +917,12 @@ void context::DestroyImage(imageHandle ImageHandle)
 void context::DestroyFramebuffer(framebufferHandle FramebufferHandle)
 {
     framebuffer *Framebuffer = GetFramebuffer(FramebufferHandle);
+    GET_API_DATA(D12Framebuffer, d3d12FramebufferData, Framebuffer);
+    for (size_t i = 0; i < D12Framebuffer->RenderTargetsCount; i++)
+    {
+        ResourceManager.Images.ReleaseResource(D12Framebuffer->RenderTargetsSRV[i]);
+    }
+    
     ResourceManager.RenderPasses.ReleaseResource(Framebuffer->RenderPass);
     ResourceManager.Framebuffers.ReleaseResource(FramebufferHandle);
 }
@@ -966,6 +930,12 @@ void context::DestroySwapchain()
 {
     GET_API_DATA(D12SwapchainData, d3d12SwapchainData, Swapchain);
     framebuffer *Framebuffer = GetFramebuffer(D12SwapchainData->FramebufferHandle);
+    GET_API_DATA(D12Framebuffer, d3d12FramebufferData, Framebuffer);
+    for (size_t i = 0; i < D12Framebuffer->RenderTargetsCount; i++)
+    {
+        ResourceManager.Images.ReleaseResource(D12Framebuffer->RenderTargetsSRV[i]);
+    }
+    
     ResourceManager.RenderPasses.ReleaseResource(Framebuffer->RenderPass);
     ResourceManager.Framebuffers.ReleaseResource(D12SwapchainData->FramebufferHandle);
 }

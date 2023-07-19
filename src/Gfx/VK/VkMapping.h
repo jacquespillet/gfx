@@ -168,7 +168,7 @@ vk::AccessFlags ImageUsageToAccessFlags(imageUsage::bits Usage);
 vk::PipelineStageFlags ImageUsageToPipelineStage(imageUsage::bits Usage);
 
 static vk::Format ToVkVertexFormat( vertexComponentFormat::values Value ) {
-    static vk::Format Mapping[ vertexComponentFormat::Count ] = { vk::Format::eR32Sfloat, vk::Format::eR32G32Sfloat, vk::Format::eR32G32B32Sfloat, vk::Format::eR32G32B32A32Sfloat, /*MAT4 TODO*/vk::Format::eR32G32B32A32Sfloat,
+    static vk::Format Mapping[ vertexComponentFormat::Count ] = { vk::Format::eR32Sfloat, vk::Format::eR32G32Sfloat, vk::Format::eR32G32B32Sfloat, vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat,
                                                                           vk::Format::eR8Sint, vk::Format::eR8G8B8A8Snorm, vk::Format::eR8Uint, vk::Format::eR8G8B8A8Uint, vk::Format::eR16G16Sint, vk::Format::eR16G16Snorm,
                                                                           vk::Format::eR16G16B16A16Sint, vk::Format::eR16G16B16A16Snorm, vk::Format::eR32Uint, vk::Format::eR32G32Uint, vk::Format::eR32G32B32A32Uint };
     return Mapping[ Value ];

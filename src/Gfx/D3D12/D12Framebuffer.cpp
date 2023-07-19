@@ -7,7 +7,42 @@
 
 namespace gfx
 {
+
+void d3d12FramebufferData::AddRenderTarget(format Format, const f32 *ClearValues)
+{
+    GET_CONTEXT(D12Data, context::Get());
+
+    D3D12_RESOURCE_DESC desc = {};
+    desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    desc.Alignment = 0;
+    desc.Width = Framebuffer->Width;
+    desc.Height = Framebuffer->Height;
+    desc.DepthOrArraySize = 1;
+    desc.MipLevels = 1;
+    desc.Format = FormatToNative(Format);
+    desc.SampleDesc.Count = 1;
+    desc.SampleDesc.Quality = 0;
+    desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+    desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+
+    D3D12_HEAP_PROPERTIES heapProperties = {};
+    heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+    D3D12_CLEAR_VALUE clearValue = {};
+    clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    clearValue.Color[0] = ClearValues[0];
+    clearValue.Color[1] = ClearValues[1];
+    clearValue.Color[2] = ClearValues[2];
+    clearValue.Color[3] = ClearValues[3];
     
+    D12Data->Device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_RENDER_TARGET, &clearValue, IID_PPV_ARGS(&RenderTargets[RenderTargetsCount]));    
+    
+    this->RenderTargetsSRV[RenderTargetsCount] = context::Get()->ResourceManager.Images.ObtainResource();
+    context::Get()->GetImage(this->RenderTargetsSRV[RenderTargetsCount])->Init(Framebuffer->Width, Framebuffer->Height, Format, imageUsage::COLOR_ATTACHMENT, memoryUsage::GpuOnly);
+    
+    this->ColorFormats[RenderTargetsCount++] = Format;
+}
+
 void d3d12FramebufferData::CreateHeaps()
 {
     assert(RenderTargetsCount>0);
@@ -31,17 +66,7 @@ void d3d12FramebufferData::CreateHeaps()
     DSVDescriptorSize = D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 }
 
-void d3d12FramebufferData::SetRenderTargets(ComPtr<ID3D12Resource> *Buffers, u32 Count)
-{
-    this->RenderTargetsCount = Count;
-    for (UINT n = 0; n < Count; n++)
-    {
-        this->RenderTargets[n] = Buffers[n];
-        this->RenderTargetsSRV[n].Init(Width, Height, ColorFormats[n], imageUsage::COLOR_ATTACHMENT, memoryUsage::GpuOnly);
-    }        
-}
-
-void d3d12FramebufferData::BuildDescriptors()
+void d3d12FramebufferData::CreateDescriptors()
 {
     std::shared_ptr<d3d12Data> D12Data = std::static_pointer_cast<d3d12Data>(context::Get()->ApiContextData);
 
@@ -61,6 +86,22 @@ void d3d12FramebufferData::BuildDescriptors()
         MultisampledColorImageIndex = RenderTargetsCount;
     }
 }
+
+void d3d12FramebufferData::SetSwapchainRenderTargets(ComPtr<ID3D12Resource> *Buffers, u32 Count, format Format)
+{
+    this->IsSwapchain=true;
+    this->RenderTargetsCount = Count;
+
+    for (UINT n = 0; n < Count; n++)
+    {
+        this->RenderTargets[n] = Buffers[n];
+        this->ColorFormats[n]= Format;
+        
+        this->RenderTargetsSRV[n] = context::Get()->ResourceManager.Images.ObtainResource();
+        context::Get()->GetImage(this->RenderTargetsSRV[n])->Init(Framebuffer->Width, Framebuffer->Height, ColorFormats[n], imageUsage::COLOR_ATTACHMENT, memoryUsage::GpuOnly);
+    }        
+}
+
 
 void d3d12FramebufferData::CreateDepthBuffer(u32 Width, u32 Height, format Format)
 {

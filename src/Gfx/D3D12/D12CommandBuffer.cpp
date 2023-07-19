@@ -170,7 +170,8 @@ void commandBuffer::EndPass()
         for (size_t i = 0; i < D12FramebufferData->RenderTargetsCount; i++)
         {
             ID3D12Resource *Source = D12FramebufferData->RenderTargets[i].Get();
-            ID3D12Resource *Dest = std::static_pointer_cast<d3d12ImageData>(D12FramebufferData->RenderTargetsSRV[i].ApiData)->Handle.Get();
+            image *Image = context::Get()->GetImage(D12FramebufferData->RenderTargetsSRV[i]);
+            ID3D12Resource *Dest = std::static_pointer_cast<d3d12ImageData>(Image->ApiData)->Handle.Get();
 
             D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(Source, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_COPY_SOURCE));
             D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(Dest, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
@@ -189,7 +190,7 @@ void commandBuffer::EndPass()
     {
         D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12FramebufferData->MultisampledColorImage.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_RESOLVE_SOURCE));
         D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12FramebufferData->RenderTargets[D12FramebufferData->CurrentTarget].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_RESOLVE_DEST));
-        D12CommandBufferData->CommandList->ResolveSubresource(D12FramebufferData->RenderTargets[D12FramebufferData->CurrentTarget].Get(), 0, D12FramebufferData->MultisampledColorImage.Get(), 0, D12FramebufferData->ColorFormatsNative[0]);
+        D12CommandBufferData->CommandList->ResolveSubresource(D12FramebufferData->RenderTargets[D12FramebufferData->CurrentTarget].Get(), 0, D12FramebufferData->MultisampledColorImage.Get(), 0, FormatToNative(D12FramebufferData->ColorFormats[0]));
         D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12FramebufferData->MultisampledColorImage.Get(), D3D12_RESOURCE_STATE_RESOLVE_SOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET));
         D12CommandBufferData->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12FramebufferData->RenderTargets[D12FramebufferData->CurrentTarget].Get(), D3D12_RESOURCE_STATE_RESOLVE_DEST, D12FramebufferData->IsSwapchain ? D3D12_RESOURCE_STATE_PRESENT : D3D12_RESOURCE_STATE_RENDER_TARGET));
     }
@@ -355,7 +356,8 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
         {
             framebuffer* FramebufferData = Group->GetFramebuffer((u32)i);
             std::shared_ptr<d3d12FramebufferData> D12FramebufferData = std::static_pointer_cast<d3d12FramebufferData>(FramebufferData->ApiData);
-            std::shared_ptr<d3d12ImageData> ImageData = std::static_pointer_cast<d3d12ImageData>(D12FramebufferData->RenderTargetsSRV[Group->Uniforms[i].ResourceIndex].ApiData);
+            image *Image = context::Get()->GetImage(D12FramebufferData->RenderTargetsSRV[Group->Uniforms[i].ResourceIndex]);
+            GET_API_DATA(ImageData, d3d12ImageData, Image);
             if(D12Pipeline->UsedRootParams[Group->Uniforms[i].Binding])
             {
                 u32 RootParamIndex = D12Pipeline->BindingRootParamMapping[Group->Uniforms[i].Binding];

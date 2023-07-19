@@ -20,7 +20,7 @@ add_definitions(-DGFX_VK=${GFX_API_VK})
 add_definitions(-DGFX_D3D12=${GFX_API_D3D12})
 add_definitions(-DGFX_API=${GFX_API})
 
-set(BUILD_ALL 1)
+set(BUILD_ALL 0)
 
 
 ################################################
@@ -295,7 +295,7 @@ else()
         
         # Offscreen
         set(targetName Main)
-        set(mainCode ${sourceCode} src/Main_HelloTriangle_OffscreenRenderTarget.cpp)
+        set(mainCode ${sourceCode} src/Main_HelloTriangle_StorageBuffer.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
