@@ -182,7 +182,7 @@ struct pipelineCreation
 {
     vertexInputCreation VertexInput;
     depthStencilCreation DepthStencil;
-    renderPassOutput RenderPass;
+    renderPassHandle RenderPassHandle;
     shaderStateCreation Shaders;
     blendStateCreation BlendState;
     rasterizationCreation Rasterization;

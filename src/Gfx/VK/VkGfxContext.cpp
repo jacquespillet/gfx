@@ -214,8 +214,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
 
             if(i==0) 
             {
-                VkFramebufferData->DepthStencilImage->Destroy();        
-                
+                VkFramebufferData->DepthStencilImage->Destroy();
             }        
         }          
     }
@@ -228,8 +227,6 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
         VkSwapchainData->SwapchainImageUsages[i] = imageUsage::UNKNOWN;
     }
 
-    renderPassHandle SwapchainPassHandle = GetDefaultRenderPass();
-    
     //Initialize texture representations of swapchain images
     for(u32 i=0; i<VkData->PresentImageCount; i++)
     {
@@ -243,7 +240,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
     std::shared_ptr<image> DepthStencil = std::make_shared<image>();
     DepthStencil->Init(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height, DepthFormat, imageUsage::DEPTH_STENCIL_ATTACHMENT, memoryUsage::GpuOnly);
 
-    CreateSwapchainFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, SwapchainPassHandle, VkData->PresentImageCount, VkSwapchainData.get());
+    CreateSwapchainFramebuffer(VkSwapchainData->SwapchainImages, DepthStencil, SwapchainRenderPass, VkData->PresentImageCount, VkSwapchainData.get());
 
 
     return Swapchain;
@@ -407,7 +404,7 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
     InitializeInfo.InfoCallback("Created device and queues");
 
 
-    VkData->GetRenderPass(Singleton->SwapchainOutput, "Swapchain");
+    Singleton->SwapchainRenderPass = Singleton->CreateRenderPass(Singleton->SwapchainOutput);
 
     //Initialize dynamic dispatch loader
     VkData->DynamicLoader.init(VkData->Instance, VkData->Device);
@@ -419,7 +416,7 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
                                  .setPfnUserCallback(ValidationLayerCallback);
     VkData->DebugUtilsMessenger = VkData->Instance.createDebugUtilsMessengerEXT(DebugUtilsMessengerCreateInfo, nullptr, VkData->DynamicLoader);
 
-    //Initialize VMA
+    //Initialize VMA 
     VmaAllocatorCreateInfo AllocatorInfo = {};
     AllocatorInfo.vulkanApiVersion = VkData->ApiVersion;
     AllocatorInfo.physicalDevice = VkData->PhysicalDevice;
@@ -811,8 +808,21 @@ descriptorSetLayoutHandle CreateDescriptorSetLayout(const descriptorSetLayoutCre
     return Handle;
 }
 
-vk::RenderPass CreateRenderPass(vkData *VkData, const renderPassOutput &Output)
+
+renderPassHandle context::CreateRenderPass(const renderPassOutput &Output)
 {
+    GET_CONTEXT(VkData, this);
+
+    renderPassHandle Handle = ResourceManager.RenderPasses.ObtainResource();
+    if(Handle == InvalidHandle)
+    {
+        assert(false);
+        return Handle;
+    }
+    renderPass *RenderPass = GetRenderPass(Handle);
+    RenderPass->Output = Output;
+    RenderPass->ApiData = std::make_shared<vkRenderPassData>();
+    GET_API_DATA(VkRenderPass, vkRenderPassData, RenderPass);
 
     vk::AttachmentDescription ColorAttachments[16] = {};
     vk::AttachmentReference ColorAttachmentsRefs[commonConstants::MaxImageOutputs] = {};
@@ -953,35 +963,9 @@ vk::RenderPass CreateRenderPass(vkData *VkData, const renderPassOutput &Output)
                         .setSubpassCount(1)
                         .setPSubpasses(&Subpass);
     
-    vk::RenderPass RenderPass = VkData->Device.createRenderPass(RenderPassCreateInfo);
+    VkRenderPass->NativeHandle = VkData->Device.createRenderPass(RenderPassCreateInfo);
 
-    return RenderPass;    
-}
-
-renderPass *vkData::GetRenderPass(const renderPassOutput &Output, std::string Name)
-{
-    if(RenderPassCache.find(Name) != RenderPassCache.end())
-    {
-        renderPass *RenderPass = context::Get()->GetRenderPass(RenderPassCache[Name]);
-        return RenderPass;
-    }
-
-    renderPassHandle RenderPassHandle = context::Get()->ResourceManager.RenderPasses.ObtainResource();
-    if(RenderPassHandle == InvalidHandle)
-    {
-        assert(false);
-        return {};
-    }
-    
-    renderPass *RenderPass = context::Get()->GetRenderPass(RenderPassHandle);
-    RenderPass->Name = Name;
-    RenderPass->ApiData = std::make_shared<vkRenderPassData>();
-    GET_API_DATA(VkRenderPassData, vkRenderPassData, RenderPass);
-    VkRenderPassData->NativeHandle =  CreateRenderPass(this, Output);
-
-
-    RenderPassCache[Name] = RenderPassHandle;
-    return RenderPass;
+    return Handle;
 }
 
 pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
@@ -1041,6 +1025,8 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 
     shader *ShaderStateData = GetShader(ShaderState);
     GET_API_DATA(VkShaderData, vkShaderData, ShaderStateData);
+
+    renderPass *RenderPass = GetRenderPass(PipelineCreation.RenderPassHandle);
 
     VkPipelineData->ShaderState = ShaderState;
     vk::DescriptorSetLayout Layouts[vkConstants::MaxDescriptorSetLayouts];
@@ -1136,7 +1122,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         }
         else
         {
-            for(u32 i=0; i<PipelineCreation.RenderPass.NumColorFormats; i++)
+            for(u32 i=0; i<RenderPass->Output.NumColorFormats; i++)
             {
                 ColorBlendAttachment[i] = vk::PipelineColorBlendAttachmentState();
                 ColorBlendAttachment[i].blendEnable = VK_FALSE;
@@ -1149,7 +1135,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         vk::PipelineColorBlendStateCreateInfo ColorBlending;
         ColorBlending.setLogicOp(vk::LogicOp::eCopy)
                      //.setAttachmentCount(PipelineCreation.BlendState.ActiveStates)
-                      .setAttachmentCount(PipelineCreation.BlendState.ActiveStates ? PipelineCreation.BlendState.ActiveStates : PipelineCreation.RenderPass.NumColorFormats)
+                      .setAttachmentCount(PipelineCreation.BlendState.ActiveStates ? PipelineCreation.BlendState.ActiveStates : RenderPass->Output.NumColorFormats)
                      .setPAttachments(ColorBlendAttachment)
                      .setBlendConstants({0,0,0,0});
         PipelineCreateInfo.setPColorBlendState(&ColorBlending);
@@ -1165,7 +1151,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 
         vk::PipelineMultisampleStateCreateInfo MultisampleState;
         MultisampleState.setSampleShadingEnable(VK_FALSE)
-                        .setRasterizationSamples(SampleCountToNative(PipelineCreation.RenderPass.SampleCount))
+                        .setRasterizationSamples(SampleCountToNative(RenderPass->Output.SampleCount))
                         .setMinSampleShading(1.0f)
                         .setPSampleMask(nullptr)
                         .setAlphaToCoverageEnable(VK_FALSE)
@@ -1204,7 +1190,6 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
                      .setPScissors(&Scissor);
         PipelineCreateInfo.setPViewportState(&ViewportState);
 
-        renderPass *RenderPass = VkData->GetRenderPass(PipelineCreation.RenderPass, std::string(PipelineCreation.RenderPass.Name));
         GET_API_DATA(VkRenderPassData, vkRenderPassData, RenderPass);
         PipelineCreateInfo.setRenderPass(VkRenderPassData->NativeHandle);
 
@@ -1239,7 +1224,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 renderPassHandle context::GetDefaultRenderPass()
 {
     GET_CONTEXT(VkData, this);
-    return VkData->RenderPassCache["Swapchain"];
+    return SwapchainRenderPass;
 }
 
 framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &CreateInfo)
@@ -1259,7 +1244,8 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     RenderPassOutput.SetDepthStencilOperation(renderPassOperation::Clear, renderPassOperation::Clear);
     //TODO: Remove foo here
     RenderPassOutput.Name = "Foo";
-    renderPass *RenderPass = VKData->GetRenderPass(RenderPassOutput, "Foo");
+    renderPassHandle RenderPassHandle = CreateRenderPass(RenderPassOutput);
+    renderPass *RenderPass = GetRenderPass(RenderPassHandle);
     RenderPass->Output = RenderPassOutput;
     vk::RenderPass VkRenderPass = std::static_pointer_cast<vkRenderPassData>(RenderPass->ApiData)->NativeHandle;
 
@@ -1298,7 +1284,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     Framebuffer->Width = CreateInfo.Width;
     Framebuffer->Height = CreateInfo.Height;
     Framebuffer->ApiData = std::make_shared<vkFramebufferData>();
-    Framebuffer->RenderPass = VKData->RenderPassCache["Foo"];   
+    Framebuffer->RenderPass = RenderPassHandle;   
     GET_API_DATA(VkFramebufferData, vkFramebufferData, Framebuffer);
     VkFramebufferData->DepthStencilImage = DepthImage;
     VkFramebufferData->ColorImages = ColorImages;
@@ -1448,10 +1434,14 @@ void context::DestroyFramebuffer(framebufferHandle FramebufferHandle)
     for (sz i = 0; i < VkFramebufferData->ColorImagesCount; i++)
     {
         VkFramebufferData->ColorImages[i]->Destroy();
-        
     }
     VkFramebufferData->DepthStencilImage->Destroy();
     
+    renderPass *RenderPass = GetRenderPass(Framebuffer->RenderPass);
+    GET_API_DATA(VkRenderPass, vkRenderPassData, RenderPass);
+    VkData->Device.destroyRenderPass(VkRenderPass->NativeHandle);
+    ResourceManager.RenderPasses.ReleaseResource(Framebuffer->RenderPass);
+
     VkData->Device.destroyFramebuffer(VkFramebufferData->Handle);
     ResourceManager.Framebuffers.ReleaseResource(FramebufferHandle);
 
@@ -1488,6 +1478,13 @@ void context::DestroySwapchain()
             
         }  
     }
+
+    renderPass *RenderPass = GetRenderPass(SwapchainRenderPass);
+    GET_API_DATA(VkRenderPass, vkRenderPassData, RenderPass);
+    VkData->Device.destroyRenderPass(VkRenderPass->NativeHandle);
+    ResourceManager.RenderPasses.ReleaseResource(SwapchainRenderPass);
+    
+
     VkData->Device.destroySwapchainKHR(VkSwapchainData->Handle);
 }
 
@@ -1505,12 +1502,6 @@ void context::Cleanup()
     VkData->StageBuffer.Destroy();
     VkData->VirtualFrames.Destroy();  
     
-    for(auto RenderPassHandle : VkData->RenderPassCache)
-    {
-        renderPass *RenderPass = GetRenderPass(RenderPassHandle.second);
-        VkData->Device.destroyRenderPass(std::static_pointer_cast<vkRenderPassData>(RenderPass->ApiData)->NativeHandle);
-        ResourceManager.RenderPasses.ReleaseResource(RenderPassHandle.second);
-    }
 
     ResourceManager.Destroy();
     

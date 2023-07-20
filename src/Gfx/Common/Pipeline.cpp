@@ -461,14 +461,12 @@ pipelineHandle context::CreatePipelineFromFile(const char *FileName, framebuffer
     {
         if(FramebufferHandle == InvalidHandle)
         {
-            PipelineCreations[i].RenderPass = context::Get()->SwapchainOutput;
+            PipelineCreations[i].RenderPassHandle = context::Get()->SwapchainRenderPass;
         }
         else
         {
             framebuffer *Framebuffer = context::Get()->GetFramebuffer(FramebufferHandle);
-            renderPass *RenderPass = context::Get()->GetRenderPass(Framebuffer->RenderPass);
-            
-            PipelineCreations[i].RenderPass = RenderPass->Output;
+            PipelineCreations[i].RenderPassHandle = Framebuffer->RenderPass;
         }
         pipelineHandle pipeline = this->CreatePipeline(PipelineCreations[i]);
         for (size_t j = 0; j < PipelineCreations[i].Shaders.StagesCount; j++)

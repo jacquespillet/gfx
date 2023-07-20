@@ -54,15 +54,8 @@ struct vkData
 
     virtualFrameProvider VirtualFrames;
 
-    std::unordered_map<std::string, renderPassHandle> RenderPassCache;
-
-
     //Multisampling
     b8 MultisamplingEnabled=false;
-    
-
-    renderPass *GetRenderPass(const renderPassOutput &Output, std::string Name);
-    
 };
 
 stageBuffer CreateVkStageBuffer(sz Size);

@@ -84,6 +84,7 @@ struct context
     pipelineHandle CreatePipelineFromFile(const char *FileName, framebufferHandle Framebuffer = InvalidHandle); 
     pipelineHandle CreatePipeline(const pipelineCreation &PipelineCreation);
 
+    renderPassHandle CreateRenderPass(const renderPassOutput &Output);
 
     renderPassHandle GetDefaultRenderPass();
     framebufferHandle GetSwapchainFramebuffer();
@@ -124,6 +125,7 @@ struct context
     resourceManager ResourceManager;
 
     renderPassOutput SwapchainOutput;
+    renderPassHandle SwapchainRenderPass;
 
     std::shared_ptr<swapchain> Swapchain;
 
