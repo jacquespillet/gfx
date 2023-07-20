@@ -105,10 +105,11 @@ void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo 
     D3D12_PLACED_SUBRESOURCE_FOOTPRINT placedTexture2D = { 0 };
     placedTexture2D.Offset = Source.Offset;
     placedTexture2D.Footprint = pitchedDesc;
+    
 
 
     D12CommandBufferData->CommandList->CopyTextureRegion( 
-        &CD3DX12_TEXTURE_COPY_LOCATION( DestHandle, 0 ), 
+        &CD3DX12_TEXTURE_COPY_LOCATION( DestHandle, Destination.Layer ), 
         0, 0, 0, 
         &CD3DX12_TEXTURE_COPY_LOCATION( SourceHandle, placedTexture2D ), 
         nullptr );

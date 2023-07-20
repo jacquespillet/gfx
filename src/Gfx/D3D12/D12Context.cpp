@@ -644,6 +644,8 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 
     GET_CONTEXT(D12Data, this);
 
+    renderPass *RenderPass = GetRenderPass(PipelineCreation.RenderPassHandle);
+
     //Root signature        
     {
         std::vector<CD3DX12_DESCRIPTOR_RANGE> DescriptorRanges;
@@ -744,8 +746,8 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
             psoDesc.DepthStencilState.FrontFace = StencilStateToNative(PipelineCreation.DepthStencil.Front);
             psoDesc.DepthStencilState.BackFace = StencilStateToNative(PipelineCreation.DepthStencil.Back);
             
-            psoDesc.NumRenderTargets = PipelineCreation.RenderPass.NumColorFormats;
-            psoDesc.DSVFormat = FormatToNative(PipelineCreation.RenderPass.DepthStencilFormat);
+            psoDesc.NumRenderTargets = RenderPass->Output.NumColorFormats;
+            psoDesc.DSVFormat = FormatToNative(RenderPass->Output.DepthStencilFormat);
 
             psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
             for(sz i=0; i<psoDesc.NumRenderTargets; i++)
@@ -768,15 +770,15 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
                 psoDesc.BlendState.RenderTarget[i].BlendEnable = (b8)PipelineCreation.BlendState.BlendStates[i].BlendEnabled;
                 psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = BlendWriteMaskToNative(PipelineCreation.BlendState.BlendStates[i].ColorWriteMask);
                 
-                psoDesc.RTVFormats[i] = FormatToNative(PipelineCreation.RenderPass.ColorFormats[i]);
+                psoDesc.RTVFormats[i] = FormatToNative(RenderPass->Output.ColorFormats[i]);
             }
             
             psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
             psoDesc.RasterizerState.CullMode = CullModeToNative(PipelineCreation.Rasterization.CullMode);
             psoDesc.RasterizerState.FrontCounterClockwise = FrontFaceToNative(PipelineCreation.Rasterization.FrontFace);
             psoDesc.RasterizerState.FillMode = FillModeToNative(PipelineCreation.Rasterization.Fill);
-            psoDesc.RasterizerState.MultisampleEnable = PipelineCreation.RenderPass.SampleCount > 1 ? TRUE : FALSE;
-            psoDesc.SampleDesc.Count = PipelineCreation.RenderPass.SampleCount;
+            psoDesc.RasterizerState.MultisampleEnable = RenderPass->Output.SampleCount > 1 ? TRUE : FALSE;
+            psoDesc.SampleDesc.Count = RenderPass->Output.SampleCount;
             psoDesc.SampleDesc.Quality = 0;
 
             psoDesc.SampleMask = UINT_MAX;
@@ -816,6 +818,19 @@ imageHandle context::CreateImage(const imageData &ImageData, const imageCreateIn
     image *Image = GetImage(ImageHandle);
     *Image = image();
     Image->Init(ImageData, CreateInfo);
+    return ImageHandle;
+}
+
+imageHandle context::CreateImageCubemap(const imageData &Left, const imageData &Right, const imageData &Top, const imageData &Bottom, const imageData &Back, const imageData &Front, const imageCreateInfo& CreateInfo)
+{
+    imageHandle ImageHandle = ResourceManager.Images.ObtainResource();
+    if(ImageHandle == InvalidHandle)
+    {
+        return ImageHandle;
+    }
+    image *Image = GetImage(ImageHandle);
+    *Image = image();
+    Image->InitAsCubemap(Left, Right, Top, Bottom, Back, Front, CreateInfo);
     return ImageHandle;
 }
 

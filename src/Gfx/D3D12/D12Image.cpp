@@ -332,5 +332,66 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
 }
 
 
+void image::InitAsCubemap(const imageData &Left, const imageData &Right, const imageData &Top, const imageData &Bottom, const imageData &Back, const imageData &Front, const imageCreateInfo &CreateInfo)
+{
+    std::shared_ptr<d3d12Data> D12Data = std::static_pointer_cast<d3d12Data>(context::Get()->ApiContextData);
+
+    Extent.Width = Left.Width;
+    Extent.Height = Left.Height;
+    Format = Left.Format;
+    ByteSize = Left.DataSize;
+    MipLevelCount = CreateInfo.GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
+
+    context *VulkanContext = context::Get();
+
+    ApiData = std::make_shared<d3d12ImageData>();
+    std::shared_ptr<d3d12ImageData> D12Image = std::static_pointer_cast<d3d12ImageData>(ApiData);
+        
+    D12Image->ResourceState = D3D12_RESOURCE_STATE_COPY_DEST;
+
+    CD3DX12_RESOURCE_DESC TextureDesc = CD3DX12_RESOURCE_DESC::Tex2D(FormatToNative(Format), Extent.Width, Extent.Height, 6, MipLevelCount);
+    D12Data->Device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE,
+        &TextureDesc, D12Image->ResourceState, nullptr,
+        IID_PPV_ARGS(&D12Image->Handle));
+
+    D12Image->OffsetInHeap = D12Data->CurrentHeapOffset;
+
+    // Create the shader resource view (SRV)
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = FormatToNative(Format);
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+    srvDesc.TextureCube.MipLevels = MipLevelCount;
+    srvDesc.TextureCube.MostDetailedMip = 0;
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    D12Data->Device->CreateShaderResourceView(D12Image->Handle.Get(), &srvDesc, D12Data->GetCPUDescriptorAt(D12Image->OffsetInHeap));    
+    // Allocate descriptors by incrementing the handles
+    D12Data->CurrentHeapOffset++;
+
+    const std::vector<std::reference_wrapper<const imageData>> Images = {Right, Left, Top, Bottom, Front, Back};
+
+    //Fill the stage buffer with data
+    for(u32 i=0; i<6; i++)
+    {
+        auto TextureAllocation = D12Data->StageBuffer.Submit(Images[i].get().Data, (u32)Images[i].get().DataSize);
+        
+        //Copy stage buffer into texture
+        D12Data->ImmediateCommandBuffer->Begin();
+        D12Data->ImmediateCommandBuffer->CopyBufferToImage(
+            bufferInfo {D12Data->StageBuffer.GetBuffer(), TextureAllocation.Offset },
+            imageInfo {this, imageUsage::UNKNOWN, 0, i, 1}
+        );
+
+        D12Data->StageBuffer.Flush();
+        D12Data->ImmediateCommandBuffer->End();
+        context::Get()->SubmitCommandBufferImmediate(D12Data->ImmediateCommandBuffer.get());
+        D12Data->StageBuffer.Reset();
+    }
+
+    if (CreateInfo.GenerateMipmaps)
+    {
+        //TODO        
+    }
+}
+
 
 }

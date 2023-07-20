@@ -125,7 +125,7 @@ struct application
 			gfx::samplerWrapMode::ClampToBorder,
 			gfx::samplerWrapMode::ClampToBorder,
 			gfx::samplerWrapMode::ClampToBorder,
-			true
+			false
 		};
 		TextureHandle1 = GfxContext->CreateImageCubemap(CubemapLeft, CubemapRight, CubemapTop, CubemapBottom, CubemapBack, CubemapFront, ImageCreateInfo);
 		gfx::image *Texture1 = GfxContext->GetImage(TextureHandle1);
@@ -273,7 +273,7 @@ struct application
 			// Begin recording commands into the command buffer
 			CommandBuffer->Begin();
 
-			CommandBuffer->BeginPass(OffscreenPass, {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
+			CommandBuffer->BeginPass(OffscreenPass, {1.0f, 0.0f, 0.0f, 0.0f}, {1.0f, 0});
 			CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);
 			CommandBuffer->SetScissor(0, 0, Width, Height);
 
