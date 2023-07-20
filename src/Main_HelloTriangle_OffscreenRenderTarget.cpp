@@ -128,6 +128,7 @@ struct application
 		//That's the content of a descriptor set
 		UniformsOffscreen = std::make_shared<gfx::uniformGroup>();
 		UniformsOffscreen->Reset()
+						 .AddTexture(2, TextureHandle1)
 						 .AddTexture(4, TextureHandle1);
 		
 		GfxContext->BindUniformsToPipeline(UniformsOffscreen, PipelineHandleOffscreen, 0);

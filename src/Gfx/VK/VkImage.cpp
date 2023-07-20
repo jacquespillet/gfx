@@ -184,14 +184,8 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
     
     const std::vector<std::reference_wrapper<const imageData>> Images = {Right, Left, Top, Bottom, Front, Back};
 
-    struct rgba {uint8_t r, g, b, a;};
-    std::vector<rgba> redImage(2048 * 2048, {255, 0, 0, 255});
-
-
-
     for (sz i = 0; i < 6; i++)
     {
-        // auto TextureAllocation = VkData->StageBuffer.Submit((u8*)redImage.data(), (u32)redImage.size() * sizeof(rgba));
         auto TextureAllocation = VkData->StageBuffer.Submit(Images[i].get().Data, (u32)Images[i].get().DataSize);
         VkData->ImmediateCommandBuffer->Begin();
         
