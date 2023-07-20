@@ -1,4 +1,4 @@
-#include "../Include/GfxContext.h"
+#include "../Include/Context.h"
 #include "../Include/Shader.h"
 
 namespace gfx

@@ -1,5 +1,5 @@
 #include "../Include/Memory.h"
-#include "../Include/GfxContext.h"
+#include "../Include/Context.h"
 
 namespace gfx
 {

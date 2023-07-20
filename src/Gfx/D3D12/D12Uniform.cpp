@@ -1,8 +1,8 @@
 #include "../Include/Uniform.h"
-#include "../Include/GfxContext.h"
+#include "../Include/Context.h"
 #include "D12Uniform.h"
 #include "D12Common.h"
-#include "D12GfxContext.h"
+#include "D12Context.h"
 
 namespace gfx
 {

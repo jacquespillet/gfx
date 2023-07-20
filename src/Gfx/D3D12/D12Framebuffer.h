@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Include/GfxContext.h"
+#include "../Include/Context.h"
 #include "../Include/Framebuffer.h"
 
 #include <d3d12.h>

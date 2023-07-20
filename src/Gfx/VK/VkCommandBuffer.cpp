@@ -1,10 +1,10 @@
 #if GFX_API==GFX_VK
-#include "../Include/GfxContext.h"
+#include "../Include/Context.h"
 #include "../Include/Buffer.h"
 #include "../Include/Swapchain.h"
 #include "../Include/Framebuffer.h"
 #include "../Include/Memory.h"
-#include "VkGfxContext.h"
+#include "VkContext.h"
 #include "VkSwapchain.h"
 #include "VkCommandBuffer.h"
 #include "VkBuffer.h"

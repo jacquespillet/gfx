@@ -8,7 +8,7 @@
 #include <glslang/Public/ShaderLang.h>
 
 #include "../../App/App.h"
-#include "../Include/GfxContext.h"
+#include "../Include/Context.h"
 #include "../Include/Image.h"
 #include "../Include/CommandBuffer.h"
 #include "../Include/Swapchain.h"
@@ -22,7 +22,7 @@
 #include "VkMapping.h"
 #include "VkImage.h"
 #include "VkCommandBuffer.h"
-#include "VkGfxContext.h"
+#include "VkContext.h"
 #include "VkSwapchain.h"
 #include "VkBuffer.h"
 #include "VkShader.h"
@@ -1242,8 +1242,6 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     }
     RenderPassOutput.Depth(CreateInfo.DepthFormat, imageLayout::DepthAttachmentOptimal);
     RenderPassOutput.SetDepthStencilOperation(renderPassOperation::Clear, renderPassOperation::Clear);
-    //TODO: Remove foo here
-    RenderPassOutput.Name = "Foo";
     renderPassHandle RenderPassHandle = CreateRenderPass(RenderPassOutput);
     renderPass *RenderPass = GetRenderPass(RenderPassHandle);
     RenderPass->Output = RenderPassOutput;
@@ -1325,12 +1323,11 @@ void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pip
         VkUniformData->DescriptorInfos[PipelineHandle] = {};
         VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSetLayout = VkPipeline->DescriptorSetLayouts[Binding];
         
-        //TODO: Do we really want to create a new descriptor set everytime we bind to a pipeline?
-        // if(!VkUniformData->Initialized)
-        {
-            VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSet = AllocateDescriptorSet(VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSetLayout->NativeHandle, Uniforms);
-            VkUniformData->Initialized=true;
-        }
+        //We allocate a new descriptor set everytime the uniforms will be used in a new pipeline.
+        //This is because each pipeline might or might not use some uniforms in the group, so we need to use the descriptor set layout of the pipeline just in case.
+        //Maybe that's not ideal...
+        VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSet = AllocateDescriptorSet(VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSetLayout->NativeHandle, Uniforms);
+        VkUniformData->Initialized=true;
     }
 }
 

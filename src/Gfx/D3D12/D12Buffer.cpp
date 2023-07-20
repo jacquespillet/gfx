@@ -1,8 +1,8 @@
 #include "D12Buffer.h"
 #include "../Include/Buffer.h"
-#include "../Include/GfxContext.h"
+#include "../Include/Context.h"
 #include "D12Common.h"
-#include "D12GfxContext.h"
+#include "D12Context.h"
 #include "D12CommandBuffer.h"
 #include <d3dx12.h>
 

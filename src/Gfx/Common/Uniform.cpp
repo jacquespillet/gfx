@@ -2,7 +2,7 @@
 #include "../Include/Buffer.h"
 #include "../Include/Image.h"
 #include "../Include/Framebuffer.h"
-#include "../Include/GfxContext.h"
+#include "../Include/Context.h"
 
 namespace gfx
 {

@@ -1,8 +1,8 @@
 #if GFX_API == GFX_VK
 #include "VkImage.h"
-#include "../Include/GfxContext.h"
+#include "../Include/Context.h"
 #include "../Include/Memory.h"
-#include "VkGfxContext.h"
+#include "VkContext.h"
 #include "VkCommon.h"
 #include "VkMemoryAllocation.h"
 

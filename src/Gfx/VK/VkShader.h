@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../Include/Shader.h"
-#include "../Include/GfxContext.h"
-#include "VkGfxContext.h"
+#include "../Include/Context.h"
+#include "VkContext.h"
 
 #include <vulkan/vulkan.hpp>
 

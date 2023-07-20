@@ -1,5 +1,5 @@
 #include "../Include/Buffer.h"
-#include "../Include/GfxContext.h"
+#include "../Include/Context.h"
 #include "GLBuffer.h"
 #include "GLMapping.h"
 #include "GLContext.h"

@@ -1,6 +1,6 @@
 #include "D12Framebuffer.h"
 #include "D12Common.h"
-#include "D12GfxContext.h"
+#include "D12Context.h"
 #include "D12Mapping.h"
 
 #include <d3dx12.h>

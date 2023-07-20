@@ -1,9 +1,9 @@
 #include "../Include/Uniform.h"
-#include "../Include/GfxContext.h"
+#include "../Include/Context.h"
 #include "../Include/Framebuffer.h"
 #include "VkUniform.h"
 #include "VkCommon.h"
-#include "VkGfxContext.h"
+#include "VkContext.h"
 #include "vkImage.h"
 #include "vkFramebuffer.h"
 

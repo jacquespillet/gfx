@@ -3,8 +3,8 @@
 #include <optional>
 
 #include "../../App/App.h"
-#include "../Include/GfxContext.h"
-#include "VkGfxContext.h"
+#include "../Include/Context.h"
+#include "VkContext.h"
 namespace gfx
 {
     

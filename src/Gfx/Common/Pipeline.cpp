@@ -1,5 +1,5 @@
 #include "../Include/Pipeline.h"
-#include "../Include/GfxContext.h"
+#include "../Include/Context.h"
 #include "../Include/Memory.h"
 #include "../Include/Framebuffer.h"
 #include "../Include/RenderPass.h"

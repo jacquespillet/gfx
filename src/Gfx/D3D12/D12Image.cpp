@@ -1,6 +1,6 @@
 #include "D12Image.h"
-#include "../Include/GfxContext.h"
-#include "D12GfxContext.h"
+#include "../Include/Context.h"
+#include "D12Context.h"
 #include "D12Mapping.h"
 #include "D12CommandBuffer.h"
 

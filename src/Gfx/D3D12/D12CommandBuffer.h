@@ -1,10 +1,10 @@
 #pragma once
 #include "../Include/Types.h"
 #include "../Include/Memory.h"
-#include "../Include/GfxContext.h"
+#include "../Include/Context.h"
 #include "../Include/CommandBuffer.h"
 #include "D12Common.h"
-#include "D12GfxContext.h"
+#include "D12Context.h"
 #include <wrl.h>
 using namespace Microsoft::WRL;
 #include <d3d12.h>

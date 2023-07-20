@@ -1,5 +1,5 @@
 #include "../../App/App.h"
-#include "../Include/GfxContext.h"
+#include "../Include/Context.h"
 #include "../Include/Image.h"
 #include "../Include/CommandBuffer.h"
 #include "../Include/Swapchain.h"
@@ -11,7 +11,7 @@
 #include "../Include/Framebuffer.h"
 #include "../Include/Memory.h"
 #include "../Common/Util.h"
-#include "D12GfxContext.h"
+#include "D12Context.h"
 #include "D12Common.h"
 #include "D12Swapchain.h"
 #include "D12Buffer.h"
@@ -841,8 +841,7 @@ std::shared_ptr<commandBuffer> context::GetCurrentFrameCommandBuffer()
 
 void context::OnResize(u32 NewWidth, u32 NewHeight)
 {
-    //TODO:
-    //Does it just work ? idk
+    //TODO: Does it just work ? idk
     //No it doesn't : it doesn't resize the back buffers, so they get interpolated instead.
 }
 

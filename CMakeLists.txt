@@ -113,7 +113,7 @@ set(extCode
 )
 
 set(vkCode
-        src/Gfx/VK/VkGfxContext.cpp
+        src/Gfx/VK/VkContext.cpp
         src/Gfx/VK/VkCommandBuffer.cpp
         src/Gfx/VK/VkBuffer.cpp
         src/Gfx/VK/VkMapping.cpp
@@ -128,7 +128,7 @@ set(vkCode
 
 set(d3d12Code
         src/Gfx/D3D12/D12ResourceManager.cpp
-        src/Gfx/D3D12/D12GfxContext.cpp
+        src/Gfx/D3D12/D12Context.cpp
         src/Gfx/D3D12/D12VirtualFrames.cpp
         src/Gfx/D3D12/D12CommandBuffer.cpp
         src/Gfx/D3D12/D12Framebuffer.cpp

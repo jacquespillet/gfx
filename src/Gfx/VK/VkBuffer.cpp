@@ -3,9 +3,9 @@
 
 #include "VkBuffer.h"
 #include "../Include/Buffer.h"
-#include "../Include/GfxContext.h"
+#include "../Include/Context.h"
 #include "VkMemoryAllocation.h"
-#include "VkGfxContext.h"
+#include "VkContext.h"
 
 namespace gfx
 {
