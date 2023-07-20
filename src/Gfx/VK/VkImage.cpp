@@ -11,7 +11,7 @@ namespace gfx
 {
 
 
-void GenerateMipmaps(vk::Image Image, u32 Width, u32 Height, u32 MipLevels, vk::CommandBuffer &CommandBuffer)
+void GenerateMipmaps(vk::Image Image, u32 Width, u32 Height, u32 MipLevels, vk::CommandBuffer &CommandBuffer, int LayerIndex = 0)
 {
     // VkImageMemoryBarrier Barrier {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
     vk::ImageMemoryBarrier Barrier;
@@ -19,7 +19,7 @@ void GenerateMipmaps(vk::Image Image, u32 Width, u32 Height, u32 MipLevels, vk::
     Barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     Barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     Barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-    Barrier.subresourceRange.baseArrayLayer=0;
+    Barrier.subresourceRange.baseArrayLayer=LayerIndex;
     Barrier.subresourceRange.layerCount=1;
     Barrier.subresourceRange.levelCount=1;
 
@@ -45,13 +45,13 @@ void GenerateMipmaps(vk::Image Image, u32 Width, u32 Height, u32 MipLevels, vk::
         Blit.srcOffsets[1] = vk::Offset3D(MipWidth, MipHeight, 1);
         Blit.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
         Blit.srcSubresource.mipLevel = i-1;
-        Blit.srcSubresource.baseArrayLayer = 0;
+        Blit.srcSubresource.baseArrayLayer = LayerIndex;
         Blit.srcSubresource.layerCount=1;
         Blit.dstOffsets[0] = vk::Offset3D(0,0,0);
         Blit.dstOffsets[1] = vk::Offset3D(MipWidth > 1 ? MipWidth / 2 : 1, MipHeight > 1 ? MipHeight/2 : 1, 1);
         Blit.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
         Blit.dstSubresource.mipLevel = i;
-        Blit.dstSubresource.baseArrayLayer = 0;
+        Blit.dstSubresource.baseArrayLayer = LayerIndex;
         Blit.dstSubresource.layerCount=1;
 
         CommandBuffer.blitImage(Image, vk::ImageLayout::eTransferSrcOptimal,
@@ -83,7 +83,7 @@ void GenerateMipmaps(vk::Image Image, u32 Width, u32 Height, u32 MipLevels, vk::
                                     1, &Barrier);
 }
 
-void vkImageData::Init(const image &Image, imageUsage::value ImageUsage, memoryUsage MemoryUsage)
+void vkImageData::Init(const image &Image, imageUsage::value ImageUsage, memoryUsage MemoryUsage, vk::ImageCreateFlags Flags)
 {
     vk::ImageCreateInfo ImageCreateInfo;
     ImageCreateInfo.setImageType(vk::ImageType::e2D)
@@ -95,6 +95,7 @@ void vkImageData::Init(const image &Image, imageUsage::value ImageUsage, memoryU
                     .setTiling(vk::ImageTiling::eOptimal)
                     .setUsage((vk::ImageUsageFlags)ImageUsage)
                     .setSharingMode(vk::SharingMode::eExclusive)
+                    .setFlags(Flags)
                     .setInitialLayout(vk::ImageLayout::eUndefined);
 
     // if(Options & imageOptions::CUBEMAP)
@@ -103,7 +104,6 @@ void vkImageData::Init(const image &Image, imageUsage::value ImageUsage, memoryU
     // }                       
 
     Allocation = gfx::AllocateImage(ImageCreateInfo, MemoryUsage, &Handle);
-    InitViews(Image, Handle, Image.Format);
 }
 
 void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
@@ -126,6 +126,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
         ImageUsage,
         memoryUsage::GpuOnly
     );
+    VKImage->InitViews(*this, VKImage->Handle, Format);
 
     // CommandBuffer.Begin();
     GET_CONTEXT(VkData, context::Get());
@@ -152,6 +153,78 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     VkData->StageBuffer.Reset();
 
     VKImage->InitSampler(CreateInfo, MipLevelCount);
+}
+
+
+void image::InitAsCubemap(const imageData &Left, const imageData &Right, const imageData &Top, const imageData &Bottom, const imageData &Back, const imageData &Front, const imageCreateInfo &CreateInfo)
+{
+    //Assume all images have same size and format
+    this->Extent.Width = Left.Width;
+    this->Extent.Height = Left.Height;
+    this->Format = Left.Format;
+    this->MipLevelCount = CreateInfo.GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
+    this->LayerCount = 6;
+
+    context *VulkanContext = context::Get();
+    ApiData = std::make_shared<vkImageData>();
+    GET_API_DATA(VKImage, vkImageData, this);
+
+    imageUsage::value ImageUsage = imageUsage::TRANSFER_DESTINATION | imageUsage::SHADER_READ; 
+    if(CreateInfo.GenerateMipmaps) ImageUsage |= imageUsage::TRANSFER_SOURCE;
+    VKImage->Init(
+        *this,
+        ImageUsage,
+        memoryUsage::GpuOnly,
+        vk::ImageCreateFlagBits::eCubeCompatible
+    );
+    VKImage->InitViews(*this, VKImage->Handle, this->Format, vk::ImageViewType::eCube);
+    VKImage->InitSampler(CreateInfo, this->MipLevelCount);
+    
+    GET_CONTEXT(VkData, context::Get());
+    
+    const std::vector<std::reference_wrapper<const imageData>> Images = {Right, Left, Top, Bottom, Front, Back};
+
+    struct rgba {uint8_t r, g, b, a;};
+    std::vector<rgba> redImage(2048 * 2048, {255, 0, 0, 255});
+
+
+
+    for (sz i = 0; i < 6; i++)
+    {
+        // auto TextureAllocation = VkData->StageBuffer.Submit((u8*)redImage.data(), (u32)redImage.size() * sizeof(rgba));
+        auto TextureAllocation = VkData->StageBuffer.Submit(Images[i].get().Data, (u32)Images[i].get().DataSize);
+        VkData->ImmediateCommandBuffer->Begin();
+        
+        if(i==0)
+            VkData->ImmediateCommandBuffer->TransferLayout(*this, imageUsage::UNKNOWN, imageUsage::TRANSFER_DESTINATION);
+        VkData->ImmediateCommandBuffer->CopyBufferToImage(
+            bufferInfo {VkData->StageBuffer.GetBuffer(), 0 },
+            imageInfo {this, imageUsage::TRANSFER_DESTINATION, 0, (u32)i, (u32)1}
+        );
+        
+        
+        if(i==5 && !CreateInfo.GenerateMipmaps)
+            VkData->ImmediateCommandBuffer->TransferLayout(*this, imageUsage::TRANSFER_DESTINATION, imageUsage::SHADER_READ);
+
+        VkData->ImmediateCommandBuffer->End();
+        context::Get()->SubmitCommandBufferImmediate(VkData->ImmediateCommandBuffer.get());
+        VkData->StageBuffer.Flush();
+        VkData->StageBuffer.Reset();
+    }
+
+    if(CreateInfo.GenerateMipmaps)
+    {
+        VkData->ImmediateCommandBuffer->Begin();
+
+        for(sz i=0; i<6; i++)
+        {
+            GenerateMipmaps(VKImage->Handle, this->Extent.Width, this->Extent.Height, this->MipLevelCount, std::static_pointer_cast<vkCommandBufferData>(VkData->ImmediateCommandBuffer->ApiData)->Handle, i);
+        }
+        VkData->ImmediateCommandBuffer->End();
+        context::Get()->SubmitCommandBufferImmediate(VkData->ImmediateCommandBuffer.get());
+    }
+    
+
 }
 
 image::image(vk::Image VkImage, u32 Width, u32 Height, format Format)
@@ -218,13 +291,13 @@ vk::ImageSubresourceRange GetDefaultImageSubresourceRange(const image &Image)
     );    
 }
 
-vk::ImageSubresourceLayers GetDefaultImageSubresourceLayers(const image &Image, u32 MipLevel, u32 Layer)
+vk::ImageSubresourceLayers GetDefaultImageSubresourceLayers(const image &Image, u32 MipLevel, u32 Layer, u32 LayerCount)
 {
     return vk::ImageSubresourceLayers(
         ImageFormatToImageAspect(Image.Format),
         MipLevel,
         Layer,
-        1
+        LayerCount
     );
 }
 
@@ -248,7 +321,7 @@ vk::ImageMemoryBarrier GetImageMemoryBarrier(const image &Texture, imageUsage::b
 }
 
 
-void vkImageData::InitViews(const image &Image, const vk::Image &VkImage, format Format)
+void vkImageData::InitViews(const image &Image, const vk::Image &VkImage, format Format, vk::ImageViewType ViewType)
 {
     auto Vulkan = context::Get();
     GET_CONTEXT(VkData, Vulkan);
@@ -260,7 +333,7 @@ void vkImageData::InitViews(const image &Image, const vk::Image &VkImage, format
     //Create image view
     vk::ImageViewCreateInfo ImageViewCreateInfo;
     ImageViewCreateInfo.setImage(this->Handle)
-                        .setViewType(vk::ImageViewType::e2D)
+                        .setViewType(ViewType)
                         .setFormat(FormatToNative(Format))
                         .setComponents(vk::ComponentMapping(vk::ComponentSwizzle::eIdentity,
                                                             vk::ComponentSwizzle::eIdentity,

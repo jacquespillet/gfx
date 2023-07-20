@@ -295,7 +295,7 @@ else()
         
         # Offscreen
         set(targetName Main)
-        set(mainCode ${sourceCode} src/Main_HelloTriangle_OffscreenRenderTarget.cpp)
+        set(mainCode ${sourceCode} src/Main_HelloCubeMap.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)

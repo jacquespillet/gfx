@@ -227,7 +227,7 @@ void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo 
         );
     }
 
-    auto DestinationLayers = GetDefaultImageSubresourceLayers(*Destination.Resource, Destination.MipLevel, Destination.Layer);
+    auto DestinationLayers = GetDefaultImageSubresourceLayers(*Destination.Resource, Destination.MipLevel, Destination.Layer, Destination.Layercount);
     vk::BufferImageCopy BufferToImageCopyInfo;
     BufferToImageCopyInfo.setBufferOffset(Source.Offset)
                          .setBufferImageHeight(0)

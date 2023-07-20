@@ -24,15 +24,15 @@ struct vkImageData
     
     vk::Sampler Sampler = nullptr;
 
-    void Init(const image &Image, imageUsage::value ImageUsage, memoryUsage MemoryUsage);
-    void InitViews(const image &Image, const vk::Image &VkImage, format Format);
+    void Init(const image &Image, imageUsage::value ImageUsage, memoryUsage MemoryUsage, vk::ImageCreateFlags Flags = (vk::ImageCreateFlags)0);
+    void InitViews(const image &Image, const vk::Image &VkImage, format Format, vk::ImageViewType ViewType = vk::ImageViewType::e2D);
     void InitSampler(const imageCreateInfo &CreateInfo, u32 MipLevelCount);
     void InitSamplerDefault();
 };
 
 
 vk::ImageSubresourceRange GetDefaultImageSubresourceRange(const image &Image);
-vk::ImageSubresourceLayers GetDefaultImageSubresourceLayers(const image &Image, u32 MipLevel, u32 Layer);
+vk::ImageSubresourceLayers GetDefaultImageSubresourceLayers(const image &Image, u32 MipLevel, u32 LayerStart, u32 LayerCount=1);
 vk::ImageMemoryBarrier GetImageMemoryBarrier(const image &Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout);
 
 }

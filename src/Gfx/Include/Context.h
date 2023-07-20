@@ -79,6 +79,7 @@ struct context
    
     bufferHandle CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsage MemoryUsage, sz Stride = 0);
     imageHandle CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo);
+    imageHandle CreateImageCubemap(const imageData &Left, const imageData &Right, const imageData &Top, const imageData &Bottom, const imageData &Back, const imageData &Front, const imageCreateInfo& CreateInfo);
     imageHandle CreateImage(u32 Width, u32 Height, format Format, u8 *Pixels);
 
     pipelineHandle CreatePipelineFromFile(const char *FileName, framebufferHandle Framebuffer = InvalidHandle); 

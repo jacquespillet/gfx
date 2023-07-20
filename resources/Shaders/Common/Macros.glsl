@@ -22,6 +22,12 @@ CUSTOM_DEFINES
 #endif
 
 #if GRAPHICS_API==VK
+#define DECLARE_UNIFORM_CUBEMAP(Set, Binding, Name) layout(set = Set, binding = Binding) uniform samplerCube Name
+#elif GRAPHICS_API==GL
+#define DECLARE_UNIFORM_CUBEMAP(Set, Binding, Name) layout(binding = Binding) uniform samplerCube Name;
+#endif
+
+#if GRAPHICS_API==VK
 #define InstanceIndex gl_InstanceIndex
 #elif GRAPHICS_API==GL
 #define InstanceIndex gl_InstanceID

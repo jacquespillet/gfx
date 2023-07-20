@@ -20,6 +20,7 @@ struct imageInfo
     imageUsage::bits Usage = imageUsage::UNKNOWN;
     u32 MipLevel = 0;
     u32 Layer = 0;
+    u32 Layercount = 1;
 };
 
 struct clearColorValues 
