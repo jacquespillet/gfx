@@ -31,6 +31,25 @@ set(BUILD_ALL 0)
 # Third parties
 ################
 
+# Imgui
+set(IMGUI_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui)
+set(IMGUI_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_demo.cpp
+                 ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_glfw.cpp
+                 ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui.cpp
+                 ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_draw.cpp
+                 ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_widgets.cpp
+                 )
+if(${GFX_API} EQUAL ${GFX_API_D3D12})
+set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_dx12.cpp)
+set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_win32.cpp)
+elseif(${GFX_API} EQUAL ${GFX_API_GL})
+set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_opengl3.cpp)
+elseif(${GFX_API} EQUAL ${GFX_API_VK})
+set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_vulkan.cpp)
+endif()
+
+include_directories(${IMGUI_INC_DIR})
+
 # GLM
 set(GLM_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glm)
 include_directories(${GLM_INC_DIR})
@@ -110,6 +129,7 @@ set(extCode
         ${TLSF_SOURCE}
         ${VOLK_SOURCE}
         ${SPIRVREFLECT_SOURCE}
+        ${IMGUI_SOURCE}
 )
 
 set(vkCode
@@ -136,6 +156,7 @@ set(d3d12Code
         src/Gfx/D3D12/D12Buffer.cpp
         src/Gfx/D3D12/D12Image.cpp
         src/Gfx/D3D12/D12Uniform.cpp
+        src/Gfx/D3D12/D12Imgui.cpp
 )
 
 set(glCode

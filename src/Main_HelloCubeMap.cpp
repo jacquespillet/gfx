@@ -13,6 +13,7 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
+#include <Imgui.h>
 
 void WindowErrorCallback(const std::string &errorMessage)
 {
@@ -30,11 +31,13 @@ void InfoCallback(const std::string &message)
 }
 
 void OnResizeWindow(app::window &Window, app::v2i NewSize);
+void OnClickedWindow(app::window &Window, app::mouseButton Button, bool clicked);
 
 struct application
 {
 	std::shared_ptr<app::window> Window;
 	std::shared_ptr<gfx::context> GfxContext;
+	std::shared_ptr<gfx::imgui> Imgui;
 	gfx::renderPassHandle SwapchainPass;
 	gfx::renderPassHandle OffscreenPass;
 	gfx::pipelineHandle PipelineHandleOffscreen;
@@ -100,6 +103,7 @@ struct application
 	#endif
 		Window = std::make_shared<app::window>(WindowCreateOptions);
 		Window->OnResize = OnResizeWindow;
+		Window->OnMouseChanged = OnClickedWindow;
 
 		// Initialize the graphics API
 		gfx::context::initializeInfo ContextInitialize;
@@ -108,6 +112,8 @@ struct application
 		ContextInitialize.InfoCallback = InfoCallback;
 		ContextInitialize.Debug = true;
 		GfxContext = gfx::context::Initialize(ContextInitialize, *Window);
+
+		Imgui = gfx::imgui::Initialize(GfxContext, Window);
 
 		Swapchain = GfxContext->CreateSwapchain(Width, Height);
 		
@@ -259,6 +265,7 @@ struct application
 		float t = 0;
 		while(!Window->ShouldClose())
 		{
+			
 			t += 0.01f;
 			UniformData1.Color0.r = (cos(t) + 1.0f) * 0.5f;
 			Uniforms->UpdateBuffer(0, &UniformData1, sizeof(uniformData), 0);
@@ -286,6 +293,12 @@ struct application
 			CommandBuffer->EndPass();
 
 			CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
+			
+			Imgui->StartFrame();
+
+			bool Show = true;
+			ImGui::ShowDemoWindow(&Show);
+
 			CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);
 			CommandBuffer->SetScissor(0, 0, Width, Height);
 
@@ -296,10 +309,12 @@ struct application
 			CommandBuffer->BindVertexBuffer(VertexBufferHandle);
 			CommandBuffer->DrawArrays(0, 36); 
 
+			Imgui->EndFrame(CommandBuffer);
+			
 			CommandBuffer->EndPass();
 			
-			GfxContext->EndFrame();
 
+			GfxContext->EndFrame();
 			// Present the rendered frame
 			GfxContext->Present();
 		}
@@ -313,6 +328,11 @@ struct application
 		std::cout << "ON RESIZE " << NewWidth << std::endl;
 	}
 
+	void OnClick(app::mouseButton Button, bool Clicked)
+	{
+		Imgui->OnClick(Button, Clicked);
+	}
+
 };
 
 application App;
@@ -322,6 +342,12 @@ void OnResizeWindow(app::window &Window, app::v2i NewSize)
 {
 	App.OnResize(NewSize.x, NewSize.y);
 }
+
+void OnClickedWindow(app::window &Window, app::mouseButton Button, bool Clicked)
+{
+	App.OnClick(Button, Clicked);
+}
+
 
 int main()
 {	
