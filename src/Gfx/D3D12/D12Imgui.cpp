@@ -23,7 +23,7 @@ imgui *imgui::Get()
     return Singleton.get();
 }
 
-std::shared_ptr<imgui> imgui::Initialize(std::shared_ptr<context> Context, std::shared_ptr<app::window> Window)
+std::shared_ptr<imgui> imgui::Initialize(std::shared_ptr<context> Context, std::shared_ptr<app::window> Window, framebufferHandle Framebuffer)
 {
     if(Singleton==nullptr){
         Singleton = std::make_shared<imgui>();

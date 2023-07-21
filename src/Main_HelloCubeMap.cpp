@@ -113,8 +113,7 @@ struct application
 		ContextInitialize.Debug = true;
 		GfxContext = gfx::context::Initialize(ContextInitialize, *Window);
 
-		Imgui = gfx::imgui::Initialize(GfxContext, Window);
-
+		
 		Swapchain = GfxContext->CreateSwapchain(Width, Height);
 		
 		gfx::imageData CubemapFront = gfx::ImageFromFile("resources/Textures/Cubemap/Front.jpg");
@@ -207,6 +206,8 @@ struct application
 		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/CubeMap/CubeMap.json");
 		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/CubeMap/CubeMap.json", OffscreenPass);
 
+		Imgui = gfx::imgui::Initialize(GfxContext, Window, SwapchainPass);
+  
 
 		UniformBufferHandle1 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
 		gfx::buffer *UniformBuffer1 = GfxContext->GetBuffer(UniformBufferHandle1);
@@ -237,9 +238,11 @@ struct application
 		GfxContext->WaitIdle();
 
 		DestroyProgramSpecific();
+		Imgui->Cleanup();
 
 		GfxContext->DestroySwapchain();
 		GfxContext->Cleanup();
+
 
 		gfx::memory *Memory = gfx::memory::Get();
 		Memory->Destroy();
