@@ -12,6 +12,10 @@
 #include "GLFramebuffer.h"
 #include <GL/glew.h>
 
+
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
 #define GET_GL_COMMANDS std::shared_ptr<glCommandBuffer> GLCommandBuffer = std::static_pointer_cast<glCommandBuffer>(this->ApiData);
 namespace gfx
 {
@@ -81,6 +85,13 @@ void ExecuteBindIndexBuffer(const command &Command)
     buffer *IndexBuffer = context::Get()->GetBuffer(IndexBufferHandle);
     GET_API_DATA(GLIndexBuffer, glBuffer, IndexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GLIndexBuffer->Handle);
+}
+
+void ExecuteDrawImgui(const command &Command)
+{
+    // Rendering
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());    
 }
 
 void ExecuteDrawIndexed(const command &Command)
@@ -335,6 +346,14 @@ void commandBuffer::End()
         GLCommandBuffer->Commands[i].CommandFunction(GLCommandBuffer->Commands[i]);
     }
     GLCommandBuffer->Commands.resize(0);
+}
+
+void glCommandBuffer::DrawImgui()
+{
+    command Command;
+    Command.Type = commandType::DrawImgui;
+    Command.CommandFunction = (commandFunction)&ExecuteDrawImgui;
+    Commands.push_back(Command);
 }
 
 void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Binding)

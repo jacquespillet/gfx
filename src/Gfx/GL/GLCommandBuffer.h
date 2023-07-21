@@ -19,7 +19,8 @@ enum class commandType
     BeginPass,
     EndPass,
     CopyBuffer,
-    Dispatch
+    Dispatch,
+    DrawImgui
 };
 
 struct command;
@@ -99,6 +100,7 @@ struct command
             u32 Height;
         } Scissor;
         
+        
         struct graphicsPipelineState
         {
             pipelineHandle Pipeline;
@@ -120,6 +122,8 @@ struct glCommandBuffer
 
     indexType IndexType = indexType::Uint16;
     u32 IndexBufferOffset=0;
+
+    void DrawImgui();
     
 };
 
