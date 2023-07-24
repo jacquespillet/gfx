@@ -31,6 +31,7 @@ void buffer::Init(size_t ByteSize, sz Stride, bufferUsage::value Usage, memoryUs
     //Set size, usage
     this->Size = ByteSize;
     this->Stride = Stride;
+    this->MemoryUsage = MemoryUsage;
 
     vk::BufferCreateInfo BufferCreateInfo;
     BufferCreateInfo.setSize(Size)

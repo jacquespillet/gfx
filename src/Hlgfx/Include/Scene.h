@@ -9,7 +9,8 @@ namespace hlgfx
 struct scene : public object3D
 {
     scene();
-    virtual void OnRender(std::shared_ptr<camera> Camera) override;
+    virtual void OnRender(std::shared_ptr<camera> Camera);
+    
     
 };
 

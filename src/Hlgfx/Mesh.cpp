@@ -21,7 +21,7 @@ mesh::mesh()
     gfx::context *LowLevelContext = gfx::context::Get();
     for(auto &Pipeline : HighLevelContext->Pipelines)
     {
-        LowLevelContext->BindUniformsToPipeline(this->Uniforms, Pipeline.second, CameraUniformsBinding);
+        LowLevelContext->BindUniformsToPipeline(this->Uniforms, Pipeline.second, ModelUniformsBinding);
     }
     
     this->UniformData.ModelMatrix = this->Transform.LocalToWorld;
@@ -41,7 +41,10 @@ void mesh::OnRender(std::shared_ptr<camera> Camera)
 
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = gfx::context::Get()->GetCurrentFrameCommandBuffer();
     CommandBuffer->BindGraphicsPipeline(this->Material->PipelineHandle);
+    
+    CommandBuffer->BindUniformGroup(Camera->Uniforms, CameraUniformsBinding);
     CommandBuffer->BindUniformGroup(this->Uniforms, ModelUniformsBinding);
+
     CommandBuffer->BindVertexBuffer(this->GeometryBuffers.VertexBuffer);
     CommandBuffer->BindIndexBuffer(this->GeometryBuffers.IndexBuffer, this->GeometryBuffers.Start, gfx::indexType::Uint32);
     CommandBuffer->DrawIndexed(this->GeometryBuffers.Start, this->GeometryBuffers.Count, 1);

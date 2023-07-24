@@ -174,7 +174,7 @@ void ParseSpirv(void* ByteCode, sz ByteCodeSize, spirvParseResult &Results)
         
 		AddBindingIfUnique(SetLayout, Binding);
 
-        Results.SetCount = Max(Results.SetCount, (DescriptorBinding->set+1));
+        Results.SetCount = Max(Results.SetCount, (DescriptorBinding->set + 1));
     }
 }
 

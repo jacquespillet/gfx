@@ -6,12 +6,29 @@ struct PSInput
     vec2 uv : TEXCOORD;
 };
 
+cbuffer Camera : register(b0)
+{
+    float FOV;
+    float AspectRatio;
+    float NearClip;
+    float FarClip;
+
+    mat4 ProjectionMatrix;
+    mat4 ViewMatrix;
+    mat4 ViewProjectionMatrix;    
+};
+
+cbuffer Model : register(b1)
+{
+    mat4 ModelMatrix;    
+};
+
 PSInput VSMain(vec4 PositionUvX : POSITION0, vec4 NormalUvY : POSITION1)
 {
     PSInput result;
 
     result.uv = vec2(PositionUvX.w, NormalUvY.w);
-    result.position = vec4(PositionUvX.xyz, 1);
+    result.position = mul(mul(ViewProjectionMatrix, ModelMatrix), vec4(PositionUvX.xyz, 1));
 
     return result;
 }
