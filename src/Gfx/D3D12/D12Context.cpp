@@ -885,25 +885,7 @@ void context::CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz
     GET_CONTEXT(D12Data, this);
     
     buffer *Buffer = GetBuffer(BufferHandle);
-    
-    auto StageBuffer = D12Data->StageBuffer;
-    auto CommandBuffer = D12Data->ImmediateCommandBuffer;
-
-    CommandBuffer->Begin();
-
-    auto Allocation = StageBuffer.Submit((uint8_t*)Ptr, (u32)Size);
-
-    CommandBuffer->CopyBuffer(
-        gfx::bufferInfo {StageBuffer.GetBuffer(), Allocation.Offset},
-        gfx::bufferInfo {Buffer, 0},
-        Allocation.Size
-    );  
-    
-    StageBuffer.Flush();
-    CommandBuffer->End();
-
-    SubmitCommandBufferImmediate(CommandBuffer.get());
-    StageBuffer.Reset();     
+    Buffer->CopyData((u8*)Ptr, Size, Offset);
 }
 
 void context::DestroyVertexBuffer(bufferHandle VertexBufferHandle)

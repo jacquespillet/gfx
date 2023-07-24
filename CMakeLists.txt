@@ -223,6 +223,9 @@ set (sourceCode ${sourceCode}
                 src/Hlgfx/Mesh.cpp
                 src/Hlgfx/Material.cpp
                 src/Hlgfx/Geometry.cpp
+                src/Hlgfx/Camera.cpp
+                src/Hlgfx/Scene.cpp
+                src/Hlgfx/CameraController.cpp
                 )
 
 ################################################

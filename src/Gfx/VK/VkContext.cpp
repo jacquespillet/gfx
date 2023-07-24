@@ -1347,28 +1347,34 @@ void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pip
 void context::CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz Offset)
 {
     buffer *Buffer = GetBuffer(BufferHandle);
-    
-    Buffer->Name = "";
-    GET_API_DATA(VkBufferData, vkBufferData, Buffer);
-    
-    auto StageBuffer = GetStageBuffer();
-    auto CommandBuffer = GetImmediateCommandBuffer();
+    if(Buffer->MemoryUsage == memoryUsage::CpuToGpu)
+    {
+        Buffer->CopyData((u8*)Ptr, Size, Offset);
+    }
+    else
+    {
+        Buffer->Name = "";
+        GET_API_DATA(VkBufferData, vkBufferData, Buffer);
+        
+        auto StageBuffer = GetStageBuffer();
+        auto CommandBuffer = GetImmediateCommandBuffer();
 
-    CommandBuffer->Begin();
+        CommandBuffer->Begin();
 
-    auto Allocation = StageBuffer->Submit((uint8_t*)Ptr, (u32)Size);
+        auto Allocation = StageBuffer->Submit((uint8_t*)Ptr, (u32)Size);
 
-    CommandBuffer->CopyBuffer(
-        gfx::bufferInfo {StageBuffer->GetBuffer(), Allocation.Offset},
-        gfx::bufferInfo {Buffer, 0},
-        Allocation.Size
-    );
-    
-    StageBuffer->Flush();
-    CommandBuffer->End();
+        CommandBuffer->CopyBuffer(
+            gfx::bufferInfo {StageBuffer->GetBuffer(), Allocation.Offset},
+            gfx::bufferInfo {Buffer, 0},
+            Allocation.Size
+        );
+        
+        StageBuffer->Flush();
+        CommandBuffer->End();
 
-    SubmitCommandBufferImmediate(CommandBuffer);
-    StageBuffer->Reset();     
+        SubmitCommandBufferImmediate(CommandBuffer);
+        StageBuffer->Reset();     
+    }
 }
 
 void context::DestroyPipeline(pipelineHandle PipelineHandle)

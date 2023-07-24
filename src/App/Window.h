@@ -193,6 +193,8 @@ public:
     std::function<void(window &, v2i)> OnResize;
     std::function<void(window &, keyCode, bool)> OnKeyChanged;
     std::function<void(window &, mouseButton, bool)> OnMouseChanged;
+    std::function<void(window &, f64, f64)> OnMousePositionChanged;
+    std::function<void(window &, f64, f64)> OnMouseWheelChanged;
 
     bool ShouldClose() const;
     void PollEvents() const;

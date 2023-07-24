@@ -6,6 +6,23 @@ struct PSInput
     vec2 FragUV;
 };
 
+DECLARE_UNIFORM_BUFFER(1, 0, Camera)
+{
+    float FOV;
+    float AspectRatio;
+    float NearClip;
+    float FarClip;
+
+    mat4 ProjectionMatrix;
+    mat4 ViewMatrix;
+    mat4 ViewProjectionMatrix;    
+};
+
+DECLARE_UNIFORM_BUFFER(2, 1, Model)
+{
+    mat4 ModelMatrix;    
+};
+
 
 /////////////////////////////////
 //////////VERTEX/////////////////
@@ -18,7 +35,7 @@ layout (location = 0) out PSInput Output;
 
 void main() 
 {
-    gl_Position = vec4(PositionUvX.xyz, 1.0);
+    gl_Position = ViewProjectionMatrix * ModelMatrix *vec4(PositionUvX.xyz, 1.0);
     Output.FragUV = vec2(PositionUvX.w, NormalUvY.w);
 }
 

@@ -7,6 +7,8 @@
 
 namespace hlgfx
 {
+struct camera;
+
 struct object3D
 {
     object3D(object3D *Parent = nullptr);
@@ -26,9 +28,10 @@ struct object3D
     void SetReceiveShadow(b8 ReceiveShadow);
 
     virtual void AddObject(std::shared_ptr<object3D> Object);
+    virtual void OnEarlyUpdate();
     virtual void OnUpdate();
-    virtual void OnBeforeRender();
-    virtual void OnRender();
-    virtual void OnAfterRender();
+    virtual void OnBeforeRender(std::shared_ptr<camera> Camera);
+    virtual void OnRender(std::shared_ptr<camera> Camera);
+    virtual void OnAfterRender(std::shared_ptr<camera> Camera);
 };
 }

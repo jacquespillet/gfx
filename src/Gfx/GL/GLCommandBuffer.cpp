@@ -49,11 +49,9 @@ void ExecuteBeginPass(const command &Command)
     glBindFramebuffer(GL_FRAMEBUFFER, GLFramebuffer->Handle);
 
     glClearColor(Command.BeginPass.ClearColor[0], Command.BeginPass.ClearColor[1], Command.BeginPass.ClearColor[2], Command.BeginPass.ClearColor[3]);
-    glClear(GL_COLOR_BUFFER_BIT);
     glClearDepth(Command.BeginPass.ClearDepth);
-    glClear(GL_DEPTH_BUFFER_BIT);
     glClearStencil(Command.BeginPass.ClearStencil);
-    glClear(GL_STENCIL_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
 void ExecuteBindUniformBuffer(const command &Command)

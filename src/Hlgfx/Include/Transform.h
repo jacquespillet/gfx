@@ -40,6 +40,7 @@ struct transform
 
     void SetParent(transform *Parent);
 
+    void SetModelMatrix(m4x4 Matrix);
     void SetLocalPosition(v3f LocalPosition);
     void SetLocalRotation(v3f LocalRotation);
     void SetLocalScale(v3f LocalScale);
@@ -49,6 +50,10 @@ struct transform
     void Scale(v3f Scale);
 
     void LookAt(v3f Position, v3f Target, v3f Up);
+
+    b8 HasChanged=false;
+
+    b8 MatrixBased=false;
 };
 
 }

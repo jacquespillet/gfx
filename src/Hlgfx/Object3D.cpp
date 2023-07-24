@@ -37,19 +37,28 @@ void object3D::AddObject(std::shared_ptr<object3D> Object)
     this->Transform.Children.push_back(&Object->Transform);
 }
 
-void object3D::OnBeforeRender()
+void object3D::OnEarlyUpdate()
 {
     for (sz i = 0; i < Children.size(); i++)
     {
-        Children[i]->OnBeforeRender();
+        Children[i]->Transform.HasChanged=false;
+        Children[i]->OnEarlyUpdate();
     }
 }
 
-void object3D::OnRender()
+void object3D::OnBeforeRender(std::shared_ptr<camera> Camera)
 {
     for (sz i = 0; i < Children.size(); i++)
     {
-        Children[i]->OnRender();
+        Children[i]->OnBeforeRender(Camera);
+    }
+}
+
+void object3D::OnRender(std::shared_ptr<camera> Camera)
+{
+    for (sz i = 0; i < Children.size(); i++)
+    {
+        Children[i]->OnRender(Camera);
     }
 }
 
@@ -61,11 +70,12 @@ void object3D::OnUpdate()
     }
 }
 
-void object3D::OnAfterRender()
+
+void object3D::OnAfterRender(std::shared_ptr<camera> Camera)
 {
     for (sz i = 0; i < Children.size(); i++)
     {
-        Children[i]->OnAfterRender();
+        Children[i]->OnAfterRender(Camera);
     }
 }
 

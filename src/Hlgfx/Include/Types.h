@@ -4,6 +4,7 @@
 
 namespace hlgfx
 {
+    
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
@@ -25,4 +26,9 @@ typedef glm::ivec2 v2i;
 typedef glm::ivec3 v3i;
 typedef glm::ivec4 v4i;
 typedef glm::mat4 m4x4;
+
+
+static const u32 SceneUniformsBinding = 0;
+static const u32 CameraUniformsBinding = 1;
+static const u32 ModelUniformsBinding = 2;
 }

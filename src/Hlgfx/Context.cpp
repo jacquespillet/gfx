@@ -25,6 +25,20 @@ void OnResizeWindow(app::window &Window, app::v2i NewSize)
     context::Get()->OnResize(NewSize.x, NewSize.y);
 }
 
+void OnClickedWindow(app::window &Window, app::mouseButton Button, bool Clicked)
+{
+    context::Get()->OnMouseClicked(Button, Clicked);
+}
+
+void OnMousePositionChangedWindow(app::window &Window, f64 PosX, f64 PosY)
+{
+    context::Get()->OnMousePositionChanged(PosX, PosY);
+}
+
+void OnMouseWheelChangedWindow(app::window &Window, f64 OffsetX, f64 OffsetY)
+{
+    context::Get()->OnMouseWheelChanged(OffsetX, OffsetY);
+}
 
 std::shared_ptr<context> context::Singleton = {};
 
@@ -62,6 +76,10 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
 #endif
     Singleton->Window = std::make_shared<app::window>(WindowCreateOptions);
     Singleton->Window->OnResize = OnResizeWindow;
+    Singleton->Window->OnMouseChanged = OnClickedWindow;
+    Singleton->Window->OnMousePositionChanged = OnMousePositionChangedWindow;
+    Singleton->Window->OnMouseWheelChanged = OnMouseWheelChangedWindow;
+
 
 	// Initialize the graphics API
     gfx::context::initializeInfo ContextInitialize;
@@ -76,12 +94,19 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
 
     Singleton->Scene = std::make_shared<scene>();
 
+    Singleton->Pipelines[UnlitPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/Unlit/Unlit.json");
+
     return Singleton;
 }
 
 void context::StartFrame()
 {
+    this->MouseClicked=false;
+    this->MouseReleased=false;
+    this->MouseMoved=false;
+    this->MouseWheelChanged=false;
     Window->PollEvents();
+    
     GfxContext->StartFrame();	
 
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();
@@ -90,14 +115,16 @@ void context::StartFrame()
     CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
     CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);
     CommandBuffer->SetScissor(0, 0, Width, Height);
+    
+    this->Scene->OnEarlyUpdate();
 }
 
-void context::Update()
+void context::Update(std::shared_ptr<camera> Camera)
 {
     this->Scene->OnUpdate();
-    this->Scene->OnBeforeRender();
-    this->Scene->OnRender();
-    this->Scene->OnAfterRender();
+    this->Scene->OnBeforeRender(Camera);
+    this->Scene->OnRender(Camera);
+    this->Scene->OnAfterRender(Camera);
 }
 
 void context::EndFrame()
@@ -105,12 +132,46 @@ void context::EndFrame()
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();    
     CommandBuffer->EndPass();
     GfxContext->EndFrame();
-    GfxContext->Present();    
+    GfxContext->Present();   
+     
 }
 
 void context::OnResize(u32 Width, u32 Height)
 {
     GfxContext->OnResize(Width, Height);
+}
+
+void context::OnMouseClicked(app::mouseButton Button, bool Clicked)
+{
+    if(Clicked) 
+    {
+        this->MouseClicked=true;
+        if(Button == app::mouseButton::LEFT) this->LeftButtonPressed=true;
+        if(Button == app::mouseButton::RIGHT) this->RightButtonPressed=true;
+    }
+    if(!Clicked) 
+    {
+        this->MouseReleased=true;
+        if(Button == app::mouseButton::LEFT) this->LeftButtonPressed=false;
+        if(Button == app::mouseButton::RIGHT) this->RightButtonPressed=false;
+    }
+    this->ButtonClicked = Button;
+}
+
+void context::OnMousePositionChanged(f64 NewPosX, f64 NewPosY)
+{
+    this->MouseMoved=true;
+    this->MouseDelta.x = NewPosX - this->MousePosition.x;
+    this->MouseDelta.y = NewPosY - this->MousePosition.y;
+    this->MousePosition.x = NewPosX;
+    this->MousePosition.y = NewPosY;
+}
+
+void context::OnMouseWheelChanged(f64 OffsetX, f64 OffsetY)
+{
+    this->MouseWheelChanged=true;
+    this->MouseWheelX = OffsetX;
+    this->MouseWheelY = OffsetY;
 }
 
 void context::Cleanup()

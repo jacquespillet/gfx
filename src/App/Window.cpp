@@ -43,7 +43,7 @@ window::window(const windowCreateOptions &WindowCreateOptions)
 
 #if GFX_API == GFX_GL
     glfwMakeContextCurrent(this->Handle);
-    glfwSwapInterval(1);
+    glfwSwapInterval(2);
 #endif
 
     glfwSetWindowPos(this->Handle, WindowCreateOptions.Position.x, WindowCreateOptions.Position.y);
@@ -59,6 +59,14 @@ window::window(const windowCreateOptions &WindowCreateOptions)
     glfwSetMouseButtonCallback(this->Handle, [](GLFWwindow *handle, int button, int action, int mods){
         auto &Window = *(window*)glfwGetWindowUserPointer(handle);
         if(Window.OnMouseChanged) Window.OnMouseChanged(Window, (mouseButton)button, action==GLFW_PRESS);
+    });
+    glfwSetCursorPosCallback(this->Handle, [](GLFWwindow *handle, f64 PosX, f64 PosY){
+        auto &Window = *(window*)glfwGetWindowUserPointer(handle);
+        if(Window.OnMousePositionChanged) Window.OnMousePositionChanged(Window, PosX, PosY);
+    });
+    glfwSetScrollCallback(this->Handle, [](GLFWwindow *handle, f64 OffsetX, f64 OffsetY){
+        auto &Window = *(window*)glfwGetWindowUserPointer(handle);
+        if(Window.OnMouseWheelChanged) Window.OnMouseWheelChanged(Window, OffsetX, OffsetY);
     });
 }
 
