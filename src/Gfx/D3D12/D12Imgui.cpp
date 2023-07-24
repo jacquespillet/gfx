@@ -98,4 +98,11 @@ void imgui::OnClick(app::mouseButton Button, b8 Clicked)
     // io.mouse
 }
 
+void imgui::Cleanup(){
+    ImGui_ImplDX12_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+}
+
+
 }

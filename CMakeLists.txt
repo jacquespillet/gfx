@@ -13,7 +13,7 @@ add_compile_definitions(_GLFW_WIN32 GLFW_EXPOSE_NATIVE_WIN32 VK_USE_PLATFORM_WIN
 set(GFX_API_GL 0)
 set(GFX_API_VK 1)
 set(GFX_API_D3D12 2)
-set(GFX_API ${GFX_API_GL})
+set(GFX_API ${GFX_API_D3D12})
 
 add_definitions(-DGFX_GL=${GFX_API_GL})
 add_definitions(-DGFX_VK=${GFX_API_VK})
@@ -38,6 +38,7 @@ set(IMGUI_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_demo.cpp
                  ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui.cpp
                  ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_draw.cpp
                  ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_widgets.cpp
+                 ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/ImGuizmo.cpp
                  )
 if(${GFX_API} EQUAL ${GFX_API_D3D12})
 set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_dx12.cpp)
@@ -120,6 +121,8 @@ set(DXC_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dxc/bin)
 include_directories(${DXC_INC_DIR})
 link_directories(${DXC_LIB_DIR})
 endif()
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 ################################################
 ##########      Code              ##############
@@ -212,6 +215,15 @@ elseif(${GFX_API} EQUAL ${GFX_API_GL})
                 ${glCode}
         )
 endif()
+
+set (sourceCode ${sourceCode}
+                src/Hlgfx/Context.cpp
+                src/Hlgfx/Object3D.cpp
+                src/Hlgfx/Transform.cpp
+                src/Hlgfx/Mesh.cpp
+                src/Hlgfx/Material.cpp
+                src/Hlgfx/Geometry.cpp
+                )
 
 ################################################
 ##########      Libs              ##############
@@ -314,11 +326,26 @@ if(${BUILD_ALL} EQUAL 1)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
-else()
-        
-        # Offscreen
-        set(targetName Main)
+
+        # Cubemap
+        set(targetName HelloCubemap_${GFX_API_STR})
         set(mainCode ${sourceCode} src/Main_HelloCubeMap.cpp)
+        add_executable(${targetName} ${mainCode})
+        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
+        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
+        
+        # Imgui
+        set(targetName HelloImgui_${GFX_API_STR})
+        set(mainCode ${sourceCode} src/Main_HelloImgui.cpp)
+        add_executable(${targetName} ${mainCode})
+        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
+        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
+
+        else()
+        
+        # Cubemap
+        set(targetName Main)
+        set(mainCode ${sourceCode} src/Main_HelloHLGFX.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)

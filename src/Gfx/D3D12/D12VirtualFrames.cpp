@@ -87,7 +87,7 @@ void virtualFramesProvider::StartFrame()
     // // However, when ExecuteCommandList() is called on a particular command 
     // // list, that command list can then be reset at any time and must be before 
     // // re-recording.
-    // ThrowIfFailed(CommandList->Reset(CommandAllocators[D12SwapchainData->GetFrameIndex()].Get(), m_pipelineState.Get()));    
+    // ThrowIfFailed(CommandList->Reset(CommandAllocators[D12SwapchainData->GetFrameIndex()].Get(), m_pipelineState.Get()));     
 }
 
 void virtualFramesProvider::EndFrame()

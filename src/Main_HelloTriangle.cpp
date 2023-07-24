@@ -148,7 +148,6 @@ struct application
 			.SetStreamIndex(0)
 			.AddAttribute({sizeof(float), 3, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 0})
 			.AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::COLOR, 0, 1});
-		
 		gfx::vertexBufferCreateInfo VertexBufferCreateInfo = {};
 		VertexBufferCreateInfo.Init()
 							  .AddVertexStream(VertexStream1);

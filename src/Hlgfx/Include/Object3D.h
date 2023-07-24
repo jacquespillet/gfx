@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include "Types.h"
 #include "Transform.h"
 #include <vector>
@@ -11,7 +12,7 @@ struct object3D
     object3D(object3D *Parent = nullptr);
 
     object3D *Parent;
-    std::vector<object3D> Children;
+    std::vector<std::shared_ptr<object3D>> Children;
     transform Transform;
 
     u32 RenderOrder=0;
@@ -24,11 +25,10 @@ struct object3D
     void SetCastShadow(b8 CastShadow);
     void SetReceiveShadow(b8 ReceiveShadow);
 
+    virtual void AddObject(std::shared_ptr<object3D> Object);
     virtual void OnUpdate();
     virtual void OnBeforeRender();
     virtual void OnRender();
-    virtual void OnUpdate();
-
-    void AddChild(object3D *Child);
+    virtual void OnAfterRender();
 };
 }

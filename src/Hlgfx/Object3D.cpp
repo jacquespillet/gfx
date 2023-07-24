@@ -9,10 +9,6 @@ object3D::object3D(object3D *Parent)
         this->Transform.Parent = &Parent->Transform;
 }
 
-void object3D::AddChild(object3D *Child)
-{
-    this->Transform.Children.push_back(&Child->Transform);
-}
 
 void object3D::SetRenderOrder(u32 RenderOrder)
 {
@@ -35,12 +31,17 @@ void object3D::SetReceiveShadow(b8 ReceiveShadow)
 }
 
 
+void object3D::AddObject(std::shared_ptr<object3D> Object)
+{
+    this->Children.push_back(Object);
+    this->Transform.Children.push_back(&Object->Transform);
+}
 
 void object3D::OnBeforeRender()
 {
     for (sz i = 0; i < Children.size(); i++)
     {
-        Children[i].OnBeforeRender();
+        Children[i]->OnBeforeRender();
     }
 }
 
@@ -48,7 +49,7 @@ void object3D::OnRender()
 {
     for (sz i = 0; i < Children.size(); i++)
     {
-        Children[i].OnRender();
+        Children[i]->OnRender();
     }
 }
 
@@ -56,7 +57,15 @@ void object3D::OnUpdate()
 {
     for (sz i = 0; i < Children.size(); i++)
     {
-        Children[i].OnUpdate();
+        Children[i]->OnUpdate();
+    }
+}
+
+void object3D::OnAfterRender()
+{
+    for (sz i = 0; i < Children.size(); i++)
+    {
+        Children[i]->OnAfterRender();
     }
 }
 

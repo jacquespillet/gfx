@@ -13,6 +13,7 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
+#include <Imgui.h>
 
 void WindowErrorCallback(const std::string &errorMessage)
 {
@@ -36,6 +37,7 @@ struct application
 {
 	std::shared_ptr<app::window> Window;
 	std::shared_ptr<gfx::context> GfxContext;
+	std::shared_ptr<gfx::imgui> Imgui;
 	gfx::renderPassHandle SwapchainPass;
 	gfx::renderPassHandle OffscreenPass;
 	gfx::pipelineHandle PipelineHandleOffscreen;
@@ -204,6 +206,8 @@ struct application
 		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/CubeMap/CubeMap.json");
 		PipelineHandleOffscreen = GfxContext->CreatePipelineFromFile("resources/Shaders/CubeMap/CubeMap.json", OffscreenPass);
 
+		Imgui = gfx::imgui::Initialize(GfxContext, Window, SwapchainPass);
+  
 
 		UniformBufferHandle1 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
 		gfx::buffer *UniformBuffer1 = GfxContext->GetBuffer(UniformBufferHandle1);
@@ -234,6 +238,7 @@ struct application
 		GfxContext->WaitIdle();
 
 		DestroyProgramSpecific();
+		Imgui->Cleanup();
 
 		GfxContext->DestroySwapchain();
 		GfxContext->Cleanup();
@@ -292,6 +297,10 @@ struct application
 
 			CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
 			
+			Imgui->StartFrame();
+
+			bool Show = true;
+			ImGui::ShowDemoWindow(&Show);
 
 			CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);
 			CommandBuffer->SetScissor(0, 0, Width, Height);
@@ -303,6 +312,8 @@ struct application
 			CommandBuffer->BindVertexBuffer(VertexBufferHandle);
 			CommandBuffer->DrawArrays(0, 36); 
 
+			Imgui->EndFrame(CommandBuffer);
+			
 			CommandBuffer->EndPass();
 			
 
@@ -322,6 +333,7 @@ struct application
 
 	void OnClick(app::mouseButton Button, bool Clicked)
 	{
+		Imgui->OnClick(Button, Clicked);
 	}
 
 };
