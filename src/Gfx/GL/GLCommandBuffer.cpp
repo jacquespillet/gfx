@@ -103,7 +103,7 @@ void ExecuteDrawIndexed(const command &Command)
     }
     else
     {
-        glDrawElements(GL_TRIANGLES, Command.DrawIndexed.Count, IndexTypeToNative(Command.DrawIndexed.IndexType), reinterpret_cast<void*>(Offset));
+        glDrawElements(GL_TRIANGLES, Command.DrawIndexed.Count, IndexTypeToNative(Command.DrawIndexed.IndexType), nullptr);
     }
 }
 
@@ -332,7 +332,8 @@ void commandBuffer::DrawIndexed(u32 Start, u32 Count, u32 InstanceCount)
     Command.DrawIndexed.IndexType = GLCommandBuffer->IndexType; 
     Command.DrawIndexed.Offset = GLCommandBuffer->IndexBufferOffset + Start; 
     Command.CommandFunction = (commandFunction)&ExecuteDrawIndexed;
-    
+    GLCommandBuffer->Commands.push_back(Command);
+
     GLCommandBuffer->IndexType = indexType::Uint16;
     GLCommandBuffer->IndexBufferOffset=0;
 }

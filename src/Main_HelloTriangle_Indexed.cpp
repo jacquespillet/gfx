@@ -285,7 +285,8 @@ struct application
 			CommandBuffer->BindUniformGroup(Uniforms, 0);
 
 			CommandBuffer->BindVertexBuffer(VertexBufferHandle);
-			CommandBuffer->DrawArrays(0, 3); 
+			CommandBuffer->BindIndexBuffer(IndexBufferHandle, 0, gfx::indexType::Uint32);
+			CommandBuffer->DrawIndexed(0, 3); 
 
 			CommandBuffer->EndPass();
 			

@@ -267,6 +267,7 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
     }
     if(PipelineCreation.IsCompute) return;
     
+    //TODO: Refactor that
     json VertexStreams = PipelineJSON["vertex_streams"];
     if(VertexStreams.is_array())
     {
