@@ -38,11 +38,7 @@ void mesh::OnRender(std::shared_ptr<camera> Camera)
         this->UniformData.ModelMatrix = this->Transform.LocalToWorld;
         gfx::context::Get()->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(uniformData), 0);
     }
-
-    std::shared_ptr<gfx::commandBuffer> CommandBuffer = gfx::context::Get()->GetCurrentFrameCommandBuffer();
-    CommandBuffer->BindGraphicsPipeline(this->Material->PipelineHandle);
-    
-    CommandBuffer->BindUniformGroup(Camera->Uniforms, CameraUniformsBinding);
+    std::shared_ptr<gfx::commandBuffer> CommandBuffer = gfx::context::Get()->GetCurrentFrameCommandBuffer();    
     CommandBuffer->BindUniformGroup(this->Uniforms, ModelUniformsBinding);
 
     CommandBuffer->BindVertexBuffer(this->GeometryBuffers.VertexBuffer);
