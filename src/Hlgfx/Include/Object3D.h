@@ -11,7 +11,11 @@ struct camera;
 
 struct object3D
 {
-    object3D(object3D *Parent = nullptr);
+    object3D(const char *Name);
+
+    void SetParent(std::shared_ptr<object3D> Parent);
+    const char *Name;
+
 
     object3D *Parent;
     std::vector<std::shared_ptr<object3D>> Children;

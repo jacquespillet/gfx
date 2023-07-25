@@ -5,7 +5,7 @@
 namespace hlgfx
 {
 
-orbitCameraController::orbitCameraController(std::shared_ptr<camera> Camera)
+orbitCameraController::orbitCameraController(std::shared_ptr<camera> Camera) : object3D("CameraController")
 {
     this->Camera = Camera;
 

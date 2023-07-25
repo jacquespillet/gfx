@@ -1,6 +1,7 @@
 #pragma once
 #include "App/Window.h"
 #include "Gfx/Include/Context.h"
+#include "Gfx/Include/Imgui.h"
 #include "Types.h"
 #include "Camera.h"
 
@@ -44,6 +45,9 @@ struct context
 
     static const u32 UnlitPipeline = 0;
     std::unordered_map<u32, gfx::pipelineHandle> Pipelines;
+
+    std::shared_ptr<gfx::imgui> Imgui;
+	
 
     //Inputs
     b8 MouseClicked=false;

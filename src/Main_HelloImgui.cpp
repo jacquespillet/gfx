@@ -263,6 +263,7 @@ struct application
 	}
 
 
+
 	void Run()
 	{
 		float t = 0;
@@ -298,9 +299,6 @@ struct application
 			CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
 			
 			Imgui->StartFrame();
-
-			bool Show = true;
-			ImGui::ShowDemoWindow(&Show);
 
 			CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);
 			CommandBuffer->SetScissor(0, 0, Width, Height);

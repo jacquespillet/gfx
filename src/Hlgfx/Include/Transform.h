@@ -25,6 +25,10 @@ struct transform
     v3f LocalRotation;
     v3f LocalScale;
 
+    v3f PositionInParent;
+    v3f RotationInParent;
+    v3f ScaleInParent;
+
     m4x4 LocalToWorld;
     m4x4 LocalToWorldNormal;
     m4x4 WorldToLocal;

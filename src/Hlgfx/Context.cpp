@@ -96,6 +96,8 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
 
     Singleton->Pipelines[UnlitPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/Unlit/Unlit.json");
 
+    Singleton->Imgui = gfx::imgui::Initialize(Singleton->GfxContext, Singleton->Window, Singleton->SwapchainPass);
+  
     return Singleton;
 }
 
@@ -115,7 +117,9 @@ void context::StartFrame()
     CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
     CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);
     CommandBuffer->SetScissor(0, 0, Width, Height);
-    
+
+    Imgui->StartFrame();
+
     this->Scene->OnEarlyUpdate();
 }
 
@@ -130,6 +134,7 @@ void context::Update(std::shared_ptr<camera> Camera)
 void context::EndFrame()
 {
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();    
+    Imgui->EndFrame(CommandBuffer);
     CommandBuffer->EndPass();
     GfxContext->EndFrame();
     GfxContext->Present();   
@@ -178,7 +183,7 @@ void context::Cleanup()
 {
     GfxContext->WaitIdle();
 
-    // DestroyProgramSpecific();
+    Imgui->Cleanup();
 
     GfxContext->DestroySwapchain();
     GfxContext->Cleanup();

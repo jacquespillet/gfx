@@ -6,21 +6,20 @@
 
 namespace hlgfx
 {
-scene::scene()
+scene::scene() : object3D("Scene")
 {
     
 }
 
 void scene::AddObject(std::shared_ptr<object3D> Object)
 {
+    object3D::AddObject(Object);
+
+    //If it's a mesh, store it in the meshes map as well
     std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Object);
     if(Mesh)
     {
         this->Meshes[Mesh->Material->PipelineHandle].push_back(Mesh);
-    }
-    else
-    {
-        object3D::AddObject(Object);
     }
 }
 

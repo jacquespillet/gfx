@@ -5,7 +5,7 @@
 
 namespace hlgfx
 {
-camera::camera(f32 FOV, f32 AspectRatio, f32 NearClip, f32 FarClip)
+camera::camera(f32 FOV, f32 AspectRatio, f32 NearClip, f32 FarClip) : object3D("Camera")
 {
     gfx::context *LowLevelContext = gfx::context::Get();
     context *HighLevelContext = context::Get();

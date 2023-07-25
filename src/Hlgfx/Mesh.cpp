@@ -6,7 +6,7 @@
 namespace hlgfx
 {
 
-mesh::mesh()
+mesh::mesh() : object3D("Mesh")
 {
     this->Material = nullptr;
     this->GeometryBuffers.IndexBuffer = gfx::InvalidHandle;

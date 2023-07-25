@@ -49,6 +49,10 @@ transform::transform()
     this->LocalRotation = v3f(0,0,0);
     this->LocalScale = v3f(1,1,1);
 
+    this->PositionInParent = v3f(0,0,0);
+    this->RotationInParent = v3f(0,0,0);
+    this->ScaleInParent = v3f(1,1,1);
+
     this->LocalToWorld = m4x4(1);
     this->LocalToWorldNormal = m4x4(1);
     this->WorldToLocal = m4x4(1);
@@ -102,14 +106,18 @@ void transform::SetParent(transform *Parent)
 {
     this->Parent = Parent;
     
-    v3f PositionDifference = this->LocalPosition - Parent->LocalPosition;
-    this->LocalPosition -= PositionDifference;
+    this->PositionInParent = this->LocalPosition;
+    this->RotationInParent = this->LocalRotation;
+    this->ScaleInParent = this->LocalScale;
 
-    v3f RotationDifference = this->LocalRotation - Parent->LocalRotation;
-    this->LocalRotation -= RotationDifference;
+    v3f PositionDifference = this->PositionInParent - Parent->PositionInParent;
+    this->LocalPosition = PositionDifference;
+        
+    v3f RotationDifference = this->RotationInParent - Parent->RotationInParent;
+    this->LocalRotation = RotationDifference;
 
-    v3f ScaleDifference = this->LocalScale - Parent->LocalScale;
-    this->LocalScale -= ScaleDifference;
+    v3f ScaleDifference = this->ScaleInParent / Parent->ScaleInParent;
+    this->LocalScale = ScaleDifference;
 
     CalculateMatrices();
 
