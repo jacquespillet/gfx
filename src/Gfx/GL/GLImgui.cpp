@@ -36,7 +36,7 @@ std::shared_ptr<imgui> imgui::Initialize(std::shared_ptr<context> Context, std::
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
     // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
+    ImGui::StyleColorsLight();
     //ImGui::StyleColorsClassic();
 
     // Setup Platform/Renderer bindings

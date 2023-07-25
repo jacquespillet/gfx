@@ -13,6 +13,14 @@ window::window(const windowCreateOptions &WindowCreateOptions)
         return;
     }
 
+    GLFWmonitor* PrimaryMonitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* VideoMode = glfwGetVideoMode(PrimaryMonitor);
+    if(this->Width == 0 || this->Height == 0)
+    {
+        this->Width = VideoMode->width;
+        this->Height = VideoMode->height;
+    }
+
     if(WindowCreateOptions.MultiSampling)
         glfwWindowHint(GLFW_SAMPLES, 4);
 #if GFX_API == GFX_VK
@@ -33,8 +41,17 @@ window::window(const windowCreateOptions &WindowCreateOptions)
 
     glfwWindowHint(GLFW_DECORATED, WindowCreateOptions.TitleBar);
     glfwWindowHint(GLFW_RESIZABLE, WindowCreateOptions.Resizable);
+    this->Handle = glfwCreateWindow(this->Width, this->Height, WindowCreateOptions.Title, nullptr, nullptr);
     
-    this->Handle = glfwCreateWindow(WindowCreateOptions.Size.x, WindowCreateOptions.Size.y, WindowCreateOptions.Title, nullptr, nullptr);
+    s32 PosX = WindowCreateOptions.Position.x;
+    s32 PosY = WindowCreateOptions.Position.y;
+    if(PosX == -1 || PosY == -1)
+    {
+        PosX = (this->Width - VideoMode->width) / 2;
+        PosY = (this->Height - VideoMode->height) / 2;
+    }
+    glfwSetWindowPos(this->Handle, PosX, PosY);
+
     if(this->Handle == nullptr)
     {
         WindowCreateOptions.ErrorCallback("Could not create GLFW window");
@@ -46,7 +63,6 @@ window::window(const windowCreateOptions &WindowCreateOptions)
     glfwSwapInterval(2);
 #endif
 
-    glfwSetWindowPos(this->Handle, WindowCreateOptions.Position.x, WindowCreateOptions.Position.y);
     glfwSetWindowUserPointer(this->Handle, (void*)this);
     glfwSetWindowSizeCallback(this->Handle, [](GLFWwindow *handle, int width, int height){
         auto &Window = *(window*)glfwGetWindowUserPointer(handle);

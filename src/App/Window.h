@@ -177,7 +177,7 @@ struct windowCreateOptions
     std::function<void(const std::string&)> ErrorCallback = DefaultWindowCallback;
 
     v2i Size = v2f(800, 600);
-    v2i Position = v2f(0, 0);
+    v2i Position = v2f(-1, -1);
     const char *Title = "MainWindow";
 
     int VersionMajor=4;

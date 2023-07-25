@@ -22,7 +22,7 @@ struct context
     static std::shared_ptr<context> Singleton;
 
     static context *Get();
-    static std::shared_ptr<context> Initialize(u32 Width, u32 Height);
+    static std::shared_ptr<context> Initialize(u32 Width=0, u32 Height=0);
 
     void StartFrame();
     void EndFrame();
@@ -32,6 +32,8 @@ struct context
     void OnMousePositionChanged(f64 NewPosX, f64 NewPosY);
     void OnMouseWheelChanged(f64 OffsetX, f64 OffsetY);
     void Cleanup();
+
+    void DrawGUI();
     b8 ShouldClose();
 
     std::shared_ptr<scene> Scene;
@@ -54,6 +56,7 @@ struct context
 	
 
     //Inputs
+    b8 IsInteractingGUI = false;
     b8 MouseClicked=false;
     b8 MouseReleased =false;
     app::mouseButton ButtonClicked;

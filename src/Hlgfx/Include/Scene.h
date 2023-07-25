@@ -12,8 +12,12 @@ struct scene : public object3D
     scene();
     virtual void OnRender(std::shared_ptr<camera> Camera);
     virtual void AddObject(std::shared_ptr<object3D> Object) override;
-    
     std::unordered_map<gfx::pipelineHandle, std::vector<std::shared_ptr<mesh>>> Meshes;
+    
+    virtual void DrawGUI() override;
+    void DrawNodeChildren(hlgfx::object3D *Object);
+    std::shared_ptr<hlgfx::object3D> NodeClicked = nullptr;
+    u32 GuiWidth = 400;
 };
 
 }

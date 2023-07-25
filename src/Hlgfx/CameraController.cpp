@@ -20,6 +20,7 @@ orbitCameraController::orbitCameraController(std::shared_ptr<camera> Camera) : o
 void orbitCameraController::OnUpdate()
 {
     context *Context = context::Get();
+    if(Context->IsInteractingGUI) return;
 
     b8 ShouldRecalculate=false;
     if(Context->LeftButtonPressed)

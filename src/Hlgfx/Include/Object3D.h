@@ -37,5 +37,7 @@ struct object3D
     virtual void OnBeforeRender(std::shared_ptr<camera> Camera);
     virtual void OnRender(std::shared_ptr<camera> Camera);
     virtual void OnAfterRender(std::shared_ptr<camera> Camera);
+
+    virtual void DrawGUI();
 };
 }

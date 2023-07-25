@@ -38,7 +38,8 @@ std::shared_ptr<imgui> imgui::Initialize(std::shared_ptr<context> Context, std::
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    ImGui::StyleColorsDark();
+    ImGui::StyleColorsLight();
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
 
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForVulkan(Window->GetHandle(), true);

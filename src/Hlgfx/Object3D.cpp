@@ -1,4 +1,5 @@
 #include "Include/Object3D.h"
+#include <imgui.h>
 
 namespace hlgfx
 {
@@ -127,6 +128,43 @@ void object3D::OnAfterRender(std::shared_ptr<camera> Camera)
     for (sz i = 0; i < Children.size(); i++)
     {
         Children[i]->OnAfterRender(Camera);
+    }
+}
+
+void object3D::DrawGUI()
+{
+    ImGuiTabBarFlags TabBarFlags = ImGuiTabBarFlags_None;
+    if (ImGui::BeginTabBar("", TabBarFlags))
+    {
+        if(ImGui::BeginTabItem("Object"))
+        {
+            v3f LocalPosition = Transform.LocalPosition;
+            v3f LocalRotation = Transform.LocalRotation;
+            v3f LocalScale = Transform.LocalScale;
+            if(ImGui::DragFloat3("Position", (float*)&LocalPosition, 0.01f))
+            {
+                this->Transform.SetLocalPosition(LocalPosition);
+            }
+            if(ImGui::DragFloat3("Rotation", (float*)&LocalRotation, 0.01f))
+            {
+                this->Transform.SetLocalRotation(LocalRotation);
+            }
+            if(ImGui::DragFloat3("Scale", (float*)&LocalScale, 0.01f))
+            {
+                this->Transform.SetLocalScale(LocalScale);
+            }
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Geometry"))
+        {
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Material"))
+        {
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
     }
 }
 

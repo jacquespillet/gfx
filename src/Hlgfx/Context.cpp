@@ -2,6 +2,7 @@
 #include "Include/Scene.h"
 #include <iostream>
 #include "Gfx/Include/CommandBuffer.h"
+#include <imgui.h>
 
 namespace hlgfx
 {
@@ -58,13 +59,10 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
         Singleton = std::make_shared<context>();
     }
 
-    Singleton->Width = Width;
-    Singleton->Height = Height;
 
 
     gfx::memory::Get()->Init();
-	app::windowCreateOptions WindowCreateOptions;
-    WindowCreateOptions.Position = app::v2f(300, 100);
+	app::windowCreateOptions WindowCreateOptions = {};
     WindowCreateOptions.Size = app::v2f(Width, Height);
     WindowCreateOptions.ErrorCallback = WindowErrorCallback;
 #if GFX_API == GFX_VK
@@ -80,6 +78,8 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->Window->OnMousePositionChanged = OnMousePositionChangedWindow;
     Singleton->Window->OnMouseWheelChanged = OnMouseWheelChangedWindow;
 
+    Singleton->Width = Singleton->Window->Width;
+    Singleton->Height = Singleton->Window->Height;
 
 	// Initialize the graphics API
     gfx::context::initializeInfo ContextInitialize;
@@ -119,8 +119,11 @@ void context::StartFrame()
     CommandBuffer->SetScissor(0, 0, Width, Height);
 
     Imgui->StartFrame();
+    IsInteractingGUI = (ImGui::IsAnyItemHovered() || ImGui::IsAnyItemActive() || ImGui::IsAnyItemFocused() || ImGui::IsAnyWindowHovered());
 
     this->Scene->OnEarlyUpdate();
+
+    this->DrawGUI();
 }
 
 void context::Update(std::shared_ptr<camera> Camera)
@@ -177,6 +180,11 @@ void context::OnMouseWheelChanged(f64 OffsetX, f64 OffsetY)
     this->MouseWheelChanged=true;
     this->MouseWheelX = OffsetX;
     this->MouseWheelY = OffsetY;
+}
+
+void context::DrawGUI()
+{
+    this->Scene->DrawGUI();
 }
 
 void context::Cleanup()
