@@ -432,7 +432,6 @@ pipelineHandle context::CreatePipelineFromFile(const char *FileName, framebuffer
         {
             json Pipeline = Pipelines[i];
             pipelineCreation PipelineCreation{};
-            // PipelineCreation.Name = TechniqueCreation.Name;
             PipelineCreation.Shaders.Reset();
 
             json InheritFrom = Pipeline["inherit_from"];

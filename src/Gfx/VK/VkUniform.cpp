@@ -24,6 +24,7 @@ uniformGroup & uniformGroup::Update()
     for(auto &Binding : Bindings)
     {
         pipelineHandle PipelineHandle = Binding.first;
+        pipeline *Pipeline = context::Get()->GetPipeline(PipelineHandle);
 
         std::vector<vk::WriteDescriptorSet> DescriptorWrites;
         std::vector<vk::DescriptorBufferInfo> DescriptorBuffers;
@@ -33,11 +34,11 @@ uniformGroup & uniformGroup::Update()
         DescriptorImages.reserve(Uniforms.size());
         for(sz i=0; i<Uniforms.size(); i++)
         {
-            descriptorInfo &DescriptorInfo = VkUniformData->DescriptorInfos[PipelineHandle];
-            if(!VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSetLayout->UsedBindings[Uniforms[i].Binding]) continue;
+            descriptorInfo &DescriptorInfo = VkUniformData->DescriptorInfos[Pipeline->Name];
+            if(!VkUniformData->DescriptorInfos[Pipeline->Name].DescriptorSetLayout->UsedBindings[Uniforms[i].Binding]) continue;
             
             vk::WriteDescriptorSet DescriptorWrite;
-            DescriptorWrite.setDstSet(VkUniformData->DescriptorInfos[PipelineHandle].DescriptorSet)
+            DescriptorWrite.setDstSet(VkUniformData->DescriptorInfos[Pipeline->Name].DescriptorSet)
                                 .setDstBinding(Uniforms[i].Binding)
                                 .setDstArrayElement(0)
                                 .setDescriptorCount(1);

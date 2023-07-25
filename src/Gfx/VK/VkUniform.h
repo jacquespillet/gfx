@@ -13,7 +13,7 @@ struct descriptorInfo
 
 struct vkUniformData
 {
-    std::unordered_map<pipelineHandle, descriptorInfo> DescriptorInfos;
+    std::unordered_map<std::string, descriptorInfo> DescriptorInfos;
     b8 Initialized=false;
 };
 

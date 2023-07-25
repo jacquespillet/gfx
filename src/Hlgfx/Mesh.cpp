@@ -21,6 +21,7 @@ mesh::mesh() : object3D("Mesh")
     gfx::context *LowLevelContext = gfx::context::Get();
     for(auto &Pipeline : HighLevelContext->Pipelines)
     {
+        //This effectively allocates the descriptor sets based on the DS layouts of each pipeline.
         LowLevelContext->BindUniformsToPipeline(this->Uniforms, Pipeline.second, ModelUniformsBinding);
     }
     

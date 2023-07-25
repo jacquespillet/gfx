@@ -8,6 +8,7 @@
 #include "../Common/Util.h"
 #include <memory>
 #include "RenderPass.h"
+#include <string>
 
 // 	// Create a shader program
 // 	ShaderHandle vertexShader = GfxContext->CreateShader("vertex_shader.glsl", ShaderType::Vertex);
@@ -207,9 +208,9 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
 
 struct pipeline
 {
-    depthStencilCreation DepthStencil;
-    blendStateCreation  BlendState;
-    rasterizationCreation Rasterization;
+    std::string Name;
+
+    pipelineCreation Creation;
     
     b8 GraphicsPipeline=true;
 

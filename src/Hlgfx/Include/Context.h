@@ -43,6 +43,10 @@ struct context
 	gfx::pipelineHandle PipelineHandleSwapchain;
 	std::shared_ptr<gfx::swapchain> Swapchain;    
 
+    //That's not optimal : 
+    //We create these global pipelines only so we can get their descriptor layouts
+    //So we can call BindUniformsToPipeline() on them
+    //Then each material instantiates another pipeline
     static const u32 UnlitPipeline = 0;
     std::unordered_map<u32, gfx::pipelineHandle> Pipelines;
 

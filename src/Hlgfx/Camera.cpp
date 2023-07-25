@@ -25,6 +25,7 @@ camera::camera(f32 FOV, f32 AspectRatio, f32 NearClip, f32 FarClip) : object3D("
     //Bind the uniform group to the context pipelines
     for(auto &Pipeline : HighLevelContext->Pipelines)
     {
+        //This allocates the descriptor sets based on the DS layouts of each pipeline
         LowLevelContext->BindUniformsToPipeline(this->Uniforms, Pipeline.second, CameraUniformsBinding);
     }
     this->Uniforms->Update();
