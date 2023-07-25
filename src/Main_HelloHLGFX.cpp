@@ -46,6 +46,9 @@ struct application
 		Obj2->Transform.SetLocalPosition(hlgfx::v3f(3, 0, 0));
 		Obj2->Transform.SetLocalScale(hlgfx::v3f(2, 2, 2));
 		Obj1->AddObject(Obj2);
+		
+		std::shared_ptr<hlgfx::object3D> Obj3 = std::make_shared<hlgfx::object3D>("Obj3");
+		Context->Scene->AddObject(Obj3);
 	}
 	
 	void Cleanup()

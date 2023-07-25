@@ -134,6 +134,7 @@ void object3D::OnAfterRender(std::shared_ptr<camera> Camera)
 void object3D::DrawGUI()
 {
     ImGuiTabBarFlags TabBarFlags = ImGuiTabBarFlags_None;
+    ImGui::Text(this->Name);
     if (ImGui::BeginTabBar("", TabBarFlags))
     {
         if(ImGui::BeginTabItem("Object"))

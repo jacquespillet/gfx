@@ -27,7 +27,6 @@ void scene::AddObject(std::shared_ptr<object3D> Object)
 
 void scene::OnRender(std::shared_ptr<camera> Camera)
 {
-    //TODO: Refactor that
     for(auto &PipelineMeshes : this->Meshes)
     {
         std::shared_ptr<gfx::commandBuffer> CommandBuffer = gfx::context::Get()->GetCurrentFrameCommandBuffer();
@@ -44,7 +43,7 @@ void scene::OnRender(std::shared_ptr<camera> Camera)
 
 void scene::DrawNodeChildren(hlgfx::object3D *Object)
 {
-
+    //For each children, draw it
     static ImGuiTreeNodeFlags BaseFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
     for(size_t i=0; i<Object->Children.size(); i++)
     {
@@ -52,9 +51,11 @@ void scene::DrawNodeChildren(hlgfx::object3D *Object)
         
         int NumChildren = Object->Children[i]->Children.size();
         if(NumChildren == 0) NodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+        if(Object->Children[i] == NodeClicked) NodeFlags |= ImGuiTreeNodeFlags_Selected;
 
         bool NodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)i, NodeFlags, Object->Children[i]->Name, i);
         if(NumChildren == 0) NodeOpen=false;
+
 
         if(ImGui::IsItemClicked())
         {
@@ -86,6 +87,46 @@ void scene::DrawNodeChildren(hlgfx::object3D *Object)
     }
 }
 
+void scene::DrawSceneGUI()
+{
+    std::shared_ptr<scene> ScenePtr = context::Get()->Scene;
+
+    static ImGuiTreeNodeFlags BaseFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
+    int NumChildren = this->Children.size();
+    if(NumChildren == 0) BaseFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+    bool NodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)0, BaseFlags, this->Name);
+    if(NumChildren == 0) NodeOpen=false;
+
+    if(ImGui::IsItemClicked())
+    {
+        NodeClicked = ScenePtr;
+    }
+
+    //Drag and drop
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+    {
+        ImGui::SetDragDropPayload("DND_DEMO_CELL", &ScenePtr, sizeof(std::shared_ptr<hlgfx::object3D>));    // Set payload to carry the index of our item (could be anything)
+        ImGui::Text("Move");
+        ImGui::EndDragDropSource();
+    }
+    if (ImGui::BeginDragDropTarget())
+    {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_DEMO_CELL"))
+        {
+            std::shared_ptr<hlgfx::object3D> Payload = *(std::shared_ptr<hlgfx::object3D>*)payload->Data;
+            Payload->SetParent(ScenePtr);
+        }
+        ImGui::EndDragDropTarget();
+    }			
+
+    if(NodeOpen)
+    {
+        DrawNodeChildren(ScenePtr.get());
+        ImGui::TreePop();
+    }    
+}
+
 
 void scene::DrawGUI()
 {
@@ -103,14 +144,18 @@ void scene::DrawGUI()
 
     ImGui::BeginChild("Scene", ImVec2(GuiWidth, 300));
     ImGui::Text("Scene");
-    DrawNodeChildren(this);
+    DrawSceneGUI(); 
     ImGui::EndChild();  
     ImGui::PopStyleColor(1);
 
 
-    if(NodeClicked != nullptr)
+    if(NodeClicked != nullptr && NodeClicked != context::Get()->Scene)
     {
         NodeClicked->DrawGUI();
+    }
+    else if (NodeClicked == context::Get()->Scene)
+    {  
+
     }
 
     this->GuiWidth = ImGui::GetWindowSize().x;
