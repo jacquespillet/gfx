@@ -31,4 +31,5 @@ typedef glm::mat4 m4x4;
 static const u32 SceneUniformsBinding = 0;
 static const u32 CameraUniformsBinding = 1;
 static const u32 ModelUniformsBinding = 2;
+static const u32 MaterialUniformsBinding = 3;
 }

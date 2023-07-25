@@ -2,7 +2,7 @@
 	"name" : "main",
 	"pipelines" : [
 		{
-			"name" : "Triangle",
+			"name" : "Unlit",
 			"vertex_streams":
 			[
 				{

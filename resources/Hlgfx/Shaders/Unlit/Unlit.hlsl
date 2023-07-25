@@ -23,6 +23,11 @@ cbuffer Model : register(b1)
     mat4 ModelMatrix;    
 };
 
+cbuffer Model : register(b3)
+{
+    vec4 Color;
+};
+
 PSInput VSMain(vec4 PositionUvX : POSITION0, vec4 NormalUvY : POSITION1)
 {
     PSInput result;
@@ -35,5 +40,5 @@ PSInput VSMain(vec4 PositionUvX : POSITION0, vec4 NormalUvY : POSITION1)
 
 vec4 PSMain(PSInput input) : SV_TARGET
 {
-    return vec4(input.uv, 0, 1);
+    return vec4(input.uv, 0, 1) + Color;
 }

@@ -23,6 +23,11 @@ DECLARE_UNIFORM_BUFFER(2, 1, Model)
     mat4 ModelMatrix;    
 };
 
+DECLARE_UNIFORM_BUFFER(3, 3, Material)
+{
+    vec4 BaseColor;
+};
+
 
 /////////////////////////////////
 //////////VERTEX/////////////////
@@ -52,7 +57,7 @@ layout(location = 0) out vec4 outputColor;
 
 void main() 
 {
-    outputColor = vec4(Input.FragUV, 0, 1);
+    outputColor = vec4(Input.FragUV, 0, 1) + BaseColor;
 }
 
 #endif

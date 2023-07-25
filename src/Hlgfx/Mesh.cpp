@@ -41,7 +41,8 @@ void mesh::OnRender(std::shared_ptr<camera> Camera)
     }
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = gfx::context::Get()->GetCurrentFrameCommandBuffer();    
     CommandBuffer->BindUniformGroup(this->Uniforms, ModelUniformsBinding);
-
+    CommandBuffer->BindUniformGroup(this->Material->Uniforms, MaterialUniformsBinding);
+    
     CommandBuffer->BindVertexBuffer(this->GeometryBuffers.VertexBuffer);
     CommandBuffer->BindIndexBuffer(this->GeometryBuffers.IndexBuffer, this->GeometryBuffers.Start, gfx::indexType::Uint32);
     CommandBuffer->DrawIndexed(this->GeometryBuffers.Start, this->GeometryBuffers.Count, 1);
