@@ -12,7 +12,7 @@ struct buffer
     const char *Name;
     sz Size;
     sz Stride;
-    u8 *MappedData;
+    u8 *MappedData = nullptr;
     
     std::shared_ptr<void> ApiData;
 

@@ -19,7 +19,7 @@ void scene::AddObject(std::shared_ptr<object3D> Object)
 {
     object3D::AddObject(Object);
 
-    //If it's a mesh, store it in the meshes map as well
+    // If it's a mesh, store it in the meshes map as well
     std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Object);
     if(Mesh)
     {
@@ -55,7 +55,7 @@ void scene::DrawNodeChildren(hlgfx::object3D *Object)
         if(NumChildren == 0) NodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
         if(Object->Children[i] == NodeClicked) NodeFlags |= ImGuiTreeNodeFlags_Selected;
 
-        bool NodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)i, NodeFlags, Object->Children[i]->Name, i);
+        bool NodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)i, NodeFlags, Object->Children[i]->Name.c_str(), i);
         if(NumChildren == 0) NodeOpen=false;
 
 
@@ -99,7 +99,7 @@ void scene::DrawSceneGUI()
     int NumChildren = this->Children.size();
     if(NumChildren == 0) BaseFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-    bool NodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)0, BaseFlags, this->Name);
+    bool NodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)0, BaseFlags, this->Name.c_str());
     if(NumChildren == 0) NodeOpen=false;
 
     if(ImGui::IsItemClicked())

@@ -40,4 +40,12 @@ void camera::RecalculateMatrices()
     this->Data.ViewProjectionMatrix = this->Data.ProjectionMatrix * this->Data.ViewMatrix;
     gfx::context::Get()->CopyDataToBuffer(this->UniformBuffer, &this->Data, sizeof(cameraUniformData), 0);
 }
+
+camera::~camera()
+{
+    //TODO: Far from ideal ! 
+    //Have a deletionQueue in context that deletes everything at the end of each frame.
+    gfx::context::Get()->WaitIdle();
+    gfx::context::Get()->DestroyBuffer(this->UniformBuffer);
+}
 }

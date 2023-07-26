@@ -23,12 +23,19 @@ void resourceManager::Init()
 
 void resourceManager::Destroy()
 {
-    Buffers.Destroy();
+    printf("Destroying Buffers\n");
+	Buffers.Destroy();
+	printf("Destroying Images\n");
 	Images.Destroy();
+	printf("Destroying Pipelines\n");
 	Pipelines.Destroy();
+	printf("Destroying Shaders\n");
 	Shaders.Destroy();
+	printf("Destroying RenderPasses\n");
 	RenderPasses.Destroy();
+	printf("Destroying Framebuffers\n");
 	Framebuffers.Destroy();
+	printf("Destroying VertexBuffers\n");
 	VertexBuffers.Destroy();
 
 	DestroyApiSpecific();

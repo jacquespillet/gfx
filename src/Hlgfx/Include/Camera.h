@@ -8,6 +8,7 @@ namespace hlgfx
 struct camera : public object3D
 {
     camera(f32 FOV, f32 AspectRatio, f32 NearClip = 0.01f, f32 FarClip = 100.0f);
+    ~camera();
     struct cameraUniformData
     {
         f32 FOV;

@@ -28,6 +28,13 @@ void unlitMaterial::SetCullMode(gfx::cullMode Mode)
     //Rebuild pipeline and replace the handle
 }
 
+unlitMaterial::~unlitMaterial()  
+{
+    gfx::context::Get()->WaitIdle();
+    gfx::context::Get()->DestroyBuffer(this->UniformBuffer);
+    gfx::context::Get()->DestroyPipeline(this->PipelineHandle);
+}
+
 std::vector<u8> unlitMaterial::Serialize() 
 {
     std::vector<u8> Result;

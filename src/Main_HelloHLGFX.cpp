@@ -11,9 +11,10 @@
 
 void OnResizeWindow(app::window &Window, app::v2i NewSize);
 
+std::shared_ptr<hlgfx::context> Context;
+
 struct application
 {
-	std::shared_ptr<hlgfx::context> Context;
 	std::shared_ptr<hlgfx::camera> Camera;
 	std::shared_ptr<hlgfx::mesh> Mesh;
 
@@ -34,27 +35,22 @@ struct application
 		Mesh->GeometryBuffers = hlgfx::GetTriangleGeometry();
 		Mesh->Material = std::make_shared<hlgfx::unlitMaterial>();
 		Context->Scene->AddObject(Mesh);
-		// Mesh->Transform.SetLocalRotation(hlgfx::v3f(0, 45, 0));
+		Mesh->Transform.SetLocalRotation(hlgfx::v3f(0, 45, 0));
 
-		// std::shared_ptr<hlgfx::object3D> Obj = std::make_shared<hlgfx::object3D>("Obj0");
-		// Context->Scene->AddObject(Obj);
-		// Obj->Transform.SetLocalRotation(hlgfx::v3f(45, 0, 0));
-		// Obj->Transform.SetLocalScale(hlgfx::v3f(2, 2, 2));
-		// std::shared_ptr<hlgfx::object3D> Obj1 = std::make_shared<hlgfx::object3D>("Obj1");
-		// Obj1->Transform.SetLocalPosition(hlgfx::v3f(2, 0, 0));
-		// Obj->AddObject(Obj1);
-		// std::shared_ptr<hlgfx::object3D> Obj2 = std::make_shared<hlgfx::object3D>("Obj2");
-		// Obj2->Transform.SetLocalPosition(hlgfx::v3f(3, 0, 0));
-		// Obj2->Transform.SetLocalScale(hlgfx::v3f(2, 2, 2));
-		// Obj1->AddObject(Obj2);
+		std::shared_ptr<hlgfx::object3D> Obj = std::make_shared<hlgfx::object3D>("Obj0");
+		Context->Scene->AddObject(Obj);
+		Obj->Transform.SetLocalRotation(hlgfx::v3f(45, 0, 0));
+		Obj->Transform.SetLocalScale(hlgfx::v3f(2, 2, 2));
+		std::shared_ptr<hlgfx::object3D> Obj1 = std::make_shared<hlgfx::object3D>("Obj1");
+		Obj1->Transform.SetLocalPosition(hlgfx::v3f(2, 0, 0));
+		Obj->AddObject(Obj1);
+		std::shared_ptr<hlgfx::object3D> Obj2 = std::make_shared<hlgfx::object3D>("Obj2");
+		Obj2->Transform.SetLocalPosition(hlgfx::v3f(3, 0, 0));
+		Obj2->Transform.SetLocalScale(hlgfx::v3f(2, 2, 2));
+		Obj1->AddObject(Obj2);
 		
-		// std::shared_ptr<hlgfx::object3D> Obj3 = std::make_shared<hlgfx::object3D>("Obj3");
-		// Context->Scene->AddObject(Obj3);
-	}
-	
-	void Cleanup()
-	{
-		Context->Cleanup();
+		std::shared_ptr<hlgfx::object3D> Obj3 = std::make_shared<hlgfx::object3D>("Obj3");
+		Context->Scene->AddObject(Obj3);
 	}
 
 	void Run()
@@ -83,6 +79,5 @@ int main()
 {	
     App.Init();
 	App.Run();
-	App.Cleanup();
 	return 0;
 }

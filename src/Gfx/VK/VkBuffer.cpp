@@ -18,6 +18,8 @@ vk::Buffer GetBufferHandle(buffer *Buffer)
 
 void buffer::Init(size_t ByteSize, sz Stride, bufferUsage::value Usage, memoryUsage MemoryUsage)
 {
+    this->MappedData=nullptr;
+    
     constexpr std::array BufferQueueFamilyIndices = {(u32)0};
     this->Destroy();
 

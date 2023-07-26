@@ -24,7 +24,8 @@ struct material
 struct unlitMaterial : public material
 {
     unlitMaterial();
-
+    ~unlitMaterial();
+  
     virtual void SetCullMode(gfx::cullMode Mode);
     virtual std::vector<u8> Serialize() override;
     struct materialData

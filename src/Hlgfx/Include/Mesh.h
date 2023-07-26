@@ -11,7 +11,7 @@ struct mesh : public object3D
     std::shared_ptr<material> Material;
 
     mesh();
-
+    ~mesh();
     void SetVertexBuffer(gfx::vertexBufferHandle VertexBufferHandle);
 
     virtual void OnRender(std::shared_ptr<camera> Camera) override;

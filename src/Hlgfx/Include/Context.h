@@ -38,6 +38,8 @@ struct context
     void DrawGUI();
     b8 ShouldClose();
 
+    ~context();
+
     std::shared_ptr<scene> Scene;
 
     u32 Width, Height;

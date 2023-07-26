@@ -14,6 +14,8 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 
+#include <ImGuizmo.h>
+
 namespace gfx
 {
 std::shared_ptr<imgui> imgui::Singleton = {};
@@ -80,6 +82,7 @@ void imgui::StartFrame()
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
+    ImGuizmo::BeginFrame();
 }
 
 

@@ -59,7 +59,7 @@ indexedGeometryBuffers GetTriangleGeometry()
 
 
     uint32_t Indices[] = 
-    {
+    {  
         0, 2, 1,
         0, 3, 2
     };

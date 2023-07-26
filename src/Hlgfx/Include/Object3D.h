@@ -4,6 +4,7 @@
 #include "Types.h"
 #include "Transform.h"
 #include <vector>
+#include <string>
 
 namespace hlgfx
 {
@@ -18,9 +19,9 @@ enum class object3DType
 struct object3D
 {
     object3D(const char *Name);
-
+    ~object3D();
     void SetParent(std::shared_ptr<object3D> Parent);
-    const char *Name;
+    std::string Name;
 
 
     object3D *Parent;

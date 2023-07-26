@@ -1415,9 +1415,11 @@ void context::DestroyPipeline(pipelineHandle PipelineHandle)
 void context::DestroyBuffer(bufferHandle BufferHandle)
 {
     GET_CONTEXT(VkData, this);
-
     buffer *Buffer = GetBuffer(BufferHandle);
     GET_API_DATA(VkBufferData, vkBufferData, Buffer);
+    
+    if(Buffer->MappedData != nullptr) Buffer->UnmapMemory();
+
     vmaDestroyBuffer(VkData->Allocator, VkBufferData->Handle, VkBufferData->Allocation);
     ResourceManager.Buffers.ReleaseResource(BufferHandle);
 }

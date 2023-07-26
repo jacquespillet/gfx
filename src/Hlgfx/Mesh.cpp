@@ -57,9 +57,9 @@ std::vector<u8> mesh::Serialize()
     u32 Object3DType = (u32) object3DType::Mesh;
     AddItem(Result, &Object3DType, sizeof(u32));
     
-    u32 StringLength = strlen(this->Name) + 1;
+    u32 StringLength = this->Name.size();
     AddItem(Result, &StringLength, sizeof(u32));
-    AddItem(Result, (void*)this->Name, StringLength);
+    AddItem(Result, (void*)this->Name.data(), StringLength);
     
     u32 VertexDataSize = this->GeometryBuffers.VertexData.size();
     AddItem(Result, &VertexDataSize, sizeof(u32));
@@ -90,6 +90,14 @@ std::vector<u8> mesh::Serialize()
 
 
     return Result;
+}
+
+mesh::~mesh()
+{
+    gfx::context::Get()->WaitIdle();
+    gfx::context::Get()->DestroyBuffer(this->UniformBuffer);
+    gfx::context::Get()->DestroyBuffer(this->GeometryBuffers.IndexBuffer);
+    gfx::context::Get()->DestroyVertexBuffer(this->GeometryBuffers.VertexBuffer);
 }
 
 

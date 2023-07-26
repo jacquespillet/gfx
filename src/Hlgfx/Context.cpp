@@ -253,6 +253,15 @@ void context::Cleanup()
 {
     GfxContext->WaitIdle();
 
+    //Clears the scene, effectively dereferences all the pointers to call their destructors before we clean up
+    this->Scene->Children = std::vector<std::shared_ptr<object3D>>();
+    this->Scene->Meshes = std::unordered_map<gfx::pipelineHandle, std::vector<std::shared_ptr<mesh>>>();
+
+    for(auto &Pipeline : this->Pipelines)
+    {
+        GfxContext->DestroyPipeline(Pipeline.second);
+    }
+
     Imgui->Cleanup();
 
     GfxContext->DestroySwapchain();
@@ -261,6 +270,11 @@ void context::Cleanup()
     gfx::memory *Memory = gfx::memory::Get();
     Memory->Destroy();
     delete Memory;    
+}
+
+context::~context()
+{
+    Cleanup();
 }
 
 }

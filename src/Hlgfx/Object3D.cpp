@@ -165,7 +165,7 @@ void object3D::OnAfterRender(std::shared_ptr<camera> Camera)
 void object3D::DrawGUI()
 {
     ImGuiTabBarFlags TabBarFlags = ImGuiTabBarFlags_None;
-    ImGui::Text(this->Name);
+    ImGui::Text(this->Name.c_str());
     if (ImGui::BeginTabBar("", TabBarFlags))
     {
         if(ImGui::BeginTabItem("Object"))
@@ -208,9 +208,9 @@ std::vector<u8> object3D::Serialize()
     u32 Object3DType = (u32) object3DType::Object3d;
     AddItem(Result, &Object3DType, sizeof(u32));
 
-    u32 StringLength = strlen(this->Name) + 1;
+    u32 StringLength = this->Name.size();
     AddItem(Result, &StringLength, sizeof(u32));
-    AddItem(Result, (void*)this->Name, StringLength);
+    AddItem(Result, (void*)this->Name.data(), StringLength);
     
     AddItem(Result, glm::value_ptr(this->Transform.LocalPosition), sizeof(v3f));
     AddItem(Result, glm::value_ptr(this->Transform.LocalRotation), sizeof(v3f));
@@ -252,7 +252,7 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
         std::shared_ptr<object3D> Result = std::make_shared<object3D>("BLA");
         
         Result->Name = (char*)gfx::AllocateMemory(NameLength);
-        GetItem(Serialized, (void*)Result->Name, Cursor, NameLength);
+        GetItem(Serialized, (void*)Result->Name.data(), Cursor, NameLength);
 
         v3f LocalPosition, LocalRotation, LocalScale;
         GetItem(Serialized, glm::value_ptr(LocalPosition), Cursor, sizeof(v3f));
@@ -282,7 +282,7 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
         std::shared_ptr<mesh> Result = std::make_shared<mesh>();
 
         Result->Name = (char*)gfx::AllocateMemory(NameLength);
-        GetItem(Serialized, (void*)Result->Name, Cursor, NameLength);
+        GetItem(Serialized, (void*)Result->Name.data(), Cursor, NameLength);
 
         u32 VertexDataSize;
         GetItem(Serialized, &VertexDataSize, Cursor, sizeof(u32));
@@ -330,6 +330,10 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
         return Result; 
 
     }
+}
+
+object3D::~object3D()
+{
 }
 
 }
