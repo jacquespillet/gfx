@@ -215,6 +215,10 @@ void context::DrawMainMenuBar()
     {
         if (ImGui::BeginMenu("File"))
         {
+            if(ImGui::MenuItem("New"))
+            {
+                this->Scene->Clear();
+            }
             if(ImGui::MenuItem("Save"))
             {
                 nfdchar_t *OutPath = NULL;
@@ -233,7 +237,25 @@ void context::DrawMainMenuBar()
             }
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Edit"))
+        if(ImGui::BeginMenu("Edit"))
+        {
+            if(ImGui::MenuItem("Clone"))
+            {
+                if(Scene->NodeClicked)
+                {
+
+                }
+            }
+            if(ImGui::MenuItem("Delete"))
+            {
+                if(Scene->NodeClicked)
+                {
+                    Scene->DeleteObject(Scene->NodeClicked);
+                }
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Add"))
         {
             if (ImGui::BeginMenu("Add Object")) 
             {

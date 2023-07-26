@@ -10,6 +10,20 @@
 
 namespace hlgfx
 {
+
+void RemoveObjectInChildren(std::vector<std::shared_ptr<object3D>>& Children, std::shared_ptr<object3D> Object) {
+    auto it = std::find(Children.begin(), Children.end(), Object);
+    if (it != Children.end()) {
+        Children.erase(it);
+    }
+}
+void RemoveMeshInChildren(std::vector<std::shared_ptr<mesh>>& Children, std::shared_ptr<mesh> Object) {
+    auto it = std::find(Children.begin(), Children.end(), Object);
+    if (it != Children.end()) {
+        Children.erase(it);
+    }
+}
+
 scene::scene() : object3D("Scene")
 {
     
@@ -17,7 +31,6 @@ scene::scene() : object3D("Scene")
 
 void scene::AddObject(std::shared_ptr<object3D> Object)
 {
-    Object->Scene = this;
     object3D::AddObject(Object);
 }
 
@@ -35,6 +48,7 @@ void scene::OnRender(std::shared_ptr<camera> Camera)
 {
     for(auto &PipelineMeshes : this->Meshes)
     {
+        if (PipelineMeshes.second.size() == 0) continue;
         std::shared_ptr<gfx::commandBuffer> CommandBuffer = gfx::context::Get()->GetCurrentFrameCommandBuffer();
         CommandBuffer->BindGraphicsPipeline(PipelineMeshes.first);
         CommandBuffer->BindUniformGroup(Camera->Uniforms, CameraUniformsBinding);
@@ -63,9 +77,16 @@ void scene::DrawNodeChildren(hlgfx::object3D *Object)
 
         if(ImGui::IsItemClicked())
         {
+            //Unselect previous
             if(NodeClicked != nullptr) NodeClicked->IsSelectedInGui=false;
-            NodeClicked = Object->Children[i];
-            NodeClicked->IsSelectedInGui=true;
+
+            //Unselect if already clicked
+            if(NodeClicked == Object->Children[i]) NodeClicked = nullptr;
+            else //Otherwise select
+            {
+                NodeClicked = Object->Children[i];
+                NodeClicked->IsSelectedInGui=true;
+            }
         }
 
         //Drag and drop
@@ -133,6 +154,40 @@ void scene::DrawSceneGUI()
     }    
 }
 
+void ClearObject(std::shared_ptr<object3D> Object)
+{
+    //If it's a mesh, we have to remove it from the meshes array
+    std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Object);
+    if(Mesh)
+    {
+        RemoveMeshInChildren(context::Get()->Scene->Meshes[Mesh->Material->PipelineHandle], Mesh);
+    }
+
+    //Delete all children
+    for (sz i = 0; i < Object->Children.size(); i++)
+    {
+        ClearObject(Object->Children[i]);
+    }
+    Object->Children.clear();
+}
+
+void scene::Clear()
+{
+    for (sz i = 0; i < Children.size(); i++)
+    {
+        ClearObject(Children[i]);
+    }
+    this->Children.clear();
+
+    this->Meshes.clear();
+}
+
+void scene::DeleteObject(std::shared_ptr<object3D> Object)
+{
+    //Go through all children and delete them recursively
+    ClearObject(Object);
+    Object->Parent->DeleteChild(Object);
+}
 
 void scene::DrawGUI()
 {
@@ -149,7 +204,7 @@ void scene::DrawGUI()
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(1,1,1,1));
 
     ImGui::BeginChild("Scene", ImVec2(GuiWidth, 300));
-    DrawSceneGUI(); 
+    DrawSceneGUI();
     ImGui::EndChild();  
     ImGui::PopStyleColor(1);
 
@@ -169,8 +224,7 @@ void scene::DrawGUI()
 
 void scene::LoadFromFile(const char *FileName)
 {
-    this->Children.clear();
-    this->Meshes.clear();
+    this->Clear();
     
     std::ifstream InStream;
     InStream.open(FileName, std::ios_base::binary);

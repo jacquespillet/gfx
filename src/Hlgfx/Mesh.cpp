@@ -94,6 +94,7 @@ std::vector<u8> mesh::Serialize()
 
 mesh::~mesh()
 {
+    printf("Destroying Mesh\n");
     gfx::context::Get()->WaitIdle();
     gfx::context::Get()->DestroyBuffer(this->UniformBuffer);
     gfx::context::Get()->DestroyBuffer(this->GeometryBuffers.IndexBuffer);

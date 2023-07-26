@@ -19,6 +19,9 @@ struct scene : public object3D
     void DrawNodeChildren(hlgfx::object3D *Object);
     void DrawSceneGUI();
 
+    void Clear();
+    void DeleteObject(std::shared_ptr<object3D> Object);
+    
     void LoadFromFile(const char *FileName);
     void SaveToFile(const char *FileName);
     std::shared_ptr<hlgfx::object3D> NodeClicked = nullptr;
