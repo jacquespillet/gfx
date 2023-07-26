@@ -251,6 +251,7 @@ void context::DrawMainMenuBar()
                 if(Scene->NodeClicked)
                 {
                     Scene->DeleteObject(Scene->NodeClicked);
+                    Scene->NodeClicked=nullptr;
                 }
             }
             ImGui::EndMenu();
