@@ -178,8 +178,8 @@ void scene::Clear()
         ClearObject(Children[i]);
     }
     this->Children.clear();
-
     this->Meshes.clear();
+    this->NodeClicked=nullptr;
 }
 
 void scene::DeleteObject(std::shared_ptr<object3D> Object)
