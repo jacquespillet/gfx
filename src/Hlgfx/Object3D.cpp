@@ -64,7 +64,7 @@ std::shared_ptr<object3D> FindInChildren(std::vector<std::shared_ptr<object3D>> 
             return Children[i];
         }
     }
-    
+    return nullptr;
 }
 
 void object3D::SetParent(std::shared_ptr<object3D> Parent)
@@ -89,7 +89,7 @@ void object3D::SetParent(std::shared_ptr<object3D> Parent)
 void object3D::AddObject(std::shared_ptr<object3D> Object)
 {
     //TODO: Case where object already has a parent (needs to be removed)
-    Object->Scene->AddMesh(Object);
+    context::Get()->Scene->AddMesh(Object);
 
     Object->Parent = this;
     Object->Transform.SetParent(&this->Transform);
@@ -117,14 +117,14 @@ void object3D::OnBeforeRender(std::shared_ptr<camera> Camera)
     
     if(IsSelectedInGui)
     {
-        m4x4 ModelMatrix = this->Transform.LocalToWorld;
+        m4x4 ModelMatrix = this->Transform.Matrices.LocalToWorld;
     
         ImGuiIO& io = ImGui::GetIO();
         ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
         ImGuizmo::Manipulate(glm::value_ptr(Camera->Data.ViewMatrix), glm::value_ptr(Camera->Data.ProjectionMatrix), context::Get()->CurrentGizmoOperation, context::Get()->CurrentGizmoMode, glm::value_ptr(ModelMatrix), NULL, NULL);
 
         //Remove the localToWorld component
-        ModelMatrix = glm::inverse(this->Transform.Parent->LocalToWorld) * ModelMatrix;
+        ModelMatrix = glm::inverse(this->Transform.Parent->Matrices.LocalToWorld) * ModelMatrix;
 
         //Decompose the matrix
         v3f matrixTranslation, matrixRotation, matrixScale;
@@ -172,9 +172,9 @@ void object3D::DrawGUI()
     {
         if(ImGui::BeginTabItem("Object"))
         {
-            v3f LocalPosition = Transform.LocalPosition;
-            v3f LocalRotation = Transform.LocalRotation;
-            v3f LocalScale = Transform.LocalScale;
+            v3f LocalPosition = Transform.LocalValues.LocalPosition;
+            v3f LocalRotation = Transform.LocalValues.LocalRotation;
+            v3f LocalScale = Transform.LocalValues.LocalScale;
             if(ImGui::DragFloat3("Position", (float*)&LocalPosition, 0.01f))
             {
                 this->Transform.SetLocalPosition(LocalPosition);
@@ -214,9 +214,8 @@ std::vector<u8> object3D::Serialize()
     AddItem(Result, &StringLength, sizeof(u32));
     AddItem(Result, (void*)this->Name.data(), StringLength);
     
-    AddItem(Result, glm::value_ptr(this->Transform.LocalPosition), sizeof(v3f));
-    AddItem(Result, glm::value_ptr(this->Transform.LocalRotation), sizeof(v3f));
-    AddItem(Result, glm::value_ptr(this->Transform.LocalScale), sizeof(v3f));
+    AddItem(Result, &this->Transform.Matrices, sizeof(transform::matrices));
+    AddItem(Result, &this->Transform.LocalValues, sizeof(transform::localValues));
 
     u32 NumChildren = this->Children.size();
     AddItem(Result, &NumChildren, sizeof(u32));
@@ -232,11 +231,21 @@ std::vector<u8> object3D::Serialize()
     return Result;
 }
 
+void object3D::DeleteChild(std::shared_ptr<object3D> Child)
+{
+    u32 Index = 0;
+    if(FindInChildren(this->Children, Child.get(), Index))
+    {
+        this->Children.erase(this->Children.begin() + Index);
+    }
+}
+
 void GetItem(std::vector<u8> &Blob, void *Dest, u32 &Cursor, sz Size)
 {
     memcpy(Dest, Blob.data() + Cursor, Size);
     Cursor += Size;
 }
+
 
 std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
 {
@@ -256,13 +265,10 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
         Result->Name.resize(NameLength);
         GetItem(Serialized, (void*)Result->Name.data(), Cursor, NameLength);
 
-        v3f LocalPosition, LocalRotation, LocalScale;
-        GetItem(Serialized, glm::value_ptr(LocalPosition), Cursor, sizeof(v3f));
-        GetItem(Serialized, glm::value_ptr(LocalRotation), Cursor, sizeof(v3f));
-        GetItem(Serialized, glm::value_ptr(LocalScale), Cursor, sizeof(v3f));
-        Result->Transform.SetLocalPosition(LocalPosition);
-        Result->Transform.SetLocalRotation(LocalRotation);
-        Result->Transform.SetLocalScale(LocalScale);
+
+        GetItem(Serialized, &Result->Transform.Matrices, Cursor, sizeof(transform::matrices));
+        GetItem(Serialized, &Result->Transform.LocalValues, Cursor, sizeof(transform::localValues));
+        Result->Transform.HasChanged=true;
 
         u32 NumChildren;
         GetItem(Serialized, &NumChildren, Cursor, sizeof(u32));
@@ -306,15 +312,10 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
             GetItem(Serialized, glm::value_ptr(Material->UniformData.Color), Cursor, sizeof(v4f));
             Result->Material = Material;
         }
-        
-        
-        v3f LocalPosition, LocalRotation, LocalScale;
-        GetItem(Serialized, glm::value_ptr(LocalPosition), Cursor, sizeof(v3f));
-        GetItem(Serialized, glm::value_ptr(LocalRotation), Cursor, sizeof(v3f));
-        GetItem(Serialized, glm::value_ptr(LocalScale), Cursor, sizeof(v3f));
-        Result->Transform.SetLocalPosition(LocalPosition);
-        Result->Transform.SetLocalRotation(LocalRotation);
-        Result->Transform.SetLocalScale(LocalScale);
+     
+        GetItem(Serialized, &Result->Transform.Matrices, Cursor, sizeof(transform::matrices));
+        GetItem(Serialized, &Result->Transform.LocalValues, Cursor, sizeof(transform::localValues));
+        Result->Transform.HasChanged=true;
 
         u32 NumChildren;
         GetItem(Serialized, &NumChildren, Cursor, sizeof(u32));

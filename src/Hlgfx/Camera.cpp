@@ -58,7 +58,7 @@ void camera::SetLocalScale(v3f LocalScale)
 void camera::RecalculateMatrices()
 {
     this->Data.ProjectionMatrix = glm::perspective(glm::radians(this->Data.FOV), this->Data.AspectRatio, this->Data.NearClip, this->Data.FarClip);
-    this->Data.ViewMatrix = this->Transform.WorldToLocal;
+    this->Data.ViewMatrix = this->Transform.Matrices.WorldToLocal;
     this->Data.ViewProjectionMatrix = this->Data.ProjectionMatrix * this->Data.ViewMatrix;
     gfx::context::Get()->CopyDataToBuffer(this->UniformBuffer, &this->Data, sizeof(cameraUniformData), 0);
 }

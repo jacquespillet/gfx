@@ -13,7 +13,7 @@ orbitCameraController::orbitCameraController(camera *Camera) : object3D("CameraC
 
 void orbitCameraController::Recalculate()
 {
-    v3f Position = this->Camera->Transform.LocalPosition - this->Target;
+    v3f Position = this->Camera->Transform.LocalValues.LocalPosition - this->Target;
     this->Distance = std::sqrt(Position.x * Position.x + Position.y * Position.y + Position.z * Position.z);
     this->Theta = std::acos(Position.y / this->Distance);
     this->Phi = std::atan2(Position.z, Position.x);

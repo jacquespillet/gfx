@@ -17,26 +17,33 @@ enum class rotationOrder
 //
 struct transform
 {
+    static b8 DoCompute;
     transform();
     transform *Parent;
     std::vector<transform*> Children;
 
-    v3f LocalPosition;
-    v3f LocalRotation;
-    quat LocalRotationQuat;
-    v3f LocalScale;
+    struct localValues
+    {
+        v3f LocalPosition;
+        v3f LocalRotation;
+        quat LocalRotationQuat;
+        v3f LocalScale;
+    } LocalValues;
 
     // v3f PositionInParent;
     // v3f RotationInParent;
     // v3f ScaleInParent;
 
-    m4x4 LocalToWorld;
-    m4x4 LocalToWorldNormal;
-    m4x4 WorldToLocal;
+    struct matrices 
+    {
+        m4x4 LocalToWorld;
+        m4x4 LocalToWorldNormal;
+        m4x4 WorldToLocal;
 
-    m4x4 LocalToParent;
-    m4x4 LocalToParentNormal;
-    m4x4 ParentToLocal;
+        m4x4 LocalToParent;
+        m4x4 LocalToParentNormal;
+        m4x4 ParentToLocal;
+    } Matrices;
 
     void CalculateMatrices();
     void CalculateLocalToWorldMatrix();

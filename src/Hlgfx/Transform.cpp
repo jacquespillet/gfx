@@ -8,6 +8,9 @@
 namespace hlgfx
 {
 
+b8 transform::DoCompute = true;
+
+
 // m4x4 GetRotationMatrix(v3f EulerAngles, rotationOrder Order)
 // {
 //     m4x4 UnitMatrix(1.0f);
@@ -48,33 +51,35 @@ transform::transform()
     this->Parent = nullptr;
     this->Children.resize(0);
 
-    this->LocalPosition = v3f(0,0,0);
-    this->LocalRotation = v3f(0,0,0);
-    this->LocalRotationQuat = glm::quat(this->LocalRotation);
-    this->LocalScale = v3f(1,1,1);
+    this->LocalValues.LocalPosition = v3f(0,0,0);
+    this->LocalValues.LocalRotation = v3f(0,0,0);
+    this->LocalValues.LocalRotationQuat = glm::quat(this->LocalValues.LocalRotation);
+    this->LocalValues.LocalScale = v3f(1,1,1);
 
-    this->LocalToWorld = m4x4(1);
-    this->LocalToWorldNormal = m4x4(1);
-    this->WorldToLocal = m4x4(1);
+    this->Matrices.LocalToWorld = m4x4(1);
+    this->Matrices.LocalToWorldNormal = m4x4(1);
+    this->Matrices.WorldToLocal = m4x4(1);
 
-    this->LocalToParent = m4x4(1);
-    this->LocalToParentNormal = m4x4(1);
-    this->ParentToLocal = m4x4(1);    
+    this->Matrices.LocalToParent = m4x4(1);
+    this->Matrices.LocalToParentNormal = m4x4(1);
+    this->Matrices.ParentToLocal = m4x4(1);    
 }
 
 void transform::CalculateMatrices()
 {
+    if(!DoCompute) return;
+
     m4x4 UnitMatrix(1.0f);
 
     if(!MatrixBased)
     {
         //Local to parent
-        m4x4 TranslationMatrix = glm::translate(UnitMatrix, this->LocalPosition);
-        m4x4 ScaleMatrix = glm::scale(UnitMatrix, this->LocalScale);
-        m4x4 RotationMatrix = glm::toMat4(this->LocalRotationQuat);
-        this->LocalToParent = TranslationMatrix * RotationMatrix * ScaleMatrix;
-        this->ParentToLocal = glm::inverse(this->LocalToParent);
-        this->LocalToParentNormal = glm::inverseTranspose(this->LocalToParent);
+        m4x4 TranslationMatrix = glm::translate(UnitMatrix, this->LocalValues.LocalPosition);
+        m4x4 ScaleMatrix = glm::scale(UnitMatrix, this->LocalValues.LocalScale);
+        m4x4 RotationMatrix = glm::toMat4(this->LocalValues.LocalRotationQuat);
+        this->Matrices.LocalToParent = TranslationMatrix * RotationMatrix * ScaleMatrix;
+        this->Matrices.ParentToLocal = glm::inverse(this->Matrices.LocalToParent);
+        this->Matrices.LocalToParentNormal = glm::inverseTranspose(this->Matrices.LocalToParent);
     }
 
     CalculateLocalToWorldMatrix();
@@ -88,31 +93,38 @@ void transform::CalculateMatrices()
 
 void transform::CalculateLocalToWorldMatrix()
 {
+    if(!DoCompute) return;
+
     if(Parent != nullptr)
     {
-        this->LocalToWorld = Parent->LocalToWorld * this->LocalToParent;
+        this->Matrices.LocalToWorld = Parent->Matrices.LocalToWorld * this->Matrices.LocalToParent;
     }
     else
     {
-        this->LocalToWorld = this->LocalToParent;
+        this->Matrices.LocalToWorld = this->Matrices.LocalToParent;
     }
-    this->WorldToLocal = glm::inverse(this->LocalToWorld);
-    this->LocalToWorldNormal = glm::inverseTranspose(this->LocalToWorld);
+    this->Matrices.WorldToLocal = glm::inverse(this->Matrices.LocalToWorld);
+    this->Matrices.LocalToWorldNormal = glm::inverseTranspose(this->Matrices.LocalToWorld);
     this->HasChanged=true;  
 }
 
 void transform::SetParent(transform *Parent)
 {
-
+    if(!DoCompute) 
+    {
+        this->Parent = Parent;
+        return;
+    }
+    
     v3f ScaleDifference = this->GetWorldScale() / Parent->GetWorldScale();
-    this->LocalScale = ScaleDifference;
+    this->LocalValues.LocalScale = ScaleDifference;
     
     quat ThisRotation = this->GetWorldRotation();
     quat ParentRotation = Parent->GetWorldRotation();
-    this->LocalRotationQuat = glm::inverse(ParentRotation) * (ThisRotation);
+    this->LocalValues.LocalRotationQuat = glm::inverse(ParentRotation) * (ThisRotation);
 
     v3f PositionDifference = this->GetWorldPosition() - Parent->GetWorldPosition();
-    this->LocalPosition = (glm::inverse(ParentRotation) * PositionDifference) * this->LocalScale;
+    this->LocalValues.LocalPosition = (glm::inverse(ParentRotation) * PositionDifference) * this->LocalValues.LocalScale;
 
     this->Parent = Parent;
 
@@ -124,9 +136,9 @@ void transform::SetParent(transform *Parent)
 void transform::SetModelMatrix(m4x4 Matrix)
 {
     this->MatrixBased=true;
-    this->LocalToParent = Matrix;
-    this->ParentToLocal = glm::inverse(this->LocalToParent);
-    this->LocalToParentNormal = glm::inverseTranspose(this->LocalToParent);
+    this->Matrices.LocalToParent = Matrix;
+    this->Matrices.ParentToLocal = glm::inverse(this->Matrices.LocalToParent);
+    this->Matrices.LocalToParentNormal = glm::inverseTranspose(this->Matrices.LocalToParent);
     CalculateMatrices();
     this->HasChanged=true;
 }
@@ -134,7 +146,7 @@ void transform::SetModelMatrix(m4x4 Matrix)
 void transform::SetLocalPosition(v3f LocalPosition)
 {
     this->MatrixBased=false;
-    this->LocalPosition = LocalPosition;
+    this->LocalValues.LocalPosition = LocalPosition;
     CalculateMatrices();
     HasChanged=true;
 }
@@ -142,8 +154,8 @@ void transform::SetLocalPosition(v3f LocalPosition)
 void transform::SetLocalRotation(v3f LocalRotation)
 {
     this->MatrixBased=false;
-    this->LocalRotation = LocalRotation;
-    this->LocalRotationQuat = glm::quat(glm::radians(this->LocalRotation));
+    this->LocalValues.LocalRotation = LocalRotation;
+    this->LocalValues.LocalRotationQuat = glm::quat(glm::radians(this->LocalValues.LocalRotation));
     CalculateMatrices();
     HasChanged=true;
 }
@@ -151,7 +163,7 @@ void transform::SetLocalRotation(v3f LocalRotation)
 void transform::SetLocalScale(v3f LocalScale)
 {
     this->MatrixBased=false;
-    this->LocalScale = LocalScale;
+    this->LocalValues.LocalScale = LocalScale;
     CalculateMatrices();
     HasChanged=true;
 }
@@ -159,14 +171,14 @@ void transform::SetLocalScale(v3f LocalScale)
 void transform::Translate(v3f Translation)
 {
     this->MatrixBased=false;
-    this->LocalPosition += Translation;
+    this->LocalValues.LocalPosition += Translation;
     CalculateMatrices();
     HasChanged=true;
 }
 void transform::Rotate(v3f Rotation)
 {
     this->MatrixBased=false;
-    this->LocalRotation += Rotation;
+    this->LocalValues.LocalRotation += Rotation;
     CalculateMatrices();
     HasChanged=true;
 }
@@ -174,7 +186,7 @@ void transform::Rotate(v3f Rotation)
 void transform::Scale(v3f Scale)
 {
     this->MatrixBased=false;
-    this->LocalScale += Scale;
+    this->LocalValues.LocalScale += Scale;
     CalculateMatrices();
     HasChanged=true;
 }
@@ -182,7 +194,7 @@ void transform::Scale(v3f Scale)
 
 v3f transform::GetWorldPosition()
 {
-    return v3f(this->LocalToWorld * v4f(0,0,0,1));
+    return v3f(this->Matrices.LocalToWorld * v4f(0,0,0,1));
 }
 
 quat transform::GetWorldRotation()
@@ -191,7 +203,7 @@ quat transform::GetWorldRotation()
     transform *Transform = this;
     while(true)
     {
-        Quaternions.push_back(Transform->LocalRotationQuat);
+        Quaternions.push_back(Transform->LocalValues.LocalRotationQuat);
         if(Transform->Parent != nullptr)
         {
             Transform = Transform->Parent;
@@ -213,7 +225,7 @@ v3f transform::GetWorldScale()
     glm::vec3 translation;
     glm::vec3 skew;
     glm::vec4 perspective;
-    glm::decompose(LocalToWorld, scale, rotation, translation, skew,perspective);    
+    glm::decompose(Matrices.LocalToWorld, scale, rotation, translation, skew,perspective);    
     return scale;
 }
 

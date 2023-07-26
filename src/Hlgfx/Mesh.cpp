@@ -27,7 +27,7 @@ mesh::mesh() : object3D("Mesh")
         LowLevelContext->BindUniformsToPipeline(this->Uniforms, Pipeline.second, ModelUniformsBinding);
     }
     
-    this->UniformData.ModelMatrix = this->Transform.LocalToWorld;
+    this->UniformData.ModelMatrix = this->Transform.Matrices.LocalToWorld;
     gfx::context::Get()->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(uniformData), 0);
 
     this->Uniforms->Update();    
@@ -38,7 +38,7 @@ void mesh::OnRender(std::shared_ptr<camera> Camera)
 {
     if(this->Transform.HasChanged)
     {
-        this->UniformData.ModelMatrix = this->Transform.LocalToWorld;
+        this->UniformData.ModelMatrix = this->Transform.Matrices.LocalToWorld;
         gfx::context::Get()->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(uniformData), 0);
     }
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = gfx::context::Get()->GetCurrentFrameCommandBuffer();    
@@ -73,9 +73,8 @@ std::vector<u8> mesh::Serialize()
     AddItem(Result, MaterialData.data(), MaterialData.size());
 
     
-    AddItem(Result, glm::value_ptr(this->Transform.LocalPosition), sizeof(v3f));
-    AddItem(Result, glm::value_ptr(this->Transform.LocalRotation), sizeof(v3f));
-    AddItem(Result, glm::value_ptr(this->Transform.LocalScale), sizeof(v3f));
+    AddItem(Result, &this->Transform.Matrices, sizeof(transform::matrices));
+    AddItem(Result, &this->Transform.LocalValues, sizeof(transform::localValues));
 
     u32 NumChildren = this->Children.size();
     AddItem(Result, &NumChildren, sizeof(u32));

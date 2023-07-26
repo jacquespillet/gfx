@@ -224,6 +224,7 @@ void scene::DrawGUI()
 
 void scene::LoadFromFile(const char *FileName)
 {
+    transform::DoCompute=false;
     this->Clear();
     
     std::ifstream InStream;
@@ -248,6 +249,8 @@ void scene::LoadFromFile(const char *FileName)
     }
 
     InStream.close();
+    
+    transform::DoCompute=true;
 }
 
 void scene::SaveToFile(const char *FileName)
