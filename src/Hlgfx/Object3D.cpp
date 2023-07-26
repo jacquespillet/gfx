@@ -2,6 +2,7 @@
 #include "Include/Camera.h"
 #include "Include/Context.h"
 #include "Include/Util.h"
+#include "Include/Scene.h"
 #include "Include/Mesh.h"
 #include "Include/Material.h"
 #include <imgui.h>
@@ -88,7 +89,8 @@ void object3D::SetParent(std::shared_ptr<object3D> Parent)
 void object3D::AddObject(std::shared_ptr<object3D> Object)
 {
     //TODO: Case where object already has a parent (needs to be removed)
-    
+    Object->Scene->AddMesh(Object);
+
     Object->Parent = this;
     Object->Transform.SetParent(&this->Transform);
     
@@ -251,7 +253,7 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
         //TODO: Name
         std::shared_ptr<object3D> Result = std::make_shared<object3D>("BLA");
         
-        Result->Name = (char*)gfx::AllocateMemory(NameLength);
+        Result->Name.resize(NameLength);
         GetItem(Serialized, (void*)Result->Name.data(), Cursor, NameLength);
 
         v3f LocalPosition, LocalRotation, LocalScale;
@@ -281,7 +283,7 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
     {
         std::shared_ptr<mesh> Result = std::make_shared<mesh>();
 
-        Result->Name = (char*)gfx::AllocateMemory(NameLength);
+        Result->Name.resize(NameLength);
         GetItem(Serialized, (void*)Result->Name.data(), Cursor, NameLength);
 
         u32 VertexDataSize;

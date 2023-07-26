@@ -66,6 +66,13 @@ set(GLFW_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/build/install/lib)
 include_directories(${GLFW_INC_DIR})
 link_directories(${GLFW_LIB_DIR})
 
+# FileDialog
+set(FILEDIALOG_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/fileDialog/include)
+set(FILEDIALOG_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ext/fileDialog/src/nfd_common.c)
+set(FILEDIALOG_SOURCE ${FILEDIALOG_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/fileDialog/src/nfd_win.cpp)
+include_directories(${FILEDIALOG_INC_DIR})
+link_directories(${FILEDIALOG_LIB_DIR})
+
 # JSON
 set(JSON_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/json)
 include_directories(${JSON_INC_DIR})
@@ -133,6 +140,7 @@ set(extCode
         ${VOLK_SOURCE}
         ${SPIRVREFLECT_SOURCE}
         ${IMGUI_SOURCE}
+        ${FILEDIALOG_SOURCE}
 )
 
 set(vkCode
@@ -233,6 +241,7 @@ set (sourceCode ${sourceCode}
 ##########      Libs              ##############
 ################################################
 set(commonLibs glfw3)
+
 if(${GFX_API} EQUAL ${GFX_API_VK})
         set(gfxApiLibs ${gfxApiLibs} vulkan-1)
         set(gfxApiLibs ${gfxApiLibs} debug VulkanMemoryAllocatord optimized VulkanMemoryAllocator)

@@ -1,8 +1,10 @@
 #include "Include/Context.h"
 #include "Include/Scene.h"
 #include "Include/CameraController.h"
+#include "Include/Material.h"
 #include <iostream>
 #include "Gfx/Include/CommandBuffer.h"
+#include <nfd.h>
 
 namespace hlgfx
 {
@@ -215,11 +217,19 @@ void context::DrawMainMenuBar()
         {
             if(ImGui::MenuItem("Save"))
             {
-                this->Scene->SaveToFile("Scene");
+                nfdchar_t *OutPath = NULL;
+                nfdresult_t Result = NFD_SaveDialog( NULL, NULL, &OutPath );
+                if ( Result == NFD_OKAY ) {
+                    this->Scene->SaveToFile(OutPath);
+                }
             }
             if(ImGui::MenuItem("Load"))
             {
-                this->Scene->LoadFromFile("Scene");
+                nfdchar_t *OutPath = NULL;
+                nfdresult_t Result = NFD_OpenDialog( NULL, NULL, &OutPath );
+                if ( Result == NFD_OKAY ) {
+                    this->Scene->LoadFromFile(OutPath);
+                }                
             }
             ImGui::EndMenu();
         }
@@ -229,11 +239,29 @@ void context::DrawMainMenuBar()
             {
                 if(ImGui::MenuItem("Empty"))
                 {
-                     
+                    std::shared_ptr<hlgfx::object3D> Empty = std::make_shared<hlgfx::object3D>("Empty");
+                    if(this->Scene->NodeClicked != nullptr)
+                    {
+                        this->Scene->NodeClicked->AddObject(Empty);
+                    }
+                    else
+                    {
+                        this->Scene->AddObject(Empty);
+                    }
                 }
                 if(ImGui::MenuItem("Quad"))
                 {
-
+                    std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<hlgfx::mesh>();
+                    Mesh->GeometryBuffers = hlgfx::GetTriangleGeometry();
+                    Mesh->Material = std::make_shared<hlgfx::unlitMaterial>();
+                    if(this->Scene->NodeClicked != nullptr)
+                    {
+                        this->Scene->NodeClicked->AddObject(Mesh);
+                    }
+                    else
+                    {
+                        this->Scene->AddObject(Mesh);
+                    }
                 }
                 ImGui::EndMenu();
             }

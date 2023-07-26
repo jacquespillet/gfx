@@ -17,8 +17,12 @@ scene::scene() : object3D("Scene")
 
 void scene::AddObject(std::shared_ptr<object3D> Object)
 {
+    Object->Scene = this;
     object3D::AddObject(Object);
+}
 
+void scene::AddMesh(std::shared_ptr<object3D> Object)
+{
     // If it's a mesh, store it in the meshes map as well
     std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Object);
     if(Mesh)
@@ -52,12 +56,10 @@ void scene::DrawNodeChildren(hlgfx::object3D *Object)
         ImGuiTreeNodeFlags NodeFlags = BaseFlags;
         
         int NumChildren = Object->Children[i]->Children.size();
-        if(NumChildren == 0) NodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+        if(NumChildren == 0) NodeFlags |= ImGuiTreeNodeFlags_Leaf;
         if(Object->Children[i] == NodeClicked) NodeFlags |= ImGuiTreeNodeFlags_Selected;
 
         bool NodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)i, NodeFlags, Object->Children[i]->Name.c_str(), i);
-        if(NumChildren == 0) NodeOpen=false;
-
 
         if(ImGui::IsItemClicked())
         {
@@ -97,10 +99,9 @@ void scene::DrawSceneGUI()
 
     static ImGuiTreeNodeFlags BaseFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
     int NumChildren = this->Children.size();
-    if(NumChildren == 0) BaseFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+    if(NumChildren == 0) BaseFlags |= ImGuiTreeNodeFlags_Leaf;
 
-    bool NodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)0, BaseFlags, this->Name.c_str());
-    if(NumChildren == 0) NodeOpen=false;
+    bool NodeOpen = ImGui::TreeNodeEx("Scene", BaseFlags, this->Name.c_str());
 
     if(ImGui::IsItemClicked())
     {
@@ -108,7 +109,7 @@ void scene::DrawSceneGUI()
         NodeClicked->IsSelectedInGui=false;
     }
 
-    //Drag and drop
+    // Drag and drop
     if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
     {
         ImGui::SetDragDropPayload("DND_DEMO_CELL", &ScenePtr, sizeof(std::shared_ptr<hlgfx::object3D>));    // Set payload to carry the index of our item (could be anything)
@@ -120,7 +121,7 @@ void scene::DrawSceneGUI()
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_DEMO_CELL"))
         {
             std::shared_ptr<hlgfx::object3D> Payload = *(std::shared_ptr<hlgfx::object3D>*)payload->Data;
-            Payload->SetParent(ScenePtr);
+            Payload->SetParent(ScenePtr);  
         }
         ImGui::EndDragDropTarget();
     }
@@ -148,7 +149,6 @@ void scene::DrawGUI()
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(1,1,1,1));
 
     ImGui::BeginChild("Scene", ImVec2(GuiWidth, 300));
-    ImGui::Text("Scene");
     DrawSceneGUI(); 
     ImGui::EndChild();  
     ImGui::PopStyleColor(1);
@@ -190,9 +190,6 @@ void scene::LoadFromFile(const char *FileName)
         std::vector<u8> SerializedChild(ChildSize);
         InStream.read((char*)SerializedChild.data(), ChildSize);
         std::shared_ptr<object3D> Object3D = object3D::Deserialize(SerializedChild);
-
-
-
         this->AddObject(Object3D);
     }
 

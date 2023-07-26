@@ -9,6 +9,7 @@
 namespace hlgfx
 {
 struct camera;
+struct scene;
 
 enum class object3DType
 {
@@ -23,6 +24,7 @@ struct object3D
     void SetParent(std::shared_ptr<object3D> Parent);
     std::string Name;
 
+    scene *Scene;
 
     object3D *Parent;
     std::vector<std::shared_ptr<object3D>> Children;
