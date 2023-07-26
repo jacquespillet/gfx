@@ -3,44 +3,45 @@
 #include <glm/ext.hpp>
 #include <glm/gtx/euler_angles.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 namespace hlgfx
 {
 
-m4x4 GetRotationMatrix(v3f EulerAngles, rotationOrder Order)
-{
-    m4x4 UnitMatrix(1.0f);
+// m4x4 GetRotationMatrix(v3f EulerAngles, rotationOrder Order)
+// {
+//     m4x4 UnitMatrix(1.0f);
 
-    m4x4 RotationX = glm::rotate(UnitMatrix, glm::radians(EulerAngles.x), v3f(1,0,0));
-    m4x4 RotationY = glm::rotate(UnitMatrix, glm::radians(EulerAngles.y), v3f(0,1,0));
-    m4x4 RotationZ = glm::rotate(UnitMatrix, glm::radians(EulerAngles.z), v3f(1,0,1));
+//     m4x4 RotationX = glm::rotate(UnitMatrix, glm::radians(EulerAngles.x), v3f(1,0,0));
+//     m4x4 RotationY = glm::rotate(UnitMatrix, glm::radians(EulerAngles.y), v3f(0,1,0));
+//     m4x4 RotationZ = glm::rotate(UnitMatrix, glm::radians(EulerAngles.z), v3f(1,0,1));
 
-    switch (Order)
-    {
-    case rotationOrder::xyz:
-        return RotationZ * RotationY * RotationX;
-        break;
-    case rotationOrder::xzy:
-        return RotationY * RotationZ * RotationX;
-        break;
-    case rotationOrder::yxz:
-        return RotationZ * RotationX * RotationY;
-        break;
-    case rotationOrder::yzx:
-        return RotationX * RotationZ * RotationY;
-        break;
-    case rotationOrder::zxy:
-        return RotationY * RotationX * RotationZ;
-        break;
-    case rotationOrder::zyx:
-        return RotationX * RotationY * RotationZ;
-        break;
-    default:
-        break;
-    }
+//     switch (Order)
+//     {
+//     case rotationOrder::xyz:
+//         return RotationZ * RotationY * RotationX;
+//         break;
+//     case rotationOrder::xzy:
+//         return RotationY * RotationZ * RotationX;
+//         break;
+//     case rotationOrder::yxz:
+//         return RotationZ * RotationX * RotationY;
+//         break;
+//     case rotationOrder::yzx:
+//         return RotationX * RotationZ * RotationY;
+//         break;
+//     case rotationOrder::zxy:
+//         return RotationY * RotationX * RotationZ;
+//         break;
+//     case rotationOrder::zyx:
+//         return RotationX * RotationY * RotationZ;
+//         break;
+//     default:
+//         break;
+//     }
 
-    assert(false);
-}
+//     assert(false);
+// }
 
 transform::transform()
 {
@@ -49,6 +50,7 @@ transform::transform()
 
     this->LocalPosition = v3f(0,0,0);
     this->LocalRotation = v3f(0,0,0);
+    this->LocalRotationQuat = glm::quat(this->LocalRotation);
     this->LocalScale = v3f(1,1,1);
 
     this->LocalToWorld = m4x4(1);
@@ -71,7 +73,7 @@ void transform::CalculateMatrices()
         //Local to parent
         m4x4 TranslationMatrix = glm::translate(UnitMatrix, this->LocalPosition);
         m4x4 ScaleMatrix = glm::scale(UnitMatrix, this->LocalScale);
-        m4x4 RotationMatrix = GetRotationMatrix(this->LocalRotation, this->RotationOrder);
+        m4x4 RotationMatrix = glm::toMat4(this->LocalRotationQuat);
         this->LocalToParent = TranslationMatrix * RotationMatrix * ScaleMatrix;
         this->ParentToLocal = glm::inverse(this->LocalToParent);
         this->LocalToParentNormal = glm::inverseTranspose(this->LocalToParent);
@@ -98,25 +100,29 @@ void transform::CalculateLocalToWorldMatrix()
     }
     this->WorldToLocal = glm::inverse(this->LocalToWorld);
     this->LocalToWorldNormal = glm::inverseTranspose(this->LocalToWorld);
-    this->HasChanged=true;
+    this->HasChanged=true;  
 }
 
 void transform::SetParent(transform *Parent)
 {
-    this->Parent = Parent;
-    
-    v3f PositionDifference = this->GetWorldPosition() - Parent->GetWorldPosition();
-    this->LocalPosition = PositionDifference;
-        
-    v3f RotationDifference = glm::degrees(this->GetWorldRotation()) - glm::degrees(Parent->GetWorldRotation());
-    this->LocalRotation = RotationDifference;
 
     v3f ScaleDifference = this->GetWorldScale() / Parent->GetWorldScale();
     this->LocalScale = ScaleDifference;
+    
 
-    CalculateMatrices();
 
-    HasChanged=true;
+    quat ThisRotation = this->GetWorldRotation();
+    quat ParentRotation = Parent->GetWorldRotation();
+    this->LocalRotationQuat = glm::inverse(ParentRotation) * (ThisRotation);
+
+    v3f PositionDifference = this->GetWorldPosition() - Parent->GetWorldPosition();
+    this->LocalPosition = (glm::inverse(ParentRotation) * PositionDifference) * this->LocalScale;
+
+    this->Parent = Parent;
+
+    CalculateMatrices();  
+
+    HasChanged=true;    
 }
 
 void transform::SetModelMatrix(m4x4 Matrix)
@@ -141,6 +147,7 @@ void transform::SetLocalRotation(v3f LocalRotation)
 {
     this->MatrixBased=false;
     this->LocalRotation = LocalRotation;
+    this->LocalRotationQuat = glm::quat(glm::radians(this->LocalRotation));
     CalculateMatrices();
     HasChanged=true;
 }
@@ -182,16 +189,25 @@ v3f transform::GetWorldPosition()
     return v3f(this->LocalToWorld * v4f(0,0,0,1));
 }
 
-v3f transform::GetWorldRotation()
+quat transform::GetWorldRotation()
 {
-    glm::vec3 scale;
-    glm::quat rotation;
-    glm::vec3 translation;
-    glm::vec3 skew;
-    glm::vec4 perspective;
-    glm::decompose(LocalToWorld, scale, rotation, translation, skew,perspective);    
-    rotation=glm::conjugate(rotation);
-    return glm::eulerAngles(rotation);
+    std::vector<quat> Quaternions;
+    transform *Transform = this;
+    while(true)
+    {
+        Quaternions.push_back(Transform->LocalRotationQuat);
+        if(Transform->Parent != nullptr)
+        {
+            Transform = Transform->Parent;
+        }
+        else break;
+    }
+    quat Result = Quaternions[Quaternions.size()-1];
+    for(s32 i=Quaternions.size()-2; i>=0; i--)
+    {
+        Result *= Quaternions[i];
+    }
+    return Result;
 }
 
 v3f transform::GetWorldScale()

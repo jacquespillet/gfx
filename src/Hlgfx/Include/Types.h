@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 namespace hlgfx
 {
@@ -26,6 +27,7 @@ typedef glm::ivec2 v2i;
 typedef glm::ivec3 v3i;
 typedef glm::ivec4 v4i;
 typedef glm::mat4 m4x4;
+typedef glm::quat quat;
 
 
 static const u32 SceneUniformsBinding = 0;

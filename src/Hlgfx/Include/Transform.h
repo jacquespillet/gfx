@@ -23,6 +23,7 @@ struct transform
 
     v3f LocalPosition;
     v3f LocalRotation;
+    quat LocalRotationQuat;
     v3f LocalScale;
 
     // v3f PositionInParent;
@@ -56,7 +57,7 @@ struct transform
     void LookAt(v3f Position, v3f Target, v3f Up);
 
     v3f GetWorldPosition();
-    v3f GetWorldRotation();
+    quat GetWorldRotation();
     v3f GetWorldScale();
 
     b8 HasChanged=false;
