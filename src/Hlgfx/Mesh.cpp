@@ -1,7 +1,9 @@
 #include "Include/Mesh.h"
 #include "Include/Material.h"
 #include "Include/Context.h"
+#include "Include/Util.h"
 #include "gfx/Include/Context.h"
+#include <glm/ext.hpp>
 
 namespace hlgfx
 {
@@ -46,6 +48,48 @@ void mesh::OnRender(std::shared_ptr<camera> Camera)
     CommandBuffer->BindVertexBuffer(this->GeometryBuffers.VertexBuffer);
     CommandBuffer->BindIndexBuffer(this->GeometryBuffers.IndexBuffer, this->GeometryBuffers.Start, gfx::indexType::Uint32);
     CommandBuffer->DrawIndexed(this->GeometryBuffers.Start, this->GeometryBuffers.Count, 1);
+}
+
+std::vector<u8> mesh::Serialize()
+{
+    std::vector<u8> Result;
+
+    u32 Object3DType = (u32) object3DType::Mesh;
+    AddItem(Result, &Object3DType, sizeof(u32));
+    
+    u32 StringLength = strlen(this->Name) + 1;
+    AddItem(Result, &StringLength, sizeof(u32));
+    AddItem(Result, (void*)this->Name, StringLength);
+    
+    u32 VertexDataSize = this->GeometryBuffers.VertexData.size();
+    AddItem(Result, &VertexDataSize, sizeof(u32));
+    AddItem(Result, this->GeometryBuffers.VertexData.data(), this->GeometryBuffers.VertexData.size());
+    
+    u32 IndexDataSize = this->GeometryBuffers.IndexData.size();
+    AddItem(Result, &IndexDataSize, sizeof(u32));
+    AddItem(Result, this->GeometryBuffers.IndexData.data(), this->GeometryBuffers.IndexData.size());
+
+    std::vector<u8> MaterialData = this->Material->Serialize();
+    AddItem(Result, MaterialData.data(), MaterialData.size());
+
+    
+    AddItem(Result, glm::value_ptr(this->Transform.LocalPosition), sizeof(v3f));
+    AddItem(Result, glm::value_ptr(this->Transform.LocalRotation), sizeof(v3f));
+    AddItem(Result, glm::value_ptr(this->Transform.LocalScale), sizeof(v3f));
+
+    u32 NumChildren = this->Children.size();
+    AddItem(Result, &NumChildren, sizeof(u32));
+
+    for (sz i = 0; i < NumChildren; i++)
+    {
+        std::vector<u8> ChildBlob = this->Children[i]->Serialize();
+        u32 ChildrenSize = ChildBlob.size();
+        AddItem(Result, &ChildrenSize, sizeof(u32));
+        AddItem(Result, ChildBlob.data(), ChildBlob.size());
+    }
+
+
+    return Result;
 }
 
 

@@ -226,6 +226,7 @@ set (sourceCode ${sourceCode}
                 src/Hlgfx/Camera.cpp
                 src/Hlgfx/Scene.cpp
                 src/Hlgfx/CameraController.cpp
+                src/Hlgfx/Util.cpp
                 )
 
 ################################################

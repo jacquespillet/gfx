@@ -97,6 +97,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
 
     Singleton->Imgui = gfx::imgui::Initialize(Singleton->GfxContext, Singleton->Window, Singleton->SwapchainPass);
   
+  
     return Singleton;
 }
 
@@ -181,7 +182,7 @@ void context::OnMouseWheelChanged(f64 OffsetX, f64 OffsetY)
     this->MouseWheelY = OffsetY;
 }
 
-void context::DrawGUI()
+void context::DrawGuizmoGUI()
 {
     ImGui::SetNextWindowPos(ImVec2(40, 40), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(100, 100), ImGuiCond_Always);
@@ -201,6 +202,49 @@ void context::DrawGUI()
     }
     ImGui::End();
     ImGui::PopStyleColor();
+}
+
+void context::DrawMainMenuBar()
+{
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if(ImGui::MenuItem("Save"))
+            {
+                this->Scene->SaveToFile("Scene");
+            }
+            if(ImGui::MenuItem("Load"))
+            {
+                this->Scene->LoadFromFile("Scene");
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Edit"))
+        {
+            if (ImGui::BeginMenu("Add Object")) 
+            {
+                if(ImGui::MenuItem("Empty"))
+                {
+                     
+                }
+                if(ImGui::MenuItem("Quad"))
+                {
+
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+}
+
+void context::DrawGUI()
+{
+    DrawGuizmoGUI();
+    DrawMainMenuBar();
+
 
     this->Scene->DrawGUI();
 }

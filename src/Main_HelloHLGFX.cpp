@@ -36,8 +36,8 @@ struct application
 		Context->Scene->AddObject(Mesh);
 		// Mesh->Transform.SetLocalRotation(hlgfx::v3f(0, 45, 0));
 
-		std::shared_ptr<hlgfx::object3D> Obj = std::make_shared<hlgfx::object3D>("Obj0");
-		Context->Scene->AddObject(Obj);
+		// std::shared_ptr<hlgfx::object3D> Obj = std::make_shared<hlgfx::object3D>("Obj0");
+		// Context->Scene->AddObject(Obj);
 		// Obj->Transform.SetLocalRotation(hlgfx::v3f(45, 0, 0));
 		// Obj->Transform.SetLocalScale(hlgfx::v3f(2, 2, 2));
 		// std::shared_ptr<hlgfx::object3D> Obj1 = std::make_shared<hlgfx::object3D>("Obj1");

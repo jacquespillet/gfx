@@ -60,8 +60,6 @@ transform::transform()
     this->LocalToParent = m4x4(1);
     this->LocalToParentNormal = m4x4(1);
     this->ParentToLocal = m4x4(1);    
-
-    this->RotationOrder = rotationOrder::zxy;
 }
 
 void transform::CalculateMatrices()

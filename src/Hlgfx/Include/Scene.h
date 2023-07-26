@@ -17,6 +17,9 @@ struct scene : public object3D
     virtual void DrawGUI() override;
     void DrawNodeChildren(hlgfx::object3D *Object);
     void DrawSceneGUI();
+
+    void LoadFromFile(const char *FileName);
+    void SaveToFile(const char *FileName);
     std::shared_ptr<hlgfx::object3D> NodeClicked = nullptr;
     u32 GuiWidth = 400;
 };

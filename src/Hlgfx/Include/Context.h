@@ -73,6 +73,9 @@ struct context
 
    ImGuizmo::OPERATION CurrentGizmoOperation = (ImGuizmo::ROTATE);
    ImGuizmo::MODE CurrentGizmoMode = (ImGuizmo::WORLD);
+
+   void DrawGuizmoGUI();
+   void DrawMainMenuBar();
    
 };
 

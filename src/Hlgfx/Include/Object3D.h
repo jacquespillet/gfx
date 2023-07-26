@@ -9,6 +9,12 @@ namespace hlgfx
 {
 struct camera;
 
+enum class object3DType
+{
+    Object3d,
+    Mesh
+};
+
 struct object3D
 {
     object3D(const char *Name);
@@ -20,6 +26,8 @@ struct object3D
     object3D *Parent;
     std::vector<std::shared_ptr<object3D>> Children;
     transform Transform;
+
+    virtual std::vector<u8> Serialize();
 
     u32 RenderOrder=0;
     b8 FrustumCulled=false;
@@ -42,5 +50,7 @@ struct object3D
 
 
     b8 IsSelectedInGui = false;
+
+    static std::shared_ptr<object3D> Deserialize(std::vector<u8> &Serialized);
 };
 }

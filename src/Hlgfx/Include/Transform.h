@@ -38,8 +38,6 @@ struct transform
     m4x4 LocalToParentNormal;
     m4x4 ParentToLocal;
 
-    rotationOrder RotationOrder;
-
     void CalculateMatrices();
     void CalculateLocalToWorldMatrix();
 

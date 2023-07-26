@@ -1,6 +1,9 @@
 #include "Include/Object3D.h"
 #include "Include/Camera.h"
 #include "Include/Context.h"
+#include "Include/Util.h"
+#include "Include/Mesh.h"
+#include "Include/Material.h"
 #include <imgui.h>
 #include <ImGuizmo.h>
 #include <glm/ext.hpp>
@@ -194,6 +197,138 @@ void object3D::DrawGUI()
         }
 
         ImGui::EndTabBar();
+    }
+}
+
+
+std::vector<u8> object3D::Serialize()
+{
+    std::vector<u8> Result;
+    
+    u32 Object3DType = (u32) object3DType::Object3d;
+    AddItem(Result, &Object3DType, sizeof(u32));
+
+    u32 StringLength = strlen(this->Name) + 1;
+    AddItem(Result, &StringLength, sizeof(u32));
+    AddItem(Result, (void*)this->Name, StringLength);
+    
+    AddItem(Result, glm::value_ptr(this->Transform.LocalPosition), sizeof(v3f));
+    AddItem(Result, glm::value_ptr(this->Transform.LocalRotation), sizeof(v3f));
+    AddItem(Result, glm::value_ptr(this->Transform.LocalScale), sizeof(v3f));
+
+    u32 NumChildren = this->Children.size();
+    AddItem(Result, &NumChildren, sizeof(u32));
+
+    for (sz i = 0; i < NumChildren; i++)
+    {
+        std::vector<u8> ChildBlob = this->Children[i]->Serialize();
+        u32 ChildrenSize = ChildBlob.size();
+        AddItem(Result, &ChildrenSize, sizeof(u32));
+        AddItem(Result, ChildBlob.data(), ChildBlob.size());
+    }
+    
+    return Result;
+}
+
+void GetItem(std::vector<u8> &Blob, void *Dest, u32 &Cursor, sz Size)
+{
+    memcpy(Dest, Blob.data() + Cursor, Size);
+    Cursor += Size;
+}
+
+std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
+{
+    u32 Cursor = 0;
+    
+    u32 ObjectType;
+    GetItem(Serialized, &ObjectType, Cursor, sizeof(u32));
+
+    u32 NameLength;
+    GetItem(Serialized, &NameLength, Cursor, sizeof(u32));
+
+    if(ObjectType == (u32)object3DType::Object3d)
+    {
+        //TODO: Name
+        std::shared_ptr<object3D> Result = std::make_shared<object3D>("BLA");
+        
+        Result->Name = (char*)gfx::AllocateMemory(NameLength);
+        GetItem(Serialized, (void*)Result->Name, Cursor, NameLength);
+
+        v3f LocalPosition, LocalRotation, LocalScale;
+        GetItem(Serialized, glm::value_ptr(LocalPosition), Cursor, sizeof(v3f));
+        GetItem(Serialized, glm::value_ptr(LocalRotation), Cursor, sizeof(v3f));
+        GetItem(Serialized, glm::value_ptr(LocalScale), Cursor, sizeof(v3f));
+        Result->Transform.SetLocalPosition(LocalPosition);
+        Result->Transform.SetLocalRotation(LocalRotation);
+        Result->Transform.SetLocalScale(LocalScale);
+
+        u32 NumChildren;
+        GetItem(Serialized, &NumChildren, Cursor, sizeof(u32));
+
+        for (sz i = 0; i < NumChildren; i++)
+        {
+            u32 ChildSize;
+            GetItem(Serialized, &ChildSize, Cursor, sizeof(u32));
+            std::vector<u8> SerializedChild(ChildSize);
+            GetItem(Serialized, SerializedChild.data(), Cursor, ChildSize);
+
+            std::shared_ptr<object3D> Object = object3D::Deserialize(SerializedChild);
+            Result->AddObject(Object);
+        }
+        return Result;
+    }
+    else if(ObjectType == (u32) object3DType::Mesh)
+    {
+        std::shared_ptr<mesh> Result = std::make_shared<mesh>();
+
+        Result->Name = (char*)gfx::AllocateMemory(NameLength);
+        GetItem(Serialized, (void*)Result->Name, Cursor, NameLength);
+
+        u32 VertexDataSize;
+        GetItem(Serialized, &VertexDataSize, Cursor, sizeof(u32));
+        std::vector<u8> VertexData(VertexDataSize);
+        GetItem(Serialized, VertexData.data(), Cursor, VertexDataSize);
+        
+        u32 IndexDataSize;
+        GetItem(Serialized, &IndexDataSize, Cursor, sizeof(u32));
+        std::vector<u8> IndexData(IndexDataSize);
+        GetItem(Serialized, IndexData.data(), Cursor, IndexDataSize);
+
+        Result->GeometryBuffers = CreateGeometryFromBuffers(VertexData, IndexData);
+
+        u32 MaterialType;
+        GetItem(Serialized, &MaterialType, Cursor, sizeof(u32));
+        if(MaterialType == (u32)materialType::Unlit)
+        {
+            std::shared_ptr<unlitMaterial> Material = std::make_shared<unlitMaterial>();
+            GetItem(Serialized, glm::value_ptr(Material->UniformData.Color), Cursor, sizeof(v4f));
+            Result->Material = Material;
+        }
+        
+        
+        v3f LocalPosition, LocalRotation, LocalScale;
+        GetItem(Serialized, glm::value_ptr(LocalPosition), Cursor, sizeof(v3f));
+        GetItem(Serialized, glm::value_ptr(LocalRotation), Cursor, sizeof(v3f));
+        GetItem(Serialized, glm::value_ptr(LocalScale), Cursor, sizeof(v3f));
+        Result->Transform.SetLocalPosition(LocalPosition);
+        Result->Transform.SetLocalRotation(LocalRotation);
+        Result->Transform.SetLocalScale(LocalScale);
+
+        u32 NumChildren;
+        GetItem(Serialized, &NumChildren, Cursor, sizeof(u32));
+
+        for (sz i = 0; i < NumChildren; i++)
+        {
+            u32 ChildSize;
+            GetItem(Serialized, &ChildSize, Cursor, sizeof(u32));
+            std::vector<u8> SerializedChild(ChildSize);
+            GetItem(Serialized, SerializedChild.data(), Cursor, ChildSize);
+
+            std::shared_ptr<object3D> Object = object3D::Deserialize(SerializedChild);
+            Result->AddObject(Object);
+        }
+        return Result; 
+
     }
 }
 

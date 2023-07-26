@@ -6,6 +6,8 @@
 #include "Include/Material.h"
 #include <imgui.h>
 
+#include <fstream>
+
 namespace hlgfx
 {
 scene::scene() : object3D("Scene")
@@ -121,7 +123,7 @@ void scene::DrawSceneGUI()
             Payload->SetParent(ScenePtr);
         }
         ImGui::EndDragDropTarget();
-    }			
+    }
 
     if(NodeOpen)
     {
@@ -163,6 +165,61 @@ void scene::DrawGUI()
 
     this->GuiWidth = ImGui::GetWindowSize().x;
     ImGui::End();
+}
+
+void scene::LoadFromFile(const char *FileName)
+{
+    this->Children.clear();
+    this->Meshes.clear();
+    
+    std::ifstream InStream;
+    InStream.open(FileName, std::ios_base::binary);
+    if(!InStream.is_open())
+    {
+        printf("Could not open file %s", FileName);
+        assert(false);
+    }
+
+    u32 NumChildren;
+    InStream.read((char*)&NumChildren, sizeof(u32));
+
+    for(u32 i=0; i<NumChildren; i++)
+    {
+        u32 ChildSize;
+        InStream.read((char*)&ChildSize, sizeof(u32));
+        std::vector<u8> SerializedChild(ChildSize);
+        InStream.read((char*)SerializedChild.data(), ChildSize);
+        std::shared_ptr<object3D> Object3D = object3D::Deserialize(SerializedChild);
+
+
+
+        this->AddObject(Object3D);
+    }
+
+    InStream.close();
+}
+
+void scene::SaveToFile(const char *FileName)
+{
+    std::ofstream OutStream;
+    OutStream.open(FileName, std::ios_base::binary | std::ios_base::trunc);
+    if(!OutStream.is_open())
+    {
+        printf("Could not open file %s", FileName); 
+        assert(false);
+    }
+
+    u32 NumChildren = this->Children.size();
+    OutStream.write((char*)&NumChildren, sizeof(u32));
+    for(u32 i=0; i<NumChildren; i++)
+    {
+        std::vector<u8> SerializedChild = this->Children[i]->Serialize();
+        u32 ChildSize = SerializedChild.size();
+        OutStream.write((char*)&ChildSize, sizeof(u32));
+        OutStream.write((char*)SerializedChild.data(), SerializedChild.size());
+    }
+
+    OutStream.close();
 }
 
 }

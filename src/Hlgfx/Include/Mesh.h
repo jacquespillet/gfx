@@ -15,6 +15,7 @@ struct mesh : public object3D
     void SetVertexBuffer(gfx::vertexBufferHandle VertexBufferHandle);
 
     virtual void OnRender(std::shared_ptr<camera> Camera) override;
+    virtual std::vector<u8> Serialize() override;
 
     //Api data
     indexedGeometryBuffers GeometryBuffers;
