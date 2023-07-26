@@ -1,5 +1,9 @@
 #include "Include/Object3D.h"
+#include "Include/Camera.h"
+#include "Include/Context.h"
 #include <imgui.h>
+#include <ImGuizmo.h>
+#include <glm/ext.hpp>
 
 namespace hlgfx
 {
@@ -98,11 +102,32 @@ void object3D::OnEarlyUpdate()
     }
 }
 
+
 void object3D::OnBeforeRender(std::shared_ptr<camera> Camera)
 {
     for (sz i = 0; i < Children.size(); i++)
     {
         Children[i]->OnBeforeRender(Camera);
+    }
+    
+    if(IsSelectedInGui)
+    {
+        m4x4 ModelMatrix = this->Transform.LocalToWorld;
+    
+        ImGuiIO& io = ImGui::GetIO();
+        ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+        ImGuizmo::Manipulate(glm::value_ptr(Camera->Data.ViewMatrix), glm::value_ptr(Camera->Data.ProjectionMatrix), context::Get()->CurrentGizmoOperation, context::Get()->CurrentGizmoMode, glm::value_ptr(ModelMatrix), NULL, NULL);
+
+        //Remove the localToWorld component
+        ModelMatrix = glm::inverse(this->Transform.Parent->LocalToWorld) * ModelMatrix;
+
+        //Decompose the matrix
+        v3f matrixTranslation, matrixRotation, matrixScale;
+        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(ModelMatrix), glm::value_ptr(matrixTranslation), glm::value_ptr(matrixRotation), glm::value_ptr(matrixScale));
+        //Set local properties
+        this->Transform.SetLocalPosition(matrixTranslation);
+        this->Transform.SetLocalRotation(matrixRotation);
+        this->Transform.SetLocalScale(matrixScale);
     }
 }
 
@@ -112,6 +137,9 @@ void object3D::OnRender(std::shared_ptr<camera> Camera)
     {
         Children[i]->OnRender(Camera);
     }
+
+    ImGuiIO& io = ImGui::GetIO();
+    
 }
 
 void object3D::OnUpdate()

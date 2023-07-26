@@ -109,8 +109,6 @@ void transform::SetParent(transform *Parent)
     v3f ScaleDifference = this->GetWorldScale() / Parent->GetWorldScale();
     this->LocalScale = ScaleDifference;
     
-
-
     quat ThisRotation = this->GetWorldRotation();
     quat ParentRotation = Parent->GetWorldRotation();
     this->LocalRotationQuat = glm::inverse(ParentRotation) * (ThisRotation);

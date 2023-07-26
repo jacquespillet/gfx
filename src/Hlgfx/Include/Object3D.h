@@ -39,5 +39,8 @@ struct object3D
     virtual void OnAfterRender(std::shared_ptr<camera> Camera);
 
     virtual void DrawGUI();
+
+
+    b8 IsSelectedInGui = false;
 };
 }

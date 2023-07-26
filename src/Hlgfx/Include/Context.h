@@ -7,6 +7,8 @@
 
 #include <memory>
 #include <unordered_map>
+#include <imgui.h>
+#include <ImGuizmo.h>
 
 namespace hlgfx
 {
@@ -68,6 +70,10 @@ struct context
     b8 MouseWheelChanged=false;
     f64 MouseWheelX = 0;
     f64 MouseWheelY = 0;
+
+   ImGuizmo::OPERATION CurrentGizmoOperation = (ImGuizmo::ROTATE);
+   ImGuizmo::MODE CurrentGizmoMode = (ImGuizmo::WORLD);
+   
 };
 
 }

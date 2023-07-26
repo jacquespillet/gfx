@@ -59,7 +59,9 @@ void scene::DrawNodeChildren(hlgfx::object3D *Object)
 
         if(ImGui::IsItemClicked())
         {
+            if(NodeClicked != nullptr) NodeClicked->IsSelectedInGui=false;
             NodeClicked = Object->Children[i];
+            NodeClicked->IsSelectedInGui=true;
         }
 
         //Drag and drop
@@ -101,6 +103,7 @@ void scene::DrawSceneGUI()
     if(ImGui::IsItemClicked())
     {
         NodeClicked = ScenePtr;
+        NodeClicked->IsSelectedInGui=false;
     }
 
     //Drag and drop

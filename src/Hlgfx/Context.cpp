@@ -2,7 +2,6 @@
 #include "Include/Scene.h"
 #include <iostream>
 #include "Gfx/Include/CommandBuffer.h"
-#include <imgui.h>
 
 namespace hlgfx
 {
@@ -119,7 +118,7 @@ void context::StartFrame()
     CommandBuffer->SetScissor(0, 0, Width, Height);
 
     Imgui->StartFrame();
-    IsInteractingGUI = (ImGui::IsAnyItemHovered() || ImGui::IsAnyItemActive() || ImGui::IsAnyItemFocused() || ImGui::IsAnyWindowHovered());
+    IsInteractingGUI = (ImGui::IsAnyItemHovered() || ImGui::IsAnyItemActive() || ImGui::IsAnyItemFocused() || ImGui::IsAnyWindowHovered() || ImGuizmo::IsUsingAny());
 
     this->Scene->OnEarlyUpdate();
 
@@ -184,6 +183,25 @@ void context::OnMouseWheelChanged(f64 OffsetX, f64 OffsetY)
 
 void context::DrawGUI()
 {
+    ImGui::SetNextWindowPos(ImVec2(40, 40), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(100, 100), ImGuiCond_Always);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.3, 0.3, 0.3, 0.3));
+    ImGui::Begin("Guizmo", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoTitleBar);
+    if (ImGui::Button("Translate"))
+        CurrentGizmoOperation = ImGuizmo::TRANSLATE;
+    if (ImGui::Button("Rotate"))
+        CurrentGizmoOperation = ImGuizmo::ROTATE;
+    if (ImGui::Button("Scale"))
+        CurrentGizmoOperation = ImGuizmo::SCALE;
+    
+    b8 IsLocal = CurrentGizmoMode == ImGuizmo::LOCAL;
+    if(ImGui::Checkbox("Local", &IsLocal))
+    {
+        CurrentGizmoMode = IsLocal ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
+    }
+    ImGui::End();
+    ImGui::PopStyleColor();
+
     this->Scene->DrawGUI();
 }
 
