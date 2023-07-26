@@ -9,9 +9,10 @@ namespace hlgfx
 
 struct orbitCameraController : public object3D
 {
-    orbitCameraController(std::shared_ptr<camera> Camera);
-    std::shared_ptr<camera> Camera;
+    orbitCameraController(camera *Camera);
+    camera *Camera;
 
+    void Recalculate();
     virtual void OnUpdate() override;
 
     f32 Theta = 0.0f;

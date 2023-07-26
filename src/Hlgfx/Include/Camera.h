@@ -5,6 +5,8 @@
 
 namespace hlgfx
 {
+struct orbitCameraController;
+
 struct camera : public object3D
 {
     camera(f32 FOV, f32 AspectRatio, f32 NearClip = 0.01f, f32 FarClip = 100.0f);
@@ -23,6 +25,13 @@ struct camera : public object3D
 
     void RecalculateMatrices();
 
+    void SetLocalPosition(v3f LocalPosition);
+    void SetLocalRotation(v3f LocalRotation);
+    void SetLocalScale(v3f LocalScale);
+
+    
+    std::shared_ptr<hlgfx::orbitCameraController> Controls;
+    
     gfx::bufferHandle UniformBuffer;
     std::shared_ptr<gfx::uniformGroup> Uniforms;
 };

@@ -5,16 +5,18 @@
 namespace hlgfx
 {
 
-orbitCameraController::orbitCameraController(std::shared_ptr<camera> Camera) : object3D("CameraController")
+orbitCameraController::orbitCameraController(camera *Camera) : object3D("CameraController")
 {
     this->Camera = Camera;
+    Recalculate();
+}
 
-
+void orbitCameraController::Recalculate()
+{
     v3f Position = this->Camera->Transform.LocalPosition - this->Target;
     this->Distance = std::sqrt(Position.x * Position.x + Position.y * Position.y + Position.z * Position.z);
     this->Theta = std::acos(Position.y / this->Distance);
     this->Phi = std::atan2(Position.z, Position.x);
-
 }
 
 void orbitCameraController::OnUpdate()

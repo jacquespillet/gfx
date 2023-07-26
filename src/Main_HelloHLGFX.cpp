@@ -25,11 +25,8 @@ struct application
 		Context = hlgfx::context::Initialize();
 		
 		Camera = std::make_shared<hlgfx::camera>(60, (float)1280 / (float)720);
-		Camera->Transform.SetLocalPosition(hlgfx::v3f(0, 0, 3));
-		Camera->RecalculateMatrices();
-
-		std::shared_ptr<hlgfx::orbitCameraController> OrbitControls = std::make_shared<hlgfx::orbitCameraController>(Camera);
-		Context->Scene->AddObject(OrbitControls);
+		Camera->SetLocalPosition(hlgfx::v3f(0, 0, 3));
+		
 
 		Mesh = std::make_shared<hlgfx::mesh>();
 		Mesh->GeometryBuffers = hlgfx::GetTriangleGeometry();

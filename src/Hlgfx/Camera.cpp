@@ -1,12 +1,15 @@
 #include "gfx/Include/Context.h"
 #include "Include/Camera.h"
 #include "Include/Context.h"
+#include "Include/CameraController.h"
 #include <glm/ext.hpp>
 
 namespace hlgfx
 {
 camera::camera(f32 FOV, f32 AspectRatio, f32 NearClip, f32 FarClip) : object3D("Camera")
 {
+    this->Controls = std::make_shared<orbitCameraController>(this);
+
     gfx::context *LowLevelContext = gfx::context::Get();
     context *HighLevelContext = context::Get();
     
@@ -29,8 +32,27 @@ camera::camera(f32 FOV, f32 AspectRatio, f32 NearClip, f32 FarClip) : object3D("
         LowLevelContext->BindUniformsToPipeline(this->Uniforms, Pipeline.second, CameraUniformsBinding);
     }
     this->Uniforms->Update();
+
 }
 
+void camera::SetLocalPosition(v3f LocalPosition)
+{
+    this->Transform.SetLocalPosition(LocalPosition);
+    RecalculateMatrices();
+    this->Controls->Recalculate();
+}
+void camera::SetLocalRotation(v3f LocalRotation)
+{
+    this->Transform.SetLocalRotation(LocalRotation);
+    RecalculateMatrices();
+    this->Controls->Recalculate();
+}
+void camera::SetLocalScale(v3f LocalScale)
+{
+    this->Transform.SetLocalScale(LocalScale);
+    RecalculateMatrices();
+    this->Controls->Recalculate();
+}
 
 
 void camera::RecalculateMatrices()

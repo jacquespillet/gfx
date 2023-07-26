@@ -1,5 +1,6 @@
 #include "Include/Context.h"
 #include "Include/Scene.h"
+#include "Include/CameraController.h"
 #include <iostream>
 #include "Gfx/Include/CommandBuffer.h"
 
@@ -128,6 +129,8 @@ void context::StartFrame()
 
 void context::Update(std::shared_ptr<camera> Camera)
 {
+
+    Camera->Controls->OnUpdate();
     this->Scene->OnUpdate();
     this->Scene->OnBeforeRender(Camera);
     this->Scene->OnRender(Camera);
