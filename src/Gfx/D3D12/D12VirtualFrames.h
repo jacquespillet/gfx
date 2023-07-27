@@ -1,10 +1,12 @@
 #pragma once
-#include "D12Swapchain.h"
+#include "D12Common.h"
+#include <memory>
+#include <wrl.h>
+using namespace Microsoft::WRL;
 
 namespace gfx
 {
 struct commandBuffer;
-
 struct virtualFramesProvider
 {
     void Init();

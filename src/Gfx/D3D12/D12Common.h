@@ -1,6 +1,7 @@
 #pragma once
-#include <iostream>
+#include "../Include/Types.h"
 #include <windows.h>
+#include <assert.h>
 
 #define GET_CONTEXT(data, context) \
     std::shared_ptr<d3d12Data> data = std::static_pointer_cast<d3d12Data>(context->ApiContextData); \
@@ -12,7 +13,6 @@ namespace gfx
         if (FAILED(hr))
         {
             assert(false);
-            std::cout << "Error " << std::endl;
         }
     }
 

@@ -1,9 +1,5 @@
 #pragma once
 
-#include "../Include/Uniform.h"
-#include "../Include/Types.h"
-#include <unordered_map>
-
 namespace gfx
 {
 

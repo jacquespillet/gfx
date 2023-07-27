@@ -1,3 +1,6 @@
+#include "../Include/Context.h"
+#include "../Include/Framebuffer.h"
+
 #include "D12Framebuffer.h"
 #include "D12Common.h"
 #include "D12Context.h"

@@ -872,6 +872,8 @@ void context::EndFrame()
 {
     GET_CONTEXT(D12Data, this);
     D12Data->VirtualFrames.EndFrame();
+    
+    ProcessDeletionQueue();
 }
 
 void context::StartFrame()

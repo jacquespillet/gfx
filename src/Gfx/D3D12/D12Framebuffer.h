@@ -1,7 +1,5 @@
 #pragma once
-
-#include "../Include/Context.h"
-#include "../Include/Framebuffer.h"
+#include "../Include/Types.h"
 
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -10,6 +8,7 @@ using namespace Microsoft::WRL;
 
 namespace gfx
 {
+struct framebuffer;
 
 struct d3d12FramebufferData
 {
