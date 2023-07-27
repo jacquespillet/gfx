@@ -18,8 +18,6 @@ struct application
 	std::shared_ptr<hlgfx::camera> Camera;
 	std::shared_ptr<hlgfx::mesh> Mesh;
 
-	//TODO: Take that out
-	
 	void Init()
 	{
 		Context = hlgfx::context::Initialize();

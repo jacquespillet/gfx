@@ -98,6 +98,7 @@ struct context
 
     void CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz Offset);
 
+
     void DestroyCommandBuffer(commandBuffer* Handle);
     void DestroySwapchain(swapchain *Swapchain);
     void DestroyPipeline(pipelineHandle Pipeline);
@@ -106,6 +107,24 @@ struct context
     void DestroyVertexBuffer(vertexBufferHandle Buffer);
     void DestroyImage(imageHandle Buffer);
     void DestroySwapchain();
+
+    struct resourceDeletion
+    {
+        u32 Handle;
+        enum class type 
+        {
+            Buffer,
+            VertexBuffer,
+            Image,
+            Pipeline,
+            Framebuffer
+        } Type;
+    };
+    std::vector<resourceDeletion> ResourceDeletionQueue;
+    void QueueDestroyBuffer(bufferHandle Buffer);
+    void QueueDestroyVertexBuffer(vertexBufferHandle Buffer);
+    void QueueDestroyPipeline(pipelineHandle Pipeline);
+    void ProcessDeletionQueue();
 
     buffer *GetBuffer(bufferHandle Handle);
     vertexBuffer *GetVertexBuffer(vertexBufferHandle Handle);

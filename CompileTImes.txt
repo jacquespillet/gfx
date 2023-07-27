@@ -1,0 +1,13 @@
+Compile times b4 Optimize:
+
+D12
+4:20
+
+VK
+GL
+
+Compile times adter optimize :
+
+D12
+VK
+GL

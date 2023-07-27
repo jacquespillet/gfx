@@ -31,9 +31,8 @@ void unlitMaterial::SetCullMode(gfx::cullMode Mode)
 unlitMaterial::~unlitMaterial()  
 {
     printf("Destroying Material \n");
-    gfx::context::Get()->WaitIdle();
-    gfx::context::Get()->DestroyBuffer(this->UniformBuffer);
-    gfx::context::Get()->DestroyPipeline(this->PipelineHandle);
+    gfx::context::Get()->QueueDestroyBuffer(this->UniformBuffer);
+    gfx::context::Get()->QueueDestroyPipeline(this->PipelineHandle);
 }
 
 std::vector<u8> unlitMaterial::Serialize() 

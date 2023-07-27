@@ -163,6 +163,7 @@ set(d3d12Code
         src/Gfx/D3D12/D12Context.cpp
         src/Gfx/D3D12/D12VirtualFrames.cpp
         src/Gfx/D3D12/D12CommandBuffer.cpp
+        src/Gfx/D3D12/D12Swapchain.cpp
         src/Gfx/D3D12/D12Framebuffer.cpp
         src/Gfx/D3D12/D12Mapping.cpp
         src/Gfx/D3D12/D12Buffer.cpp
@@ -354,7 +355,13 @@ if(${BUILD_ALL} EQUAL 1)
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
 
-        else()
+        # ModelViewer
+        set(targetName Main)
+        set(mainCode ${sourceCode} src/Main_HelloHLGFX.cpp)
+        add_executable(${targetName} ${mainCode})
+        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
+        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
+else()
         
         # Cubemap
         set(targetName Main)

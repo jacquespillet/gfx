@@ -88,6 +88,10 @@ void object3D::SetParent(std::shared_ptr<object3D> Parent)
 
 void object3D::AddObject(std::shared_ptr<object3D> Object)
 {
+    if(Object->Parent != nullptr)
+    {
+        Object->DeleteChild(Object);
+    }
     //TODO: Case where object already has a parent (needs to be removed)
     context::Get()->Scene->AddMesh(Object);
 
@@ -259,7 +263,6 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
 
     if(ObjectType == (u32)object3DType::Object3d)
     {
-        //TODO: Name
         std::shared_ptr<object3D> Result = std::make_shared<object3D>("BLA");
         
         Result->Name.resize(NameLength);
@@ -283,7 +286,7 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
             std::shared_ptr<object3D> Object = object3D::Deserialize(SerializedChild);
             Result->AddObject(Object);
         }
-        return Result;
+        return Result;  
     }
     else if(ObjectType == (u32) object3DType::Mesh)
     {

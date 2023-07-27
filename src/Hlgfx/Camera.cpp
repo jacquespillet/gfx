@@ -67,7 +67,6 @@ camera::~camera()
 {
     //TODO: Far from ideal ! 
     //Have a deletionQueue in context that deletes everything at the end of each frame.
-    gfx::context::Get()->WaitIdle();
-    gfx::context::Get()->DestroyBuffer(this->UniformBuffer);
+    gfx::context::Get()->QueueDestroyBuffer(this->UniformBuffer);
 }
 }

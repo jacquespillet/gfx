@@ -91,7 +91,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     ContextInitialize.Debug = true;
     Singleton->GfxContext = gfx::context::Initialize(ContextInitialize, *Singleton->Window);
 
-    Singleton->Swapchain = Singleton->GfxContext->CreateSwapchain(Width, Height);
+    Singleton->Swapchain = Singleton->GfxContext->CreateSwapchain(Singleton->Width, Singleton->Height);
     Singleton->SwapchainPass = Singleton->GfxContext->GetDefaultRenderPass();
 
     Singleton->Scene = std::make_shared<scene>();
@@ -156,6 +156,8 @@ void context::OnResize(u32 Width, u32 Height)
 
 void context::OnMouseClicked(app::mouseButton Button, bool Clicked)
 {
+    Imgui->OnClick(Button, Clicked);
+    
     if(Clicked) 
     {
         this->MouseClicked=true;
@@ -310,6 +312,8 @@ void context::Cleanup()
     //Clears the scene, effectively dereferences all the pointers to call their destructors before we clean up
     this->Scene->Children = std::vector<std::shared_ptr<object3D>>();
     this->Scene->Meshes = std::unordered_map<gfx::pipelineHandle, std::vector<std::shared_ptr<mesh>>>();
+    
+    GfxContext->ProcessDeletionQueue();
 
     for(auto &Pipeline : this->Pipelines)
     {
