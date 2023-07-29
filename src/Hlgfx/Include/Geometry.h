@@ -16,17 +16,21 @@ struct vertex
 
 struct indexedGeometryBuffers
 {
-    gfx::vertexBufferHandle VertexBuffer;
-    gfx::bufferHandle IndexBuffer;
-    u32 Start, Count;
+    indexedGeometryBuffers() = default;
+    gfx::vertexBufferHandle VertexBuffer = gfx::InvalidHandle;
+    gfx::bufferHandle IndexBuffer = gfx::InvalidHandle;
+    u32 Start = 0;
+    u32 Count = 0;
 
-    std::vector<u8> VertexData;
-    std::vector<u8> IndexData;
+    std::vector<vertex> VertexData;
+    std::vector<u32> IndexData;
+
+    void BuildBuffers();
 };
 
 
-indexedGeometryBuffers GetTriangleGeometry();
+std::shared_ptr<indexedGeometryBuffers>  GetTriangleGeometry();
 
-indexedGeometryBuffers CreateGeometryFromBuffers(std::vector<u8> &VertexBuffer, std::vector<u8> &IndexBuffer);
+std::shared_ptr<indexedGeometryBuffers>  CreateGeometryFromBuffers(void *VertexBufferData, sz VertexBufferSize, void *IndexBufferData, sz IndexBufferSize);
 
 }

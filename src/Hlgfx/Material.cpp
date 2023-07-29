@@ -12,7 +12,9 @@ unlitMaterial::unlitMaterial()
 
     this->UniformBuffer = Context->CreateBuffer(sizeof(materialData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
     this->Uniforms = std::make_shared<gfx::uniformGroup>();
-    this->Uniforms->Reset().AddUniformBuffer(MaterialUniformsBinding, this->UniformBuffer);
+    this->Uniforms->Reset()
+                  .AddUniformBuffer(MaterialUniformsBinding, this->UniformBuffer)
+                  .AddTexture(MaterialUniformsBinding+1, gfx::InvalidHandle);
 
     Context->BindUniformsToPipeline(this->Uniforms, this->PipelineHandle, MaterialUniformsBinding);
     Uniforms->Update();
@@ -28,11 +30,23 @@ void unlitMaterial::SetCullMode(gfx::cullMode Mode)
     //Rebuild pipeline and replace the handle
 }
 
+void unlitMaterial::SetDiffuseTexture(std::shared_ptr<gfx::imageHandle> Texture)
+{
+    this->DiffuseTexture = Texture;
+    this->Uniforms->Uniforms[1].ResourceHandle = *Texture.get();
+    this->Uniforms->Update();
+}
+
 unlitMaterial::~unlitMaterial()  
 {
     printf("Destroying Material \n");
     gfx::context::Get()->QueueDestroyBuffer(this->UniformBuffer);
     gfx::context::Get()->QueueDestroyPipeline(this->PipelineHandle);
+    if (this->DiffuseTexture.use_count() == 1)
+    {
+        gfx::context::Get()->QueueDestroyImage(*this->DiffuseTexture.get());
+    }
+    this->DiffuseTexture = nullptr;
 }
 
 std::vector<u8> unlitMaterial::Serialize() 

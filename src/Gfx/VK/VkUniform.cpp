@@ -36,7 +36,8 @@ uniformGroup & uniformGroup::Update()
         {
             descriptorInfo &DescriptorInfo = VkUniformData->DescriptorInfos[Pipeline->Name];
             if(!VkUniformData->DescriptorInfos[Pipeline->Name].DescriptorSetLayout->UsedBindings[Uniforms[i].Binding]) continue;
-            
+            if(Uniforms[i].ResourceHandle == InvalidHandle) continue;
+
             vk::WriteDescriptorSet DescriptorWrite;
             DescriptorWrite.setDstSet(VkUniformData->DescriptorInfos[Pipeline->Name].DescriptorSet)
                                 .setDstBinding(Uniforms[i].Binding)

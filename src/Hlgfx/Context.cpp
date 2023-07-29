@@ -312,6 +312,7 @@ void context::Cleanup()
     //Clears the scene, effectively dereferences all the pointers to call their destructors before we clean up
     this->Scene->Children = std::vector<std::shared_ptr<object3D>>();
     this->Scene->Meshes = std::unordered_map<gfx::pipelineHandle, std::vector<std::shared_ptr<mesh>>>();
+    this->Scene->NodeClicked = nullptr;
     
     GfxContext->ProcessDeletionQueue();
 

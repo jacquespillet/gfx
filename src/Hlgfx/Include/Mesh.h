@@ -18,7 +18,7 @@ struct mesh : public object3D
     virtual std::vector<u8> Serialize() override;
 
     //Api data
-    indexedGeometryBuffers GeometryBuffers;
+    std::shared_ptr<indexedGeometryBuffers> GeometryBuffers;
 
     struct uniformData
     {

@@ -59,6 +59,10 @@ include_directories(${GLM_INC_DIR})
 set(STB_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/stb)
 include_directories(${STB_INC_DIR})
 
+# # tinygltf
+set(TINYGLTF_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/tinygltf)
+include_directories(${TINYGLTF_INC_DIR})
+
 
 # Glfw
 set(GLFW_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/build/install/include)
@@ -236,6 +240,7 @@ set (sourceCode ${sourceCode}
                 src/Hlgfx/Scene.cpp
                 src/Hlgfx/CameraController.cpp
                 src/Hlgfx/Util.cpp
+                src/Hlgfx/Loaders/GLTF.cpp
                 )
 
 ################################################

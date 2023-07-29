@@ -124,6 +124,7 @@ struct context
     void QueueDestroyBuffer(bufferHandle Buffer);
     void QueueDestroyVertexBuffer(vertexBufferHandle Buffer);
     void QueueDestroyPipeline(pipelineHandle Pipeline);
+    void QueueDestroyImage(imageHandle Image);
     void ProcessDeletionQueue();
 
     buffer *GetBuffer(bufferHandle Handle);

@@ -14,6 +14,7 @@ namespace hlgfx
 object3D::object3D(const char *Name)
 {
     this->Name = Name;
+    this->Parent = nullptr;
 }
 
 
@@ -305,7 +306,7 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
         std::vector<u8> IndexData(IndexDataSize);
         GetItem(Serialized, IndexData.data(), Cursor, IndexDataSize);
 
-        Result->GeometryBuffers = CreateGeometryFromBuffers(VertexData, IndexData);
+        Result->GeometryBuffers = CreateGeometryFromBuffers(VertexData.data(), VertexData.size(), IndexData.data(), IndexData.size());
 
         u32 MaterialType;
         GetItem(Serialized, &MaterialType, Cursor, sizeof(u32));

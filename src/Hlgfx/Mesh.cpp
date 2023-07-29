@@ -11,8 +11,7 @@ namespace hlgfx
 mesh::mesh() : object3D("Mesh")
 {
     this->Material = nullptr;
-    this->GeometryBuffers.IndexBuffer = gfx::InvalidHandle;
-    this->GeometryBuffers.VertexBuffer = gfx::InvalidHandle;
+    this->GeometryBuffers = nullptr;
 
     this->UniformBuffer = gfx::context::Get()->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
     this->Uniforms = std::make_shared<gfx::uniformGroup>();
@@ -45,9 +44,9 @@ void mesh::OnRender(std::shared_ptr<camera> Camera)
     CommandBuffer->BindUniformGroup(this->Uniforms, ModelUniformsBinding);
     CommandBuffer->BindUniformGroup(this->Material->Uniforms, MaterialUniformsBinding);
     
-    CommandBuffer->BindVertexBuffer(this->GeometryBuffers.VertexBuffer);
-    CommandBuffer->BindIndexBuffer(this->GeometryBuffers.IndexBuffer, this->GeometryBuffers.Start, gfx::indexType::Uint32);
-    CommandBuffer->DrawIndexed(this->GeometryBuffers.Start, this->GeometryBuffers.Count, 1);
+    CommandBuffer->BindVertexBuffer(this->GeometryBuffers->VertexBuffer);
+    CommandBuffer->BindIndexBuffer(this->GeometryBuffers->IndexBuffer, this->GeometryBuffers->Start, gfx::indexType::Uint32);
+    CommandBuffer->DrawIndexed(this->GeometryBuffers->Start, this->GeometryBuffers->Count, 1);
 }
 
 std::vector<u8> mesh::Serialize()
@@ -61,13 +60,13 @@ std::vector<u8> mesh::Serialize()
     AddItem(Result, &StringLength, sizeof(u32));
     AddItem(Result, (void*)this->Name.data(), StringLength);
     
-    u32 VertexDataSize = this->GeometryBuffers.VertexData.size();
+    u32 VertexDataSize = this->GeometryBuffers->VertexData.size();
     AddItem(Result, &VertexDataSize, sizeof(u32));
-    AddItem(Result, this->GeometryBuffers.VertexData.data(), this->GeometryBuffers.VertexData.size());
+    AddItem(Result, this->GeometryBuffers->VertexData.data(), this->GeometryBuffers->VertexData.size());
     
-    u32 IndexDataSize = this->GeometryBuffers.IndexData.size();
+    u32 IndexDataSize = this->GeometryBuffers->IndexData.size();
     AddItem(Result, &IndexDataSize, sizeof(u32));
-    AddItem(Result, this->GeometryBuffers.IndexData.data(), this->GeometryBuffers.IndexData.size());
+    AddItem(Result, this->GeometryBuffers->IndexData.data(), this->GeometryBuffers->IndexData.size());
 
     std::vector<u8> MaterialData = this->Material->Serialize();
     AddItem(Result, MaterialData.data(), MaterialData.size());
@@ -95,8 +94,11 @@ mesh::~mesh()
 {
     printf("Destroying Mesh\n");
     gfx::context::Get()->QueueDestroyBuffer(this->UniformBuffer);
-    gfx::context::Get()->QueueDestroyBuffer(this->GeometryBuffers.IndexBuffer);
-    gfx::context::Get()->QueueDestroyVertexBuffer(this->GeometryBuffers.VertexBuffer);
+    if(this->GeometryBuffers.use_count() == 1)
+    {
+        gfx::context::Get()->QueueDestroyBuffer(this->GeometryBuffers->IndexBuffer);
+        gfx::context::Get()->QueueDestroyVertexBuffer(this->GeometryBuffers->VertexBuffer);
+    }
 }
 
 

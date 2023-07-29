@@ -28,6 +28,8 @@ DECLARE_UNIFORM_BUFFER(3, 3, Material)
     vec4 BaseColor;
 };
 
+DECLARE_UNIFORM_TEXTURE(3, 4, DiffuseTexture);
+
 
 /////////////////////////////////
 //////////VERTEX/////////////////
@@ -57,7 +59,7 @@ layout(location = 0) out vec4 outputColor;
 
 void main() 
 {
-    outputColor = vec4(Input.FragUV, 0, 1) + BaseColor;
+    outputColor =  BaseColor + texture(DiffuseTexture, Input.FragUV);
 }
 
 #endif

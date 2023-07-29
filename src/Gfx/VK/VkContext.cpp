@@ -504,7 +504,7 @@ void context::OnResize(u32 NewWidth, u32 NewHeight)
 }
 
 
-bufferHandle CreateVertexBufferStream(f32 *Values, sz Count, sz Stride, const std::vector<vertexInputAttribute> &Attributes)
+bufferHandle CreateVertexBufferStream(void *Values, sz Count, sz Stride, const std::vector<vertexInputAttribute> &Attributes)
 {
     context *Context = context::Get();
 
@@ -528,7 +528,7 @@ bufferHandle CreateVertexBufferStream(f32 *Values, sz Count, sz Stride, const st
 
     CommandBuffer->Begin();
 
-    auto VertexAllocation = StageBuffer->Submit((uint8_t*)Values, (u32)Count * sizeof(f32));
+    auto VertexAllocation = StageBuffer->Submit((uint8_t*)Values, (u32)Count);
 
     Buffer->Init(VertexAllocation.Size, 1, gfx::bufferUsage::VertexBuffer, gfx::memoryUsage::GpuOnly);
   

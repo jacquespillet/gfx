@@ -106,6 +106,12 @@ void transform::CalculateLocalToWorldMatrix()
     this->Matrices.WorldToLocal = glm::inverse(this->Matrices.LocalToWorld);
     this->Matrices.LocalToWorldNormal = glm::inverseTranspose(this->Matrices.LocalToWorld);
     this->HasChanged=true;  
+
+    for (sz i = 0; i < this->Children.size(); i++)
+    {
+        this->Children[i]->CalculateLocalToWorldMatrix();
+    }
+    
 }
 
 void transform::SetParent(transform *Parent)

@@ -44,6 +44,10 @@ void buffer::Init(size_t ByteSize, sz Stride, bufferUsage::value Usage, memoryUs
     //Allocate with vma
     GET_API_DATA(VkBufferData, vkBufferData, this);
     VkBufferData->Allocation = gfx::AllocateBuffer(BufferCreateInfo, MemoryUsage, &VkBufferData->Handle);    
+    
+    GET_CONTEXT(VkData, context::Get());
+    VmaAllocationInfo AllocInfo;
+    vmaGetAllocationInfo(VkData->Allocator, VkBufferData->Allocation, &AllocInfo);
 }
 
 u8 *buffer::MapMemory()
@@ -98,7 +102,15 @@ void buffer::CopyData(const uint8_t *Data, size_t ByteSize, size_t Offset)
     if(this->MappedData == nullptr)
     {
         (void)this->MapMemory();
+
+#if 0
         std::memcpy((void*)(this->MappedData + Offset), (const void*)Data, ByteSize);
+#else
+        for(sz i=0; i<ByteSize; i++)
+        {
+            std::memcpy((void*)(this->MappedData + Offset + i), (const void*)(Data + i), 1);
+        }
+#endif
         this->FlushMemory(ByteSize, Offset);
         this->UnmapMemory();
     }
@@ -124,7 +136,7 @@ void stageBuffer::Init(sz Size)
     BufferHandle = context::Get()->CreateBuffer(Size, bufferUsage::TransferSource, memoryUsage::CpuToGpu);    
     buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
     this->CurrentOffset=0;
-    Buffer->MapMemory();
+    // Buffer->MapMemory();
 }
 
 stageBuffer::allocation stageBuffer::Submit(const uint8_t *Data, u32 ByteSize)

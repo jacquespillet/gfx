@@ -28,6 +28,11 @@ struct unlitMaterial : public material
   
     virtual void SetCullMode(gfx::cullMode Mode);
     virtual std::vector<u8> Serialize() override;
+
+    void SetDiffuseTexture(std::shared_ptr<gfx::imageHandle> Texture);
+    
+    std::shared_ptr<gfx::imageHandle> DiffuseTexture;
+
     struct materialData
     {
         v4f Color;

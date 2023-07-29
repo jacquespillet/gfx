@@ -50,6 +50,10 @@ void context::QueueDestroyPipeline(pipelineHandle Pipeline)
 {
     this->ResourceDeletionQueue.push_back({Pipeline, resourceDeletion::type::Pipeline});
 }
+void context::QueueDestroyImage(imageHandle Image)
+{
+    this->ResourceDeletionQueue.push_back({Image, resourceDeletion::type::Image});
+}
 
 void context::ProcessDeletionQueue()
 {
@@ -66,6 +70,10 @@ void context::ProcessDeletionQueue()
         else if(this->ResourceDeletionQueue[i].Type == resourceDeletion::type::Pipeline)
         {
             this->DestroyPipeline(this->ResourceDeletionQueue[i].Handle);
+        } 
+        else if(this->ResourceDeletionQueue[i].Type == resourceDeletion::type::Image)
+        {
+            this->DestroyImage(this->ResourceDeletionQueue[i].Handle);
         } 
     }
     this->ResourceDeletionQueue.clear();    
