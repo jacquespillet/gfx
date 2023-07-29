@@ -9,6 +9,13 @@ enum class materialType
     Unlit
 };
 
+struct defaultTextures
+{
+    static gfx::imageHandle BlackTexture;
+    static gfx::imageHandle BlueTexture;
+    static gfx::imageHandle WhiteTexture;
+};
+
 struct material
 {
     gfx::pipelineHandle PipelineHandle;
@@ -18,7 +25,7 @@ struct material
 
     virtual void SetCullMode(gfx::cullMode Mode) = 0;
     virtual std::vector<u8> Serialize()=0;
-
+    
 };
 
 struct unlitMaterial : public material

@@ -1,12 +1,14 @@
 #version 450
 
 #include "../Common/Macros.glsl"
+#include "../Common/Bindings.h"
+
 struct PSInput
 {
     vec2 FragUV;
 };
 
-DECLARE_UNIFORM_BUFFER(1, 0, Camera)
+DECLARE_UNIFORM_BUFFER(CameraDescriptorSetBinding, CameraBinding, Camera)
 {
     float FOV;
     float AspectRatio;
@@ -18,17 +20,17 @@ DECLARE_UNIFORM_BUFFER(1, 0, Camera)
     mat4 ViewProjectionMatrix;    
 };
 
-DECLARE_UNIFORM_BUFFER(2, 1, Model)
+DECLARE_UNIFORM_BUFFER(ModelDescriptorSetBinding, ModelBinding, Model)
 {
     mat4 ModelMatrix;    
 };
 
-DECLARE_UNIFORM_BUFFER(3, 3, Material)
+DECLARE_UNIFORM_BUFFER(MaterialDescriptorSetBinding, MaterialDataBinding, Material)
 {
     vec4 BaseColor;
 };
 
-DECLARE_UNIFORM_TEXTURE(3, 4, DiffuseTexture);
+DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, UnlitDiffuseTextureBinding, DiffuseTexture);
 
 
 /////////////////////////////////

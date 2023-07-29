@@ -2,8 +2,8 @@
 #include "Include/Camera.h"
 #include "Include/Context.h"
 #include "Include/CameraController.h"
+#include "Include/Bindings.h"
 #include <glm/ext.hpp>
-
 namespace hlgfx
 {
 camera::camera(f32 FOV, f32 AspectRatio, f32 NearClip, f32 FarClip) : object3D("Camera")
@@ -17,7 +17,7 @@ camera::camera(f32 FOV, f32 AspectRatio, f32 NearClip, f32 FarClip) : object3D("
     this->UniformBuffer = LowLevelContext->CreateBuffer(sizeof(cameraUniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
     this->Uniforms = std::make_shared<gfx::uniformGroup>();
     this->Uniforms->Reset();
-    this->Uniforms->AddUniformBuffer(0, this->UniformBuffer);
+    this->Uniforms->AddUniformBuffer(CameraBinding, this->UniformBuffer);
 
     this->Data.FOV = FOV;
     this->Data.AspectRatio = AspectRatio;
@@ -29,7 +29,7 @@ camera::camera(f32 FOV, f32 AspectRatio, f32 NearClip, f32 FarClip) : object3D("
     for(auto &Pipeline : HighLevelContext->Pipelines)
     {
         //This allocates the descriptor sets based on the DS layouts of each pipeline
-        LowLevelContext->BindUniformsToPipeline(this->Uniforms, Pipeline.second, CameraUniformsBinding);
+        LowLevelContext->BindUniformsToPipeline(this->Uniforms, Pipeline.second, CameraDescriptorSetBinding);
     }
     this->Uniforms->Update();
 

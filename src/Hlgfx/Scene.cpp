@@ -4,6 +4,7 @@
 #include "Include/Scene.h"
 #include "Include/Mesh.h"
 #include "Include/Material.h"
+#include "Include/Bindings.h"
 #include <imgui.h>
 
 #include <fstream>
@@ -51,7 +52,7 @@ void scene::OnRender(std::shared_ptr<camera> Camera)
         if (PipelineMeshes.second.size() == 0) continue;
         std::shared_ptr<gfx::commandBuffer> CommandBuffer = gfx::context::Get()->GetCurrentFrameCommandBuffer();
         CommandBuffer->BindGraphicsPipeline(PipelineMeshes.first);
-        CommandBuffer->BindUniformGroup(Camera->Uniforms, CameraUniformsBinding);
+        CommandBuffer->BindUniformGroup(Camera->Uniforms, CameraDescriptorSetBinding);
         for(sz i=0; i<PipelineMeshes.second.size(); i++)
         {
             PipelineMeshes.second[i]->OnRender(Camera);

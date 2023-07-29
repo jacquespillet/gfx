@@ -99,8 +99,34 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->Pipelines[UnlitPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/Unlit/Unlit.json");
 
     Singleton->Imgui = gfx::imgui::Initialize(Singleton->GfxContext, Singleton->Window, Singleton->SwapchainPass);
-  
-  
+    
+    std::vector<u8> ColorData = {0,0,0,0};
+    gfx::imageData ImageData = {};
+    ImageData.ChannelCount = 4;
+    ImageData.Data = ColorData.data();
+    ImageData.DataSize = ColorData.size();
+    ImageData.Width = 1;
+    ImageData.Height = 1;
+    ImageData.Format = gfx::format::R8G8B8A8_UNORM;
+    ImageData.Type = gfx::type::UNSIGNED_BYTE;
+    gfx::imageCreateInfo ImageCreateInfo = 
+    {
+        {0.0f,0.0f,0.0f,0.0f},
+        gfx::samplerFilter::Linear,
+        gfx::samplerFilter::Linear,
+        gfx::samplerWrapMode::ClampToBorder,
+        gfx::samplerWrapMode::ClampToBorder,
+        gfx::samplerWrapMode::ClampToBorder,
+        true
+    };    
+    defaultTextures::BlackTexture = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
+
+    ColorData[2] = 255;
+    defaultTextures::BlueTexture = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
+    
+    ColorData[0] = 255; ColorData[1] = 255; ColorData[2] = 255; ColorData[3] = 255;
+    defaultTextures::WhiteTexture = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
+
     return Singleton;
 }
 
@@ -308,6 +334,10 @@ void context::DrawGUI()
 void context::Cleanup()
 {
     GfxContext->WaitIdle();
+
+    GfxContext->QueueDestroyImage(defaultTextures::BlackTexture);
+    GfxContext->QueueDestroyImage(defaultTextures::WhiteTexture);
+    GfxContext->QueueDestroyImage(defaultTextures::BlueTexture);
 
     //Clears the scene, effectively dereferences all the pointers to call their destructors before we clean up
     this->Scene->Children = std::vector<std::shared_ptr<object3D>>();

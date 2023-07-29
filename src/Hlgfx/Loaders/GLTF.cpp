@@ -309,7 +309,6 @@ void LoadTextures(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<gfx::i
             TexName = GLTFImage.uri;
         }
         
-        VkFormat Format = VK_FORMAT_R8G8B8A8_UNORM;
         assert(GLTFImage.component==4);
         assert(GLTFImage.bits==8);
         

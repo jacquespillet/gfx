@@ -2,6 +2,7 @@
 #include "Include/Material.h"
 #include "Include/Context.h"
 #include "Include/Util.h"
+#include "Include/Bindings.h"
 #include "gfx/Include/Context.h"
 #include <glm/ext.hpp>
 
@@ -15,7 +16,7 @@ mesh::mesh() : object3D("Mesh")
 
     this->UniformBuffer = gfx::context::Get()->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
     this->Uniforms = std::make_shared<gfx::uniformGroup>();
-    this->Uniforms->Reset().AddUniformBuffer(1, this->UniformBuffer);
+    this->Uniforms->Reset().AddUniformBuffer(ModelBinding, this->UniformBuffer);
 
     //Bind the uniform group to the context pipelines
     context *HighLevelContext = context::Get();
@@ -23,7 +24,7 @@ mesh::mesh() : object3D("Mesh")
     for(auto &Pipeline : HighLevelContext->Pipelines)
     {
         //This effectively allocates the descriptor sets based on the DS layouts of each pipeline.
-        LowLevelContext->BindUniformsToPipeline(this->Uniforms, Pipeline.second, ModelUniformsBinding);
+        LowLevelContext->BindUniformsToPipeline(this->Uniforms, Pipeline.second, ModelDescriptorSetBinding);
     }
     
     this->UniformData.ModelMatrix = this->Transform.Matrices.LocalToWorld;
@@ -41,8 +42,8 @@ void mesh::OnRender(std::shared_ptr<camera> Camera)
         gfx::context::Get()->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(uniformData), 0);
     }
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = gfx::context::Get()->GetCurrentFrameCommandBuffer();    
-    CommandBuffer->BindUniformGroup(this->Uniforms, ModelUniformsBinding);
-    CommandBuffer->BindUniformGroup(this->Material->Uniforms, MaterialUniformsBinding);
+    CommandBuffer->BindUniformGroup(this->Uniforms, ModelDescriptorSetBinding);
+    CommandBuffer->BindUniformGroup(this->Material->Uniforms, MaterialDescriptorSetBinding);
     
     CommandBuffer->BindVertexBuffer(this->GeometryBuffers->VertexBuffer);
     CommandBuffer->BindIndexBuffer(this->GeometryBuffers->IndexBuffer, this->GeometryBuffers->Start, gfx::indexType::Uint32);

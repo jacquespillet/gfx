@@ -1,4 +1,5 @@
-#include "resources/Shaders/Common/Macros.hlsl"
+#include "resources/Hlgfx/Shaders/Common/Macros.hlsl"
+#include "resources/Hlgfx/Shaders/Common/Bindings.h"
 
 struct PSInput
 {
@@ -23,10 +24,13 @@ cbuffer Model : register(b1)
     mat4 ModelMatrix;    
 };
 
-cbuffer Model : register(b3)
+cbuffer Material : register(b3)
 {
-    vec4 Color;
+    vec4 BaseColor;
 };
+
+Texture2D DiffuseTexture : register(t4);
+SamplerState DefaultSampler : register(s0);
 
 PSInput VSMain(vec4 PositionUvX : POSITION0, vec4 NormalUvY : POSITION1)
 {
@@ -38,7 +42,7 @@ PSInput VSMain(vec4 PositionUvX : POSITION0, vec4 NormalUvY : POSITION1)
     return result;
 }
 
-vec4 PSMain(PSInput input) : SV_TARGET
+vec4 PSMain(PSInput Input) : SV_TARGET
 {
-    return vec4(input.uv, 0, 1) + Color;
+    return BaseColor + SampleTexture(DiffuseTexture, DefaultSampler, Input.uv);
 }

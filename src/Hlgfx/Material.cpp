@@ -1,8 +1,12 @@
 #include "Include/Material.h"
 #include "Include/Util.h"
+#include "Include/Bindings.h"
 
 namespace hlgfx
 {
+gfx::imageHandle defaultTextures::BlackTexture = gfx::InvalidHandle;
+gfx::imageHandle defaultTextures::BlueTexture = gfx::InvalidHandle;
+gfx::imageHandle defaultTextures::WhiteTexture = gfx::InvalidHandle;
 
 unlitMaterial::unlitMaterial()
 {
@@ -13,10 +17,10 @@ unlitMaterial::unlitMaterial()
     this->UniformBuffer = Context->CreateBuffer(sizeof(materialData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
     this->Uniforms = std::make_shared<gfx::uniformGroup>();
     this->Uniforms->Reset()
-                  .AddUniformBuffer(MaterialUniformsBinding, this->UniformBuffer)
-                  .AddTexture(MaterialUniformsBinding+1, gfx::InvalidHandle);
+                  .AddUniformBuffer(MaterialDataBinding, this->UniformBuffer)
+                  .AddTexture(UnlitDiffuseTextureBinding, defaultTextures::BlackTexture);
 
-    Context->BindUniformsToPipeline(this->Uniforms, this->PipelineHandle, MaterialUniformsBinding);
+    Context->BindUniformsToPipeline(this->Uniforms, this->PipelineHandle, MaterialDescriptorSetBinding);
     Uniforms->Update();
 
     this->UniformData.Color = v4f(1,0,0,0);
