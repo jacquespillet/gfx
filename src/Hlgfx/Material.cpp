@@ -25,8 +25,24 @@ unlitMaterial::unlitMaterial()
 
     this->UniformData.Color = v4f(1,0,0,0);
     Context->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(materialData), 0);
+}
 
-    // PipelineHandle = context::Get()->Pipelines[context::UnlitPipeline];
+unlitMaterial::unlitMaterial(gfx::pipelineHandle Pipeline)
+{
+    gfx::context *Context = gfx::context::Get();
+
+    this->PipelineHandle = Pipeline;
+    this->UniformBuffer = Context->CreateBuffer(sizeof(materialData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
+    this->Uniforms = std::make_shared<gfx::uniformGroup>();
+    this->Uniforms->Reset()
+                  .AddUniformBuffer(MaterialDataBinding, this->UniformBuffer)
+                  .AddTexture(UnlitDiffuseTextureBinding, defaultTextures::BlackTexture);
+
+    Context->BindUniformsToPipeline(this->Uniforms, this->PipelineHandle, MaterialDescriptorSetBinding);
+    Uniforms->Update();
+
+    this->UniformData.Color = v4f(1,0,0,0);
+    Context->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(materialData), 0);
 }
   
 void unlitMaterial::SetCullMode(gfx::cullMode Mode)
@@ -55,6 +71,7 @@ unlitMaterial::~unlitMaterial()
 
 std::vector<u8> unlitMaterial::Serialize() 
 {
+    //TODO: Add images
     std::vector<u8> Result;
     u32 MaterialType = (u32)materialType::Unlit;
     AddItem(Result, &MaterialType, sizeof(u32));

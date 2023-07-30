@@ -18,6 +18,7 @@
 #include "../Include/Geometry.h"
 #include "../Include/Material.h"
 #include "../Include/Mesh.h"
+#include "gfx/Include/Pipeline.h"
 
 #include <glm/gtx/matrix_decompose.hpp>
 
@@ -33,6 +34,93 @@ struct geometryData
     std::shared_ptr<indexedGeometryBuffers> Buffers;
     u32 MaterialIndex;
 };
+
+gfx::pipelineHandle PipelineFromMaterial(const tinygltf::Material &Material)
+{
+    gfx::pipelineCreation PipelineCreation = {};
+
+    PipelineCreation.Name = "Unlit";
+    //
+    std::string ApiDefinition;
+    if(GFX_API == GFX_VK)
+    {
+        ApiDefinition = "#define GRAPHICS_API VK\n";
+    }
+    if(GFX_API == GFX_GL)
+    {
+        ApiDefinition = "#define GRAPHICS_API GL\n";
+    }
+    if(GFX_API == GFX_D3D12)
+    {
+        ApiDefinition = "#define GRAPHICS_API D3D12\n";
+    }
+    
+    std::string VertexCode;
+    gfx::ShaderConcatenate(std::string("Unlit.glsl"), VertexCode, std::string("resources/Hlgfx/Shaders/Unlit/"));
+    std::string VertexCustomDefines = "#define VERTEX\n";
+    VertexCustomDefines += ApiDefinition;
+    VertexCode = std::regex_replace(VertexCode, std::regex("CUSTOM_DEFINES"), VertexCustomDefines);
+    const char *VertexCodeCStr = gfx::AllocateCString(VertexCode.c_str());
+    const char *VertexFileNameCStr = gfx::AllocateCString(std::string("resources/Hlgfx/Shaders/Unlit/") + "/" + std::string("Unlit.glsl"));
+    PipelineCreation.Shaders.AddStage(VertexCodeCStr, VertexFileNameCStr, (u32)strlen(VertexCodeCStr), gfx::shaderStageFlags::bits::Vertex);
+
+    std::string FragmentCode;
+    gfx::ShaderConcatenate(std::string("Unlit.glsl"), FragmentCode, std::string("resources/Hlgfx/Shaders/Unlit/"));
+    std::string FragmentCustomDefines = "#define FRAGMENT\n";
+    FragmentCustomDefines += ApiDefinition;
+    FragmentCode = std::regex_replace(FragmentCode, std::regex("CUSTOM_DEFINES"), FragmentCustomDefines);
+    const char *FragmentCodeCStr = gfx::AllocateCString(FragmentCode.c_str());
+    const char *FragmentFileNameCStr = gfx::AllocateCString(std::string("resources/Hlgfx/Shaders/Unlit/") + "/" + std::string("Unlit.glsl"));
+    PipelineCreation.Shaders.AddStage(FragmentCodeCStr, FragmentFileNameCStr, (u32)strlen(FragmentCodeCStr), gfx::shaderStageFlags::bits::Fragment);
+
+    
+    //TODO: Refactor that
+    PipelineCreation.VertexInput.NumVertexStreams=0;
+    gfx::vertexStream VertexStream{};
+    VertexStream.Binding = 0;
+    VertexStream.Stride = sizeof(vertex);
+    VertexStream.InputRate = gfx::vertexInputRate::PerVertex;
+    PipelineCreation.VertexInput.AddVertexStream(VertexStream);        
+
+    PipelineCreation.VertexInput.NumVertexAttributes=0;
+    gfx::vertexAttribute VertexAttribute0{};
+    VertexAttribute0.Location = 0;
+    VertexAttribute0.Binding = 0;
+    VertexAttribute0.Offset = 0;
+    VertexAttribute0.Format = gfx::vertexComponentFormat::Float4;
+    VertexAttribute0.SemanticIndex = 0;
+    PipelineCreation.VertexInput.AddVertexAttribute(VertexAttribute0);
+    gfx::vertexAttribute VertexAttribute1{};
+    VertexAttribute1.Location = 1;
+    VertexAttribute1.Binding = 0;
+    VertexAttribute1.Offset = sizeof(v4f);
+    VertexAttribute1.Format = gfx::vertexComponentFormat::Float4;
+    VertexAttribute1.SemanticIndex = 1;
+    PipelineCreation.VertexInput.AddVertexAttribute(VertexAttribute1);
+
+    PipelineCreation.DepthStencil.DepthEnable = 1;
+    PipelineCreation.DepthStencil.DepthWriteEnable = true;
+    PipelineCreation.DepthStencil.DepthComparison = gfx::compareOperation::LessOrEqual;
+
+    
+    gfx::blendState &BlendState = PipelineCreation.BlendState.AddBlendState();
+    BlendState.BlendEnabled = true;
+    BlendState.SetColor(gfx::blendFactor::SrcColor, gfx::blendFactor::OneMinusSrcColor, gfx::blendOperation::Add);
+
+
+    PipelineCreation.Rasterization.CullMode = gfx::cullMode::Back;
+
+    PipelineCreation.RenderPassHandle = gfx::context::Get()->SwapchainRenderPass;
+    gfx::pipelineHandle Pipeline = gfx::context::Get()->CreatePipeline(PipelineCreation);
+
+    gfx::DeallocateMemory((void*)FragmentCodeCStr);
+    gfx::DeallocateMemory((void*)FragmentFileNameCStr);
+    gfx::DeallocateMemory((void*)VertexCodeCStr);
+    gfx::DeallocateMemory((void*)VertexFileNameCStr);
+
+
+    return Pipeline;
+}
 
 void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geometryData>> &Geometries, std::vector<std::vector<uint32_t>> &InstanceMapping)
 {
@@ -321,6 +409,7 @@ void LoadTextures(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<gfx::i
         ImageData.Format = gfx::format::R8G8B8A8_UNORM;
         ImageData.Type = gfx::type::UNSIGNED_BYTE;
 
+        //TODO
 		gfx::imageCreateInfo ImageCreateInfo = 
 		{
 			{0.0f,0.0f,0.0f,0.0f},
@@ -346,15 +435,28 @@ void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<mater
     {
         const tinygltf::Material GLTFMaterial = GLTFModel.materials[i];
         const tinygltf::PbrMetallicRoughness PBR = GLTFMaterial.pbrMetallicRoughness;
-        Materials[i] = std::make_shared<unlitMaterial>();
+    
+        // PBR.roughnessFactor
+        // PBR.metallicRoughnessTexture
+        // PBR.metallicFactor
+        // PBR.baseColorTexture
+        // PBR.baseColorFactor
+        // GLTFMaterial.occlusionTexture
+        // GLTFMaterial.normalTexture
+        // GLTFMaterial.emissiveTexture
+        // GLTFMaterial.emissiveFactor
+        // GLTFMaterial.doubleSided
+        // GLTFMaterial.alphaMode
+        // GLTFMaterial.alphaCutoff
+
+        gfx::pipelineHandle Pipeline = PipelineFromMaterial(GLTFMaterial);
+        Materials[i] = std::make_shared<unlitMaterial>(Pipeline);  
         std::shared_ptr<unlitMaterial> UnlitMat = std::static_pointer_cast<unlitMaterial>(Materials[i]);
         // Materials[i].MaterialData.BaseColor = glm::vec3((float)PBR.baseColorFactor[0], (float)PBR.baseColorFactor[1], (float)PBR.baseColorFactor[2]);
-
+        
         if(PBR.baseColorTexture.index > -1)
         {
             int TexIndex = PBR.baseColorTexture.index;
-
-            //TODO: What to do when no texture ?
             UnlitMat->SetDiffuseTexture(Textures[TexIndex]);
         }
     }
@@ -394,6 +496,7 @@ std::shared_ptr<object3D> Load(std::string FileName)
     std::vector<std::shared_ptr<gfx::imageHandle>> Textures;
     std::vector<std::shared_ptr<material>> Materials;
     LoadTextures(GLTFModel, Textures);
+    
     LoadMaterials(GLTFModel, Materials, Textures);
     LoadGeometry(GLTFModel, Geometries, InstanceMapping);
     LoadInstances(GLTFModel, Geometries, InstanceMapping, Materials, Result);

@@ -31,6 +31,7 @@ struct material
 struct unlitMaterial : public material
 {
     unlitMaterial();
+    unlitMaterial(gfx::pipelineHandle Pipeline);
     ~unlitMaterial();
   
     virtual void SetCullMode(gfx::cullMode Mode);
