@@ -111,6 +111,9 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     Extent.Width = ImageData.Width;
     Extent.Height = ImageData.Height;
     Format = ImageData.Format;
+    Data.resize(ImageData.Width * ImageData.Height * FormatSize(Format));
+    ChannelCount = ChannelCountFromFormat(Format);
+    this->Type = ImageData.Type;
 
 
     MipLevelCount = CreateInfo.GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
@@ -164,6 +167,23 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
     this->Format = Left.Format;
     this->MipLevelCount = CreateInfo.GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
     this->LayerCount = 6;
+    this->Data.resize(Left.DataSize + Right.DataSize + Top.DataSize + Bottom.DataSize + Back.DataSize + Front.DataSize);
+    sz Offset=0;
+    memcpy(this->Data.data() + Offset, Left.Data, Left.DataSize);
+    Offset += Left.DataSize;
+    memcpy(this->Data.data() + Offset, Right.Data, Right.DataSize);
+    Offset += Right.DataSize;
+    memcpy(this->Data.data() + Offset, Top.Data, Top.DataSize);
+    Offset += Top.DataSize;
+    memcpy(this->Data.data() + Offset, Bottom.Data, Bottom.DataSize);
+    Offset += Bottom.DataSize;
+    memcpy(this->Data.data() + Offset, Back.Data, Back.DataSize);
+    Offset += Back.DataSize;
+    memcpy(this->Data.data() + Offset, Front.Data, Front.DataSize);
+    Offset += Front.DataSize;
+    this->ChannelCount = Left.ChannelCount;
+    this->Type = Left.Type;
+
 
     context *VulkanContext = context::Get();
     ApiData = std::make_shared<vkImageData>();
@@ -228,6 +248,7 @@ image::image(vk::Image VkImage, u32 Width, u32 Height, format Format)
     this->Extent.Width = Width;
     this->Extent.Height = Height;
     this->Format = Format;
+    this->Type = type::BYTE;
 
     GET_API_DATA(ImageData, vkImageData, this);
 
@@ -249,6 +270,8 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
     this->Format = Format;
     this->Extent.Width = Width;
     this->Extent.Height = Height;
+    this->Data.resize(Width * Height * FormatSize(Format));
+    this->Type = type::BYTE;
     
     if(ImageUsage == imageUsage::COLOR_ATTACHMENT) ImageUsage |= imageUsage::SHADER_READ;
 

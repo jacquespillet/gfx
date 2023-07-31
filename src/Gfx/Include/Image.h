@@ -46,6 +46,7 @@ struct image
     extent2D Extent;
     sz ByteSize=0;
     u8 ChannelCount = 4;
+    type Type;
 
     std::vector<u8> Data;
     

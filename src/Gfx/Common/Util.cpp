@@ -156,5 +156,17 @@ void WriteFileBinary(const char *FileName, u8 *Data, sz Size)
 }
 
 
+u8 ChannelCountFromFormat(format Format)
+{
+    return 4;
+}
+
+sz FormatSize(format Format)
+{
+    return 4;
+}
+
+
+
 
 }

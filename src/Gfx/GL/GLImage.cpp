@@ -11,6 +11,12 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     this->Extent.Width = ImageData.Width;
     this->Extent.Height = ImageData.Height;
     this->Format = ImageData.Format;
+    this->ChannelCount = ImageData.ChannelCount;
+    this->Data.resize(ImageData.Width * ImageData.Height * FormatSize(Format));
+    this->Type = ImageData.Type;
+
+    memcpy(this->Data.data(), ImageData.Data, ImageData.DataSize);
+
     
     this->MipLevelCount = CreateInfo.GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
 
@@ -19,7 +25,8 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     glGenTextures(1, &GLImage->Handle);
     glBindTexture(GL_TEXTURE_2D, GLImage->Handle);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, FormatToNativeInternal(ImageData.Format), ImageData.Width, ImageData.Height, 0, FormatToNative(ImageData.Format), TypeToNative(ImageData.Type), ImageData.Data);
+    // glTexImage2D(GL_TEXTURE_2D, 0, FormatToNativeInternal(ImageData.Format), ImageData.Width, ImageData.Height, 0, FormatToNative(ImageData.Format), TypeToNative(ImageData.Type), ImageData.Data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, ImageData.Width, ImageData.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, ImageData.Data);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, SamplerWrapToNative(CreateInfo.WrapS));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, SamplerWrapToNative(CreateInfo.WrapT));
@@ -41,6 +48,23 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
     this->Format = Left.Format;
     this->MipLevelCount = CreateInfo.GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
     this->LayerCount = 6;
+    this->ChannelCount = Left.ChannelCount;
+    this->Data.resize(Left.DataSize + Right.DataSize + Top.DataSize + Bottom.DataSize + Back.DataSize + Front.DataSize);
+    this->Type = Left.Type;
+    sz Offset=0;
+    memcpy(this->Data.data() + Offset, Left.Data, Left.DataSize);
+    Offset += Left.DataSize;
+    memcpy(this->Data.data() + Offset, Right.Data, Right.DataSize);
+    Offset += Right.DataSize;
+    memcpy(this->Data.data() + Offset, Top.Data, Top.DataSize);
+    Offset += Top.DataSize;
+    memcpy(this->Data.data() + Offset, Bottom.Data, Bottom.DataSize);
+    Offset += Bottom.DataSize;
+    memcpy(this->Data.data() + Offset, Back.Data, Back.DataSize);
+    Offset += Back.DataSize;
+    memcpy(this->Data.data() + Offset, Front.Data, Front.DataSize);
+    Offset += Front.DataSize;
+
 
     this->ApiData = std::make_shared<glImage>();
     GET_API_DATA(GLImage, glImage, this);

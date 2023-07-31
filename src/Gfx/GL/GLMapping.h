@@ -35,6 +35,7 @@ GLenum CullModeToNative(cullMode::bits Mode);
 GLenum FillModeToNative(fillMode Mode);
 GLenum FrontFaceToNative(frontFace Mode);
 
+
 GLenum IndexTypeToNative(indexType Type);
 sz IndexTypeSize(indexType Type);
 

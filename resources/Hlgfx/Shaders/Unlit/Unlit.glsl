@@ -61,7 +61,7 @@ layout(location = 0) out vec4 outputColor;
 
 void main() 
 {
-    outputColor =  BaseColor + texture(DiffuseTexture, Input.FragUV);
+    outputColor =  texture(DiffuseTexture, Input.FragUV);
 }
 
 #endif

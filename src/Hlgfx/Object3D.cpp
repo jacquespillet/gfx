@@ -9,6 +9,8 @@
 #include <ImGuizmo.h>
 #include <glm/ext.hpp>
 
+#include <stb_image_write.h>
+
 namespace hlgfx
 {
 object3D::object3D(const char *Name)
@@ -262,6 +264,7 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
     u32 NameLength;
     GetItem(Serialized, &NameLength, Cursor, sizeof(u32));
 
+    //TODO: Refactor that
     if(ObjectType == (u32)object3DType::Object3d)
     {
         std::shared_ptr<object3D> Result = std::make_shared<object3D>("BLA");
@@ -326,9 +329,11 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
                 GetItem(Serialized, &ImageData.Height, Cursor, sizeof(u32));
                 GetItem(Serialized, &ImageData.Format, Cursor, sizeof(u32));
                 GetItem(Serialized, &ImageData.ChannelCount, Cursor, sizeof(u8));
+                GetItem(Serialized, &ImageData.Type, Cursor, sizeof(gfx::type));
                 GetItem(Serialized, &ImageData.DataSize, Cursor, sizeof(sz));
                 ImageData.Data = (u8*) gfx::AllocateMemory(ImageData.DataSize);
                 GetItem(Serialized, ImageData.Data, Cursor, ImageData.DataSize);
+
                 gfx::imageCreateInfo ImageCreateInfo = 
                 {
                     {0.0f,0.0f,0.0f,0.0f},
@@ -339,6 +344,7 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
                     gfx::samplerWrapMode::ClampToBorder,
                     true
                 };
+
                 gfx::imageHandle ImageHandle = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);
                 Material->SetDiffuseTexture(std::make_shared<gfx::imageHandle>(ImageHandle));
 

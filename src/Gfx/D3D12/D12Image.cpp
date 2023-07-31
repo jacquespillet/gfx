@@ -23,6 +23,7 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
     Format = Format;
     MipLevelCount = 1;
     this->ChannelCount = ChannelCountFromFormat(Format);
+    this->Type = type::BYTE;
 
     this->Data.resize(Width * Height * FormatSize(Format));
 
@@ -65,6 +66,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     this->Data.resize(ImageData.DataSize);
     memcpy(this->Data.data(), ImageData.Data, ImageData.DataSize);
     this->ChannelCount = ImageData.ChannelCount;
+    this->Type = ImageData.Type;
 
     context *VulkanContext = context::Get();
 
@@ -361,8 +363,8 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
     Offset += Back.DataSize;
     memcpy(this->Data.data() + Offset, Front.Data, Front.DataSize);
     Offset += Front.DataSize;
-
     this->ChannelCount = Left.ChannelCount;
+    this->Type = Left.Type;
 
     context *VulkanContext = context::Get();
 

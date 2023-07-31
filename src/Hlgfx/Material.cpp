@@ -73,7 +73,6 @@ unlitMaterial::~unlitMaterial()
 
 std::vector<u8> unlitMaterial::Serialize() 
 {
-    //TODO: Add images
     std::vector<u8> Result;
     u32 MaterialType = (u32)materialType::Unlit;
     AddItem(Result, &MaterialType, sizeof(u32));
@@ -89,6 +88,7 @@ std::vector<u8> unlitMaterial::Serialize()
         AddItem(Result, &Image->Extent.Height, sizeof(u32));
         AddItem(Result, &Image->Format, sizeof(u32));
         AddItem(Result, &Image->ChannelCount , sizeof(u8));
+        AddItem(Result, &Image->Type , sizeof(gfx::type));
         sz Size = Image->Data.size();
         AddItem(Result, &Size, sizeof(sz));
         AddItem(Result,  Image->Data.data(), Image->Data.size());

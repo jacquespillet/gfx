@@ -30,4 +30,8 @@ struct fileContent
 fileContent ReadFileBinary(const char *FileName);
 void WriteFileBinary(const char *FileName, u8 *Data, sz Size);
 
+
+u8 ChannelCountFromFormat(format Format);
+sz FormatSize(format Format);
+
 }
