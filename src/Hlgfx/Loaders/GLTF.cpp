@@ -35,11 +35,27 @@ struct geometryData
     u32 MaterialIndex;
 };
 
-gfx::pipelineHandle PipelineFromMaterial(const tinygltf::Material &Material)
+gfx::pipelineHandle PipelineFromMaterial(const tinygltf::Material &Material, materialType Type)
 {
     gfx::pipelineCreation PipelineCreation = {};
 
-    PipelineCreation.Name = "Unlit";
+    std::string ShaderParentPath;
+    std::string ShaderFileName;
+    if(Type == materialType::Unlit)
+    {
+        PipelineCreation.Name = "Unlit";
+        ShaderParentPath = "resources/Hlgfx/Shaders/Unlit/";
+        if(GFX_API == GFX_VK || GFX_API == GFX_GL)
+        {
+            ShaderFileName = "Unlit.glsl";
+        }
+        else
+        {
+            ShaderFileName = "Unlit.hlsl";
+        }
+    }
+
+
     //
     std::string ApiDefinition;
     if(GFX_API == GFX_VK)
@@ -56,21 +72,21 @@ gfx::pipelineHandle PipelineFromMaterial(const tinygltf::Material &Material)
     }
     
     std::string VertexCode;
-    gfx::ShaderConcatenate(std::string("Unlit.glsl"), VertexCode, std::string("resources/Hlgfx/Shaders/Unlit/"));
+    gfx::ShaderConcatenate(ShaderFileName, VertexCode, ShaderParentPath);
     std::string VertexCustomDefines = "#define VERTEX\n";
     VertexCustomDefines += ApiDefinition;
     VertexCode = std::regex_replace(VertexCode, std::regex("CUSTOM_DEFINES"), VertexCustomDefines);
     const char *VertexCodeCStr = gfx::AllocateCString(VertexCode.c_str());
-    const char *VertexFileNameCStr = gfx::AllocateCString(std::string("resources/Hlgfx/Shaders/Unlit/") + "/" + std::string("Unlit.glsl"));
+    const char *VertexFileNameCStr = gfx::AllocateCString(ShaderParentPath + "/" + ShaderFileName);
     PipelineCreation.Shaders.AddStage(VertexCodeCStr, VertexFileNameCStr, (u32)strlen(VertexCodeCStr), gfx::shaderStageFlags::bits::Vertex);
 
     std::string FragmentCode;
-    gfx::ShaderConcatenate(std::string("Unlit.glsl"), FragmentCode, std::string("resources/Hlgfx/Shaders/Unlit/"));
+    gfx::ShaderConcatenate(ShaderFileName, FragmentCode, ShaderParentPath);
     std::string FragmentCustomDefines = "#define FRAGMENT\n";
     FragmentCustomDefines += ApiDefinition;
     FragmentCode = std::regex_replace(FragmentCode, std::regex("CUSTOM_DEFINES"), FragmentCustomDefines);
     const char *FragmentCodeCStr = gfx::AllocateCString(FragmentCode.c_str());
-    const char *FragmentFileNameCStr = gfx::AllocateCString(std::string("resources/Hlgfx/Shaders/Unlit/") + "/" + std::string("Unlit.glsl"));
+    const char *FragmentFileNameCStr = gfx::AllocateCString(ShaderParentPath + "/" + ShaderFileName);
     PipelineCreation.Shaders.AddStage(FragmentCodeCStr, FragmentFileNameCStr, (u32)strlen(FragmentCodeCStr), gfx::shaderStageFlags::bits::Fragment);
 
     
@@ -101,14 +117,13 @@ gfx::pipelineHandle PipelineFromMaterial(const tinygltf::Material &Material)
     PipelineCreation.DepthStencil.DepthEnable = 1;
     PipelineCreation.DepthStencil.DepthWriteEnable = true;
     PipelineCreation.DepthStencil.DepthComparison = gfx::compareOperation::LessOrEqual;
-
     
+
     gfx::blendState &BlendState = PipelineCreation.BlendState.AddBlendState();
-    BlendState.BlendEnabled = true;
+    BlendState.BlendEnabled = Material.alphaMode == "BLEND";
     BlendState.SetColor(gfx::blendFactor::SrcColor, gfx::blendFactor::OneMinusSrcColor, gfx::blendOperation::Add);
 
-
-    PipelineCreation.Rasterization.CullMode = gfx::cullMode::Back;
+    PipelineCreation.Rasterization.CullMode = Material.doubleSided ? gfx::cullMode::None : gfx::cullMode::Back;
 
     PipelineCreation.RenderPassHandle = gfx::context::Get()->SwapchainRenderPass;
     gfx::pipelineHandle Pipeline = gfx::context::Get()->CreatePipeline(PipelineCreation);
@@ -449,7 +464,7 @@ void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<mater
         // GLTFMaterial.alphaMode
         // GLTFMaterial.alphaCutoff
 
-        gfx::pipelineHandle Pipeline = PipelineFromMaterial(GLTFMaterial);
+        gfx::pipelineHandle Pipeline = PipelineFromMaterial(GLTFMaterial, materialType::Unlit);
         Materials[i] = std::make_shared<unlitMaterial>(Pipeline);  
         std::shared_ptr<unlitMaterial> UnlitMat = std::static_pointer_cast<unlitMaterial>(Materials[i]);
         // Materials[i].MaterialData.BaseColor = glm::vec3((float)PBR.baseColorFactor[0], (float)PBR.baseColorFactor[1], (float)PBR.baseColorFactor[2]);
