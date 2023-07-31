@@ -17,6 +17,7 @@
 
 #include "../Include/Geometry.h"
 #include "../Include/Material.h"
+#include "../Include/Texture.h"
 #include "../Include/Mesh.h"
 #include "gfx/Include/Pipeline.h"
 
@@ -298,7 +299,7 @@ void LoadInstances(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geome
     }
 }
 
-void LoadTextures(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<gfx::imageHandle>> &Images)
+void LoadTextures(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<texture>> &Images)
 {
     for (size_t i = 0; i < GLTFModel.textures.size(); i++)
     {
@@ -334,12 +335,12 @@ void LoadTextures(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<gfx::i
 			true
 		};
 		gfx::imageHandle Image = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);
-        std::shared_ptr<gfx::imageHandle> ImagePtr = std::make_shared<gfx::imageHandle>(Image);
+        std::shared_ptr<texture> ImagePtr = std::make_shared<texture>(Image);
         Images.push_back(ImagePtr);
     }
 }
 
-void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<material>> &Materials, std::vector<std::shared_ptr<gfx::imageHandle>> &Textures)
+void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<material>> &Materials, std::vector<std::shared_ptr<texture>> &Textures)
 {
     
     // AScene->mMaterials[i]->Get(AI_MATKEY_TEXTURE_DIFFUSE(0), Materials[i].MaterialData.BaseColorTextureID);
@@ -348,20 +349,8 @@ void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<mater
     {
         const tinygltf::Material GLTFMaterial = GLTFModel.materials[i];
         const tinygltf::PbrMetallicRoughness PBR = GLTFMaterial.pbrMetallicRoughness;
-    
-        // PBR.roughnessFactor
-        // PBR.metallicRoughnessTexture
-        // PBR.metallicFactor
-        // PBR.baseColorTexture
-        // PBR.baseColorFactor
-        // GLTFMaterial.occlusionTexture
-        // GLTFMaterial.normalTexture
-        // GLTFMaterial.emissiveTexture
-        // GLTFMaterial.emissiveFactor
-        // GLTFMaterial.doubleSided
-        // GLTFMaterial.alphaMode
-        // GLTFMaterial.alphaCutoff
 
+        
         materialFlags::bits Flags = materialFlags::None;
         if(GLTFMaterial.alphaMode == "BLEND")
             Flags = (materialFlags::bits)(Flags |  materialFlags::BlendEnabled);
@@ -376,13 +365,37 @@ void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<mater
         
         Materials[i] = std::make_shared<unlitMaterial>(Flags);  
         std::shared_ptr<unlitMaterial> UnlitMat = std::static_pointer_cast<unlitMaterial>(Materials[i]);
-        // Materials[i].MaterialData.BaseColor = glm::vec3((float)PBR.baseColorFactor[0], (float)PBR.baseColorFactor[1], (float)PBR.baseColorFactor[2]);
-        
+            
+        UnlitMat->UniformData.BaseColorFactor = v3f(PBR.baseColorFactor[0], PBR.baseColorFactor[1], PBR.baseColorFactor[2]);
+        UnlitMat->UniformData.OpacityFactor = PBR.baseColorFactor[3];
+        UnlitMat->UniformData.RoughnessFactor = PBR.roughnessFactor;
+        UnlitMat->UniformData.MetallicFactor = PBR.metallicFactor;
+        UnlitMat->UniformData.Emission = v3f(GLTFMaterial.emissiveFactor[0], GLTFMaterial.emissiveFactor[1], GLTFMaterial.emissiveFactor[2]);
+        UnlitMat->UniformData.EmissiveFactor = 1.0f;
+        UnlitMat->UniformData.AlphaCutoff = GLTFMaterial.alphaCutoff;
+        UnlitMat->UniformData.OcclusionStrength = 1.0f;
+
         if(PBR.baseColorTexture.index > -1)
         {
-            int TexIndex = PBR.baseColorTexture.index;
-            UnlitMat->SetDiffuseTexture(Textures[TexIndex]);
+            UnlitMat->SetDiffuseTexture(Textures[PBR.baseColorTexture.index]);
         }
+        if(PBR.metallicRoughnessTexture.index > -1)
+        {
+            UnlitMat->SetMetallicRoughnessTexture(Textures[PBR.metallicRoughnessTexture.index]);
+        }
+        if(GLTFMaterial.occlusionTexture.index > -1)
+        {
+            UnlitMat->SetOcclusionTexture(Textures[GLTFMaterial.occlusionTexture.index]);
+        }
+        if(GLTFMaterial.normalTexture.index > -1)
+        {
+            UnlitMat->SetNormalTexture(Textures[GLTFMaterial.normalTexture.index]);
+        }
+        if(GLTFMaterial.emissiveTexture.index > -1)
+        {
+            UnlitMat->SetEmissiveTexture(Textures[GLTFMaterial.emissiveTexture.index]);
+        }
+
     }
 }    
 
@@ -417,7 +430,7 @@ std::shared_ptr<object3D> Load(std::string FileName)
     
     std::vector<std::vector<uint32_t>> InstanceMapping;
     std::vector<std::shared_ptr<geometryData>> Geometries;
-    std::vector<std::shared_ptr<gfx::imageHandle>> Textures;
+    std::vector<std::shared_ptr<texture>> Textures;
     std::vector<std::shared_ptr<material>> Materials;
     LoadTextures(GLTFModel, Textures);
     
@@ -425,13 +438,7 @@ std::shared_ptr<object3D> Load(std::string FileName)
     LoadGeometry(GLTFModel, Geometries, InstanceMapping);
     LoadInstances(GLTFModel, Geometries, InstanceMapping, Materials, Result);
 
-    for (sz i = 0; i < Textures.size(); i++)
-    {
-        if(Textures[i].use_count() == 1)
-        {
-            gfx::context::Get()->QueueDestroyImage(*Textures[i].get());
-        }
-    }
+
     
 
     return Result;

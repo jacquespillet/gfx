@@ -84,6 +84,10 @@ vk::ShaderModuleCreateInfo CompileShader(const char *Code, u32 CodeSize, shaderS
         {
             printf(Shader.getInfoLog());
             printf(Shader.getInfoDebugLog());
+            printf("Shader Code : \n");
+            printf("______________________________________________________\n");
+            printf(Code);
+            printf("______________________________________________________\n");
         }
         assert(IsParsed);
 
@@ -91,9 +95,13 @@ vk::ShaderModuleCreateInfo CompileShader(const char *Code, u32 CodeSize, shaderS
         Program.addShader(&Shader);  
         bool IsLinked = Program.link(EShMessages::EShMsgDefault);
         if(!IsLinked)
-        {
+        {  
             printf(Program.getInfoLog());
             printf(Program.getInfoDebugLog());
+            printf("Shader Code : \n");
+            printf("______________________________________________________\n");
+            printf(Code);
+            printf("______________________________________________________\n");
         }
         assert(IsLinked);
 

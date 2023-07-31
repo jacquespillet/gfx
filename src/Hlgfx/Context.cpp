@@ -127,18 +127,19 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
         gfx::samplerWrapMode::ClampToBorder,
         true
     };    
-    defaultTextures::BlackTexture = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
+
+    defaultTextures::BlackTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
 
 
     Color = {0,0,255,0};
     for (sz i = 0; i < TexWidth * TexHeight; i++)
         ColorData[i] = Color;
-    defaultTextures::BlueTexture = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
+    defaultTextures::BlueTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
     
     Color = {255,255,255,255};
     for (sz i = 0; i < TexWidth * TexHeight; i++)
         ColorData[i] = Color;
-    defaultTextures::WhiteTexture = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
+    defaultTextures::WhiteTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
 
     return Singleton;
 }
@@ -456,14 +457,15 @@ void context::Cleanup()
 {
     GfxContext->WaitIdle();
 
-    GfxContext->QueueDestroyImage(defaultTextures::BlackTexture);
-    GfxContext->QueueDestroyImage(defaultTextures::WhiteTexture);
-    GfxContext->QueueDestroyImage(defaultTextures::BlueTexture);
 
     //Clears the scene, effectively dereferences all the pointers to call their destructors before we clean up
     this->Scene->Children = std::vector<std::shared_ptr<object3D>>();
     this->Scene->Meshes = std::unordered_map<gfx::pipelineHandle, std::vector<std::shared_ptr<mesh>>>();
     this->Scene->NodeClicked = nullptr;
+    
+    GfxContext->QueueDestroyImage(defaultTextures::BlackTexture->Handle);
+    GfxContext->QueueDestroyImage(defaultTextures::WhiteTexture->Handle);
+    GfxContext->QueueDestroyImage(defaultTextures::BlueTexture->Handle);
     
     GfxContext->ProcessDeletionQueue();
 

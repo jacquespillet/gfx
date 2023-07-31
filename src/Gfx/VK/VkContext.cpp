@@ -1448,6 +1448,7 @@ void context::DestroyImage(imageHandle ImageHandle)
 {
     GET_CONTEXT(VkData, this);
     image *Image = GetImage(ImageHandle);
+    if(!Image) return;
     GET_API_DATA(VkImageData, vkImageData, Image);
     Image->Destroy();
     ResourceManager.Images.ReleaseResource(ImageHandle);

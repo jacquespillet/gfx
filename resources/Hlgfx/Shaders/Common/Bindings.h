@@ -9,4 +9,10 @@
 #define ModelBinding 1
 
 #define MaterialDataBinding 3
-#define UnlitDiffuseTextureBinding 4
+
+#define BaseColorTextureBinding 4
+#define MetallicRoughnessTextureBinding 5
+#define OcclusionTextureBinding 6
+#define NormalTextureBinding 7
+#define EmissiveTextureBinding 8 
+

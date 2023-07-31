@@ -1,6 +1,7 @@
 #pragma once
 #include "Types.h"
 #include "Gfx/Api.h"
+#include "Texture.h"
 
 namespace hlgfx
 {
@@ -25,9 +26,9 @@ struct materialFlags
 
 struct defaultTextures
 {
-    static gfx::imageHandle BlackTexture;
-    static gfx::imageHandle BlueTexture;
-    static gfx::imageHandle WhiteTexture;
+    static std::shared_ptr<texture> BlackTexture;
+    static std::shared_ptr<texture> BlueTexture;
+    static std::shared_ptr<texture> WhiteTexture;
 };
 
 struct material
@@ -52,13 +53,35 @@ struct unlitMaterial : public material
     virtual void SetCullMode(gfx::cullMode Mode);
     virtual std::vector<u8> Serialize() override;
 
-    void SetDiffuseTexture(std::shared_ptr<gfx::imageHandle> Texture);
-    
-    std::shared_ptr<gfx::imageHandle> DiffuseTexture;
+    void SetDiffuseTexture(std::shared_ptr<texture> Texture);
+    void SetMetallicRoughnessTexture(std::shared_ptr<texture> Texture);
+    void SetOcclusionTexture(std::shared_ptr<texture> Texture);
+    void SetNormalTexture(std::shared_ptr<texture> Texture);
+    void SetEmissiveTexture(std::shared_ptr<texture> Texture);
+
+    void Update();
+
+    std::shared_ptr<texture> BaseColorTexture;
+    std::shared_ptr<texture> MetallicRoughnessTexture;
+    std::shared_ptr<texture> OcclusionTexture;
+    std::shared_ptr<texture> NormalTexture;
+    std::shared_ptr<texture> EmissiveTexture;
 
     struct materialData
     {
-        v4f Color;
+        f32 RoughnessFactor;
+        f32 MetallicFactor;
+        f32 EmissiveFactor;
+        f32 AlphaCutoff;
+        
+        v3f BaseColorFactor;
+        f32 OpacityFactor;
+
+        s32 DebugChannel;
+        v3i Padding0;
+
+        f32 OcclusionStrength;
+        v3f Emission;
     } UniformData;
 
 };

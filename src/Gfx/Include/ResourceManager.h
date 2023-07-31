@@ -32,6 +32,8 @@ public:
         }
 
         _UsedIndices=0;
+
+        Initialized=true;
     }
     
     u32 ObtainResource()
@@ -91,10 +93,12 @@ public:
         assert(_UsedIndices==0);
 
         DeallocateMemory(_Memory);
+        Initialized=false;
     }
 
     
     u32 _UsedIndices=0;
+    b8 Initialized=false;
 protected:
     u32 _PoolSize=16;
     u32 _ResourceSize = 4;
@@ -103,6 +107,7 @@ protected:
     u32 *_FreeIndices = nullptr;
 
     u32 _FreeIndicesHead=0;
+
 };
 
 struct resourceManager

@@ -27,10 +27,22 @@ DECLARE_UNIFORM_BUFFER(ModelDescriptorSetBinding, ModelBinding, Model)
 
 DECLARE_UNIFORM_BUFFER(MaterialDescriptorSetBinding, MaterialDataBinding, Material)
 {
-    vec4 BaseColor;
+    float RoughnessFactor;
+    float MetallicFactor;
+    float EmissiveFactor;
+    float AlphaCutoff;
+    
+    vec3 BaseColorFactor;
+    float OpacityFactor;
+
+    int DebugChannel;
+    ivec3 Padding0;
+
+    float OcclusionStrength;
+    vec3 Emission;    
 };
 
-DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, UnlitDiffuseTextureBinding, DiffuseTexture);
+DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, BaseColorTextureBinding, BaseColorTexture);
 
 
 /////////////////////////////////
@@ -61,7 +73,7 @@ layout(location = 0) out vec4 outputColor;
 
 void main() 
 {
-    outputColor =  texture(DiffuseTexture, Input.FragUV);
+    outputColor =  texture(BaseColorTexture, Input.FragUV);
 }
 
 #endif

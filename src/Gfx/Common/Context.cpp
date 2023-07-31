@@ -15,6 +15,7 @@ vertexBuffer *context::GetVertexBuffer(vertexBufferHandle Handle)
 
 image *context::GetImage(imageHandle Handle)
 {
+    if(!this->ResourceManager.Images.Initialized) return nullptr;
     return (image*) this->ResourceManager.Images.GetResource(Handle);
 }
 
