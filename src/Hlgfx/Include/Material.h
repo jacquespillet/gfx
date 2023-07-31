@@ -39,6 +39,7 @@ struct material
     std::shared_ptr<gfx::uniformGroup> Uniforms;
     materialFlags::bits Flags;
     
+    virtual void DrawGUI() = 0;
     virtual void SetCullMode(gfx::cullMode Mode) = 0;
     virtual std::vector<u8> Serialize()=0;
     
@@ -61,6 +62,8 @@ struct unlitMaterial : public material
 
     void Update();
 
+    virtual void DrawGUI() override;
+ 
     std::shared_ptr<texture> BaseColorTexture;
     std::shared_ptr<texture> MetallicRoughnessTexture;
     std::shared_ptr<texture> OcclusionTexture;

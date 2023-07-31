@@ -170,6 +170,11 @@ void object3D::OnAfterRender(std::shared_ptr<camera> Camera)
     }
 }
 
+void object3D::DrawMaterial()
+{
+
+}
+
 void object3D::DrawGUI()
 {
     ImGuiTabBarFlags TabBarFlags = ImGuiTabBarFlags_None;
@@ -201,7 +206,7 @@ void object3D::DrawGUI()
         }
         if (ImGui::BeginTabItem("Material"))
         {
-            //TODO
+            DrawMaterial();
             ImGui::EndTabItem();
         }
 

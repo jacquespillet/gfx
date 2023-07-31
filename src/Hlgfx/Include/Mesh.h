@@ -17,6 +17,7 @@ struct mesh : public object3D
     virtual void OnRender(std::shared_ptr<camera> Camera) override;
     virtual std::vector<u8> Serialize() override;
 
+    virtual void DrawMaterial() override;
     //Api data
     std::shared_ptr<indexedGeometryBuffers> GeometryBuffers;
 

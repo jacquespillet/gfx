@@ -50,6 +50,7 @@ struct object3D
     void DeleteChild(std::shared_ptr<object3D> Child);
 
     virtual void DrawGUI();
+    virtual void DrawMaterial();
 
 
     b8 IsSelectedInGui = false;

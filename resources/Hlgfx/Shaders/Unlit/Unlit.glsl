@@ -73,7 +73,7 @@ layout(location = 0) out vec4 outputColor;
 
 void main() 
 {
-    outputColor =  texture(BaseColorTexture, Input.FragUV);
+    outputColor =  texture(BaseColorTexture, Input.FragUV) + vec4(BaseColorFactor, OpacityFactor);
 }
 
 #endif

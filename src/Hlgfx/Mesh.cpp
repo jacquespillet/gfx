@@ -50,6 +50,11 @@ void mesh::OnRender(std::shared_ptr<camera> Camera)
     CommandBuffer->DrawIndexed(this->GeometryBuffers->Start, this->GeometryBuffers->Count, 1);
 }
 
+void mesh::DrawMaterial()
+{
+    this->Material->DrawGUI();
+}
+
 std::vector<u8> mesh::Serialize()
 {
     std::vector<u8> Result;

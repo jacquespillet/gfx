@@ -3,6 +3,8 @@
 #include "Include/Bindings.h"
 #include "Include/Context.h"
 
+#include <glm/ext.hpp>
+
 namespace hlgfx
 {
 std::shared_ptr<texture> defaultTextures::BlackTexture = std::make_shared<texture>(gfx::InvalidHandle);
@@ -125,6 +127,14 @@ void unlitMaterial::SetEmissiveTexture(std::shared_ptr<texture> Texture)
     this->Uniforms->Update();
 }
 
+void unlitMaterial::DrawGUI()
+{
+    bool ShouldUpdate = false;
+    ShouldUpdate |= ImGui::ColorEdit3("Base Color", glm::value_ptr(this->UniformData.BaseColorFactor));
+
+    if(ShouldUpdate)
+        Update();
+}
 
 unlitMaterial::~unlitMaterial()  
 {
