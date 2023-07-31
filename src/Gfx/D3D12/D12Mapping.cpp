@@ -222,6 +222,18 @@ DXGI_FORMAT FormatToNative(format Format)
     return FormatTable[(u64)Format];
 }
 
+//TODO
+sz FormatSize(format Format)
+{
+    return 4 * sizeof(u8);
+}
+
+//TODO
+u8 ChannelCountFromFormat(format Format)
+{
+    return 4;
+}
+
 
 D3D12_RESOURCE_STATES ImageUsageToResourceState(imageUsage::bits Usage)
 {

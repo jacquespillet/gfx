@@ -1,6 +1,7 @@
 #pragma once
 #include "Types.h"
 #include <memory>
+#include <vector>
 
 namespace gfx
 {
@@ -44,7 +45,10 @@ struct image
     u32 LayerCount=1;
     extent2D Extent;
     sz ByteSize=0;
+    u8 ChannelCount = 4;
 
+    std::vector<u8> Data;
+    
     std::shared_ptr<void> ApiData;
     image() = default;
     void Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage, u32 SampleCount=1);

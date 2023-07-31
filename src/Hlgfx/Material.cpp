@@ -40,7 +40,7 @@ unlitMaterial::unlitMaterial(materialFlags::bits Flags)
     this->Uniforms->Reset()
                   .AddUniformBuffer(MaterialDataBinding, this->UniformBuffer)
                   .AddTexture(UnlitDiffuseTextureBinding, defaultTextures::BlackTexture);
-
+    this->Flags = Flags;
     Context->BindUniformsToPipeline(this->Uniforms, this->PipelineHandle, MaterialDescriptorSetBinding);
     Uniforms->Update();
 
@@ -77,7 +77,23 @@ std::vector<u8> unlitMaterial::Serialize()
     std::vector<u8> Result;
     u32 MaterialType = (u32)materialType::Unlit;
     AddItem(Result, &MaterialType, sizeof(u32));
+    AddItem(Result, &Flags, sizeof(u32));
     AddItem(Result, &this->UniformData.Color, sizeof(v4f));
+
+    u8 HasDiffuseTexture = u8(*this->DiffuseTexture.get() != defaultTextures::BlackTexture); 
+    AddItem(Result, &HasDiffuseTexture, sizeof(u8));
+    if(HasDiffuseTexture)
+    {
+        gfx::image *Image = gfx::context::Get()->GetImage(*this->DiffuseTexture.get());
+        AddItem(Result, &Image->Extent.Width, sizeof(u32));
+        AddItem(Result, &Image->Extent.Height, sizeof(u32));
+        AddItem(Result, &Image->Format, sizeof(u32));
+        AddItem(Result, &Image->ChannelCount , sizeof(u8));
+        sz Size = Image->Data.size();
+        AddItem(Result, &Size, sizeof(sz));
+        AddItem(Result,  Image->Data.data(), Image->Data.size());
+    }
+
     return Result;
 }
 

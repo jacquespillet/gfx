@@ -199,7 +199,6 @@ gfx::pipelineCreation context::GetPipelineCreation(materialFlags::bits Flags)
     PipelineCreation.Shaders.AddStage(FragmentCodeCStr, FragmentFileNameCStr, (u32)strlen(FragmentCodeCStr), gfx::shaderStageFlags::bits::Fragment);
 
     
-    //TODO: Refactor that
     PipelineCreation.VertexInput.NumVertexStreams=0;
     gfx::vertexStream VertexStream{};
     VertexStream.Binding = 0;

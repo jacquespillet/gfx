@@ -47,14 +47,6 @@ void scene::AddMesh(std::shared_ptr<object3D> Object)
 
 void scene::OnRender(std::shared_ptr<camera> Camera)
 {
-    //TODO: That's not working really...
-    //most of the time meshes do not share the same material and pipeline.
-    //we must have a global map of pipelines with the following flags : 
-    //  BlendStateEnabled / Disabled
-    //  BlendColor / BlendAlpha values
-    //  CullModeOn / Off
-    //When we create a pipeline we check if it already exists in the map, and then we assign it to the material
-    //
     for(auto &PipelineMeshes : this->Meshes)
     {
         if (PipelineMeshes.second.size() == 0) continue;

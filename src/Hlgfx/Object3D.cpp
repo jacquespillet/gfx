@@ -93,7 +93,6 @@ void object3D::AddObject(std::shared_ptr<object3D> Object)
     {
         Object->DeleteChild(Object);
     }
-    //TODO: Case where object already has a parent (needs to be removed)
     context::Get()->Scene->AddMesh(Object);
 
     Object->Parent = this;
@@ -297,13 +296,13 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
         Result->Name.resize(NameLength);
         GetItem(Serialized, (void*)Result->Name.data(), Cursor, NameLength);
 
-        u32 VertexDataSize;
-        GetItem(Serialized, &VertexDataSize, Cursor, sizeof(u32));
+        sz VertexDataSize;
+        GetItem(Serialized, &VertexDataSize, Cursor, sizeof(sz));
         std::vector<u8> VertexData(VertexDataSize);
         GetItem(Serialized, VertexData.data(), Cursor, VertexDataSize);
         
-        u32 IndexDataSize;
-        GetItem(Serialized, &IndexDataSize, Cursor, sizeof(u32));
+        sz IndexDataSize;
+        GetItem(Serialized, &IndexDataSize, Cursor, sizeof(sz));
         std::vector<u8> IndexData(IndexDataSize);
         GetItem(Serialized, IndexData.data(), Cursor, IndexDataSize);
 
@@ -313,8 +312,39 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
         GetItem(Serialized, &MaterialType, Cursor, sizeof(u32));
         if(MaterialType == (u32)materialType::Unlit)
         {
-            std::shared_ptr<unlitMaterial> Material = std::make_shared<unlitMaterial>();
+            materialFlags::bits Flags;
+            GetItem(Serialized, &Flags, Cursor, sizeof(u32));
+            std::shared_ptr<unlitMaterial> Material = std::make_shared<unlitMaterial>(Flags);
             GetItem(Serialized, glm::value_ptr(Material->UniformData.Color), Cursor, sizeof(v4f));
+
+            u8 HasDiffuseTexture = 0;
+            GetItem(Serialized, &HasDiffuseTexture, Cursor, sizeof(u8));
+            if(HasDiffuseTexture)
+            {
+                gfx::imageData ImageData = {};
+                GetItem(Serialized, &ImageData.Width, Cursor, sizeof(u32));
+                GetItem(Serialized, &ImageData.Height, Cursor, sizeof(u32));
+                GetItem(Serialized, &ImageData.Format, Cursor, sizeof(u32));
+                GetItem(Serialized, &ImageData.ChannelCount, Cursor, sizeof(u8));
+                GetItem(Serialized, &ImageData.DataSize, Cursor, sizeof(sz));
+                ImageData.Data = (u8*) gfx::AllocateMemory(ImageData.DataSize);
+                GetItem(Serialized, ImageData.Data, Cursor, ImageData.DataSize);
+                gfx::imageCreateInfo ImageCreateInfo = 
+                {
+                    {0.0f,0.0f,0.0f,0.0f},
+                    gfx::samplerFilter::Linear,
+                    gfx::samplerFilter::Linear,
+                    gfx::samplerWrapMode::ClampToBorder,
+                    gfx::samplerWrapMode::ClampToBorder,
+                    gfx::samplerWrapMode::ClampToBorder,
+                    true
+                };
+                gfx::imageHandle ImageHandle = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);
+                Material->SetDiffuseTexture(std::make_shared<gfx::imageHandle>(ImageHandle));
+
+                gfx::DeallocateMemory(ImageData.Data);
+            }
+
             Result->Material = Material;
         }
      

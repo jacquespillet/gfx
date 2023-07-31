@@ -61,13 +61,13 @@ std::vector<u8> mesh::Serialize()
     AddItem(Result, &StringLength, sizeof(u32));
     AddItem(Result, (void*)this->Name.data(), StringLength);
     
-    u32 VertexDataSize = this->GeometryBuffers->VertexData.size();
-    AddItem(Result, &VertexDataSize, sizeof(u32));
-    AddItem(Result, this->GeometryBuffers->VertexData.data(), this->GeometryBuffers->VertexData.size());
+    sz VertexDataSize = this->GeometryBuffers->VertexData.size() * sizeof(vertex);
+    AddItem(Result, &VertexDataSize, sizeof(sz));
+    AddItem(Result, this->GeometryBuffers->VertexData.data(), VertexDataSize);
     
-    u32 IndexDataSize = this->GeometryBuffers->IndexData.size();
-    AddItem(Result, &IndexDataSize, sizeof(u32));
-    AddItem(Result, this->GeometryBuffers->IndexData.data(), this->GeometryBuffers->IndexData.size());
+    sz IndexDataSize = this->GeometryBuffers->IndexData.size() * sizeof(u32);
+    AddItem(Result, &IndexDataSize, sizeof(sz));
+    AddItem(Result, this->GeometryBuffers->IndexData.data(), IndexDataSize);
 
     std::vector<u8> MaterialData = this->Material->Serialize();
     AddItem(Result, MaterialData.data(), MaterialData.size());

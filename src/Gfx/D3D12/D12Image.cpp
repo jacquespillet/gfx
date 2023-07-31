@@ -22,6 +22,9 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
     Extent.Height = Height;
     Format = Format;
     MipLevelCount = 1;
+    this->ChannelCount = ChannelCountFromFormat(Format);
+
+    this->Data.resize(Width * Height * FormatSize(Format));
 
     context *VulkanContext = context::Get();
 
@@ -59,6 +62,9 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     Format = ImageData.Format;
     ByteSize = ImageData.DataSize;
     MipLevelCount = CreateInfo.GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
+    this->Data.resize(ImageData.DataSize);
+    memcpy(this->Data.data(), ImageData.Data, ImageData.DataSize);
+    this->ChannelCount = ImageData.ChannelCount;
 
     context *VulkanContext = context::Get();
 
@@ -341,6 +347,22 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
     Format = Left.Format;
     ByteSize = Left.DataSize;
     MipLevelCount = CreateInfo.GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
+    this->Data.resize(Left.DataSize + Right.DataSize + Top.DataSize + Bottom.DataSize + Back.DataSize + Front.DataSize);
+    sz Offset=0;
+    memcpy(this->Data.data() + Offset, Left.Data, Left.DataSize);
+    Offset += Left.DataSize;
+    memcpy(this->Data.data() + Offset, Right.Data, Right.DataSize);
+    Offset += Right.DataSize;
+    memcpy(this->Data.data() + Offset, Top.Data, Top.DataSize);
+    Offset += Top.DataSize;
+    memcpy(this->Data.data() + Offset, Bottom.Data, Bottom.DataSize);
+    Offset += Bottom.DataSize;
+    memcpy(this->Data.data() + Offset, Back.Data, Back.DataSize);
+    Offset += Back.DataSize;
+    memcpy(this->Data.data() + Offset, Front.Data, Front.DataSize);
+    Offset += Front.DataSize;
+
+    this->ChannelCount = Left.ChannelCount;
 
     context *VulkanContext = context::Get();
 
