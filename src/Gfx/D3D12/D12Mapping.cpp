@@ -328,6 +328,33 @@ D3D12_BLEND BlendFactorToNative(blendFactor Factor)
     return BlendFactorTable[(sz)Factor];
 }
 
+static D3D12_BLEND BlendFactorAlphaTable[] = 
+{
+    D3D12_BLEND_ZERO,//Zero,
+    D3D12_BLEND_ONE,//One,
+    D3D12_BLEND_SRC_ALPHA,//SrcColor,
+    D3D12_BLEND_INV_SRC_ALPHA,//OneMinusSrcColor,
+    D3D12_BLEND_DEST_ALPHA,//DstColor,
+    D3D12_BLEND_INV_DEST_ALPHA,//OneMinusDstColor,
+    D3D12_BLEND_SRC_ALPHA,//SrcAlpha,
+    D3D12_BLEND_INV_SRC_ALPHA,//OneMinusSrcAlpha,
+    D3D12_BLEND_DEST_ALPHA,//DstAlpha,
+    D3D12_BLEND_INV_DEST_ALPHA,//OneMinusDstAlpha,
+    (D3D12_BLEND)-1,//ConstantColor,
+    (D3D12_BLEND)-1,//OneMinusConstantColor,
+    (D3D12_BLEND)-1,//ConstantAlpha,
+    (D3D12_BLEND)-1,//OneMinusConstantAlpha,
+    D3D12_BLEND_SRC_ALPHA_SAT,//SrcAlphaSaturate,
+    D3D12_BLEND_SRC1_ALPHA,//Src1Color,
+    D3D12_BLEND_INV_SRC1_ALPHA,//OneMinusSrc1Color,
+    D3D12_BLEND_SRC1_ALPHA,//Src1Alpha,
+    D3D12_BLEND_INV_SRC1_ALPHA,//OneMinusSrc1Alpha    
+};
+D3D12_BLEND BlendFactorAlphaToNative(blendFactor Factor)
+{
+    return BlendFactorAlphaTable[(sz)Factor];
+}
+
 static D3D12_BLEND_OP BlendOpTable[] = 
 {
     D3D12_BLEND_OP_ADD,//Add,

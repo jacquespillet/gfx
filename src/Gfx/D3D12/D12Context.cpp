@@ -756,13 +756,17 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
                 psoDesc.BlendState.RenderTarget[i].DestBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].DestinationColor);
                 if(PipelineCreation.BlendState.BlendStates[i].SeparateBlend)
                 {
-                    psoDesc.BlendState.RenderTarget[i].SrcBlendAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].SourceAlpha);
-                    psoDesc.BlendState.RenderTarget[i].DestBlendAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].DestinationAlpha);
+                    psoDesc.BlendState.RenderTarget[i].SrcBlendAlpha = BlendFactorAlphaToNative(PipelineCreation.BlendState.BlendStates[i].SourceAlpha);
+                    psoDesc.BlendState.RenderTarget[i].DestBlendAlpha = BlendFactorAlphaToNative(PipelineCreation.BlendState.BlendStates[i].DestinationAlpha);
+                    psoDesc.BlendState.RenderTarget[i].SrcBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].SourceColor);
+                    psoDesc.BlendState.RenderTarget[i].DestBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].DestinationColor);
                 }
                 else
                 {
-                    psoDesc.BlendState.RenderTarget[i].SrcBlendAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].SourceColor);
-                    psoDesc.BlendState.RenderTarget[i].DestBlendAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].DestinationColor);
+                    psoDesc.BlendState.RenderTarget[i].SrcBlendAlpha = BlendFactorAlphaToNative(PipelineCreation.BlendState.BlendStates[i].SourceColor);
+                    psoDesc.BlendState.RenderTarget[i].DestBlendAlpha = BlendFactorAlphaToNative(PipelineCreation.BlendState.BlendStates[i].DestinationColor);
+                    psoDesc.BlendState.RenderTarget[i].SrcBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].SourceColor);
+                    psoDesc.BlendState.RenderTarget[i].DestBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].DestinationColor);
                 }
 
                 psoDesc.BlendState.RenderTarget[i].BlendOp = BlendOperationToNative(PipelineCreation.BlendState.BlendStates[i].ColorOp);
@@ -804,6 +808,13 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         }
 
     }    
+    
+    for (size_t j = 0; j < PipelineCreation.Shaders.StagesCount; j++)
+    {
+        DeallocateMemory((void*)PipelineCreation.Shaders.Stages[j].Code);
+        DeallocateMemory((void*)PipelineCreation.Shaders.Stages[j].FileName);
+    }
+    DeallocateMemory((void*)PipelineCreation.Name);
 
     return Handle;
 }

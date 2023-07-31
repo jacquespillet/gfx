@@ -100,13 +100,21 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
 
     Singleton->Imgui = gfx::imgui::Initialize(Singleton->GfxContext, Singleton->Window, Singleton->SwapchainPass);
     
-    std::vector<u8> ColorData = {0,0,0,0};
+    struct rgba {uint8_t r, g, b, a;};
+    u32 TexWidth = 64;
+    u32 TexHeight = 64;
+    std::vector<rgba> ColorData(TexWidth * TexHeight);
+    
+    rgba Color = {0,0,0,0};
+    for (sz i = 0; i < TexWidth * TexHeight; i++)
+        ColorData[i] = Color;
+    
     gfx::imageData ImageData = {};
     ImageData.ChannelCount = 4;
-    ImageData.Data = ColorData.data();
-    ImageData.DataSize = ColorData.size();
-    ImageData.Width = 1;
-    ImageData.Height = 1;
+    ImageData.Data = (u8*)ColorData.data();
+    ImageData.DataSize = ColorData.size() * sizeof(rgba);
+    ImageData.Width = TexWidth;
+    ImageData.Height = TexHeight;
     ImageData.Format = gfx::format::R8G8B8A8_UNORM;
     ImageData.Type = gfx::type::UNSIGNED_BYTE;
     gfx::imageCreateInfo ImageCreateInfo = 
@@ -121,13 +129,127 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     };    
     defaultTextures::BlackTexture = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
 
-    ColorData[2] = 255;
+
+    Color = {0,0,255,0};
+    for (sz i = 0; i < TexWidth * TexHeight; i++)
+        ColorData[i] = Color;
     defaultTextures::BlueTexture = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
     
-    ColorData[0] = 255; ColorData[1] = 255; ColorData[2] = 255; ColorData[3] = 255;
+    Color = {255,255,255,255};
+    for (sz i = 0; i < TexWidth * TexHeight; i++)
+        ColorData[i] = Color;
     defaultTextures::WhiteTexture = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
 
     return Singleton;
+}
+
+gfx::pipelineCreation context::GetPipelineCreation(materialFlags::bits Flags)
+{
+
+    gfx::pipelineCreation PipelineCreation = {};
+
+    std::string ShaderParentPath;
+    std::string ShaderFileName;
+    if(Flags & materialFlags::Unlit)
+    {
+        PipelineCreation.Name = gfx::AllocateCString("Unlit");
+        ShaderParentPath = "resources/Hlgfx/Shaders/Unlit/";
+        if(GFX_API == GFX_VK || GFX_API == GFX_GL)
+        {
+            ShaderFileName = "Unlit.glsl";
+        }
+        else
+        {
+            ShaderFileName = "Unlit.hlsl";
+        }
+    }
+
+
+    //
+    std::string ApiDefinition;
+    if(GFX_API == GFX_VK)
+    {
+        ApiDefinition = "#define GRAPHICS_API VK\n";
+    }
+    if(GFX_API == GFX_GL)
+    {
+        ApiDefinition = "#define GRAPHICS_API GL\n";
+    }
+    if(GFX_API == GFX_D3D12)
+    {
+        ApiDefinition = "#define GRAPHICS_API D3D12\n";
+    }
+    
+    std::string VertexCode;
+    gfx::ShaderConcatenate(ShaderFileName, VertexCode, ShaderParentPath);
+    std::string VertexCustomDefines = "#define VERTEX\n";
+    VertexCustomDefines += ApiDefinition;
+    VertexCode = std::regex_replace(VertexCode, std::regex("CUSTOM_DEFINES"), VertexCustomDefines);
+    const char *VertexCodeCStr = gfx::AllocateCString(VertexCode.c_str());
+    const char *VertexFileNameCStr = gfx::AllocateCString(ShaderParentPath + "/" + ShaderFileName);
+    PipelineCreation.Shaders.AddStage(VertexCodeCStr, VertexFileNameCStr, (u32)strlen(VertexCodeCStr), gfx::shaderStageFlags::bits::Vertex);
+
+    std::string FragmentCode;
+    gfx::ShaderConcatenate(ShaderFileName, FragmentCode, ShaderParentPath);
+    std::string FragmentCustomDefines = "#define FRAGMENT\n";
+    FragmentCustomDefines += ApiDefinition;
+    FragmentCode = std::regex_replace(FragmentCode, std::regex("CUSTOM_DEFINES"), FragmentCustomDefines);
+    const char *FragmentCodeCStr = gfx::AllocateCString(FragmentCode.c_str());
+    const char *FragmentFileNameCStr = gfx::AllocateCString(ShaderParentPath + "/" + ShaderFileName);
+    PipelineCreation.Shaders.AddStage(FragmentCodeCStr, FragmentFileNameCStr, (u32)strlen(FragmentCodeCStr), gfx::shaderStageFlags::bits::Fragment);
+
+    
+    //TODO: Refactor that
+    PipelineCreation.VertexInput.NumVertexStreams=0;
+    gfx::vertexStream VertexStream{};
+    VertexStream.Binding = 0;
+    VertexStream.Stride = sizeof(vertex);
+    VertexStream.InputRate = gfx::vertexInputRate::PerVertex;
+    PipelineCreation.VertexInput.AddVertexStream(VertexStream);        
+
+    PipelineCreation.VertexInput.NumVertexAttributes=0;
+    gfx::vertexAttribute VertexAttribute0{};
+    VertexAttribute0.Location = 0;
+    VertexAttribute0.Binding = 0;
+    VertexAttribute0.Offset = 0;
+    VertexAttribute0.Format = gfx::vertexComponentFormat::Float4;
+    VertexAttribute0.SemanticIndex = 0;
+    PipelineCreation.VertexInput.AddVertexAttribute(VertexAttribute0);
+    gfx::vertexAttribute VertexAttribute1{};
+    VertexAttribute1.Location = 1;
+    VertexAttribute1.Binding = 0;
+    VertexAttribute1.Offset = sizeof(v4f);
+    VertexAttribute1.Format = gfx::vertexComponentFormat::Float4;
+    VertexAttribute1.SemanticIndex = 1;
+    PipelineCreation.VertexInput.AddVertexAttribute(VertexAttribute1);
+
+    PipelineCreation.DepthStencil.DepthEnable = 1;
+    PipelineCreation.DepthStencil.DepthWriteEnable = true;
+    PipelineCreation.DepthStencil.DepthComparison = gfx::compareOperation::LessOrEqual;
+    
+
+    gfx::blendState &BlendState = PipelineCreation.BlendState.AddBlendState();
+    BlendState.BlendEnabled = Flags & materialFlags::BlendEnabled;
+    BlendState.SeparateBlend=false;
+    if(BlendState.BlendEnabled)
+        BlendState.SetColor(gfx::blendFactor::SrcColor, gfx::blendFactor::OneMinusSrcColor, gfx::blendOperation::Add);
+
+    PipelineCreation.Rasterization.CullMode = (Flags & materialFlags::CullModeOn) ? gfx::cullMode::Back : gfx::cullMode::None;
+
+    PipelineCreation.RenderPassHandle = gfx::context::Get()->SwapchainRenderPass;
+
+    return PipelineCreation;    
+}
+
+gfx::pipelineHandle context::CreateOrGetPipeline(materialFlags::bits Flags)
+{
+    if(this->AllPipelines.find(Flags) == this->AllPipelines.end())
+    {
+        gfx::pipelineCreation Creation = GetPipelineCreation(Flags);
+        this->AllPipelines[Flags] = gfx::context::Get()->CreatePipeline(Creation);
+    }
+
+    return this->AllPipelines[Flags];
 }
 
 void context::StartFrame()
@@ -346,6 +468,10 @@ void context::Cleanup()
     
     GfxContext->ProcessDeletionQueue();
 
+    for(auto &Pipeline : this->AllPipelines)
+    {
+        GfxContext->DestroyPipeline(Pipeline.second);
+    }
     for(auto &Pipeline : this->Pipelines)
     {
         GfxContext->DestroyPipeline(Pipeline.second);

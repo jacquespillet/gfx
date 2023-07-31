@@ -1233,6 +1233,14 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     // VkData->Device.destroyPipelineCache(PipelineCache);
     Pipeline->Name = std::string(PipelineCreation.Name);
     Pipeline->Creation = PipelineCreation;
+
+    for (size_t j = 0; j < PipelineCreation.Shaders.StagesCount; j++)
+    {
+        DeallocateMemory((void*)PipelineCreation.Shaders.Stages[j].Code);
+        DeallocateMemory((void*)PipelineCreation.Shaders.Stages[j].FileName);
+    }
+    DeallocateMemory((void*)PipelineCreation.Name);
+        
     return Handle;
 }
 

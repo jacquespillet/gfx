@@ -372,10 +372,9 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         GLPipeline->DepthStencil.DepthComparison = CompareOpToNative(PipelineCreation.DepthStencil.DepthComparison);
 
         //Blend state
-        GLPipeline->Blend.Enabled=false;
         if(PipelineCreation.BlendState.ActiveStates>0)
         {
-            GLPipeline->Blend.Enabled=true;
+            GLPipeline->Blend.Enabled=PipelineCreation.BlendState.BlendStates[0].BlendEnabled;
             GLPipeline->Blend.BlendSourceColor = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].SourceColor);
             GLPipeline->Blend.BlendDestColor = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].DestinationColor);
             GLPipeline->Blend.BlendSourceAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].SourceAlpha);
@@ -390,6 +389,13 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
         GLPipeline->Rasterizer.FillMode = FillModeToNative(PipelineCreation.Rasterization.Fill);
         GLPipeline->Rasterizer.FrontFace = FrontFaceToNative(PipelineCreation.Rasterization.FrontFace);
     }
+
+    for (size_t j = 0; j < PipelineCreation.Shaders.StagesCount; j++)
+    {
+        DeallocateMemory((void*)PipelineCreation.Shaders.Stages[j].Code);
+        DeallocateMemory((void*)PipelineCreation.Shaders.Stages[j].FileName);
+    }
+    DeallocateMemory((void*)PipelineCreation.Name);    
 
     return Handle;
 }

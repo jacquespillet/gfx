@@ -35,108 +35,6 @@ struct geometryData
     u32 MaterialIndex;
 };
 
-gfx::pipelineHandle PipelineFromMaterial(const tinygltf::Material &Material, materialType Type)
-{
-    gfx::pipelineCreation PipelineCreation = {};
-
-    std::string ShaderParentPath;
-    std::string ShaderFileName;
-    if(Type == materialType::Unlit)
-    {
-        PipelineCreation.Name = "Unlit";
-        ShaderParentPath = "resources/Hlgfx/Shaders/Unlit/";
-        if(GFX_API == GFX_VK || GFX_API == GFX_GL)
-        {
-            ShaderFileName = "Unlit.glsl";
-        }
-        else
-        {
-            ShaderFileName = "Unlit.hlsl";
-        }
-    }
-
-
-    //
-    std::string ApiDefinition;
-    if(GFX_API == GFX_VK)
-    {
-        ApiDefinition = "#define GRAPHICS_API VK\n";
-    }
-    if(GFX_API == GFX_GL)
-    {
-        ApiDefinition = "#define GRAPHICS_API GL\n";
-    }
-    if(GFX_API == GFX_D3D12)
-    {
-        ApiDefinition = "#define GRAPHICS_API D3D12\n";
-    }
-    
-    std::string VertexCode;
-    gfx::ShaderConcatenate(ShaderFileName, VertexCode, ShaderParentPath);
-    std::string VertexCustomDefines = "#define VERTEX\n";
-    VertexCustomDefines += ApiDefinition;
-    VertexCode = std::regex_replace(VertexCode, std::regex("CUSTOM_DEFINES"), VertexCustomDefines);
-    const char *VertexCodeCStr = gfx::AllocateCString(VertexCode.c_str());
-    const char *VertexFileNameCStr = gfx::AllocateCString(ShaderParentPath + "/" + ShaderFileName);
-    PipelineCreation.Shaders.AddStage(VertexCodeCStr, VertexFileNameCStr, (u32)strlen(VertexCodeCStr), gfx::shaderStageFlags::bits::Vertex);
-
-    std::string FragmentCode;
-    gfx::ShaderConcatenate(ShaderFileName, FragmentCode, ShaderParentPath);
-    std::string FragmentCustomDefines = "#define FRAGMENT\n";
-    FragmentCustomDefines += ApiDefinition;
-    FragmentCode = std::regex_replace(FragmentCode, std::regex("CUSTOM_DEFINES"), FragmentCustomDefines);
-    const char *FragmentCodeCStr = gfx::AllocateCString(FragmentCode.c_str());
-    const char *FragmentFileNameCStr = gfx::AllocateCString(ShaderParentPath + "/" + ShaderFileName);
-    PipelineCreation.Shaders.AddStage(FragmentCodeCStr, FragmentFileNameCStr, (u32)strlen(FragmentCodeCStr), gfx::shaderStageFlags::bits::Fragment);
-
-    
-    //TODO: Refactor that
-    PipelineCreation.VertexInput.NumVertexStreams=0;
-    gfx::vertexStream VertexStream{};
-    VertexStream.Binding = 0;
-    VertexStream.Stride = sizeof(vertex);
-    VertexStream.InputRate = gfx::vertexInputRate::PerVertex;
-    PipelineCreation.VertexInput.AddVertexStream(VertexStream);        
-
-    PipelineCreation.VertexInput.NumVertexAttributes=0;
-    gfx::vertexAttribute VertexAttribute0{};
-    VertexAttribute0.Location = 0;
-    VertexAttribute0.Binding = 0;
-    VertexAttribute0.Offset = 0;
-    VertexAttribute0.Format = gfx::vertexComponentFormat::Float4;
-    VertexAttribute0.SemanticIndex = 0;
-    PipelineCreation.VertexInput.AddVertexAttribute(VertexAttribute0);
-    gfx::vertexAttribute VertexAttribute1{};
-    VertexAttribute1.Location = 1;
-    VertexAttribute1.Binding = 0;
-    VertexAttribute1.Offset = sizeof(v4f);
-    VertexAttribute1.Format = gfx::vertexComponentFormat::Float4;
-    VertexAttribute1.SemanticIndex = 1;
-    PipelineCreation.VertexInput.AddVertexAttribute(VertexAttribute1);
-
-    PipelineCreation.DepthStencil.DepthEnable = 1;
-    PipelineCreation.DepthStencil.DepthWriteEnable = true;
-    PipelineCreation.DepthStencil.DepthComparison = gfx::compareOperation::LessOrEqual;
-    
-
-    gfx::blendState &BlendState = PipelineCreation.BlendState.AddBlendState();
-    BlendState.BlendEnabled = Material.alphaMode == "BLEND";
-    BlendState.SetColor(gfx::blendFactor::SrcColor, gfx::blendFactor::OneMinusSrcColor, gfx::blendOperation::Add);
-
-    PipelineCreation.Rasterization.CullMode = Material.doubleSided ? gfx::cullMode::None : gfx::cullMode::Back;
-
-    PipelineCreation.RenderPassHandle = gfx::context::Get()->SwapchainRenderPass;
-    gfx::pipelineHandle Pipeline = gfx::context::Get()->CreatePipeline(PipelineCreation);
-
-    gfx::DeallocateMemory((void*)FragmentCodeCStr);
-    gfx::DeallocateMemory((void*)FragmentFileNameCStr);
-    gfx::DeallocateMemory((void*)VertexCodeCStr);
-    gfx::DeallocateMemory((void*)VertexFileNameCStr);
-
-
-    return Pipeline;
-}
-
 void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geometryData>> &Geometries, std::vector<std::vector<uint32_t>> &InstanceMapping)
 {
     uint32_t GIndexBase=0;
@@ -464,8 +362,19 @@ void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<mater
         // GLTFMaterial.alphaMode
         // GLTFMaterial.alphaCutoff
 
-        gfx::pipelineHandle Pipeline = PipelineFromMaterial(GLTFMaterial, materialType::Unlit);
-        Materials[i] = std::make_shared<unlitMaterial>(Pipeline);  
+        materialFlags::bits Flags = materialFlags::None;
+        if(GLTFMaterial.alphaMode == "BLEND")
+            Flags = (materialFlags::bits)(Flags |  materialFlags::BlendEnabled);
+        else
+            Flags = (materialFlags::bits)(Flags |  materialFlags::BlendDisabled);
+        if(GLTFMaterial.doubleSided)
+            Flags = (materialFlags::bits)(Flags |  materialFlags::CullModeOff);
+        else
+            Flags = (materialFlags::bits)(Flags |  materialFlags::CullModeOn);
+        
+        Flags = (materialFlags::bits)(Flags |  materialFlags::Unlit);
+        
+        Materials[i] = std::make_shared<unlitMaterial>(Flags);  
         std::shared_ptr<unlitMaterial> UnlitMat = std::static_pointer_cast<unlitMaterial>(Materials[i]);
         // Materials[i].MaterialData.BaseColor = glm::vec3((float)PBR.baseColorFactor[0], (float)PBR.baseColorFactor[1], (float)PBR.baseColorFactor[2]);
         

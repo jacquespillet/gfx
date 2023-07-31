@@ -1,6 +1,7 @@
 #include "Include/Material.h"
 #include "Include/Util.h"
 #include "Include/Bindings.h"
+#include "Include/Context.h"
 
 namespace hlgfx
 {
@@ -11,8 +12,9 @@ gfx::imageHandle defaultTextures::WhiteTexture = gfx::InvalidHandle;
 unlitMaterial::unlitMaterial()
 {
     gfx::context *Context = gfx::context::Get();
+    Flags =  (materialFlags::bits)(materialFlags::Unlit | materialFlags::BlendEnabled | materialFlags::CullModeOn);
+    context::Get()->CreateOrGetPipeline(Flags);
 
-    PipelineHandle = Context->CreatePipelineFromFile("resources/Hlgfx/Shaders/Unlit/Unlit.json");
 
     this->UniformBuffer = Context->CreateBuffer(sizeof(materialData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
     this->Uniforms = std::make_shared<gfx::uniformGroup>();
@@ -27,10 +29,11 @@ unlitMaterial::unlitMaterial()
     Context->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(materialData), 0);
 }
 
-unlitMaterial::unlitMaterial(gfx::pipelineHandle Pipeline)
+unlitMaterial::unlitMaterial(materialFlags::bits Flags)
 {
     gfx::context *Context = gfx::context::Get();
 
+    gfx::pipelineHandle Pipeline = context::Get()->CreateOrGetPipeline(Flags);    
     this->PipelineHandle = Pipeline;
     this->UniformBuffer = Context->CreateBuffer(sizeof(materialData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
     this->Uniforms = std::make_shared<gfx::uniformGroup>();
@@ -61,7 +64,6 @@ unlitMaterial::~unlitMaterial()
 {
     printf("Destroying Material \n");
     gfx::context::Get()->QueueDestroyBuffer(this->UniformBuffer);
-    gfx::context::Get()->QueueDestroyPipeline(this->PipelineHandle);
     if (this->DiffuseTexture.use_count() == 1)
     {
         gfx::context::Get()->QueueDestroyImage(*this->DiffuseTexture.get());

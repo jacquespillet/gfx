@@ -20,6 +20,7 @@ D3D12_COMPARISON_FUNC DepthFuncToNative(compareOperation Operation);
 D3D12_DEPTH_WRITE_MASK DepthWriteToNative(u8 DepthWriteEnabled);
 D3D12_DEPTH_STENCILOP_DESC StencilStateToNative(stencilOperationState Operation);
 D3D12_BLEND BlendFactorToNative(blendFactor Factor);
+D3D12_BLEND BlendFactorAlphaToNative(blendFactor Factor);
 D3D12_BLEND_OP BlendOperationToNative(blendOperation Operation);
 u8 BlendWriteMaskToNative(colorWriteEnabled::mask Mask);
 D3D12_CULL_MODE CullModeToNative(cullMode::bits Mode);

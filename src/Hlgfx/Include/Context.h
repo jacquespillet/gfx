@@ -4,6 +4,7 @@
 #include "Gfx/Include/Imgui.h"
 #include "Types.h"
 #include "Camera.h"
+#include "Material.h"
 
 #include <memory>
 #include <unordered_map>
@@ -13,7 +14,7 @@
 namespace hlgfx
 {
 
-struct scene;
+struct scene;  
 void OnResizeWindow(app::window &Window, app::v2i NewSize);
 void OnClickedWindow(app::window &Window, app::mouseButton Button, bool Clicked);
 void OnMousePositionChangedWindow(app::window &Window, f64 PosX, f64 PosY);
@@ -34,6 +35,9 @@ struct context
     void OnMousePositionChanged(f64 NewPosX, f64 NewPosY);
     void OnMouseWheelChanged(f64 OffsetX, f64 OffsetY);
     void Cleanup();
+
+    gfx::pipelineCreation GetPipelineCreation(materialFlags::bits Flags);
+    gfx::pipelineHandle CreateOrGetPipeline(materialFlags::bits Flags);
 
 
 
@@ -57,6 +61,9 @@ struct context
     //Then each material instantiates another pipeline
     static const u32 UnlitPipeline = 0;
     std::unordered_map<u32, gfx::pipelineHandle> Pipelines;
+
+
+    std::unordered_map<materialFlags::bits, gfx::pipelineHandle> AllPipelines;
 
     std::shared_ptr<gfx::imgui> Imgui;
 	

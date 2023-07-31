@@ -9,7 +9,9 @@
 #include "GLMapping.h"
 #include "GLPipeline.h"
 #include "GLShader.h"
+#include "GLCommon.h"
 #include "GLFramebuffer.h"
+#include "GLContext.h"
 #include <GL/glew.h>
 
 
@@ -145,13 +147,13 @@ void ExecuteBindGraphicsPipeline(const command &Command)
         glEnable(GL_BLEND);
         if(GLPipeline->Blend.Separate)
         {
-            glBlendFunc(GLPipeline->Blend.BlendSourceColor, GLPipeline->Blend.BlendDestColor);
-            glBlendEquation(GLPipeline->Blend.ColorOp);
+            glBlendFuncSeparate(GLPipeline->Blend.BlendSourceColor, GLPipeline->Blend.BlendDestColor, GLPipeline->Blend.BlendSourceAlpha, GLPipeline->Blend.BlendDestAlpha);
+            glBlendEquationSeparate(GLPipeline->Blend.ColorOp, GLPipeline->Blend.AlphaOp);
         }
         else
         {
-            glBlendFuncSeparate(GLPipeline->Blend.BlendSourceColor, GLPipeline->Blend.BlendDestColor, GLPipeline->Blend.BlendSourceAlpha, GLPipeline->Blend.BlendDestAlpha);
-            glBlendEquationSeparate(GLPipeline->Blend.ColorOp, GLPipeline->Blend.AlphaOp);
+            glBlendFunc(GLPipeline->Blend.BlendSourceColor, GLPipeline->Blend.BlendDestColor);
+            glBlendEquation(GLPipeline->Blend.ColorOp);
         }
     }
     else
@@ -173,7 +175,8 @@ void ExecuteBindGraphicsPipeline(const command &Command)
     glFrontFace(GLPipeline->Rasterizer.FrontFace);
     glPolygonMode(GL_FRONT_AND_BACK, GLPipeline->Rasterizer.FillMode);
 
-
+    GET_CONTEXT(GLData, context::Get());
+    GLData->CheckErrors();
 }
 
 void ExecuteBindComputePipeline(const command &Command)

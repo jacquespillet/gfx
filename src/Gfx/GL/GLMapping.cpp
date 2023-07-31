@@ -625,8 +625,8 @@ GLenum BlendFactorToNative(blendFactor Factor)
 
 static GLenum BlendOpTablep[] = 
 {
-    GL_ADD,//Add,
-    GL_SUBTRACT,//Subtract,
+    GL_FUNC_ADD,//Add,
+    GL_FUNC_SUBTRACT,//Subtract,
     GL_FUNC_REVERSE_SUBTRACT,//ReverseSubtract,
     GL_MIN,//Min,
     GL_MAX,//Max,
