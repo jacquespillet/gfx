@@ -36,6 +36,42 @@ struct geometryData
     u32 MaterialIndex;
 };
 
+gfx::samplerFilter MinFilter(int Filter)
+{
+    if(Filter == TINYGLTF_TEXTURE_FILTER_LINEAR)
+        return gfx::samplerFilter::Linear;
+    else if(Filter == TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_NEAREST)
+        return gfx::samplerFilter::NearestMipmapNearest;
+    else if(Filter == TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_NEAREST)
+        return gfx::samplerFilter::LinearMipmapNearest;
+    else if(Filter == TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_LINEAR)
+        return gfx::samplerFilter::NearestMipmapLinear;
+    else if(Filter == TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR)
+        return gfx::samplerFilter::LinearMipmapLinear;
+
+    return gfx::samplerFilter::Linear;
+}
+gfx::samplerFilter MagFilter(int Filter)
+{
+    if(Filter == TINYGLTF_TEXTURE_FILTER_NEAREST)
+        return gfx::samplerFilter::Nearest;
+    else if(Filter == TINYGLTF_TEXTURE_FILTER_LINEAR)
+        return gfx::samplerFilter::Linear;
+    return gfx::samplerFilter::Linear;
+}
+gfx::samplerWrapMode BorderMode(int Mode)
+{
+    if(Mode == TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE)
+        return gfx::samplerWrapMode::ClampToEdge;
+    else if(Mode == TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT)
+        return gfx::samplerWrapMode::MirroredRepeat;
+    else if(Mode == TINYGLTF_TEXTURE_WRAP_REPEAT)
+        return gfx::samplerWrapMode::Repeat;
+
+    return gfx::samplerWrapMode::Repeat;
+}
+
+
 void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geometryData>> &Geometries, std::vector<std::vector<uint32_t>> &InstanceMapping)
 {
     uint32_t GIndexBase=0;
@@ -323,15 +359,16 @@ void LoadTextures(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<textur
         ImageData.Format = gfx::format::R8G8B8A8_UNORM;
         ImageData.Type = gfx::type::UNSIGNED_BYTE;
 
+        tinygltf::Sampler &Sampler = GLTFModel.samplers[GLTFTex.sampler];
         //TODO
 		gfx::imageCreateInfo ImageCreateInfo = 
 		{
 			{0.0f,0.0f,0.0f,0.0f},
-			gfx::samplerFilter::Linear,
-			gfx::samplerFilter::Linear,
-			gfx::samplerWrapMode::ClampToBorder,
-			gfx::samplerWrapMode::ClampToBorder,
-			gfx::samplerWrapMode::ClampToBorder,
+			MinFilter(Sampler.minFilter),
+			MagFilter(Sampler.magFilter),
+			BorderMode(Sampler.wrapS),
+			BorderMode(Sampler.wrapT),
+			gfx::samplerWrapMode::Repeat,
 			true
 		};
 		gfx::imageHandle Image = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);

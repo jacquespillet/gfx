@@ -88,7 +88,8 @@ struct unlitMaterial : public material
 
         f32 DebugChannel; 
         f32 UseBaseColor;
-        v2f Padding0;
+        f32 UseEmissionTexture;
+        f32 UseOcclusionTexture;
     } UniformData;
 
 };

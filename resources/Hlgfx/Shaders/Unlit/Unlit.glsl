@@ -40,7 +40,8 @@ DECLARE_UNIFORM_BUFFER(MaterialDescriptorSetBinding, MaterialDataBinding, Materi
 
     float DebugChannel;  
     float UseBaseColor;  
-    vec2 Padding0;
+    float UseEmissionTexture;  
+    float UseOcclusionTexture;  
 };
 
 DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, BaseColorTextureBinding, BaseColorTexture);
@@ -79,12 +80,14 @@ void main()
     vec4 FinalColor = vec4(0,0,0,0);
 
     vec3 FinalEmission = vec3(0,0,0);
-    FinalEmission += Emission;
     FinalEmission += SampleTexture(EmissionTexture, DefaultSampler, Input.FragUV).rgb;
+    FinalEmission = mix(vec3(0,0,0), FinalEmission, UseEmissionTexture);
+    FinalEmission *= Emission;
     FinalEmission *= EmissiveFactor;
 
 
     float Occlusion = SampleTexture(OcclusionTexture, DefaultSampler, Input.FragUV).x;
+    Occlusion = mix(1, Occlusion, UseOcclusionTexture);
     Occlusion = mix(1, Occlusion, OcclusionStrength);
 
     vec4 BaseColor = SampleTexture(BaseColorTexture, DefaultSampler, Input.FragUV);

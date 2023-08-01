@@ -123,9 +123,9 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
         {0.0f,0.0f,0.0f,0.0f},
         gfx::samplerFilter::Linear,
         gfx::samplerFilter::Linear,
-        gfx::samplerWrapMode::ClampToBorder,
-        gfx::samplerWrapMode::ClampToBorder,
-        gfx::samplerWrapMode::ClampToBorder,
+        gfx::samplerWrapMode::Repeat,
+        gfx::samplerWrapMode::Repeat,
+        gfx::samplerWrapMode::Repeat,
         true
     };    
 

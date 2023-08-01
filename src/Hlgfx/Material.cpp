@@ -47,6 +47,8 @@ unlitMaterial::unlitMaterial()
     this->UniformData.OcclusionStrength = 1;
     this->UniformData.Emission = v3f(0,0,0);
     this->UniformData.UseBaseColor = 1.0f;
+    this->UniformData.UseEmissionTexture = 1.0f;
+    this->UniformData.UseOcclusionTexture = 1.0f;
 
     Context->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(materialData), 0);
 }
@@ -86,6 +88,8 @@ unlitMaterial::unlitMaterial(materialFlags::bits Flags)
     this->UniformData.OcclusionStrength = 1;
     this->UniformData.Emission = v3f(0,0,0);
     this->UniformData.UseBaseColor = 1.0f;
+    this->UniformData.UseEmissionTexture = 1.0f;
+    this->UniformData.UseOcclusionTexture = 1.0f;
 
     Context->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(materialData), 0);
 }
@@ -230,9 +234,21 @@ void unlitMaterial::DrawGUI()
     ShouldUpdate |= ImGui::DragFloat("Emission Strength", &this->UniformData.EmissiveFactor, 0.005f, 0, 1);
     
 
-    if(DrawTexture("Base Color", this->BaseColorTexture, this->UniformData.UseBaseColor))
+    if(DrawTexture("Base Color Texture", this->BaseColorTexture, this->UniformData.UseBaseColor))
     {
         SetBaseColorTexture(this->BaseColorTexture);
+        ShouldUpdate=true;
+    }
+
+    if(DrawTexture("Occlusion Texture", this->OcclusionTexture, this->UniformData.UseOcclusionTexture))
+    {
+        SetOcclusionTexture(this->OcclusionTexture);
+        ShouldUpdate=true;
+    }
+
+    if(DrawTexture("Emissive Texture", this->EmissiveTexture, this->UniformData.UseEmissionTexture))
+    {
+        SetEmissiveTexture(this->EmissiveTexture);
         ShouldUpdate=true;
     }
 
