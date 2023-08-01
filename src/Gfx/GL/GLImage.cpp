@@ -89,4 +89,12 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
     if(CreateInfo.GenerateMipmaps) glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
+
+
+ImTextureID image::GetImGuiID()
+{
+    GET_API_DATA(GLImage, glImage, this);
+    return (ImTextureID)GLImage->Handle;
+}
+
 }

@@ -203,6 +203,8 @@ void d3d12PipelineData::Create(const pipelineCreation &PipelineCreation)
     //Root signature        
     {
         std::vector<CD3DX12_DESCRIPTOR_RANGE> DescriptorRanges;
+        DescriptorRanges.reserve(1024);
+
         this->RootParams.clear();
         this->BindingRootParamMapping.clear();
         for(u32 i=0; i<PipelineCreation.Shaders.StagesCount; i++)

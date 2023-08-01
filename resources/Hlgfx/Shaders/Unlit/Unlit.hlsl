@@ -34,14 +34,19 @@ cbuffer Material : register(b3)
     vec3 BaseColorFactor;
     float OpacityFactor;
 
-    int DebugChannel;
-    ivec3 Padding0;
-
+    vec3 Emission;
     float OcclusionStrength;
-    vec3 Emission;     
+
+    float DebugChannel;  
+    float UseBaseColor;  
+    vec2 Padding0;  
 };
 
 Texture2D BaseColorTexture : register(t4);
+Texture2D OcclusionTexture : register(t6);
+Texture2D EmissionTexture : register(t8);
+
+
 SamplerState DefaultSampler : register(s0);
 
 PSInput VSMain(vec4 PositionUvX : POSITION0, vec4 NormalUvY : POSITION1)
@@ -58,9 +63,20 @@ vec4 PSMain(PSInput Input) : SV_TARGET
 {
     vec4 FinalColor = vec4(0,0,0,0);
 
-    vec4 BaseColor = SampleTexture(BaseColorTexture, DefaultSampler, Input.FragUV);
-    FinalColor.rgb = BaseColor.rgb * BaseColorFactor.rgb;
-    FinalColor.a = OpacityFactor * BaseColor.a;
+    vec3 FinalEmission = vec3(0,0,0);
+    FinalEmission += Emission;
+    FinalEmission += SampleTexture(EmissionTexture, DefaultSampler, Input.FragUV).rgb;
+    FinalEmission *= EmissiveFactor;
 
+
+    float Occlusion = SampleTexture(OcclusionTexture, DefaultSampler, Input.FragUV).x;
+    Occlusion = mix(1, Occlusion, OcclusionStrength);
+
+    vec4 BaseColor = SampleTexture(BaseColorTexture, DefaultSampler, Input.FragUV);
+    BaseColor = mix(vec4(0,0,0,0), BaseColor, UseBaseColor);
+
+    FinalColor.rgb = BaseColor.rgb * BaseColorFactor.rgb * Occlusion;
+    FinalColor.rgb += FinalEmission;
+    FinalColor.a = OpacityFactor * BaseColor.a;
     return FinalColor;
 }

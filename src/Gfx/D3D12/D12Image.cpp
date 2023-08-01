@@ -417,5 +417,11 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
     }
 }
 
+ImTextureID image::GetImGuiID()
+{
+    GET_CONTEXT(D12Context, context::Get());
+    GET_API_DATA(D12Image, d3d12ImageData, this);
+    return (ImTextureID) D12Context->GetGPUDescriptorAt(D12Image->OffsetInHeap).ptr;
+}
 
 }
