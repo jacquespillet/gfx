@@ -56,5 +56,11 @@ PSInput VSMain(vec4 PositionUvX : POSITION0, vec4 NormalUvY : POSITION1)
 
 vec4 PSMain(PSInput Input) : SV_TARGET
 {
-    return SampleTexture(BaseColorTexture, DefaultSampler, Input.FragUV) + vec4(BaseColorFactor, OpacityFactor);
+    vec4 FinalColor = vec4(0,0,0,0);
+
+    vec4 BaseColor = SampleTexture(BaseColorTexture, DefaultSampler, Input.FragUV);
+    FinalColor.rgb = BaseColor.rgb * BaseColorFactor.rgb;
+    FinalColor.a = OpacityFactor * BaseColor.a;
+
+    return FinalColor;
 }

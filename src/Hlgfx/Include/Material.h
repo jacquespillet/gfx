@@ -55,7 +55,7 @@ struct unlitMaterial : public material
     virtual std::vector<u8> Serialize() override;
     virtual void RecreatePipeline() override;
 
-    void SetDiffuseTexture(std::shared_ptr<texture> Texture);
+    void SetBaseColorTexture(std::shared_ptr<texture> Texture);
     void SetMetallicRoughnessTexture(std::shared_ptr<texture> Texture);
     void SetOcclusionTexture(std::shared_ptr<texture> Texture);
     void SetNormalTexture(std::shared_ptr<texture> Texture);
@@ -71,6 +71,8 @@ struct unlitMaterial : public material
     std::shared_ptr<texture> NormalTexture;
     std::shared_ptr<texture> EmissiveTexture;
 
+    b8 UseBaseColor = true;
+
     struct materialData
     {
         f32 RoughnessFactor;
@@ -81,11 +83,12 @@ struct unlitMaterial : public material
         v3f BaseColorFactor;
         f32 OpacityFactor;
 
-        s32 DebugChannel;
-        v3i Padding0;
-
-        f32 OcclusionStrength;
         v3f Emission;
+        f32 OcclusionStrength;
+
+        f32 DebugChannel; 
+        f32 UseBaseColor;
+        v2f Padding0;
     } UniformData;
 
 };

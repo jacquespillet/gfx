@@ -13,7 +13,6 @@ texture::texture(gfx::imageHandle Handle) : Handle(Handle)
 
 texture::~texture()
 {
-    // gfx::context::Get()->QueueDestroyImage(this->Handle);
-    gfx::context::Get()->DestroyImage(this->Handle);
+    gfx::context::Get()->QueueDestroyImage(this->Handle);
 }
 }

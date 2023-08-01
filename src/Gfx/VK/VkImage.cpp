@@ -7,6 +7,8 @@
 #include "VkMemoryAllocation.h"
 
 #include <algorithm>
+
+#include "imgui_impl_vulkan.h"
 namespace gfx
 {
 
@@ -156,6 +158,8 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     VkData->StageBuffer.Reset();
 
     VKImage->InitSampler(CreateInfo, MipLevelCount);
+
+    VKImage->ImGuiDescriptorSet = ImGui_ImplVulkan_AddTexture(VKImage->Sampler, VKImage->DefaultImageViews.NativeView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 
@@ -439,6 +443,12 @@ void image::Destroy()
     
     vmaDestroyImage(VkData->Allocator, VkImageData->Handle, VkImageData->Allocation);
 
+}
+
+ImTextureID image::GetImGuiID()
+{
+    GET_API_DATA(VkImageData, vkImageData, this);
+    return (ImTextureID) VkImageData->ImGuiDescriptorSet;
 }
 
 }

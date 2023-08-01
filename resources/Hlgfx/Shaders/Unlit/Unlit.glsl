@@ -35,14 +35,17 @@ DECLARE_UNIFORM_BUFFER(MaterialDescriptorSetBinding, MaterialDataBinding, Materi
     vec3 BaseColorFactor;
     float OpacityFactor;
 
-    int DebugChannel;
-    ivec3 Padding0;
-
+    vec3 Emission;
     float OcclusionStrength;
-    vec3 Emission;    
+
+    float DebugChannel;  
+    float UseBaseColor;  
+    vec2 Padding0;
 };
 
 DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, BaseColorTextureBinding, BaseColorTexture);
+DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, OcclusionTextureBinding, OcclusionTexture);
+DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, EmissiveTextureBinding, EmissionTexture);
 
 
 /////////////////////////////////
@@ -73,11 +76,24 @@ layout(location = 0) out vec4 OutputColor;
 
 void main() 
 {
-    vec4 BaseColor = SampleTexture(BaseColorTexture, NULL, Input.FragUV);
-    
     vec4 FinalColor = vec4(0,0,0,0);
-    FinalColor.rgb = BaseColor.rgb * BaseColorFactor.rgb;
-    FinalColor.a = OpacityFactor;
+
+    vec3 FinalEmission = vec3(0,0,0);
+    FinalEmission += Emission;
+    FinalEmission += SampleTexture(EmissionTexture, DefaultSampler, Input.FragUV).rgb;
+    FinalEmission *= EmissiveFactor;
+
+
+    float Occlusion = SampleTexture(OcclusionTexture, DefaultSampler, Input.FragUV).x;
+    Occlusion = mix(1, Occlusion, OcclusionStrength);
+
+    vec4 BaseColor = SampleTexture(BaseColorTexture, DefaultSampler, Input.FragUV);
+    BaseColor = mix(vec4(0,0,0,0), BaseColor, UseBaseColor);
+
+    FinalColor.rgb = BaseColor.rgb * BaseColorFactor.rgb * Occlusion;
+    FinalColor.rgb += FinalEmission;
+    FinalColor.a = OpacityFactor * BaseColor.a;
+    
     OutputColor = FinalColor;
 }
 

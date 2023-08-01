@@ -2,6 +2,7 @@
 #include "Types.h"
 #include <memory>
 #include <vector>
+#include <imgui.h>
 
 namespace gfx
 {
@@ -56,6 +57,8 @@ struct image
     void Init(const imageData &Image, const imageCreateInfo &CreateInfo);
     void InitAsCubemap(const imageData &Left, const imageData &Right, const imageData &Top, const imageData &Bottom, const imageData &Back, const imageData &Front, const imageCreateInfo &CreateInfo);
         
+    ImTextureID GetImGuiID();
+
     u32 GetMipLevelWidth(u32 MipLevel);
     u32 GetMipLevelHeight(u32 MipLevel);
 

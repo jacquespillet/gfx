@@ -373,7 +373,7 @@ void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<mater
 
         if(PBR.baseColorTexture.index > -1)
         {
-            UnlitMat->SetDiffuseTexture(Textures[PBR.baseColorTexture.index]);
+            UnlitMat->SetBaseColorTexture(Textures[PBR.baseColorTexture.index]);
         }
         if(PBR.metallicRoughnessTexture.index > -1)
         {

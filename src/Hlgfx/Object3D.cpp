@@ -351,7 +351,7 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
                 };
 
                 gfx::imageHandle ImageHandle = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);
-                Material->SetDiffuseTexture(std::make_shared<texture>(ImageHandle));
+                Material->SetBaseColorTexture(std::make_shared<texture>(ImageHandle));
 
                 gfx::DeallocateMemory(ImageData.Data);
             }

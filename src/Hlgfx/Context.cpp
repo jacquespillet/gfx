@@ -106,7 +106,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     u32 TexHeight = 64;
     std::vector<rgba> ColorData(TexWidth * TexHeight);
     
-    rgba Color = {0,0,0,0};
+    rgba Color = {0,0,0,255};
     for (sz i = 0; i < TexWidth * TexHeight; i++)
         ColorData[i] = Color;
     
@@ -132,7 +132,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     defaultTextures::BlackTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
 
 
-    Color = {0,0,255,0};
+    Color = {0,0,255,255};
     for (sz i = 0; i < TexWidth * TexHeight; i++)
         ColorData[i] = Color;
     defaultTextures::BlueTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);

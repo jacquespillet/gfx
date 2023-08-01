@@ -20,7 +20,7 @@ uniformGroup & uniformGroup::Update()
     GET_CONTEXT(VkData, context::Get());
     GET_API_DATA(VkUniformData, vkUniformData, this);
     
-
+    context::Get()->WaitIdle();
     for(auto &Binding : Bindings)
     {
         pipelineHandle PipelineHandle = Binding.first;

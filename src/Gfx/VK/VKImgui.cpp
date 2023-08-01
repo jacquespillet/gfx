@@ -39,6 +39,8 @@ std::shared_ptr<imgui> imgui::Initialize(std::shared_ptr<context> Context, std::
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    
     ImGui::StyleColorsLight();
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
 

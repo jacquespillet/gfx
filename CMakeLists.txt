@@ -256,15 +256,15 @@ if(${GFX_API} EQUAL ${GFX_API_VK})
         set(gfxApiLibs ${gfxApiLibs} debug VulkanMemoryAllocatord optimized VulkanMemoryAllocator)
         set(gfxApiLibs
                 ${gfxApiLibs}  
-                ${GLSLANG_LIB_DIR}/OSDependentd.lib
-                ${GLSLANG_LIB_DIR}/SPIRVd.lib
-                ${GLSLANG_LIB_DIR}/glslangd.lib
-                ${GLSLANG_LIB_DIR}/MachineIndependentd.lib
-                ${GLSLANG_LIB_DIR}/SPVRemapperd.lib
-                ${GLSLANG_LIB_DIR}/GenericCodeGend.lib
-                ${GLSLANG_LIB_DIR}/glslang-default-resource-limitsd.lib
-                ${GLSLANG_LIB_DIR}/HLSLd.lib
-                ${GLSLANG_LIB_DIR}/OGLCompilerd.lib
+                debug ${GLSLANG_LIB_DIR}/OSDependentd.lib optimized ${GLSLANG_LIB_DIR}/OSDependent.lib
+                debug ${GLSLANG_LIB_DIR}/SPIRVd.lib optimized ${GLSLANG_LIB_DIR}/SPIRV.lib
+                debug ${GLSLANG_LIB_DIR}/glslangd.lib optimized ${GLSLANG_LIB_DIR}/glslang.lib
+                debug ${GLSLANG_LIB_DIR}/MachineIndependentd.lib optimized ${GLSLANG_LIB_DIR}/MachineIndependent.lib
+                debug ${GLSLANG_LIB_DIR}/SPVRemapperd.lib optimized ${GLSLANG_LIB_DIR}/SPVRemapper.lib
+                debug ${GLSLANG_LIB_DIR}/GenericCodeGend.lib optimized ${GLSLANG_LIB_DIR}/GenericCodeGen.lib
+                debug ${GLSLANG_LIB_DIR}/glslang-default-resource-limitsd.lib optimized ${GLSLANG_LIB_DIR}/glslang-default-resource-limits.lib
+                debug ${GLSLANG_LIB_DIR}/HLSLd.lib optimized ${GLSLANG_LIB_DIR}/HLSL.lib
+                debug ${GLSLANG_LIB_DIR}/OGLCompilerd.lib optimized ${GLSLANG_LIB_DIR}/OGLCompiler.lib
         )
 endif()
 

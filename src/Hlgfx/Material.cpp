@@ -4,6 +4,7 @@
 #include "Include/Context.h"
 
 #include <glm/ext.hpp>
+#include <nfd.h>
 
 namespace hlgfx
 {
@@ -20,7 +21,7 @@ unlitMaterial::unlitMaterial()
     this->BaseColorTexture = defaultTextures::BlackTexture;
     this->NormalTexture = defaultTextures::BlueTexture;
     this->EmissiveTexture = defaultTextures::BlackTexture;
-    this->OcclusionTexture = defaultTextures::BlackTexture;
+    this->OcclusionTexture = defaultTextures::WhiteTexture;
     this->MetallicRoughnessTexture = defaultTextures::BlackTexture;
 
     this->UniformBuffer = Context->CreateBuffer(sizeof(materialData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
@@ -43,8 +44,9 @@ unlitMaterial::unlitMaterial()
     this->UniformData.BaseColorFactor = v3f(0,0,0);
     this->UniformData.OpacityFactor = 1.0f;
     this->UniformData.DebugChannel = -1;
-    this->UniformData.OcclusionStrength = 0;
+    this->UniformData.OcclusionStrength = 1;
     this->UniformData.Emission = v3f(0,0,0);
+    this->UniformData.UseBaseColor = 1.0f;
 
     Context->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(materialData), 0);
 }
@@ -56,7 +58,7 @@ unlitMaterial::unlitMaterial(materialFlags::bits Flags)
     this->BaseColorTexture = defaultTextures::BlackTexture;
     this->NormalTexture = defaultTextures::BlueTexture;
     this->EmissiveTexture = defaultTextures::BlackTexture;
-    this->OcclusionTexture = defaultTextures::BlackTexture;
+    this->OcclusionTexture = defaultTextures::WhiteTexture;
     this->MetallicRoughnessTexture = defaultTextures::BlackTexture;
 
     gfx::pipelineHandle Pipeline = context::Get()->CreateOrGetPipeline(Flags);    
@@ -81,8 +83,9 @@ unlitMaterial::unlitMaterial(materialFlags::bits Flags)
     this->UniformData.BaseColorFactor = v3f(0,0,0);
     this->UniformData.OpacityFactor = 1.0f;
     this->UniformData.DebugChannel = -1;
-    this->UniformData.OcclusionStrength = 0;
+    this->UniformData.OcclusionStrength = 1;
     this->UniformData.Emission = v3f(0,0,0);
+    this->UniformData.UseBaseColor = 1.0f;
 
     Context->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(materialData), 0);
 }
@@ -92,7 +95,7 @@ void unlitMaterial::SetCullMode(gfx::cullMode Mode)
     //Rebuild pipeline and replace the handle
 }
 
-void unlitMaterial::SetDiffuseTexture(std::shared_ptr<texture> Texture)
+void unlitMaterial::SetBaseColorTexture(std::shared_ptr<texture> Texture)
 {
     this->BaseColorTexture = Texture;
     this->Uniforms->Uniforms[1].ResourceHandle = Texture->Handle;
@@ -139,14 +142,99 @@ void unlitMaterial::RecreatePipeline()
     this->ShouldRecreate=false;
 }
 
+bool DrawTexture(const char *Name, std::shared_ptr<texture> &Texture, f32 &Use)
+{   
+    b8 Changed=false;
+    f32 TextHeight = ImGui::CalcTextSize(Name).y;
+    const f32 ImageWidth = 50;
+    const f32 ImageHeight = 30;
+    f32 Offset = ImageHeight / 2 - TextHeight/2;
+
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + Offset);
+    b8 UseBool = Use > 0.0f; 
+    if(ImGui::Checkbox(Name, &UseBool))
+    {
+        Use = UseBool ? 1.0f : 0.0f;
+        Changed = true;
+    }
+
+    ImGui::SameLine();
+
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() - Offset);
+    gfx::image *Image = gfx::context::Get()->GetImage(Texture->Handle);
+    ImGui::Image(Image->GetImGuiID(), ImVec2(ImageWidth, ImageHeight));
+    if (ImGui::IsItemHovered() || ImGui::IsItemFocused())
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+    if(ImGui::IsItemClicked())
+    {
+        nfdchar_t *OutPath = NULL;
+        nfdresult_t Result = NFD_OpenDialog( NULL, NULL, &OutPath );
+        if ( Result == NFD_OKAY ) {
+            Changed = true;
+            gfx::imageData ImageData = gfx::ImageFromFile(OutPath);
+            gfx::imageCreateInfo ImageCreateInfo = 
+            {
+                {0.0f,0.0f,0.0f,0.0f},
+                gfx::samplerFilter::Linear,
+                gfx::samplerFilter::Linear,
+                gfx::samplerWrapMode::ClampToBorder,
+                gfx::samplerWrapMode::ClampToBorder,
+                gfx::samplerWrapMode::ClampToBorder,
+                true
+            };
+            gfx::imageHandle NewImage = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);                
+            Texture = std::make_shared<texture>(NewImage);
+        }        
+    }
+
+    ImGui::SameLine();
+    gfx::image *BlackImage = gfx::context::Get()->GetImage(defaultTextures::BlackTexture->Handle);
+    ImGui::Image(BlackImage->GetImGuiID(), ImVec2(30, ImageHeight));
+    if(ImGui::IsItemClicked())
+    {
+        Changed = true;
+        Texture = defaultTextures::BlackTexture;
+    }
+
+    ImGui::SameLine();
+    gfx::image *WhiteImage = gfx::context::Get()->GetImage(defaultTextures::WhiteTexture->Handle);
+    ImGui::Image(WhiteImage->GetImGuiID(), ImVec2(30, ImageHeight));
+    if(ImGui::IsItemClicked())
+    {
+        Changed = true;
+        Texture = defaultTextures::WhiteTexture;
+    }
+
+    ImGui::SameLine();
+    gfx::image *BlueImage = gfx::context::Get()->GetImage(defaultTextures::BlueTexture->Handle);
+    ImGui::Image(BlueImage->GetImGuiID(), ImVec2(30, ImageHeight));
+    if(ImGui::IsItemClicked())
+    {
+        Changed = true;
+        Texture = defaultTextures::BlueTexture;
+    }
+
+    
+    
+    return Changed;
+}
+
 void unlitMaterial::DrawGUI()
 {
     bool ShouldUpdate = false;
     bool ShouldRecreatePipeline = false;
     ShouldUpdate |= ImGui::ColorEdit3("Base Color", glm::value_ptr(this->UniformData.BaseColorFactor));
-    ShouldUpdate |= ImGui::DragFloat("Opacity", &this->UniformData.OpacityFactor, 0.001f, 0, 1);
+    ShouldUpdate |= ImGui::ColorEdit3("Emission", glm::value_ptr(this->UniformData.Emission));
+    ShouldUpdate |= ImGui::DragFloat("Opacity", &this->UniformData.OpacityFactor, 0.005f, 0, 1);
+    ShouldUpdate |= ImGui::DragFloat("Occlusion Strength", &this->UniformData.OcclusionStrength, 0.005f, 0, 1);
+    ShouldUpdate |= ImGui::DragFloat("Emission Strength", &this->UniformData.EmissiveFactor, 0.005f, 0, 1);
     
 
+    if(DrawTexture("Base Color", this->BaseColorTexture, this->UniformData.UseBaseColor))
+    {
+        SetBaseColorTexture(this->BaseColorTexture);
+        ShouldUpdate=true;
+    }
 
     bool DepthWriteEnabled = this->Flags & materialFlags::DepthWriteEnabled;
     if(ImGui::Checkbox("Depth Write", &DepthWriteEnabled))
