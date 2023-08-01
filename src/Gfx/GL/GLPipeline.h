@@ -3,6 +3,7 @@
 
 namespace gfx
 {
+struct pipelineCreation;
 struct glStencilOperation
 {
     GLenum Fail = GL_STENCIL_FAIL;
@@ -15,6 +16,9 @@ struct glPipeline
 {
     std::shared_ptr<glShaderProgram> ShaderProgram;
 
+
+    void Create(const pipelineCreation &PipelineCreation);
+    void DestroyGLResources();
 
     struct depthStencil
     {

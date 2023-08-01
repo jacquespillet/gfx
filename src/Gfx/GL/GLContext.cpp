@@ -119,7 +119,7 @@ void context::CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz
     Buffer->CopyData((u8*)Ptr, Size, Offset);
 }
 
-void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding){
+void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding, b8 Force){
 
 }
 
@@ -337,6 +337,17 @@ void context::Present()
     GLData->CheckErrors();
 }
 
+pipelineHandle context::RecreatePipeline(const pipelineCreation &PipelineCreation, pipelineHandle PipelineHandle)
+{
+    GET_CONTEXT(GLData, this);
+    pipeline *Pipeline = GetPipeline(PipelineHandle);
+    Pipeline->Name = std::string(PipelineCreation.Name);
+    Pipeline->Creation = PipelineCreation;    
+    GET_API_DATA(GLPipelineData, glPipeline, Pipeline);
+    GLPipelineData->DestroyGLResources();
+    GLPipelineData->Create(PipelineCreation);
+    return PipelineHandle;
+}
 
 pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 {
@@ -351,52 +362,8 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     Pipeline->ApiData = std::make_shared<glPipeline>();
     GET_API_DATA(GLPipeline, glPipeline, Pipeline);
     //Compile and link shaders
-
-    GLPipeline->ShaderProgram = std::make_shared<glShaderProgram>();
-    for (size_t i = 0; i < PipelineCreation.Shaders.StagesCount; i++)
-    {
-        GLPipeline->ShaderProgram->SetCodeForStage(PipelineCreation.Shaders.Stages[i].Code, PipelineCreation.Shaders.Stages[i].Stage);
-    }
-    GLPipeline->ShaderProgram->Compile();
+    GLPipeline->Create(PipelineCreation);
     
-    GLData->CheckErrors();
-
-    if(!PipelineCreation.IsCompute)
-    {
-        //Depth stencil state
-        GLPipeline->DepthStencil.FrontStencilOp = StencilStateToNative(PipelineCreation.DepthStencil.Front);
-        GLPipeline->DepthStencil.BackStencilOp = StencilStateToNative(PipelineCreation.DepthStencil.Back);
-        GLPipeline->DepthStencil.DepthEnable = PipelineCreation.DepthStencil.DepthEnable;
-        GLPipeline->DepthStencil.DepthWrite = PipelineCreation.DepthStencil.DepthWriteEnable;
-        GLPipeline->DepthStencil.StencilEnable = PipelineCreation.DepthStencil.StencilEnable;
-        GLPipeline->DepthStencil.DepthComparison = CompareOpToNative(PipelineCreation.DepthStencil.DepthComparison);
-
-        //Blend state
-        if(PipelineCreation.BlendState.ActiveStates>0)
-        {
-            GLPipeline->Blend.Enabled=PipelineCreation.BlendState.BlendStates[0].BlendEnabled;
-            GLPipeline->Blend.BlendSourceColor = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].SourceColor);
-            GLPipeline->Blend.BlendDestColor = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].DestinationColor);
-            GLPipeline->Blend.BlendSourceAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].SourceAlpha);
-            GLPipeline->Blend.BlendDestAlpha = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[0].DestinationAlpha);
-            GLPipeline->Blend.ColorOp = BlendOpToNative(PipelineCreation.BlendState.BlendStates[0].ColorOp);
-            GLPipeline->Blend.AlphaOp = BlendOpToNative(PipelineCreation.BlendState.BlendStates[0].AlphaOp);
-            GLPipeline->Blend.Separate = PipelineCreation.BlendState.BlendStates[0].SeparateBlend;
-        }
-
-        //Rasterizer state
-        GLPipeline->Rasterizer.CullMode = CullModeToNative(PipelineCreation.Rasterization.CullMode);
-        GLPipeline->Rasterizer.FillMode = FillModeToNative(PipelineCreation.Rasterization.Fill);
-        GLPipeline->Rasterizer.FrontFace = FrontFaceToNative(PipelineCreation.Rasterization.FrontFace);
-    }
-
-    for (size_t j = 0; j < PipelineCreation.Shaders.StagesCount; j++)
-    {
-        DeallocateMemory((void*)PipelineCreation.Shaders.Stages[j].Code);
-        DeallocateMemory((void*)PipelineCreation.Shaders.Stages[j].FileName);
-    }
-    DeallocateMemory((void*)PipelineCreation.Name);    
-
     return Handle;
 }
 
