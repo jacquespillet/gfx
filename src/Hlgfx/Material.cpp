@@ -259,6 +259,20 @@ void unlitMaterial::DrawGUI()
         this->ShouldRecreate = true;
     }
 
+    bool DepthTestEnabled = this->Flags & materialFlags::DepthTestEnabled;
+    if(ImGui::Checkbox("Depth Test", &DepthTestEnabled))
+    {
+        Flags = (materialFlags::bits)(Flags ^ materialFlags::DepthTestEnabled);
+        this->ShouldRecreate = true;
+    }
+
+    bool DoubleSided = !(this->Flags & materialFlags::CullModeOn);
+    if(ImGui::Checkbox("Double Sided", &DoubleSided))
+    {
+        Flags = (materialFlags::bits)(Flags ^ materialFlags::CullModeOn);
+        this->ShouldRecreate = true;
+    }
+
     bool BlendEnabled = this->Flags & materialFlags::BlendEnabled;
     if(ImGui::Checkbox("Transparent", &BlendEnabled))
     {
