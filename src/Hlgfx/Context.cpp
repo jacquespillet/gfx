@@ -235,7 +235,7 @@ gfx::pipelineCreation context::GetPipelineCreation(materialFlags::bits Flags)
     BlendState.BlendEnabled = Flags & materialFlags::BlendEnabled;
     BlendState.SeparateBlend=false;
     if(BlendState.BlendEnabled)
-        BlendState.SetColor(gfx::blendFactor::SrcColor, gfx::blendFactor::OneMinusSrcColor, gfx::blendOperation::Add);
+        BlendState.SetColor(gfx::blendFactor::SrcAlpha, gfx::blendFactor::OneMinusSrcAlpha, gfx::blendOperation::Add);
 
     PipelineCreation.Rasterization.CullMode = (Flags & materialFlags::CullModeOn) ? gfx::cullMode::Back : gfx::cullMode::None;
 

@@ -392,6 +392,8 @@ void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<mater
             UnlitMat->SetEmissiveTexture(Textures[GLTFMaterial.emissiveTexture.index]);
         }
 
+        UnlitMat->Update();
+
     }
 }    
 

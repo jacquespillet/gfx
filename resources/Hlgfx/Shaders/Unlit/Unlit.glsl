@@ -73,7 +73,11 @@ layout(location = 0) out vec4 OutputColor;
 
 void main() 
 {
-    vec4 FinalColor = SampleTexture(BaseColorTexture, NULL, Input.FragUV) + vec4(BaseColorFactor, OpacityFactor);
+    vec4 BaseColor = SampleTexture(BaseColorTexture, NULL, Input.FragUV);
+    
+    vec4 FinalColor = vec4(0,0,0,0);
+    FinalColor.rgb = BaseColor.rgb * BaseColorFactor.rgb;
+    FinalColor.a = OpacityFactor;
     OutputColor = FinalColor;
 }
 

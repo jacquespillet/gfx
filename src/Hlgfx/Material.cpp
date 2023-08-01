@@ -133,6 +133,7 @@ void unlitMaterial::RecreatePipeline()
     gfx::pipelineCreation PipelineCreation = context::Get()->GetPipelineCreation(this->Flags);
     gfx::context::Get()->RecreatePipeline(PipelineCreation, this->PipelineHandle);
     
+    
     gfx::context::Get()->BindUniformsToPipeline(this->Uniforms, this->PipelineHandle, MaterialDescriptorSetBinding, true);
     Uniforms->Update();
     this->ShouldRecreate=false;
@@ -143,6 +144,7 @@ void unlitMaterial::DrawGUI()
     bool ShouldUpdate = false;
     bool ShouldRecreatePipeline = false;
     ShouldUpdate |= ImGui::ColorEdit3("Base Color", glm::value_ptr(this->UniformData.BaseColorFactor));
+    ShouldUpdate |= ImGui::DragFloat("Opacity", &this->UniformData.OpacityFactor, 0.001f, 0, 1);
     
 
 
@@ -150,6 +152,13 @@ void unlitMaterial::DrawGUI()
     if(ImGui::Checkbox("Depth Write", &DepthWriteEnabled))
     {
         Flags = (materialFlags::bits)(Flags ^ materialFlags::DepthWriteEnabled);
+        this->ShouldRecreate = true;
+    }
+
+    bool BlendEnabled = this->Flags & materialFlags::BlendEnabled;
+    if(ImGui::Checkbox("Transparent", &BlendEnabled))
+    {
+        Flags = (materialFlags::bits)(Flags ^ materialFlags::BlendEnabled);
         this->ShouldRecreate = true;
     }
 
