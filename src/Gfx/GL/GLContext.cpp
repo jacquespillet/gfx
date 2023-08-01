@@ -447,6 +447,7 @@ void context::DestroyVertexBuffer(vertexBufferHandle VertexBufferHandle)
 void context::DestroyImage(imageHandle ImageHandle)
 {
     image *Image = GetImage(ImageHandle);
+    if(!Image) return;
     GET_API_DATA(GLImage, glImage, Image);
     glDeleteTextures(1, &GLImage->Handle);
     ResourceManager.Images.ReleaseResource(ImageHandle);

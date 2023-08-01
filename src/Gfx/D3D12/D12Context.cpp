@@ -760,6 +760,8 @@ void context::DestroyBuffer(bufferHandle BufferHandle)
 }
 void context::DestroyImage(imageHandle ImageHandle)
 {
+    image *Image = GetImage(ImageHandle);
+    if(!Image) return;
     ResourceManager.Images.ReleaseResource(ImageHandle);
 }
 void context::DestroyFramebuffer(framebufferHandle FramebufferHandle)
