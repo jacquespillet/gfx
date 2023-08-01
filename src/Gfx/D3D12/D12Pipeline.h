@@ -14,6 +14,7 @@ using namespace Microsoft::WRL;
 
 namespace gfx
 {
+struct pipelineCreation;
 struct d3d12PipelineData
 {
     ComPtr<ID3D12RootSignature> RootSignature;
@@ -24,11 +25,13 @@ struct d3d12PipelineData
     ComPtr<IDxcBlob> computeShader;
     
     std::vector<D3D12_ROOT_PARAMETER> RootParams;
-    b8 UsedRootParams[d12Constants::MaxResourceBindings]; 
-    
+    b8 UsedRootParams[d12Constants::MaxResourceBindings];     
     std::unordered_map<u32, u32> BindingRootParamMapping;
 
     b8 IsCompute=false;
+
+    void Create(const pipelineCreation &PipelineCreation);
+    void DestroyD12Resources();
 };
 
 }

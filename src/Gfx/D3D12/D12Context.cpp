@@ -631,6 +631,18 @@ ComPtr<IDxcBlob> CompileShader(const shaderStage &Stage, std::vector<D3D12_ROOT_
     return CompiledShaderBlob;
 }
 
+pipelineHandle context::RecreatePipeline(const pipelineCreation &PipelineCreation, pipelineHandle PipelineHandle)
+{
+    GET_CONTEXT(D12Data, this);
+    pipeline *Pipeline = GetPipeline(PipelineHandle);
+    Pipeline->Name = std::string(PipelineCreation.Name);
+    Pipeline->Creation = PipelineCreation;    
+    GET_API_DATA(D12PipelineData, d3d12PipelineData, Pipeline);
+    D12PipelineData->DestroyD12Resources();
+    D12PipelineData->Create(PipelineCreation); 
+    return PipelineHandle;
+}
+
 pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 {
     pipelineHandle Handle = ResourceManager.Pipelines.ObtainResource();
@@ -641,181 +653,8 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     pipeline *Pipeline = GetPipeline(Handle);
     Pipeline->ApiData = std::make_shared<d3d12PipelineData>();
     std::shared_ptr<d3d12PipelineData> D12PipelineData = std::static_pointer_cast<d3d12PipelineData>(Pipeline->ApiData);
-
-    GET_CONTEXT(D12Data, this);
-
-    renderPass *RenderPass = GetRenderPass(PipelineCreation.RenderPassHandle);
-
-    //Root signature        
-    {
-        std::vector<CD3DX12_DESCRIPTOR_RANGE> DescriptorRanges;
-        D12PipelineData->RootParams.clear();
-        D12PipelineData->BindingRootParamMapping.clear();
-        for(u32 i=0; i<PipelineCreation.Shaders.StagesCount; i++)
-        {
-            if(PipelineCreation.Shaders.Stages[i].Stage == shaderStageFlags::Vertex)
-                D12PipelineData->vertexShader = CompileShader(PipelineCreation.Shaders.Stages[i], D12PipelineData->RootParams, D12PipelineData->BindingRootParamMapping, DescriptorRanges);
-            if(PipelineCreation.Shaders.Stages[i].Stage == shaderStageFlags::Fragment)
-                D12PipelineData->pixelShader = CompileShader(PipelineCreation.Shaders.Stages[i], D12PipelineData->RootParams, D12PipelineData->BindingRootParamMapping, DescriptorRanges);
-            if(PipelineCreation.Shaders.Stages[i].Stage == shaderStageFlags::Compute)
-                D12PipelineData->computeShader = CompileShader(PipelineCreation.Shaders.Stages[i], D12PipelineData->RootParams, D12PipelineData->BindingRootParamMapping, DescriptorRanges);
-        }
-
-        memset(&D12PipelineData->UsedRootParams[0], 0, d12Constants::MaxResourceBindings * sizeof(b8));
-        for(sz i=0; i<D12PipelineData->RootParams.size(); i++)
-        {
-            if(D12PipelineData->RootParams[i].ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
-            {
-                D12PipelineData->UsedRootParams[D12PipelineData->RootParams[i].DescriptorTable.pDescriptorRanges[0].BaseShaderRegister]=true;
-            }
-            else
-            {
-                D12PipelineData->UsedRootParams[D12PipelineData->RootParams[i].Descriptor.ShaderRegister]=true;
-            }
-        }
-
-        const CD3DX12_STATIC_SAMPLER_DESC pointWrap( 0, // shaderRegister    
-                                            D3D12_FILTER_MIN_MAG_MIP_POINT, // filter    
-                                            D3D12_TEXTURE_ADDRESS_MODE_WRAP, // addressU    
-                                            D3D12_TEXTURE_ADDRESS_MODE_WRAP, // addressV    
-                                            D3D12_TEXTURE_ADDRESS_MODE_WRAP); // addressW  
-
-        D3D12_ROOT_SIGNATURE_DESC rootSigDesc;
-        rootSigDesc.NumParameters = (u32)D12PipelineData->RootParams.size();
-        rootSigDesc.pParameters = D12PipelineData->RootParams.data();
-        rootSigDesc.NumStaticSamplers = 1;
-        rootSigDesc.pStaticSamplers = &pointWrap;
-        rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-
-        // create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
-        ComPtr<ID3DBlob> serializedRootSig = nullptr;
-        ComPtr<ID3DBlob> errorBlob = nullptr;
-        HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
-            serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
-
-
-        if(errorBlob != nullptr)
-        {
-            ::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-        }
-        ThrowIfFailed(hr);
-
-        ThrowIfFailed(D12Data->Device->CreateRootSignature(
-            0,
-            serializedRootSig->GetBufferPointer(),
-            serializedRootSig->GetBufferSize(),
-            IID_PPV_ARGS(&D12PipelineData->RootSignature)));
-    }
-
-    {   
-
-        if(!PipelineCreation.IsCompute)
-        {
-            //Input 
-            std::vector<D3D12_INPUT_ELEMENT_DESC> InputElementDescriptors(PipelineCreation.VertexInput.NumVertexAttributes);        
-            u32 Offset=0;
-            for(sz i=0; i<PipelineCreation.VertexInput.NumVertexAttributes; i++)
-            {
-                InputElementDescriptors[i] =   
-                {
-                    SemanticFromAttrib(PipelineCreation.VertexInput.VertexAttributes[i].Format),
-                    PipelineCreation.VertexInput.VertexAttributes[i].SemanticIndex,
-                    AttribFormatToNative(PipelineCreation.VertexInput.VertexAttributes[i].Format),
-                    PipelineCreation.VertexInput.VertexAttributes[i].Binding,
-                    PipelineCreation.VertexInput.VertexAttributes[i].Offset,
-                    VertexInputRateToNative(PipelineCreation.VertexInput.VertexStreams[PipelineCreation.VertexInput.VertexAttributes[i].Binding].InputRate), 
-                    (PipelineCreation.VertexInput.VertexStreams[PipelineCreation.VertexInput.VertexAttributes[i].Binding].InputRate == vertexInputRate::PerVertex) ? 0u : 1u
-                };
-                Offset += PipelineCreation.VertexInput.VertexStreams[PipelineCreation.VertexInput.VertexAttributes[i].Binding].Stride;
-            }
-
-            // Describe and create the graphics pipeline state object (PSO).
-            D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-            psoDesc.InputLayout = { InputElementDescriptors.data(), (u32)InputElementDescriptors.size() };
-            psoDesc.pRootSignature = D12PipelineData->RootSignature.Get();
-
-            psoDesc.VS.BytecodeLength = D12PipelineData->vertexShader->GetBufferSize();
-            psoDesc.VS.pShaderBytecode = D12PipelineData->vertexShader->GetBufferPointer();
-            psoDesc.PS.BytecodeLength = D12PipelineData->pixelShader->GetBufferSize();
-            psoDesc.PS.pShaderBytecode = D12PipelineData->pixelShader->GetBufferPointer();
-
-            psoDesc.DepthStencilState.DepthFunc = DepthFuncToNative(PipelineCreation.DepthStencil.DepthComparison);
-            psoDesc.DepthStencilState.DepthEnable = (b8)(PipelineCreation.DepthStencil.DepthEnable);
-            psoDesc.DepthStencilState.StencilEnable = (b8)(PipelineCreation.DepthStencil.StencilEnable);
-            psoDesc.DepthStencilState.DepthWriteMask = DepthWriteToNative(PipelineCreation.DepthStencil.DepthWriteEnable);
-            psoDesc.DepthStencilState.FrontFace = StencilStateToNative(PipelineCreation.DepthStencil.Front);
-            psoDesc.DepthStencilState.BackFace = StencilStateToNative(PipelineCreation.DepthStencil.Back);
-            
-            psoDesc.NumRenderTargets = RenderPass->Output.NumColorFormats;
-            psoDesc.DSVFormat = FormatToNative(RenderPass->Output.DepthStencilFormat);
-
-            psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-            for(sz i=0; i<psoDesc.NumRenderTargets; i++)
-            {
-                psoDesc.BlendState.RenderTarget[i].SrcBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].SourceColor);
-                psoDesc.BlendState.RenderTarget[i].DestBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].DestinationColor);
-                if(PipelineCreation.BlendState.BlendStates[i].SeparateBlend)
-                {
-                    psoDesc.BlendState.RenderTarget[i].SrcBlendAlpha = BlendFactorAlphaToNative(PipelineCreation.BlendState.BlendStates[i].SourceAlpha);
-                    psoDesc.BlendState.RenderTarget[i].DestBlendAlpha = BlendFactorAlphaToNative(PipelineCreation.BlendState.BlendStates[i].DestinationAlpha);
-                    psoDesc.BlendState.RenderTarget[i].SrcBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].SourceColor);
-                    psoDesc.BlendState.RenderTarget[i].DestBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].DestinationColor);
-                }
-                else
-                {
-                    psoDesc.BlendState.RenderTarget[i].SrcBlendAlpha = BlendFactorAlphaToNative(PipelineCreation.BlendState.BlendStates[i].SourceColor);
-                    psoDesc.BlendState.RenderTarget[i].DestBlendAlpha = BlendFactorAlphaToNative(PipelineCreation.BlendState.BlendStates[i].DestinationColor);
-                    psoDesc.BlendState.RenderTarget[i].SrcBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].SourceColor);
-                    psoDesc.BlendState.RenderTarget[i].DestBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].DestinationColor);
-                }
-
-                psoDesc.BlendState.RenderTarget[i].BlendOp = BlendOperationToNative(PipelineCreation.BlendState.BlendStates[i].ColorOp);
-                psoDesc.BlendState.RenderTarget[i].BlendOpAlpha = BlendOperationToNative(PipelineCreation.BlendState.BlendStates[i].AlphaOp);
-                psoDesc.BlendState.RenderTarget[i].BlendEnable = (b8)PipelineCreation.BlendState.BlendStates[i].BlendEnabled;
-                psoDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = BlendWriteMaskToNative(PipelineCreation.BlendState.BlendStates[i].ColorWriteMask);
-                
-                psoDesc.RTVFormats[i] = FormatToNative(RenderPass->Output.ColorFormats[i]);
-            }
-            
-            psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-            psoDesc.RasterizerState.CullMode = CullModeToNative(PipelineCreation.Rasterization.CullMode);
-            psoDesc.RasterizerState.FrontCounterClockwise = FrontFaceToNative(PipelineCreation.Rasterization.FrontFace);
-            psoDesc.RasterizerState.FillMode = FillModeToNative(PipelineCreation.Rasterization.Fill);
-            psoDesc.RasterizerState.MultisampleEnable = RenderPass->Output.SampleCount > 1 ? TRUE : FALSE;
-            psoDesc.SampleDesc.Count = RenderPass->Output.SampleCount;
-            psoDesc.SampleDesc.Quality = 0;
-
-            psoDesc.SampleMask = UINT_MAX;
-            psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-            ThrowIfFailed(D12Data->Device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&D12PipelineData->PipelineState)));
-            
-            D12PipelineData->IsCompute = false;
-            for(sz i=0; i<InputElementDescriptors.size(); i++)
-            {
-                DeallocateMemory((void*)InputElementDescriptors[i].SemanticName);
-            }
-        }
-        else
-        {
-            D12PipelineData->IsCompute = true;
-            // Describe the compute pipeline state
-            D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
-            psoDesc.pRootSignature = D12PipelineData->RootSignature.Get(); // The root signature for the compute shader
-            psoDesc.CS.BytecodeLength = D12PipelineData->computeShader->GetBufferSize();
-            psoDesc.CS.pShaderBytecode = D12PipelineData->computeShader->GetBufferPointer();
-            
-            ThrowIfFailed(D12Data->Device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&D12PipelineData->PipelineState)));
-        }
-
-    }    
-    
-    for (size_t j = 0; j < PipelineCreation.Shaders.StagesCount; j++)
-    {
-        DeallocateMemory((void*)PipelineCreation.Shaders.Stages[j].Code);
-        DeallocateMemory((void*)PipelineCreation.Shaders.Stages[j].FileName);
-    }
-    DeallocateMemory((void*)PipelineCreation.Name);
-
+    D12PipelineData->Create(PipelineCreation);
+   
     return Handle;
 }
 
@@ -875,7 +714,7 @@ void context::Present()
 {
 
 }
-void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding){
+void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding, b8 Force){
 //Uniforms don't need to know about the pipeline
 }
 
@@ -953,7 +792,6 @@ void context::WaitIdle()
 {
     GET_CONTEXT(D12Data, this);
     D12Data->VirtualFrames.WaitForPreviousFrame();
-    CloseHandle(D12Data->VirtualFrames.FenceEvent);
 }
 
 void context::Cleanup()

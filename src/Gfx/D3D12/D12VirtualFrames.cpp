@@ -18,37 +18,27 @@ void virtualFramesProvider::Init()
     std::shared_ptr<swapchain> Swapchain = Context->Swapchain;
     GET_API_DATA(D12SwapchainData, d3d12SwapchainData, Swapchain);
 
-    // Create frame resources.
+    // Create a command buffer allocator for each frame
+    for (UINT n = 0; n < d12Constants::FrameCount; n++)
     {
-        // Create a RTV for each frame.
-        for (UINT n = 0; n < d12Constants::FrameCount; n++)
-        {
-            
-            ThrowIfFailed(D12Data->Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&CommandAllocators[n])));
-        }
+        
+        ThrowIfFailed(D12Data->Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&CommandAllocators[n])));
     }
 
     CommandBuffer = CreateD3D12CommandBuffer(CommandAllocators[D12SwapchainData->GetFrameIndex()]);
-    // // Create the command list.
 
+    //Create a fence
+    ThrowIfFailed(D12Data->Device->CreateFence(FenceValues[D12SwapchainData->GetFrameIndex()], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&Fence)));
+    FenceValues[D12SwapchainData->GetFrameIndex()]++;
 
-    // Create synchronization objects and wait until assets have been uploaded to the GPU.
+    // Create an event handle to use for frame synchronization.
+    FenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (FenceEvent == nullptr)
     {
-        ThrowIfFailed(D12Data->Device->CreateFence(FenceValues[D12SwapchainData->GetFrameIndex()], D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&Fence)));
-        FenceValues[D12SwapchainData->GetFrameIndex()]++;
+        ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
+    }
 
-        // Create an event handle to use for frame synchronization.
-        FenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        if (FenceEvent == nullptr)
-        {
-            ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()));
-        }
-
-        // Wait for the command list to execute; we are reusing the same command 
-        // list in our main loop but for now, we just want to wait for setup to 
-        // complete before continuing.
-        WaitForPreviousFrame();
-    }    
+    WaitForPreviousFrame();
 }
 
 void virtualFramesProvider::WaitForPreviousFrame()
@@ -58,10 +48,8 @@ void virtualFramesProvider::WaitForPreviousFrame()
     std::shared_ptr<swapchain> Swapchain = Context->Swapchain;
     GET_API_DATA(D12SwapchainData, d3d12SwapchainData, Swapchain);
 
-
     // Schedule a Signal command in the queue.
     ThrowIfFailed(D12Data->CommandQueue->Signal(Fence.Get(), FenceValues[D12SwapchainData->GetFrameIndex()]));
-
     // Wait until the fence has been processed.
     ThrowIfFailed(Fence->SetEventOnCompletion(FenceValues[D12SwapchainData->GetFrameIndex()], FenceEvent));
     WaitForSingleObjectEx(FenceEvent, INFINITE, FALSE);
@@ -76,18 +64,10 @@ void virtualFramesProvider::StartFrame()
     std::shared_ptr<swapchain> Swapchain = Context->Swapchain;
     GET_API_DATA(D12SwapchainData, d3d12SwapchainData, Swapchain);
 
-    // Command list allocators can only be reset when the associated 
-    // command lists have finished execution on the GPU; apps should use 
-    // fences to determine GPU execution progress.
     ThrowIfFailed(CommandAllocators[D12SwapchainData->GetFrameIndex()]->Reset());
 
-
+    //Set the command allocator for the new frame
     (std::static_pointer_cast<d3d12CommandBufferData>(CommandBuffer->ApiData))->CommandAllocator = CommandAllocators[D12SwapchainData->GetFrameIndex()].Get();
-    
-    // // However, when ExecuteCommandList() is called on a particular command 
-    // // list, that command list can then be reset at any time and must be before 
-    // // re-recording.
-    // ThrowIfFailed(CommandList->Reset(CommandAllocators[D12SwapchainData->GetFrameIndex()].Get(), m_pipelineState.Get()));     
 }
 
 void virtualFramesProvider::EndFrame()
