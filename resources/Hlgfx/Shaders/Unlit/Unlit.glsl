@@ -69,11 +69,12 @@ void main()
 #if defined(FRAGMENT)
 
 layout (location = 0) in PSInput Input;
-layout(location = 0) out vec4 outputColor; 
+layout(location = 0) out vec4 OutputColor; 
 
 void main() 
 {
-    outputColor =  texture(BaseColorTexture, Input.FragUV) + vec4(BaseColorFactor, OpacityFactor);
+    vec4 FinalColor = SampleTexture(BaseColorTexture, NULL, Input.FragUV) + vec4(BaseColorFactor, OpacityFactor);
+    OutputColor = FinalColor;
 }
 
 #endif

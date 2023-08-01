@@ -143,11 +143,12 @@ void unlitMaterial::DrawGUI()
     bool ShouldUpdate = false;
     bool ShouldRecreatePipeline = false;
     ShouldUpdate |= ImGui::ColorEdit3("Base Color", glm::value_ptr(this->UniformData.BaseColorFactor));
+    
+
 
     bool DepthWriteEnabled = this->Flags & materialFlags::DepthWriteEnabled;
     if(ImGui::Checkbox("Depth Write", &DepthWriteEnabled))
     {
-        u32 Bitmask = 1 << 5;
         Flags = (materialFlags::bits)(Flags ^ materialFlags::DepthWriteEnabled);
         this->ShouldRecreate = true;
     }

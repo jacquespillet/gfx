@@ -36,5 +36,5 @@ CUSTOM_DEFINES
 #define mul(Elem1, Elem2) Elem1 * Elem2
 
 // #define SampleTexture(Texture, Sampler, UV) texture(Texture, UV)
-#define SampleTexture(Texture, UV) texture(Texture, UV)
+#define SampleTexture(Texture, Sampler, UV) texture(Texture, UV)
 

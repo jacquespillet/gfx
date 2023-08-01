@@ -4,7 +4,7 @@
 struct PSInput
 {
     vec4 position : SV_POSITION;
-    vec2 uv : TEXCOORD;
+    vec2 FragUV : TEXCOORD;
 };
 
 cbuffer Camera : register(b0)
@@ -26,17 +26,29 @@ cbuffer Model : register(b1)
 
 cbuffer Material : register(b3)
 {
-    vec4 BaseColor;
+    float RoughnessFactor;
+    float MetallicFactor;
+    float EmissiveFactor;
+    float AlphaCutoff;
+    
+    vec3 BaseColorFactor;
+    float OpacityFactor;
+
+    int DebugChannel;
+    ivec3 Padding0;
+
+    float OcclusionStrength;
+    vec3 Emission;     
 };
 
-Texture2D DiffuseTexture : register(t4);
+Texture2D BaseColorTexture : register(t4);
 SamplerState DefaultSampler : register(s0);
 
 PSInput VSMain(vec4 PositionUvX : POSITION0, vec4 NormalUvY : POSITION1)
 {
     PSInput result;
 
-    result.uv = vec2(PositionUvX.w, NormalUvY.w);
+    result.FragUV = vec2(PositionUvX.w, NormalUvY.w);
     result.position = mul(mul(ViewProjectionMatrix, ModelMatrix), vec4(PositionUvX.xyz, 1));
 
     return result;
@@ -44,5 +56,5 @@ PSInput VSMain(vec4 PositionUvX : POSITION0, vec4 NormalUvY : POSITION1)
 
 vec4 PSMain(PSInput Input) : SV_TARGET
 {
-    return BaseColor + SampleTexture(DiffuseTexture, DefaultSampler, Input.uv);
+    return SampleTexture(BaseColorTexture, DefaultSampler, Input.FragUV) + vec4(BaseColorFactor, OpacityFactor);
 }
