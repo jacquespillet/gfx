@@ -79,10 +79,8 @@ void scene::DrawNodeChildren(hlgfx::object3D *Object)
         
         if(ImGui::IsItemClicked(0) || ImGui::IsItemClicked(1))
         {
-            //Unselect if already clicked
-            if(NodeClicked == Object->Children[i]) NodeClicked = nullptr;
+            if(NodeClicked == Object->Children[i] && ImGui::IsItemClicked(0)) NodeClicked = nullptr;
             else NodeClicked = Object->Children[i];
-            
         }
 
         ImGui::PushID(i);
@@ -119,7 +117,10 @@ void scene::DrawNodeChildren(hlgfx::object3D *Object)
 
         if(NodeOpen)
         {
-            DrawNodeChildren(Object->Children[i].get());
+            if(i < Object->Children.size())
+            {
+                DrawNodeChildren(Object->Children[i].get());
+            }
             ImGui::TreePop();
         }
     }
@@ -195,6 +196,7 @@ void scene::Clear()
 void scene::DeleteObject(std::shared_ptr<object3D> Object)
 {
     //Go through all children and delete them recursively
+    if(NodeClicked == Object) NodeClicked = nullptr;
     ClearObject(Object);
     Object->Parent->DeleteChild(Object);
 }
