@@ -53,8 +53,6 @@ struct object3D
     virtual void DrawMaterial();
 
 
-    b8 IsSelectedInGui = false;
-
     static std::shared_ptr<object3D> Deserialize(std::vector<u8> &Serialized);
 };
 }

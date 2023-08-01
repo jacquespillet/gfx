@@ -121,7 +121,7 @@ void object3D::OnBeforeRender(std::shared_ptr<camera> Camera)
         Children[i]->OnBeforeRender(Camera);
     }
     
-    if(IsSelectedInGui)
+    if(context::Get()->Scene->NodeClicked.get() == this && context::Get()->Scene.get() != this)
     {
         m4x4 ModelMatrix = this->Transform.Matrices.LocalToWorld;
     

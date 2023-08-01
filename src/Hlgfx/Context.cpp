@@ -363,6 +363,55 @@ void context::DrawGuizmoGUI()
     ImGui::PopStyleColor();
 }
 
+void context::DrawObjectMenu()
+{
+    if(ImGui::MenuItem("Clone"))
+    {
+        if(Scene->NodeClicked)
+        {
+
+        }
+    }
+    if(ImGui::MenuItem("Delete"))
+    {
+        if(Scene->NodeClicked)
+        {
+            Scene->DeleteObject(Scene->NodeClicked);
+            Scene->NodeClicked=nullptr;
+        }
+    }
+}
+
+void context::AddObjectMenu()
+{
+    if(ImGui::MenuItem("Empty"))
+    {
+        std::shared_ptr<hlgfx::object3D> Empty = std::make_shared<hlgfx::object3D>("Empty");
+        if(this->Scene->NodeClicked != nullptr)
+        {
+            this->Scene->NodeClicked->AddObject(Empty);
+        }
+        else
+        {
+            this->Scene->AddObject(Empty);
+        }
+    }
+    if(ImGui::MenuItem("Quad"))
+    {
+        std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<hlgfx::mesh>();
+        Mesh->GeometryBuffers = hlgfx::GetTriangleGeometry();
+        Mesh->Material = std::make_shared<hlgfx::unlitMaterial>();
+        if(this->Scene->NodeClicked != nullptr)
+        {
+            this->Scene->NodeClicked->AddObject(Mesh);
+        }
+        else
+        {
+            this->Scene->AddObject(Mesh);
+        }
+    }
+}
+
 void context::DrawMainMenuBar()
 {
     if (ImGui::BeginMainMenuBar())
@@ -402,53 +451,14 @@ void context::DrawMainMenuBar()
         }
         if(ImGui::BeginMenu("Edit"))
         {
-            if(ImGui::MenuItem("Clone"))
-            {
-                if(Scene->NodeClicked)
-                {
-
-                }
-            }
-            if(ImGui::MenuItem("Delete"))
-            {
-                if(Scene->NodeClicked)
-                {
-                    Scene->DeleteObject(Scene->NodeClicked);
-                    Scene->NodeClicked=nullptr;
-                }
-            }
+            DrawObjectMenu();
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Add"))
         {
             if (ImGui::BeginMenu("Add Object")) 
             {
-                if(ImGui::MenuItem("Empty"))
-                {
-                    std::shared_ptr<hlgfx::object3D> Empty = std::make_shared<hlgfx::object3D>("Empty");
-                    if(this->Scene->NodeClicked != nullptr)
-                    {
-                        this->Scene->NodeClicked->AddObject(Empty);
-                    }
-                    else
-                    {
-                        this->Scene->AddObject(Empty);
-                    }
-                }
-                if(ImGui::MenuItem("Quad"))
-                {
-                    std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<hlgfx::mesh>();
-                    Mesh->GeometryBuffers = hlgfx::GetTriangleGeometry();
-                    Mesh->Material = std::make_shared<hlgfx::unlitMaterial>();
-                    if(this->Scene->NodeClicked != nullptr)
-                    {
-                        this->Scene->NodeClicked->AddObject(Mesh);
-                    }
-                    else
-                    {
-                        this->Scene->AddObject(Mesh);
-                    }
-                }
+                AddObjectMenu();
                 ImGui::EndMenu();
             }
             ImGui::EndMenu();

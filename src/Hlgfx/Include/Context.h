@@ -82,11 +82,13 @@ struct context
     f64 MouseWheelX = 0;
     f64 MouseWheelY = 0;
 
-   ImGuizmo::OPERATION CurrentGizmoOperation = (ImGuizmo::ROTATE);
-   ImGuizmo::MODE CurrentGizmoMode = (ImGuizmo::WORLD);
+    ImGuizmo::OPERATION CurrentGizmoOperation = (ImGuizmo::ROTATE);
+    ImGuizmo::MODE CurrentGizmoMode = (ImGuizmo::WORLD);
 
-   void DrawGuizmoGUI();
-   void DrawMainMenuBar();
+    void DrawObjectMenu();
+    void AddObjectMenu();
+    void DrawGuizmoGUI();
+    void DrawMainMenuBar();
    
 };
 

@@ -16,7 +16,7 @@ unlitMaterial::unlitMaterial()
 {
     gfx::context *Context = gfx::context::Get();
     Flags =  (materialFlags::bits)(materialFlags::Unlit | materialFlags::BlendEnabled | materialFlags::CullModeOn | materialFlags::DepthWriteEnabled | materialFlags::DepthTestEnabled);
-    context::Get()->CreateOrGetPipeline(Flags);
+    this->PipelineHandle = context::Get()->CreateOrGetPipeline(Flags);
 
     this->BaseColorTexture = defaultTextures::BlackTexture;
     this->NormalTexture = defaultTextures::BlueTexture;
@@ -41,7 +41,7 @@ unlitMaterial::unlitMaterial()
     this->UniformData.MetallicFactor = 0.0f;
     this->UniformData.EmissiveFactor = 0.0f;
     this->UniformData.AlphaCutoff = 0.0f;
-    this->UniformData.BaseColorFactor = v3f(0,0,0);
+    this->UniformData.BaseColorFactor = v3f(1,1,1);
     this->UniformData.OpacityFactor = 1.0f;
     this->UniformData.DebugChannel = -1;
     this->UniformData.OcclusionStrength = 1;

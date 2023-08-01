@@ -33,6 +33,7 @@ scene::scene() : object3D("Scene")
 void scene::AddObject(std::shared_ptr<object3D> Object)
 {
     object3D::AddObject(Object);
+    this->NodeClicked = Object;
 }
 
 void scene::AddMesh(std::shared_ptr<object3D> Object)
@@ -75,20 +76,29 @@ void scene::DrawNodeChildren(hlgfx::object3D *Object)
         if(Object->Children[i] == NodeClicked) NodeFlags |= ImGuiTreeNodeFlags_Selected;
 
         bool NodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)i, NodeFlags, Object->Children[i]->Name.c_str(), i);
-
-        if(ImGui::IsItemClicked())
+        
+        if(ImGui::IsItemClicked(0) || ImGui::IsItemClicked(1))
         {
-            //Unselect previous
-            if(NodeClicked != nullptr) NodeClicked->IsSelectedInGui=false;
-
             //Unselect if already clicked
             if(NodeClicked == Object->Children[i]) NodeClicked = nullptr;
-            else //Otherwise select
-            {
-                NodeClicked = Object->Children[i];
-                NodeClicked->IsSelectedInGui=true;
-            }
+            else NodeClicked = Object->Children[i];
+            
         }
+
+        ImGui::PushID(i);
+        if (ImGui::BeginPopupContextItem("Actions"))
+        {
+            context::Get()->DrawObjectMenu();
+            if(ImGui::BeginMenu("Add"))
+            {
+                context::Get()->AddObjectMenu();
+                ImGui::EndMenu();
+            }
+            ImGui::EndPopup();
+        }
+        ImGui::PopID();
+
+
 
         //Drag and drop
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
@@ -128,7 +138,6 @@ void scene::DrawSceneGUI()
     if(ImGui::IsItemClicked())
     {
         NodeClicked = ScenePtr;
-        NodeClicked->IsSelectedInGui=false;
     }
 
     // Drag and drop
@@ -201,10 +210,19 @@ void scene::DrawGUI()
     ImGui::SetNextWindowSize(ImVec2(GuiWidth, WindowHeight), ImGuiCond_Always);
     
     ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_NoTitleBar;
-    ImGui::Begin("Scene", nullptr, WindowFlags);
+    ImGui::Begin("RightPanel", nullptr, WindowFlags);
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(1,1,1,1));
 
     ImGui::BeginChild("Scene", ImVec2(GuiWidth, 300));
+    if(ImGui::BeginPopupContextWindow("Scene"))
+    {
+        if(ImGui::BeginMenu("Add Object"))
+        {
+            context::Get()->AddObjectMenu();
+            ImGui::EndMenu();
+        }
+        ImGui::EndPopup();
+    }
     DrawSceneGUI();
     ImGui::EndChild();  
     ImGui::PopStyleColor(1);
