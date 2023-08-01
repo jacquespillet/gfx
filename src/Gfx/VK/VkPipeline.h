@@ -42,11 +42,14 @@ struct vkPipelineData
     vk::Pipeline NativeHandle;
     vk::PipelineLayout PipelineLayout;
     vk::PipelineBindPoint BindPoint;
-
     descriptorSetLayout *DescriptorSetLayouts[vkConstants::MaxDescriptorSetLayouts];
     descriptorSetLayoutHandle DescriptorSetLayoutHandles[vkConstants::MaxDescriptorSetLayouts];
 
     u32 NumActiveLayouts = 0;
+
+    void Create(const pipelineCreation &PipelineCreation);
+
+    void DestroyVkResources();
 };
 
 }

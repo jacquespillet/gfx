@@ -53,6 +53,10 @@ struct vkShaderData
 
     vk::PipelineShaderStageCreateInfo ShaderStageCreateInfo[commonConstants::MaxShaderStages];
     spirvParseResult SpirvParseResults;
+
+    u32 CompiledShaders=0;
+    b8 GraphicsPipeline = false;
+    void Create(const shaderStateCreation &Creation);
 };
 
 

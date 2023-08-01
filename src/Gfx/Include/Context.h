@@ -84,6 +84,7 @@ struct context
 
     pipelineHandle CreatePipelineFromFile(const char *FileName, framebufferHandle Framebuffer = InvalidHandle); 
     pipelineHandle CreatePipeline(const pipelineCreation &PipelineCreation);
+    pipelineHandle RecreatePipeline(const pipelineCreation &PipelineCreation, pipelineHandle PipelineHandle);
 
     renderPassHandle CreateRenderPass(const renderPassOutput &Output);
 
@@ -94,7 +95,7 @@ struct context
     
     void SubmitCommandBuffer(commandBuffer *CommandBuffer);
     void SubmitCommandBufferImmediate(commandBuffer *CommandBuffer);
-    void BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding);
+    void BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding, b8 Force = false);
 
     void CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz Offset);
 

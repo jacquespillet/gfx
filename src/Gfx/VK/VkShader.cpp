@@ -5,6 +5,46 @@
 namespace gfx
 {
 
+void vkShaderData::Create(const shaderStateCreation &Creation)
+{
+    GET_CONTEXT(VkData, context::Get());
+
+    this->SpirvParseResults= {};
+    this->GraphicsPipeline=true;
+    CompiledShaders=0;
+    for(CompiledShaders = 0; CompiledShaders < Creation.StagesCount; CompiledShaders++)
+    {
+        const shaderStage &ShaderStage = Creation.Stages[CompiledShaders];
+        if(ShaderStage.Stage == shaderStageFlags::Compute)
+        {
+            this->GraphicsPipeline=false;
+        }
+
+        vk::ShaderModuleCreateInfo ShaderCreateInfo;
+        if(Creation.SpvInput)
+        {
+            ShaderCreateInfo.codeSize = ShaderStage.CodeSize;
+            ShaderCreateInfo.pCode = reinterpret_cast< const u32* >(ShaderStage.Code);
+        }
+        else
+        {
+            ShaderCreateInfo = CompileShader(ShaderStage.Code, ShaderStage.CodeSize, ShaderStage.Stage, Creation.Name);
+        }
+
+
+        vk::PipelineShaderStageCreateInfo &ShaderStageCreateInfo = this->ShaderStageCreateInfo[CompiledShaders];
+        memset(&ShaderStageCreateInfo, 0, sizeof(vk::PipelineShaderStageCreateInfo));
+        ShaderStageCreateInfo = vk::PipelineShaderStageCreateInfo();
+        ShaderStageCreateInfo.setPName("main") .setStage(ShaderStageToNative(ShaderStage.Stage));
+
+        this->ShaderStageCreateInfo[CompiledShaders].module = VkData->Device.createShaderModule(ShaderCreateInfo);
+
+        ParseSpirv((void*)((char*)ShaderCreateInfo.pCode), ShaderCreateInfo.codeSize, this->SpirvParseResults);
+
+        DeallocateMemory((void*)ShaderCreateInfo.pCode);
+    }
+}
+
 EShLanguage GetShaderType(shaderStageFlags::bits Stage)
 {
     switch (Stage)

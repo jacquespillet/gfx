@@ -155,12 +155,13 @@ void WriteFileBinary(const char *FileName, u8 *Data, sz Size)
     File.close();
 }
 
-
+//TODO
 u8 ChannelCountFromFormat(format Format)
 {
     return 4;
 }
 
+//TODO
 sz FormatSize(format Format)
 {
     return 4;

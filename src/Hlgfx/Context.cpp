@@ -2,6 +2,7 @@
 #include "Include/Scene.h"
 #include "Include/CameraController.h"
 #include "Include/Material.h"
+#include "Loaders/GLTF.h"
 #include <iostream>
 #include "Gfx/Include/CommandBuffer.h"
 #include <nfd.h>
@@ -223,8 +224,10 @@ gfx::pipelineCreation context::GetPipelineCreation(materialFlags::bits Flags)
     VertexAttribute1.SemanticIndex = 1;
     PipelineCreation.VertexInput.AddVertexAttribute(VertexAttribute1);
 
-    PipelineCreation.DepthStencil.DepthEnable = 1;
-    PipelineCreation.DepthStencil.DepthWriteEnable = true;
+    u8 T = Flags & materialFlags::DepthTestEnabled;
+
+    PipelineCreation.DepthStencil.DepthEnable = (u8)((b8)(Flags & materialFlags::DepthTestEnabled));
+    PipelineCreation.DepthStencil.DepthWriteEnable = (u8)((b8)(Flags & materialFlags::DepthWriteEnabled));
     PipelineCreation.DepthStencil.DepthComparison = gfx::compareOperation::LessOrEqual;
     
 
@@ -260,6 +263,8 @@ void context::StartFrame()
     this->MouseWheelChanged=false;
     Window->PollEvents();
     
+    this->Scene->OnEarlyUpdate();
+    
     GfxContext->StartFrame();	
 
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();
@@ -272,7 +277,6 @@ void context::StartFrame()
     Imgui->StartFrame();
     IsInteractingGUI = (ImGui::IsAnyItemHovered() || ImGui::IsAnyItemActive() || ImGui::IsAnyItemFocused() || ImGui::IsAnyWindowHovered() || ImGuizmo::IsUsingAny());
 
-    this->Scene->OnEarlyUpdate();
 
     this->DrawGUI();
 }
@@ -383,6 +387,15 @@ void context::DrawMainMenuBar()
                 nfdresult_t Result = NFD_OpenDialog( NULL, NULL, &OutPath );
                 if ( Result == NFD_OKAY ) {
                     this->Scene->LoadFromFile(OutPath);
+                }                
+            }
+            if(ImGui::MenuItem("Import"))
+            {
+                nfdchar_t *OutPath = NULL;
+                nfdresult_t Result = NFD_OpenDialog( NULL, NULL, &OutPath );
+                if ( Result == NFD_OKAY ) {
+                    std::shared_ptr<hlgfx::object3D> Mesh = hlgfx::loaders::gltf::Load(OutPath);
+                    this->Scene->AddObject(Mesh);                    
                 }                
             }
             ImGui::EndMenu();

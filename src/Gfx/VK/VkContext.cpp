@@ -685,69 +685,6 @@ void context::SubmitCommandBuffer(commandBuffer *CommandBuffer)
 }
 
 
-shaderStateHandle CreateShaderState(const shaderStateCreation &Creation)
-{
-    shaderStateHandle Handle = InvalidHandle;
-    if(Creation.StagesCount == 0 || Creation.Stages == nullptr) 
-    {
-        printf("Error creating shader state\n");
-        return Handle;
-    }
-    context *Context = context::Get();
-    GET_CONTEXT(VkData, Context);
-
-    Handle = Context->ResourceManager.Shaders.ObtainResource();
-    if(Handle == InvalidHandle)
-    {
-        return Handle;
-    }
-
-    u32 CompiledShaders=0;
-    
-    shader *ShaderState = Context->GetShader(Handle);
-    ShaderState->ApiData = std::make_shared<vkShaderData>();
-    GET_API_DATA(VkShaderData, vkShaderData, ShaderState);
-
-    ShaderState->GraphicsPipeline = true;
-    ShaderState->ActiveShaders=0;
-    VkShaderData->SpirvParseResults= {};
-    for(CompiledShaders = 0; CompiledShaders < Creation.StagesCount; CompiledShaders++)
-    {
-        const shaderStage &ShaderStage = Creation.Stages[CompiledShaders];
-        if(ShaderStage.Stage == shaderStageFlags::Compute)
-        {
-            ShaderState->GraphicsPipeline=false;
-        }
-
-        vk::ShaderModuleCreateInfo ShaderCreateInfo;
-        if(Creation.SpvInput)
-        {
-            ShaderCreateInfo.codeSize = ShaderStage.CodeSize;
-            ShaderCreateInfo.pCode = reinterpret_cast< const u32* >(ShaderStage.Code);
-        }
-        else
-        {
-            ShaderCreateInfo = CompileShader(ShaderStage.Code, ShaderStage.CodeSize, ShaderStage.Stage, Creation.Name);
-        }
-
-
-        vk::PipelineShaderStageCreateInfo &ShaderStageCreateInfo = VkShaderData->ShaderStageCreateInfo[CompiledShaders];
-        memset(&ShaderStageCreateInfo, 0, sizeof(vk::PipelineShaderStageCreateInfo));
-        ShaderStageCreateInfo = vk::PipelineShaderStageCreateInfo();
-        ShaderStageCreateInfo.setPName("main") .setStage(ShaderStageToNative(ShaderStage.Stage));
-
-        VkShaderData->ShaderStageCreateInfo[CompiledShaders].module = VkData->Device.createShaderModule(ShaderCreateInfo);
-
-        ParseSpirv((void*)((char*)ShaderCreateInfo.pCode), ShaderCreateInfo.codeSize, VkShaderData->SpirvParseResults);
-
-        DeallocateMemory((void*)ShaderCreateInfo.pCode);
-    }
-
-    ShaderState->ActiveShaders = CompiledShaders;
-    ShaderState->Name = Creation.Name;
-
-    return Handle;
-}
 
 
 descriptorSetLayoutHandle CreateDescriptorSetLayout(const descriptorSetLayoutCreation &Creation)
@@ -981,266 +918,57 @@ renderPassHandle context::CreateRenderPass(const renderPassOutput &Output)
     return Handle;
 }
 
+pipelineHandle context::RecreatePipeline(const pipelineCreation &PipelineCreation, pipelineHandle PipelineHandle)
+{
+    GET_CONTEXT(VkData, this);
+    pipeline *Pipeline = GetPipeline(PipelineHandle);
+    Pipeline->Name = std::string(PipelineCreation.Name);
+    Pipeline->Creation = PipelineCreation;    
+    GET_API_DATA(VkPipelineData, vkPipelineData, Pipeline);
+    VkPipelineData->DestroyVkResources();
+
+    shader *ShaderState = GetShader(VkPipelineData->ShaderState);
+    GET_API_DATA(VkShaderData, vkShaderData, ShaderState);
+    VkShaderData->Create(PipelineCreation.Shaders);
+    ShaderState->GraphicsPipeline = VkShaderData->GraphicsPipeline;
+    ShaderState->ActiveShaders = VkShaderData->CompiledShaders;
+    ShaderState->Name = PipelineCreation.Shaders.Name;
+
+    VkPipelineData->Create(PipelineCreation);
+    return PipelineHandle;
+}
+
 pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 {
     GET_CONTEXT(VkData, this);
-
-//Pipeline cache
-#if 0
-    vk::PipelineCache PipelineCache;
-    vk::PipelineCacheCreateInfo PipelineCacheCreateInfo;
-
-    const char *PipelineCachePath = PipelineCreation.Name;
-    b8 CacheExists = FileExists(PipelineCachePath);
-    if(PipelineCachePath != nullptr && CacheExists)
-    {
-        fileContent PipelineCacheFile = ReadFileBinary(PipelineCachePath);
-        vk::PipelineCacheHeaderVersionOne *CacheHeader = (vk::PipelineCacheHeaderVersionOne*)PipelineCacheFile.Data;
-
-        if(CacheHeader->deviceID == VkData->PhysicalDeviceProperties.deviceID && 
-           CacheHeader->vendorID == VkData->PhysicalDeviceProperties.vendorID &&
-           memcmp(CacheHeader->pipelineCacheUUID, VkData->PhysicalDeviceProperties.pipelineCacheUUID, VK_UUID_SIZE) == 0)
-        {
-            PipelineCacheCreateInfo.setInitialDataSize(PipelineCacheFile.Size).setPInitialData(PipelineCacheFile.Data);
-        }
-        else
-        {
-            CacheExists=false;
-        }
-
-        PipelineCache = VkData->Device.createPipelineCache(PipelineCacheCreateInfo);
-        // delete PipelineCacheFile.Data;
-    }
-    else
-    {
-        PipelineCache = VkData->Device.createPipelineCache(PipelineCacheCreateInfo);
-    }
-#endif
 
     pipelineHandle Handle = ResourceManager.Pipelines.ObtainResource();
     if(Handle == InvalidHandle)
     {
         return Handle;
     }
-
-
-    shaderStateHandle ShaderState = CreateShaderState(PipelineCreation.Shaders);
-    if(ShaderState == InvalidHandle)
-    {
-        ResourceManager.Pipelines.ReleaseResource(Handle);
-        Handle = InvalidHandle;
-        return Handle;
-    }
-
     pipeline *Pipeline = GetPipeline(Handle);
     Pipeline->ApiData = std::make_shared<vkPipelineData>();
     GET_API_DATA(VkPipelineData, vkPipelineData, Pipeline);
 
-    shader *ShaderStateData = GetShader(ShaderState);
-    GET_API_DATA(VkShaderData, vkShaderData, ShaderStateData);
-
-    renderPass *RenderPass = GetRenderPass(PipelineCreation.RenderPassHandle);
-
-    VkPipelineData->ShaderState = ShaderState;
-    vk::DescriptorSetLayout Layouts[vkConstants::MaxDescriptorSetLayouts];
-
-    u32 NumActiveLayouts = VkShaderData->SpirvParseResults.SetCount;
-    for(sz i=0; i<NumActiveLayouts; i++)
+    //Create shader state
+    VkPipelineData->ShaderState = this->ResourceManager.Shaders.ObtainResource();
+    if(VkPipelineData->ShaderState == InvalidHandle)
     {
-        VkPipelineData->DescriptorSetLayoutHandles[i] = CreateDescriptorSetLayout(VkShaderData->SpirvParseResults.Sets[i]);
-        
-        std::shared_ptr<vkResourceManagerData> VkResourceManagerData = std::static_pointer_cast<vkResourceManagerData>(ResourceManager.ApiData);
-        VkPipelineData->DescriptorSetLayouts[i] = (descriptorSetLayout*)VkResourceManagerData->DescriptorSetLayouts.GetResource(VkPipelineData->DescriptorSetLayoutHandles[i]);
-        Layouts[i] = VkPipelineData->DescriptorSetLayouts[i]->NativeHandle;
+        return VkPipelineData->ShaderState;
     }
+    shader *ShaderState = this->GetShader(VkPipelineData->ShaderState);
+    ShaderState->ApiData = std::make_shared<vkShaderData>();
+    GET_API_DATA(VkShaderData, vkShaderData, ShaderState);
+    VkShaderData->Create(PipelineCreation.Shaders);
+    ShaderState->GraphicsPipeline = VkShaderData->GraphicsPipeline;
+    ShaderState->ActiveShaders = VkShaderData->CompiledShaders;
+    ShaderState->Name = PipelineCreation.Shaders.Name;
 
-    vk::PipelineLayoutCreateInfo PipelineLayoutCreate;
-    PipelineLayoutCreate.setPSetLayouts(Layouts)
-                        .setSetLayoutCount(NumActiveLayouts);
-
-    VkPipelineData->PipelineLayout = VkData->Device.createPipelineLayout(PipelineLayoutCreate);
-    VkPipelineData->NumActiveLayouts = NumActiveLayouts;
-
-    if(ShaderStateData->GraphicsPipeline)
-    {
-        vk::GraphicsPipelineCreateInfo PipelineCreateInfo;
-
-        PipelineCreateInfo.setPStages(VkShaderData->ShaderStageCreateInfo)
-                          .setStageCount(ShaderStateData->ActiveShaders)
-                          .setLayout(VkPipelineData->PipelineLayout);
-
-        vk::PipelineVertexInputStateCreateInfo VertexInputInfo;
-        
-        vk::VertexInputAttributeDescription VertexAttributes[8];
-        if(PipelineCreation.VertexInput.NumVertexAttributes)
-        {
-            for(u32 i=0; i<PipelineCreation.VertexInput.NumVertexAttributes; i++)
-            {
-                const vertexAttribute &VertexAttribute = PipelineCreation.VertexInput.VertexAttributes[i];
-                VertexAttributes[i] = vk::VertexInputAttributeDescription(VertexAttribute.Location, VertexAttribute.Binding, ToVkVertexFormat(VertexAttribute.Format), VertexAttribute.Offset);
-            }
-            VertexInputInfo.setVertexAttributeDescriptionCount(PipelineCreation.VertexInput.NumVertexAttributes)
-                           .setPVertexAttributeDescriptions(VertexAttributes);
-        }
-        else VertexInputInfo.setVertexAttributeDescriptionCount(0) .setPVertexAttributeDescriptions(nullptr);
-        
-        vk::VertexInputBindingDescription VertexBindings[8];
-
-        if(PipelineCreation.VertexInput.NumVertexStreams)
-        {
-            VertexInputInfo.setVertexBindingDescriptionCount(PipelineCreation.VertexInput.NumVertexStreams);
-
-            for(u32 i=0; i<PipelineCreation.VertexInput.NumVertexStreams; i++)
-            {
-                const vertexStream &VertexStream = PipelineCreation.VertexInput.VertexStreams[i];
-                vk::VertexInputRate VertexRate = VertexStream.InputRate == vertexInputRate::PerVertex ? vk::VertexInputRate::eVertex : vk::VertexInputRate::eInstance;
-                VertexBindings[i] = vk::VertexInputBindingDescription(VertexStream.Binding, VertexStream.Stride, VertexRate);
-            }
-            VertexInputInfo.setPVertexBindingDescriptions(VertexBindings);
-        }
-        else VertexInputInfo.setVertexBindingDescriptionCount(0).setVertexBindingDescriptions(nullptr);
-        
-        PipelineCreateInfo.setPVertexInputState(&VertexInputInfo);
-
-        vk::PipelineInputAssemblyStateCreateInfo InputAssemblyCreateInfo;
-        InputAssemblyCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList)
-                               .setPrimitiveRestartEnable(VK_FALSE);
-        PipelineCreateInfo.setPInputAssemblyState(&InputAssemblyCreateInfo);
-
-        vk::PipelineColorBlendAttachmentState ColorBlendAttachment[8];
-        if(PipelineCreation.BlendState.ActiveStates)
-        {
-            for(sz i=0; i<PipelineCreation.BlendState.ActiveStates; i++)
-            {
-                const blendState &BlendState = PipelineCreation.BlendState.BlendStates[i];
-
-                ColorBlendAttachment[i].colorWriteMask = vk::ColorComponentFlagBits::eR |  vk::ColorComponentFlagBits::eG |  vk::ColorComponentFlagBits::eB |  vk::ColorComponentFlagBits::eA;
-                ColorBlendAttachment[i].blendEnable = BlendState.BlendEnabled ? VK_TRUE : VK_FALSE;
-                ColorBlendAttachment[i].srcColorBlendFactor = BlendFactorToNative(BlendState.SourceColor);
-                ColorBlendAttachment[i].dstColorBlendFactor = BlendFactorToNative(BlendState.DestinationColor);
-                ColorBlendAttachment[i].colorBlendOp = BlendOpToNative(BlendState.ColorOp);
-
-                if(BlendState.SeparateBlend)
-                {
-                    ColorBlendAttachment[i].srcAlphaBlendFactor = BlendFactorToNative(BlendState.SourceAlpha);
-                    ColorBlendAttachment[i].dstAlphaBlendFactor = BlendFactorToNative(BlendState.DestinationAlpha);
-                    ColorBlendAttachment[i].alphaBlendOp = BlendOpToNative(BlendState.AlphaOp);
-                }
-                else{
-                    ColorBlendAttachment[i].srcAlphaBlendFactor = BlendFactorToNative(BlendState.SourceColor);
-                    ColorBlendAttachment[i].dstAlphaBlendFactor = BlendFactorToNative(BlendState.DestinationColor);
-                    ColorBlendAttachment[i].alphaBlendOp = BlendOpToNative(BlendState.ColorOp);
-                }
-            }
-        }
-        else
-        {
-            for(u32 i=0; i<RenderPass->Output.NumColorFormats; i++)
-            {
-                ColorBlendAttachment[i] = vk::PipelineColorBlendAttachmentState();
-                ColorBlendAttachment[i].blendEnable = VK_FALSE;
-                ColorBlendAttachment[i].srcColorBlendFactor = vk::BlendFactor::eOne;
-                ColorBlendAttachment[i].dstColorBlendFactor = vk::BlendFactor::eZero;
-                ColorBlendAttachment[i].colorWriteMask = vk::ColorComponentFlagBits::eR |  vk::ColorComponentFlagBits::eG |  vk::ColorComponentFlagBits::eB |  vk::ColorComponentFlagBits::eA;
-            }
-        }
-
-        vk::PipelineColorBlendStateCreateInfo ColorBlending;
-        ColorBlending.setLogicOp(vk::LogicOp::eCopy)
-                     //.setAttachmentCount(PipelineCreation.BlendState.ActiveStates)
-                      .setAttachmentCount(PipelineCreation.BlendState.ActiveStates ? PipelineCreation.BlendState.ActiveStates : RenderPass->Output.NumColorFormats)
-                     .setPAttachments(ColorBlendAttachment)
-                     .setBlendConstants({0,0,0,0});
-        PipelineCreateInfo.setPColorBlendState(&ColorBlending);
-
-
-        vk::PipelineDepthStencilStateCreateInfo DepthStencil;
-        DepthStencil.setDepthWriteEnable(PipelineCreation.DepthStencil.DepthWriteEnable ? true : false)
-                    .setStencilTestEnable(PipelineCreation.DepthStencil.StencilEnable ? true : false)
-                    .setDepthTestEnable(PipelineCreation.DepthStencil.DepthEnable ? true : false)
-                    .setDepthCompareOp(CompareOpToNative(PipelineCreation.DepthStencil.DepthComparison));
-        PipelineCreateInfo.setPDepthStencilState(&DepthStencil);
-
-
-        vk::PipelineMultisampleStateCreateInfo MultisampleState;
-        MultisampleState.setSampleShadingEnable(VK_FALSE)
-                        .setRasterizationSamples(SampleCountToNative(RenderPass->Output.SampleCount))
-                        .setMinSampleShading(1.0f)
-                        .setPSampleMask(nullptr)
-                        .setAlphaToCoverageEnable(VK_FALSE)
-                        .setAlphaToOneEnable(VK_FALSE);
-        PipelineCreateInfo.setPMultisampleState(&MultisampleState);
-
-        vk::PipelineRasterizationStateCreateInfo Rasterizer;
-        Rasterizer.setDepthClampEnable(VK_FALSE)
-                  .setRasterizerDiscardEnable(VK_FALSE)
-                  .setPolygonMode(vk::PolygonMode::eFill)
-                  .setLineWidth(1)
-                  .setCullMode(CullModeToNative(PipelineCreation.Rasterization.CullMode))
-                  .setFrontFace(FrontFaceToNative(PipelineCreation.Rasterization.FrontFace))
-                  .setDepthBiasEnable(VK_FALSE)
-                  .setDepthBiasConstantFactor(0.0f)
-                  .setDepthBiasClamp(0.0f)
-                  .setDepthBiasSlopeFactor(0.0f);
-        PipelineCreateInfo.setPRasterizationState(&Rasterizer);
-
-        vk::Viewport Viewport;
-        Viewport.x = 0;
-        Viewport.y = 0;
-        Viewport.width = (float)VkData->SurfaceExtent.width;
-        Viewport.height = (float)VkData->SurfaceExtent.height;
-        Viewport.minDepth = 0;
-        Viewport.maxDepth = 1;
-
-        vk::Rect2D Scissor;
-        Scissor.offset = vk::Offset2D(0,0);
-        Scissor.extent = vk::Extent2D(VkData->SurfaceExtent.width, VkData->SurfaceExtent.height);
-
-        vk::PipelineViewportStateCreateInfo ViewportState;
-        ViewportState.setViewportCount(1)
-                     .setPViewports(&Viewport)
-                     .setScissorCount(1)
-                     .setPScissors(&Scissor);
-        PipelineCreateInfo.setPViewportState(&ViewportState);
-
-        GET_API_DATA(VkRenderPassData, vkRenderPassData, RenderPass);
-        PipelineCreateInfo.setRenderPass(VkRenderPassData->NativeHandle);
-
-        vk::DynamicState DynamicStates[] = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
-        vk::PipelineDynamicStateCreateInfo DynamicState;
-        DynamicState.setDynamicStateCount(2)
-                    .setPDynamicStates(DynamicStates);
-        PipelineCreateInfo.setPDynamicState(&DynamicState);
-
-        VkPipelineData->NativeHandle = VkData->Device.createGraphicsPipeline(VK_NULL_HANDLE, PipelineCreateInfo).value;
-        VkPipelineData->BindPoint = vk::PipelineBindPoint::eGraphics;
-    }
-    else
-    {
-        vk::ComputePipelineCreateInfo ComputePipelineCreateInfo;
-        ComputePipelineCreateInfo.setStage(VkShaderData->ShaderStageCreateInfo[0])
-                                 .setLayout(VkPipelineData->PipelineLayout);
-        VkPipelineData->NativeHandle = VkData->Device.createComputePipeline(VK_NULL_HANDLE, ComputePipelineCreateInfo).value;
-        VkPipelineData->BindPoint = vk::PipelineBindPoint::eCompute;
-    }
-
-    // if(PipelineCachePath != nullptr && !CacheExists)
-    // {
-    //     std::vector<u8> CacheData = VkData->Device.getPipelineCacheData(PipelineCache);
-    //     WriteFileBinary(PipelineCachePath, CacheData.data(), CacheData.size() * sizeof(u8));
-    // }
-
-    // VkData->Device.destroyPipelineCache(PipelineCache);
+    //Create pipeline
     Pipeline->Name = std::string(PipelineCreation.Name);
     Pipeline->Creation = PipelineCreation;
-
-    for (size_t j = 0; j < PipelineCreation.Shaders.StagesCount; j++)
-    {
-        DeallocateMemory((void*)PipelineCreation.Shaders.Stages[j].Code);
-        DeallocateMemory((void*)PipelineCreation.Shaders.Stages[j].FileName);
-    }
-    DeallocateMemory((void*)PipelineCreation.Name);
-        
+    VkPipelineData->Create(PipelineCreation);
     return Handle;
 }
 
@@ -1334,13 +1062,13 @@ vk::DescriptorSet AllocateDescriptorSet(vk::DescriptorSetLayout SetLayout, std::
     return VkData->Device.allocateDescriptorSets(AllocateInfo).front();
 }
 
-void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding){
+void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding, b8 Force){
     GET_CONTEXT(VkData, this);
     pipeline *Pipeline = GetPipeline(PipelineHandle);
     GET_API_DATA(VkPipeline, vkPipelineData, Pipeline);
     GET_API_DATA(VkUniformData, vkUniformData, Uniforms);
 
-    if(VkUniformData->DescriptorInfos.find(Pipeline->Name) == VkUniformData->DescriptorInfos.end())
+    if(VkUniformData->DescriptorInfos.find(Pipeline->Name) == VkUniformData->DescriptorInfos.end() || Force)
     {
         Uniforms->Bindings[PipelineHandle] = Binding;
         VkUniformData->DescriptorInfos[Pipeline->Name] = {};

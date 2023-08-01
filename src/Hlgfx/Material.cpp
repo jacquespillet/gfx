@@ -14,7 +14,7 @@ std::shared_ptr<texture> defaultTextures::WhiteTexture = std::make_shared<textur
 unlitMaterial::unlitMaterial()
 {
     gfx::context *Context = gfx::context::Get();
-    Flags =  (materialFlags::bits)(materialFlags::Unlit | materialFlags::BlendEnabled | materialFlags::CullModeOn);
+    Flags =  (materialFlags::bits)(materialFlags::Unlit | materialFlags::BlendEnabled | materialFlags::CullModeOn | materialFlags::DepthWriteEnabled | materialFlags::DepthTestEnabled);
     context::Get()->CreateOrGetPipeline(Flags);
 
     this->BaseColorTexture = defaultTextures::BlackTexture;
@@ -127,10 +127,31 @@ void unlitMaterial::SetEmissiveTexture(std::shared_ptr<texture> Texture)
     this->Uniforms->Update();
 }
 
+void unlitMaterial::RecreatePipeline()
+{
+    gfx::context::Get()->WaitIdle();
+    gfx::pipelineCreation PipelineCreation = context::Get()->GetPipelineCreation(this->Flags);
+    gfx::context::Get()->RecreatePipeline(PipelineCreation, this->PipelineHandle);
+    
+    gfx::context::Get()->BindUniformsToPipeline(this->Uniforms, this->PipelineHandle, MaterialDescriptorSetBinding, true);
+    Uniforms->Update();
+    this->ShouldRecreate=false;
+}
+
 void unlitMaterial::DrawGUI()
 {
     bool ShouldUpdate = false;
+    bool ShouldRecreatePipeline = false;
     ShouldUpdate |= ImGui::ColorEdit3("Base Color", glm::value_ptr(this->UniformData.BaseColorFactor));
+
+    bool DepthWriteEnabled = this->Flags & materialFlags::DepthWriteEnabled;
+    if(ImGui::Checkbox("Depth Write", &DepthWriteEnabled))
+    {
+        u32 Bitmask = 1 << 5;
+        Flags = (materialFlags::bits)(Flags ^ materialFlags::DepthWriteEnabled);
+        this->ShouldRecreate = true;
+    }
+
 
     if(ShouldUpdate)
         Update();

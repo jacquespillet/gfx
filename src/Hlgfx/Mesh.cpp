@@ -33,6 +33,14 @@ mesh::mesh() : object3D("Mesh")
     this->Uniforms->Update();    
 }
 
+void mesh::OnEarlyUpdate()
+{
+    if(this->Material->ShouldRecreate)
+    {
+        this->Material->RecreatePipeline();
+    }
+}
+
 
 void mesh::OnRender(std::shared_ptr<camera> Camera) 
 {

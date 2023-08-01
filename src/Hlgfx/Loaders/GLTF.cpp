@@ -351,14 +351,10 @@ void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<mater
         const tinygltf::PbrMetallicRoughness PBR = GLTFMaterial.pbrMetallicRoughness;
 
         
-        materialFlags::bits Flags = materialFlags::None;
+        materialFlags::bits Flags = (materialFlags::bits)(materialFlags::DepthWriteEnabled | materialFlags::DepthTestEnabled);
         if(GLTFMaterial.alphaMode == "BLEND")
             Flags = (materialFlags::bits)(Flags |  materialFlags::BlendEnabled);
-        else
-            Flags = (materialFlags::bits)(Flags |  materialFlags::BlendDisabled);
-        if(GLTFMaterial.doubleSided)
-            Flags = (materialFlags::bits)(Flags |  materialFlags::CullModeOff);
-        else
+        if(!GLTFMaterial.doubleSided)
             Flags = (materialFlags::bits)(Flags |  materialFlags::CullModeOn);
         
         Flags = (materialFlags::bits)(Flags |  materialFlags::Unlit);

@@ -58,6 +58,7 @@ public:
         return nullptr;
     }
 
+
     void ReleaseResource(u32 Handle)
     {
         _FreeIndices[--_FreeIndicesHead] = Handle;

@@ -14,13 +14,12 @@ struct materialFlags
 {
     enum bits : u32
     {
-        None          = 0 << 0,
-        BlendEnabled  = 1 << 0,
-        BlendDisabled = 1 << 1,
-        CullModeOn    = 1 << 2,
-        CullModeOff   = 1 << 3,
-        Custom        = 1 << 4,
-        Unlit         = 1 << 5,
+        None                 = 0 << 0,
+        BlendEnabled         = 1 << 0,
+        Unlit                = 1 << 1,
+        CullModeOn           = 1 << 3,
+        DepthTestEnabled     = 1 << 4,
+        DepthWriteEnabled    = 1 << 5,
     };
 };
 
@@ -42,7 +41,8 @@ struct material
     virtual void DrawGUI() = 0;
     virtual void SetCullMode(gfx::cullMode Mode) = 0;
     virtual std::vector<u8> Serialize()=0;
-    
+    virtual void RecreatePipeline() = 0;
+    b8 ShouldRecreate = false;
 };
 
 struct unlitMaterial : public material
@@ -53,6 +53,7 @@ struct unlitMaterial : public material
   
     virtual void SetCullMode(gfx::cullMode Mode);
     virtual std::vector<u8> Serialize() override;
+    virtual void RecreatePipeline() override;
 
     void SetDiffuseTexture(std::shared_ptr<texture> Texture);
     void SetMetallicRoughnessTexture(std::shared_ptr<texture> Texture);
