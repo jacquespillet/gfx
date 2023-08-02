@@ -26,7 +26,8 @@ enum class commandType
 };
 
 struct command;
-using commandFunction = void (*)(const command&);
+struct d3d11CommandBuffer;
+using commandFunction = void (*)(const command&, d3d11CommandBuffer &);
 
 struct command
 {
@@ -79,7 +80,8 @@ struct command
         struct bindStorageBufferState
         {
             u32 Binding;
-            ID3D11ShaderResourceView* Buffer;
+            ID3D11ShaderResourceView* SRV;
+            ID3D11UnorderedAccessView* UAV;
         } BindStorageBuffer;
                 
         struct bindImageState
@@ -126,6 +128,8 @@ struct d3d11CommandBuffer
 
     indexType IndexType = indexType::Uint16;
     u32 IndexBufferOffset=0;
+
+    pipelineHandle BoundPipeline=InvalidHandle;
 
     void DrawImgui();
     

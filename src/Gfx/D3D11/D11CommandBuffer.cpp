@@ -24,13 +24,19 @@ void commandBuffer::Initialize()
     this->ApiData = std::make_shared<d3d11CommandBuffer>();
 }
 
-void ExecuteEndPass(const command &Command)
+void ExecuteEndPass(const command &Command, d3d11CommandBuffer &CommandBuffer)
 {
-    
+    GET_CONTEXT(D11Data, context::Get());
+    ID3D11ShaderResourceView* nullSRV[] = { nullptr };
+    for (sz i = 0; i < 16; i++)
+    {
+        D11Data->DeviceContext->VSSetShaderResources(i, 1, nullSRV);
+        D11Data->DeviceContext->PSSetShaderResources(i, 1, nullSRV);
+    }
 }
 
 
-void ExecuteSetViewport(const command &Command)
+void ExecuteSetViewport(const command &Command, d3d11CommandBuffer &CommandBuffer)
 {
     GET_CONTEXT(D11Data, context::Get());
 
@@ -38,7 +44,7 @@ void ExecuteSetViewport(const command &Command)
     D11Data->DeviceContext->RSSetViewports(1, &Viewport);
 }
 
-void ExecuteSetScissor(const command &Command)
+void ExecuteSetScissor(const command &Command, d3d11CommandBuffer &CommandBuffer)
 {
     GET_CONTEXT(D11Data, context::Get());
 
@@ -46,7 +52,7 @@ void ExecuteSetScissor(const command &Command)
     D11Data->DeviceContext->RSSetScissorRects(1, &Scissor);
 }
 
-void ExecuteBeginPass(const command &Command)
+void ExecuteBeginPass(const command &Command, d3d11CommandBuffer &CommandBuffer)
 {
     GET_CONTEXT(D11Data, context::Get());
     framebuffer *Framebuffer = context::Get()->GetFramebuffer(Command.BeginPass.FramebufferHandle);
@@ -59,27 +65,51 @@ void ExecuteBeginPass(const command &Command)
     D11Data->DeviceContext->ClearDepthStencilView(D11Framebuffer->DepthBufferView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
 
-void ExecuteBindUniformBuffer(const command &Command)
+void ExecuteBindUniformBuffer(const command &Command, d3d11CommandBuffer &CommandBuffer)
 {
     GET_CONTEXT(D11Data, context::Get());
-    D11Data->DeviceContext->VSSetConstantBuffers(Command.BindUniformBuffer.Binding, 1, &Command.BindUniformBuffer.Buffer);
-    D11Data->DeviceContext->PSSetConstantBuffers(Command.BindUniformBuffer.Binding, 1, &Command.BindUniformBuffer.Buffer);
+    pipeline *BoundPipeline = context::Get()->GetPipeline(CommandBuffer.BoundPipeline);
+    if(BoundPipeline->GraphicsPipeline)
+    {
+        D11Data->DeviceContext->VSSetConstantBuffers(Command.BindUniformBuffer.Binding, 1, &Command.BindUniformBuffer.Buffer);
+        D11Data->DeviceContext->PSSetConstantBuffers(Command.BindUniformBuffer.Binding, 1, &Command.BindUniformBuffer.Buffer);
+    }
+    else
+    {
+        D11Data->DeviceContext->CSSetConstantBuffers(Command.BindUniformBuffer.Binding, 1, &Command.BindUniformBuffer.Buffer);
+    }
 }
 
-void ExecuteBindStorageBuffer(const command &Command)
+void ExecuteBindStorageBuffer(const command &Command, d3d11CommandBuffer &CommandBuffer)
 {
     GET_CONTEXT(D11Data, context::Get());
-    D11Data->DeviceContext->VSSetShaderResources(Command.BindStorageBuffer.Binding, 1, &Command.BindStorageBuffer.Buffer);
-    D11Data->DeviceContext->PSSetShaderResources(Command.BindStorageBuffer.Binding, 1, &Command.BindStorageBuffer.Buffer);
+    pipeline *BoundPipeline = context::Get()->GetPipeline(CommandBuffer.BoundPipeline);
+    if(BoundPipeline->GraphicsPipeline)
+    {
+        D11Data->DeviceContext->VSSetShaderResources(Command.BindStorageBuffer.Binding, 1, &Command.BindStorageBuffer.SRV);
+        D11Data->DeviceContext->PSSetShaderResources(Command.BindStorageBuffer.Binding, 1, &Command.BindStorageBuffer.SRV);
+    }
+    else
+    {
+        D11Data->DeviceContext->CSSetUnorderedAccessViews(Command.BindStorageBuffer.Binding, 1, &Command.BindStorageBuffer.UAV, nullptr);
+    }
 }
 
-void ExecuteBindUniformImage(const command &Command)
+void ExecuteBindUniformImage(const command &Command, d3d11CommandBuffer &CommandBuffer)
 {
     GET_CONTEXT(D11Data, context::Get());
-    D11Data->DeviceContext->PSSetShaderResources(Command.BindUniformImage.Binding, 1, &Command.BindUniformImage.Image);
+    pipeline *BoundPipeline = context::Get()->GetPipeline(CommandBuffer.BoundPipeline);
+    if(BoundPipeline->GraphicsPipeline)
+    {
+        D11Data->DeviceContext->PSSetShaderResources(Command.BindUniformImage.Binding, 1, &Command.BindUniformImage.Image);
+    }
+    else
+    {
+        D11Data->DeviceContext->CSSetShaderResources(Command.BindUniformImage.Binding, 1, &Command.BindUniformImage.Image);
+    }
 }
 
-void ExecuteBindVertexBuffer(const command &Command)
+void ExecuteBindVertexBuffer(const command &Command, d3d11CommandBuffer &CommandBuffer)
 {
     GET_CONTEXT(D11Data, context::Get());
     vertexBufferHandle VertexBufferHandle = Command.BindVertexBuffer.VertexBufferHandle;
@@ -98,7 +128,7 @@ void ExecuteBindVertexBuffer(const command &Command)
     
 }
 
-void ExecuteBindIndexBuffer(const command &Command)
+void ExecuteBindIndexBuffer(const command &Command, d3d11CommandBuffer &CommandBuffer)
 {
     GET_CONTEXT(D11Data, context::Get());
     bufferHandle BufferHandle = Command.BindIndexBuffer.IndexBufferHandle;
@@ -108,25 +138,25 @@ void ExecuteBindIndexBuffer(const command &Command)
     D11Data->DeviceContext->IASetIndexBuffer(D11Buffer->Handle, IndexTypeToNative(Command.BindIndexBuffer.IndexType), Command.BindIndexBuffer.Offset);
 }
 
-void ExecuteDrawImgui(const command &Command)
+void ExecuteDrawImgui(const command &Command, d3d11CommandBuffer &CommandBuffer)
 {
     assert(false);
 }
 
-void ExecuteDrawIndexed(const command &Command)
+void ExecuteDrawIndexed(const command &Command, d3d11CommandBuffer &CommandBuffer)
 {
     GET_CONTEXT(D11Data, context::Get());
     D11Data->DeviceContext->DrawIndexed(Command.DrawIndexed.Count, Command.DrawIndexed.Offset, 0);
 }
 
-void ExecuteDrawTriangles(const command &Command)
+void ExecuteDrawTriangles(const command &Command, d3d11CommandBuffer &CommandBuffer)
 {
     GET_CONTEXT(D11Data, context::Get());
     D11Data->DeviceContext->DrawInstanced(Command.DrawTriangles.Count, Command.DrawTriangles.InstanceCount, Command.DrawTriangles.Start, 0);
 }
 
 
-void ExecuteBindGraphicsPipeline(const command &Command)
+void ExecuteBindGraphicsPipeline(const command &Command, d3d11CommandBuffer &CommandBuffer)
 {
     GET_CONTEXT(D11Data, context::Get());
     pipeline *Pipeline = context::Get()->GetPipeline(Command.BindGraphicsPipeline.Pipeline);
@@ -139,16 +169,32 @@ void ExecuteBindGraphicsPipeline(const command &Command)
     D11Data->DeviceContext->VSSetShader(D11Pipeline->VertexShader, nullptr, 0);
     D11Data->DeviceContext->PSSetShader(D11Pipeline->PixelShader, nullptr, 0);
     D11Data->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    CommandBuffer.BoundPipeline = Command.BindGraphicsPipeline.Pipeline;
 }
 
-void ExecuteBindComputePipeline(const command &Command)
+void ExecuteBindComputePipeline(const command &Command, d3d11CommandBuffer &CommandBuffer)
 {
-    assert(false);
+    GET_CONTEXT(D11Data, context::Get());
+    pipeline *Pipeline = context::Get()->GetPipeline(Command.BindGraphicsPipeline.Pipeline);
+    GET_API_DATA(D11Pipeline, d3d11Pipeline, Pipeline);
+    D11Data->DeviceContext->CSSetShader(D11Pipeline->ComputeShader, nullptr, 0);
+
+    CommandBuffer.BoundPipeline = Command.BindGraphicsPipeline.Pipeline;
 }
 
-void ExecuteDispatchCompute(const command &Command)
+void ExecuteDispatchCompute(const command &Command, d3d11CommandBuffer &CommandBuffer)
 {
-    assert(false);
+    GET_CONTEXT(D11Data, context::Get());
+    D11Data->DeviceContext->Dispatch(Command.DispatchCompute.NumGroupX, Command.DispatchCompute.NumGroupY, Command.DispatchCompute.NumGroupZ);
+
+    for (sz i = 0; i < 16; i++)
+    {
+        ID3D11UnorderedAccessView* nullUAV[] = { nullptr };
+        D11Data->DeviceContext->CSSetUnorderedAccessViews(i, 1, nullUAV, nullptr);
+    }
+    D11Data->DeviceContext->CSSetShader(nullptr, nullptr, 0);
+    
 }
 
 
@@ -307,7 +353,7 @@ void commandBuffer::End()
     GLCommandBuffer->IsRecording=false;
     for (size_t i = 0; i < GLCommandBuffer->Commands.size(); i++)
     {
-        GLCommandBuffer->Commands[i].CommandFunction(GLCommandBuffer->Commands[i]);
+        GLCommandBuffer->Commands[i].CommandFunction(GLCommandBuffer->Commands[i], *GLCommandBuffer);
     }
     GLCommandBuffer->Commands.resize(0);
 }
@@ -346,7 +392,8 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             command Command;
             Command.Type = commandType::BindUniforms;
             Command.BindStorageBuffer.Binding = Group->Uniforms[i].Binding;
-            Command.BindStorageBuffer.Buffer = D11Buffer->StructuredHandle;
+            Command.BindStorageBuffer.SRV = D11Buffer->StructuredHandle;
+            Command.BindStorageBuffer.UAV = D11Buffer->UAVHandle;
             Command.CommandFunction = (commandFunction)&ExecuteBindStorageBuffer;
             GLCommandBuffer->Commands.push_back(Command);
         }

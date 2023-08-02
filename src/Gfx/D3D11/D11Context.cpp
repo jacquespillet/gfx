@@ -146,6 +146,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     }
     pipeline *Pipeline = GetPipeline(Handle);
     Pipeline->ApiData = std::make_shared<d3d11Pipeline>();
+    Pipeline->GraphicsPipeline = !PipelineCreation.IsCompute;
     GET_API_DATA(D11Pipeline, d3d11Pipeline, Pipeline);
     
     //Compile and link shaders
