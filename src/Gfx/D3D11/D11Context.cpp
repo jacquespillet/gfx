@@ -135,6 +135,19 @@ imageHandle context::CreateImage(const imageData &ImageData, const imageCreateIn
     return ImageHandle;
 }
 
+imageHandle context::CreateImageCubemap(const imageData &Left, const imageData &Right, const imageData &Top, const imageData &Bottom, const imageData &Back, const imageData &Front, const imageCreateInfo& CreateInfo)
+{
+    imageHandle ImageHandle = ResourceManager.Images.ObtainResource();
+    if(ImageHandle == InvalidHandle)
+    {
+        return ImageHandle;
+    }
+    image *Image = GetImage(ImageHandle);
+    *Image = image();
+    Image->InitAsCubemap(Left, Right, Top, Bottom, Back, Front, CreateInfo);
+    return ImageHandle;
+}
+
 pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 {
     GET_CONTEXT(D11Data, this);

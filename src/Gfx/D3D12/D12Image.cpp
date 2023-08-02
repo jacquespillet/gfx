@@ -27,7 +27,7 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
 
     this->Data.resize(Width * Height * FormatSize(Format));
 
-    context *VulkanContext = context::Get();
+    context *D12Context = context::Get();
 
     ApiData = std::make_shared<d3d12ImageData>();
     std::shared_ptr<d3d12ImageData> D12Image = std::static_pointer_cast<d3d12ImageData>(ApiData);
@@ -68,7 +68,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     this->ChannelCount = ImageData.ChannelCount;
     this->Type = ImageData.Type;
 
-    context *VulkanContext = context::Get();
+    context *D12Context = context::Get();
 
     ApiData = std::make_shared<d3d12ImageData>();
     std::shared_ptr<d3d12ImageData> D12Image = std::static_pointer_cast<d3d12ImageData>(ApiData);
@@ -366,7 +366,7 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
     this->ChannelCount = Left.ChannelCount;
     this->Type = Left.Type;
 
-    context *VulkanContext = context::Get();
+    context *D12Context = context::Get();
 
     ApiData = std::make_shared<d3d12ImageData>();
     std::shared_ptr<d3d12ImageData> D12Image = std::static_pointer_cast<d3d12ImageData>(ApiData);

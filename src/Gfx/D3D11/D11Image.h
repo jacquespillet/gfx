@@ -7,5 +7,6 @@ struct d3d11Image
 {
     ID3D11Texture2D* Handle;
     ID3D11ShaderResourceView* View;
+
 };
 }
