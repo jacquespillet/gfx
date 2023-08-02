@@ -85,6 +85,10 @@ ComPtr<IDxcBlob> CompileShader2(const shaderStage &Stage, std::vector<D3D12_ROOT
         CompileArgs.push_back(DXC_ARG_OPTIMIZATION_LEVEL3);
     }    
 
+    CompileArgs.push_back(L"-DD3D11=3");
+    CompileArgs.push_back(L"-DD3D12=2");
+    CompileArgs.push_back(L"-DAPI=2");
+
     // Load the shader source file to a blob.
     ComPtr<IDxcBlobEncoding> sourceBlob{};
     ThrowIfFailed(Utils->LoadFile(ConstCharToLPCWSTR(Stage.FileName), nullptr, &sourceBlob));
@@ -95,7 +99,6 @@ ComPtr<IDxcBlob> CompileShader2(const shaderStage &Stage, std::vector<D3D12_ROOT
         sourceBlob->GetBufferSize(),
         0u,
     };
-
     // Compile the shader.
     Microsoft::WRL::ComPtr<IDxcResult> CompiledShaderBuffer{};
     const HRESULT hr = Compiler->Compile(&sourceBuffer,

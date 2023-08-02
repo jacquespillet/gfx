@@ -92,7 +92,6 @@ void buffer::Init(size_t ByteSize, sz Stride, bufferUsage::value Usage, memoryUs
         UAVDesc.Buffer.NumElements = ByteSize / Stride; // Number of elements in the buffer
         UAVDesc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_COUNTER;
         ThrowIfFailed(D11Data->Device->CreateUnorderedAccessView(D11Buffer->Handle, &UAVDesc, &D11Buffer->UAVHandle));
-        
     }
 }
 

@@ -19,7 +19,14 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
     //Vertex shader
     ID3DBlob* VSBlob;
     ID3DBlob* pErrorBlob = nullptr;
-    HRESULT hr = D3DCompileFromFile(ConstCharToLPCWSTR(PipelineCreation.Shaders.Stages[0].FileName), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", 0, 0, &VSBlob, nullptr);
+    
+    D3D_SHADER_MACRO defines[] = {
+         { "D3D11", "3" }, 
+         { "D3D12", "2" }, 
+         { "API",   "3" }, 
+         nullptr
+    };
+    HRESULT hr = D3DCompileFromFile(ConstCharToLPCWSTR(PipelineCreation.Shaders.Stages[0].FileName), defines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", 0, 0, &VSBlob, nullptr);
     if (FAILED(hr))
     {
         if (pErrorBlob)
@@ -27,6 +34,7 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
             char *Error = (char*)pErrorBlob->GetBufferPointer();
             OutputDebugStringA(static_cast<char*>(pErrorBlob->GetBufferPointer()));
             pErrorBlob->Release();
+            assert(false);
         }
     }
     D11Data->Device->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr, &VertexShader);

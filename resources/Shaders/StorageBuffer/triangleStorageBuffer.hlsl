@@ -13,7 +13,7 @@ cbuffer MainConstantBuffer1 : register(b0)
     vec4 Color1;
 };
 
-StructuredBuffer<vec4> InstancePositions : register(t2);
+DECLARE_STORAGE_BUFFER(0, 2, InstancePositions, vec4);
 
 Texture2D color : register(t4);
 SamplerState defaultSampler : register(s0);
