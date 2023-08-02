@@ -79,7 +79,7 @@ struct command
         struct bindStorageBufferState
         {
             u32 Binding;
-            ID3D11Buffer* Buffer;
+            ID3D11ShaderResourceView* Buffer;
         } BindStorageBuffer;
                 
         struct bindImageState

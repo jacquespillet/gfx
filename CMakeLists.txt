@@ -400,7 +400,7 @@ if(${BUILD_ALL} EQUAL 1)
         
 else()
         set(targetName Main)
-        set(mainCode ${sourceCode} src/Main_HelloTriangle_Indexed.cpp)
+        set(mainCode ${sourceCode} src/Main_HelloTriangle_StorageBuffer.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)

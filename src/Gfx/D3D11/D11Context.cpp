@@ -36,7 +36,7 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
     
     
     //Create device
-    D3D_FEATURE_LEVEL FeatureLevels[] = { D3D_FEATURE_LEVEL_11_0 };
+    D3D_FEATURE_LEVEL FeatureLevels[] = { D3D_FEATURE_LEVEL_11_1 };
     D3D11CreateDevice(nullptr, 
                       D3D_DRIVER_TYPE_HARDWARE, 
                       nullptr, 
@@ -58,8 +58,9 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
     D11Data->CommandBuffer = std::make_shared<commandBuffer>();
     D11Data->CommandBuffer->Initialize();
 
-
     D11Data->StageBuffer.Init(InitializeInfo.MaxStageBufferSize);
+
+    Singleton->MultiSampleCount = InitializeInfo.EnableMultisampling ? 4 : 1;
 
     return Singleton;
 }
@@ -76,7 +77,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
     SwapChainDesc.Height             = 0; // use window height
     SwapChainDesc.Format             = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
     SwapChainDesc.Stereo             = FALSE;
-    SwapChainDesc.SampleDesc.Count   = 1;
+    SwapChainDesc.SampleDesc.Count   = context::Get()->MultiSampleCount;
     SwapChainDesc.SampleDesc.Quality = 0;
     SwapChainDesc.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     SwapChainDesc.BufferCount        = 2;

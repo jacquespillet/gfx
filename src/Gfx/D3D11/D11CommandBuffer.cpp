@@ -62,12 +62,15 @@ void ExecuteBeginPass(const command &Command)
 void ExecuteBindUniformBuffer(const command &Command)
 {
     GET_CONTEXT(D11Data, context::Get());
+    D11Data->DeviceContext->VSSetConstantBuffers(Command.BindUniformBuffer.Binding, 1, &Command.BindUniformBuffer.Buffer);
     D11Data->DeviceContext->PSSetConstantBuffers(Command.BindUniformBuffer.Binding, 1, &Command.BindUniformBuffer.Buffer);
 }
 
 void ExecuteBindStorageBuffer(const command &Command)
 {
-    assert(false);
+    GET_CONTEXT(D11Data, context::Get());
+    D11Data->DeviceContext->VSSetShaderResources(Command.BindStorageBuffer.Binding, 1, &Command.BindStorageBuffer.Buffer);
+    D11Data->DeviceContext->PSSetShaderResources(Command.BindStorageBuffer.Binding, 1, &Command.BindStorageBuffer.Buffer);
 }
 
 void ExecuteBindUniformImage(const command &Command)
@@ -119,7 +122,7 @@ void ExecuteDrawIndexed(const command &Command)
 void ExecuteDrawTriangles(const command &Command)
 {
     GET_CONTEXT(D11Data, context::Get());
-    D11Data->DeviceContext->DrawInstanced(Command.DrawTriangles.Count, 1, Command.DrawTriangles.Start, 0);
+    D11Data->DeviceContext->DrawInstanced(Command.DrawTriangles.Count, Command.DrawTriangles.InstanceCount, Command.DrawTriangles.Start, 0);
 }
 
 
@@ -343,7 +346,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             command Command;
             Command.Type = commandType::BindUniforms;
             Command.BindStorageBuffer.Binding = Group->Uniforms[i].Binding;
-            Command.BindStorageBuffer.Buffer = D11Buffer->Handle;
+            Command.BindStorageBuffer.Buffer = D11Buffer->StructuredHandle;
             Command.CommandFunction = (commandFunction)&ExecuteBindStorageBuffer;
             GLCommandBuffer->Commands.push_back(Command);
         }

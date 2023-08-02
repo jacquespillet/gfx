@@ -26,6 +26,7 @@ void buffer::Init(size_t ByteSize, sz Stride, bufferUsage::value Usage, memoryUs
     
     D3D11_USAGE UsageNative = D3D11_USAGE_DEFAULT;
     u32 BindFlags = 0;
+    u32 MiscFlags = 0;
     if(Usage ==bufferUsage::UniformBuffer)
     {
         this->Size = CalcConstantBufferByteSize(ByteSize);
@@ -47,20 +48,52 @@ void buffer::Init(size_t ByteSize, sz Stride, bufferUsage::value Usage, memoryUs
 
     if(Usage == bufferUsage::TransferSource && MemoryUsage == memoryUsage::CpuToGpu)
     {
-        BindFlags |= D3D11_BIND_CONSTANT_BUFFER;
         UsageNative = D3D11_USAGE_DYNAMIC;
+        BindFlags |= D3D11_BIND_CONSTANT_BUFFER;
+    }
+
+    if(Usage == bufferUsage::StorageBuffer)
+    {
+        UsageNative = D3D11_USAGE_DEFAULT;
+        BindFlags |= D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+        MiscFlags |= D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
     }
 
     u32 CpuAccessFlags = 0;
     if(MemoryUsage == memoryUsage::CpuToGpu) CpuAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-    D3D11_BUFFER_DESC constantBufferDesc = {};
-    constantBufferDesc.ByteWidth      = this->Size;
-    constantBufferDesc.Usage          = UsageNative;
-    constantBufferDesc.BindFlags      = BindFlags;
-    constantBufferDesc.CPUAccessFlags = CpuAccessFlags;
+    D3D11_BUFFER_DESC ConstantBufferDesc = {};
+    ConstantBufferDesc.BindFlags      = BindFlags;
+    ConstantBufferDesc.ByteWidth      = this->Size;
+    ConstantBufferDesc.MiscFlags = MiscFlags;
+    ConstantBufferDesc.Usage          = UsageNative;
+    ConstantBufferDesc.CPUAccessFlags = CpuAccessFlags;
+    if(Usage == bufferUsage::StorageBuffer)
+        ConstantBufferDesc.StructureByteStride = Stride;
 
-    D11Data->Device->CreateBuffer(&constantBufferDesc, nullptr, &D11Buffer->Handle);  
+    ThrowIfFailed(D11Data->Device->CreateBuffer(&ConstantBufferDesc, nullptr, &D11Buffer->Handle));  
+
+    if(Usage == bufferUsage::StorageBuffer)
+    {
+        D3D11_SHADER_RESOURCE_VIEW_DESC ShaderResourceViewDesc;
+        ShaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+        ShaderResourceViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+        ShaderResourceViewDesc.Buffer.ElementOffset = 0;
+        ShaderResourceViewDesc.Buffer.FirstElement = 0;
+        ShaderResourceViewDesc.Buffer.NumElements = ByteSize / Stride;
+        ShaderResourceViewDesc.Buffer.ElementWidth = ByteSize / Stride;
+    
+        ThrowIfFailed(D11Data->Device->CreateShaderResourceView(D11Buffer->Handle, &ShaderResourceViewDesc, &D11Buffer->StructuredHandle));
+
+        D3D11_UNORDERED_ACCESS_VIEW_DESC UAVDesc = {};
+        UAVDesc.Format = DXGI_FORMAT_UNKNOWN;
+        UAVDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+        UAVDesc.Buffer.FirstElement = 0;
+        UAVDesc.Buffer.NumElements = ByteSize / Stride; // Number of elements in the buffer
+        UAVDesc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_COUNTER;
+        ThrowIfFailed(D11Data->Device->CreateUnorderedAccessView(D11Buffer->Handle, &UAVDesc, &D11Buffer->UAVHandle));
+        
+    }
 }
 
 
