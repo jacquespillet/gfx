@@ -23,6 +23,7 @@ struct imgui
     app::window *Window;
     static imgui *Get();
     static std::shared_ptr<imgui> Initialize(std::shared_ptr<context> Context, std::shared_ptr<app::window> Window, framebufferHandle Framebuffer);
+    static bool IsInitialized();
 
     void StartFrame();
     void EndFrame(std::shared_ptr<commandBuffer> CommandBuffer);

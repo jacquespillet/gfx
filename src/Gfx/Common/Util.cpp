@@ -55,7 +55,7 @@ std::string ReadShaderFile(const char * FileName)
     while(std::getline(File, LineBuffer))
     {
 
-#if GFX_API != GFX_D3D12 //hlsl has its own include handler
+#if GFX_API != GFX_D3D12 && GFX_API != GFX_D3D11 //hlsl has its own include handler
         if(LineBuffer.find(IncludeIdentifier) != LineBuffer.npos)
         {
             LineBuffer.erase(0, IncludeIdentifier.size());

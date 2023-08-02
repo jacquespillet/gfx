@@ -13,11 +13,13 @@ add_compile_definitions(_GLFW_WIN32 GLFW_EXPOSE_NATIVE_WIN32 VK_USE_PLATFORM_WIN
 set(GFX_API_GL 0)
 set(GFX_API_VK 1)
 set(GFX_API_D3D12 2)
-set(GFX_API ${GFX_API_VK})
+set(GFX_API_D3D11 3)
+set(GFX_API ${GFX_API_D3D11})
 
 add_definitions(-DGFX_GL=${GFX_API_GL})
 add_definitions(-DGFX_VK=${GFX_API_VK})
 add_definitions(-DGFX_D3D12=${GFX_API_D3D12})
+add_definitions(-DGFX_D3D11=${GFX_API_D3D11})
 add_definitions(-DGFX_API=${GFX_API})
 
 set(BUILD_ALL 0)
@@ -47,6 +49,8 @@ elseif(${GFX_API} EQUAL ${GFX_API_GL})
 set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_opengl3.cpp)
 elseif(${GFX_API} EQUAL ${GFX_API_VK})
 set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_vulkan.cpp)
+elseif(${GFX_API} EQUAL ${GFX_API_D3D11})
+set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_dx11.cpp)
 endif()
 
 include_directories(${IMGUI_INC_DIR})
@@ -99,38 +103,41 @@ include_directories(${TLSF_INC_DIR})
 # Vulkan
 
 if(${GFX_API} EQUAL ${GFX_API_VK})
+        set(VULKAN_LIB_DIR $ENV{VULKAN_SDK}/Lib)
+        set(VULKAN_INC_DIR $ENV{VULKAN_SDK}/Include)
+        set(VULKAN_BIN_DIR $ENV{VULKAN_SDK}/Bin)
+        include_directories(${VULKAN_INC_DIR})
+        link_directories(${VULKAN_LIB_DIR})
+        # Vma
+        set(VMA_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/vma/include)
+        set(VMA_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/vma/lib)
+        include_directories(${VMA_INC_DIR})
+        link_directories(${VMA_LIB_DIR})
 
-set(VULKAN_LIB_DIR $ENV{VULKAN_SDK}/Lib)
-set(VULKAN_INC_DIR $ENV{VULKAN_SDK}/Include)
-set(VULKAN_BIN_DIR $ENV{VULKAN_SDK}/Bin)
-include_directories(${VULKAN_INC_DIR})
-link_directories(${VULKAN_LIB_DIR})
-# Vma
-set(VMA_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/vma/include)
-set(VMA_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/vma/lib)
-include_directories(${VMA_INC_DIR})
-link_directories(${VMA_LIB_DIR})
+        # glslang
+        set(GLSLANG_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang/include)
+        set(GLSLANG_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang/lib)
+        include_directories(${GLSLANG_INC_DIR})
+        link_directories(${GLSLANG_LIB_DIR})
 
-# glslang
-set(GLSLANG_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang/include)
-set(GLSLANG_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang/lib)
-include_directories(${GLSLANG_INC_DIR})
-link_directories(${GLSLANG_LIB_DIR})
-
-# spirv_reflect
-set(SPIRVREFLECT_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/spirv-reflect)
-set(SPIRVREFLECT_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ext/spirv-reflect/spirv_reflect.c)
-include_directories(${SPIRVREFLECT_INC_DIR})
+        # spirv_reflect
+        set(SPIRVREFLECT_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/spirv-reflect)
+        set(SPIRVREFLECT_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ext/spirv-reflect/spirv_reflect.c)
+        include_directories(${SPIRVREFLECT_INC_DIR})
 endif()
 
 if(${GFX_API} EQUAL ${GFX_API_D3D12})
-set(D3DX_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/d3dx)
-include_directories(${D3DX_INC_DIR})
-set(DXC_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dxc/include)
-set(DXC_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dxc/lib)
-set(DXC_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dxc/bin)
-include_directories(${DXC_INC_DIR})
-link_directories(${DXC_LIB_DIR})
+        set(D3DX_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/d3dx)
+        include_directories(${D3DX_INC_DIR})
+        set(DXC_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dxc/include)
+        set(DXC_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dxc/lib)
+        set(DXC_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dxc/bin)
+        include_directories(${DXC_INC_DIR})
+        link_directories(${DXC_LIB_DIR})
+endif()
+
+if(${GFX_API} EQUAL ${GFX_API_D3D11})
+
 endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -177,6 +184,17 @@ set(d3d12Code
         src/Gfx/D3D12/D12Imgui.cpp
 )
 
+set(d3d11Code
+        src/Gfx/D3D11/D11Context.cpp
+        src/Gfx/D3D11/D11Uniforms.cpp
+        src/Gfx/D3D11/D11ResourceManager.cpp
+        src/Gfx/D3D11/D11Image.cpp
+        src/Gfx/D3D11/D11Pipeline.cpp
+        src/Gfx/D3D11/D11Buffer.cpp
+        src/Gfx/D3D11/D11Swapchain.cpp
+        src/Gfx/D3D11/D11CommandBuffer.cpp
+)
+
 set(glCode
         src/Gfx/GL/GLContext.cpp
         src/Gfx/GL/GLPipeline.cpp
@@ -191,14 +209,14 @@ set(glCode
 )
         
 set(commonCode
-        src/Gfx/Common/ResourceManager.cpp
-        src/Gfx/Common/Uniform.cpp
-        src/Gfx/Common/Image.cpp
-        src/Gfx/Common/Framebuffer.cpp
-        src/Gfx/Common/Pipeline.cpp
-        src/Gfx/Common/Util.cpp
         src/Gfx/Common/Memory.cpp
+        src/Gfx/Common/ResourceManager.cpp
         src/Gfx/Common/Context.cpp
+        src/Gfx/Common/Image.cpp
+        src/Gfx/Common/Util.cpp
+        src/Gfx/Common/Pipeline.cpp
+        src/Gfx/Common/Uniform.cpp
+        # src/Gfx/Common/Framebuffer.cpp
 )
 set(appCode
         src/App/Window.cpp
@@ -207,8 +225,8 @@ set(appCode
 
 set (sourceCode
         ${extCode}
-        ${commonCode}
         ${appCode}
+        ${commonCode}
 )
 
 if(${GFX_API} EQUAL ${GFX_API_VK})
@@ -229,22 +247,28 @@ elseif(${GFX_API} EQUAL ${GFX_API_GL})
                 ${sourceCode}
                 ${glCode}
         )
+elseif(${GFX_API} EQUAL ${GFX_API_D3D11})
+        set(GFX_API_STR "D3D11")
+        set (sourceCode
+                ${sourceCode}
+                ${d3d11Code}
+        )
 endif()
 
-set (sourceCode ${sourceCode}
-                src/Hlgfx/Context.cpp
-                src/Hlgfx/Texture.cpp
-                src/Hlgfx/Object3D.cpp
-                src/Hlgfx/Transform.cpp
-                src/Hlgfx/Mesh.cpp
-                src/Hlgfx/Material.cpp
-                src/Hlgfx/Geometry.cpp
-                src/Hlgfx/Camera.cpp
-                src/Hlgfx/Scene.cpp
-                src/Hlgfx/CameraController.cpp
-                src/Hlgfx/Util.cpp
-                src/Hlgfx/Loaders/GLTF.cpp
-                )
+# set (sourceCode ${sourceCode}
+#                 src/Hlgfx/Context.cpp
+#                 src/Hlgfx/Texture.cpp
+#                 src/Hlgfx/Object3D.cpp
+#                 src/Hlgfx/Transform.cpp
+#                 src/Hlgfx/Mesh.cpp
+#                 src/Hlgfx/Material.cpp
+#                 src/Hlgfx/Geometry.cpp
+#                 src/Hlgfx/Camera.cpp
+#                 src/Hlgfx/Scene.cpp
+#                 src/Hlgfx/CameraController.cpp
+#                 src/Hlgfx/Util.cpp
+#                 src/Hlgfx/Loaders/GLTF.cpp
+# )
 
 ################################################
 ##########      Libs              ##############
@@ -274,6 +298,10 @@ if(${GFX_API} EQUAL ${GFX_API_D3D12})
         set(gfxApiLibs ${gfxApiLibs} D3DCompiler.lib)
         set(gfxApiLibs ${gfxApiLibs} dxcompiler.lib)
         install(FILES ${DXC_BIN_DIR}/dxil.dll DESTINATION bin)
+endif()
+
+if(${GFX_API} EQUAL ${GFX_API_D3D11})
+        set(gfxApiLibs ${gfxApiLibs} d3d11.lib)
 endif()
 
 if(${GFX_API} EQUAL ${GFX_API_GL})
@@ -369,20 +397,19 @@ if(${BUILD_ALL} EQUAL 1)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
-else()
         
-        # Cubemap
+        # ModelViewer
         set(targetName Main)
         set(mainCode ${sourceCode} src/Main_HelloHLGFX.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
-
-        # set(targetName Main)
-        # set(mainCode ${sourceCode} src/Main_HelloTriangle_Indexed.cpp)
-        # add_executable(${targetName} ${mainCode})
-        # target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
-        # install(TARGETS ${targetName} RUNTIME DESTINATION bin)
+else()
+        set(targetName Main)
+        set(mainCode ${sourceCode} src/Main_HelloTriangle.cpp)
+        add_executable(${targetName} ${mainCode})
+        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
+        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
 endif()
 
 
@@ -391,4 +418,4 @@ endif()
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources/
         DESTINATION bin/resources
 )
-
+ 

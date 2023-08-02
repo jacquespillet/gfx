@@ -448,6 +448,24 @@ struct bufferUsage
         AccelerationStructureBuildInputReadonly = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
         AccelerationStructureStorage = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
         ShaderBindingTable = D3D12_RESOURCE_STATE_COMMON,
+#elif GFX_API==GFX_D3D11
+        UNKNOWN,
+        TransferSource,
+        TransferDestination,
+        UniformTexelBuffer,
+        StorageTexelBuffer,
+        UniformBuffer,
+        StorageBuffer,
+        IndexBuffer,
+        VertexBuffer,
+        IndirectBuffer,
+        ShaderDeviceAddress,
+        TransformFeedbackBuffer,
+        TransformFeedbackCounterBuffer,
+        ConditionalRendering,
+        AccelerationStructureBuildInputReadonly,
+        AccelerationStructureStorage,
+        ShaderBindingTable,
 #endif
     };
 };
@@ -538,6 +556,33 @@ struct shaderStageFlags
         MeshEXT,
         SubpassShadingHUAWEI,
         ClusterCullingHUAWEI
+#elif GFX_API==GFX_D3D11
+        Vertex,
+        TessellationControl,
+        TessellationEvaluation,
+        Geometry,
+        Fragment,
+        Compute,
+        AllGraphics,
+        All,
+        RaygenKHR,
+        AnyHitKHR,
+        ClosestHitKHR,
+        MissKHR,
+        IntersectionKHR,
+        CallableKHR,
+        RaygenNV,
+        AnyHitNV,
+        ClosestHitNV,
+        MissNV,
+        IntersectionNV,
+        CallableNV,
+        TaskNV,
+        MeshNV,
+        TaskEXT,
+        MeshEXT,
+        SubpassShadingHUAWEI,
+        ClusterCullingHUAWEI
 #endif
     };
 };
@@ -577,6 +622,16 @@ struct imageUsage
         DEPTH_STENCIL_ATTACHMENT,
         INPUT_ATTACHMENT,
         FRAGNENT_SHADING_RATE_ATTACHMENT,
+#elif GFX_API==GFX_D3D11
+        UNKNOWN,
+        TRANSFER_SOURCE,
+        TRANSFER_DESTINATION,
+        SHADER_READ,
+        STORAGE,
+        COLOR_ATTACHMENT,
+        DEPTH_STENCIL_ATTACHMENT,
+        INPUT_ATTACHMENT,
+        FRAGNENT_SHADING_RATE_ATTACHMENT,
 #endif
     };
 };
@@ -601,6 +656,11 @@ struct cullMode
         Front = D3D12_CULL_MODE_FRONT,
         Back = D3D12_CULL_MODE_BACK,
         FrontAndBack = D3D12_CULL_MODE_BACK | D3D12_CULL_MODE_FRONT
+#elif GFX_API==GFX_D3D11
+        None ,
+        Front,
+        Back,
+        FrontAndBack,
 #endif
     };
 };

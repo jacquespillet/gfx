@@ -2,6 +2,7 @@
 #include "VkImage.h"
 #include "../Include/Context.h"
 #include "../Include/Memory.h"
+#include "../Include/Imgui.h"
 #include "VkContext.h"
 #include "VkCommon.h"
 #include "VkMemoryAllocation.h"
@@ -159,7 +160,9 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
 
     VKImage->InitSampler(CreateInfo, MipLevelCount);
 
-    VKImage->ImGuiDescriptorSet = ImGui_ImplVulkan_AddTexture(VKImage->Sampler, VKImage->DefaultImageViews.NativeView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    if(imgui::IsInitialized())
+        VKImage->ImGuiDescriptorSet = ImGui_ImplVulkan_AddTexture(VKImage->Sampler, VKImage->DefaultImageViews.NativeView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 

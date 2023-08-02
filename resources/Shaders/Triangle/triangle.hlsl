@@ -35,12 +35,12 @@ Texture2D color : register(t4);
 SamplerState defaultSampler : register(s0);
 
 
-PSInput VSMain(vec4 position : POSITION0, vec4 color : POSITION1)
+PSInput VSMain(vec3 position : POSITION0, vec4 color : POSITION1)
 {
     PSInput result;
 
     result.uv = position.xy;
-    result.position = position;
+    result.position = vec4(position, 1);
     result.color = color;
 
     return result;

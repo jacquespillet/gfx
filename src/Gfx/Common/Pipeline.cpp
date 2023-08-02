@@ -213,6 +213,10 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
             {
                 continue;
             }
+            if(GFX_API == GFX_D3D11 && Name != "HLSL")
+            {
+                continue;
+            }
 
             std::string Name;
             std::string Code;
@@ -234,20 +238,32 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
             ShaderStage["stage"].get_to(Name);
             
             std::string CustomDefines;
+            CustomDefines += "#define VK " + std::to_string(GFX_VK) + "\n";
+            CustomDefines += "#define GL " + std::to_string(GFX_GL) + "\n";
+            CustomDefines += "#define D3D11 " + std::to_string(GFX_D3D11) + "\n";
+            CustomDefines += "#define GFX_D3D12 " + std::to_string(GFX_D3D12) + "\n";
             if(Name == "vertex")
-                CustomDefines = "#define VERTEX\n";
+                CustomDefines += "#define VERTEX\n";
             if(Name == "fragment")
-                CustomDefines = "#define FRAGMENT\n";
+                CustomDefines += "#define FRAGMENT\n";
             if(Name == "compute")
-                CustomDefines = "#define COMPUTE\n";
-            if((GFX_API == GFX_VK) && Name != "GLSL")
+                CustomDefines += "#define COMPUTE\n";
+            if(GFX_API == GFX_VK)
             {
                 CustomDefines += "#define GRAPHICS_API VK\n";
             }
-            if((GFX_API == GFX_GL) && Name != "GLSL")
+            if(GFX_API == GFX_GL)
             {
                 CustomDefines += "#define GRAPHICS_API GL\n";
-            }                
+            }
+            if(GFX_API == GFX_D3D12)
+            {
+                CustomDefines += "#define GRAPHICS_API D3D12\n";
+            }
+            if(GFX_API == GFX_D3D11)
+            {
+                CustomDefines += "#define GRAPHICS_API D3D11\n";
+            }
             
             // Code.replace(Code.begin(), Code.end(), "{{CustomDefines}}", CustomDefines);
             Code = std::regex_replace(Code, std::regex("CUSTOM_DEFINES"), CustomDefines);

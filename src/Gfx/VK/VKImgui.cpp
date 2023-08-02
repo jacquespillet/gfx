@@ -17,11 +17,16 @@
 
 namespace gfx
 {
-std::shared_ptr<imgui> imgui::Singleton = {};
+std::shared_ptr<imgui> imgui::Singleton = nullptr;
 
 imgui *imgui::Get()
 {
     return Singleton.get();
+}
+
+bool imgui::IsInitialized()
+{
+    return Singleton != nullptr;
 }
 
 std::shared_ptr<imgui> imgui::Initialize(std::shared_ptr<context> Context, std::shared_ptr<app::window> Window, framebufferHandle FramebufferHandle)

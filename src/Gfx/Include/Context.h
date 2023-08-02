@@ -150,7 +150,7 @@ struct context
     renderPassHandle SwapchainRenderPass;
 
     std::shared_ptr<swapchain> Swapchain;
-
+    
     u32 MultiSampleCount=1;
 };
 }
