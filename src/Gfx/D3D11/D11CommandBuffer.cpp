@@ -11,6 +11,7 @@
 #include "D11Common.h"
 #include "D11Framebuffer.h"
 #include "D11Context.h"
+#include "D11Mapping.h"
 
 #include <GL/glew.h>
 
@@ -51,6 +52,7 @@ void ExecuteBeginPass(const command &Command)
     framebuffer *Framebuffer = context::Get()->GetFramebuffer(Command.BeginPass.FramebufferHandle);
     GET_API_DATA(D11Framebuffer, d3d11FramebufferData, Framebuffer)
     
+    //TODO
     FLOAT BackgroundColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
     D11Data->DeviceContext->OMSetRenderTargets(1, &D11Framebuffer->View, D11Framebuffer->DepthBufferView);
     D11Data->DeviceContext->ClearRenderTargetView(D11Framebuffer->View, BackgroundColor);
@@ -77,18 +79,30 @@ void ExecuteBindUniformImage(const command &Command)
 void ExecuteBindVertexBuffer(const command &Command)
 {
     GET_CONTEXT(D11Data, context::Get());
-    bufferHandle VertexBufferHandle = Command.BindVertexBuffer.VertexBufferHandle;
+    vertexBufferHandle VertexBufferHandle = Command.BindVertexBuffer.VertexBufferHandle;
     vertexBuffer *VertexBuffer = context::Get()->GetVertexBuffer(VertexBufferHandle);
     GET_API_DATA(D11VertexBuffer, d3d11VertexBuffer, VertexBuffer);
     
-    u32 Stride = VertexBuffer->VertexStreams[0].Stride;
-    u32 Offset = 0;
-    D11Data->DeviceContext->IASetVertexBuffers(0, 1, &D11VertexBuffer->Handle, &Stride, &Offset);
+    for (sz i = 0; i < VertexBuffer->NumVertexStreams; i++)
+    {
+        buffer *VertexStreamBuffer = context::Get()->GetBuffer(D11VertexBuffer->VertexBuffers[i]);
+        GET_API_DATA(D11Buffer, d3d11Buffer, VertexStreamBuffer);
+
+        u32 Stride = VertexBuffer->VertexStreams[i].Stride;
+        u32 Offset = 0;
+        D11Data->DeviceContext->IASetVertexBuffers(VertexBuffer->VertexStreams[i].StreamIndex, 1, &D11Buffer->Handle, &Stride, &Offset);
+    }
+    
 }
 
 void ExecuteBindIndexBuffer(const command &Command)
 {
-    assert(false);
+    GET_CONTEXT(D11Data, context::Get());
+    bufferHandle BufferHandle = Command.BindIndexBuffer.IndexBufferHandle;
+    buffer *IndexBuffer = context::Get()->GetBuffer(BufferHandle);
+    GET_API_DATA(D11Buffer, d3d11Buffer, IndexBuffer);
+    
+    D11Data->DeviceContext->IASetIndexBuffer(D11Buffer->Handle, IndexTypeToNative(Command.BindIndexBuffer.IndexType), Command.BindIndexBuffer.Offset);
 }
 
 void ExecuteDrawImgui(const command &Command)
@@ -98,7 +112,8 @@ void ExecuteDrawImgui(const command &Command)
 
 void ExecuteDrawIndexed(const command &Command)
 {
-    assert(false);
+    GET_CONTEXT(D11Data, context::Get());
+    D11Data->DeviceContext->DrawIndexed(Command.DrawIndexed.Count, Command.DrawIndexed.Offset, 0);
 }
 
 void ExecuteDrawTriangles(const command &Command)
@@ -218,6 +233,8 @@ void commandBuffer::BindIndexBuffer(bufferHandle Buffer, u32 Offset, indexType I
     command Command;
     Command.Type = commandType::BindIndexBuffer;
     Command.BindIndexBuffer.IndexBufferHandle = Buffer;
+    Command.BindIndexBuffer.Offset = Offset;
+    Command.BindIndexBuffer.IndexType = IndexType;
     Command.CommandFunction = (commandFunction)&ExecuteBindIndexBuffer;
     GLCommandBuffer->Commands.push_back(Command);
 

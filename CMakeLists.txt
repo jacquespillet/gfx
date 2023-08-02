@@ -193,6 +193,7 @@ set(d3d11Code
         src/Gfx/D3D11/D11Buffer.cpp
         src/Gfx/D3D11/D11Swapchain.cpp
         src/Gfx/D3D11/D11CommandBuffer.cpp
+        src/Gfx/D3D11/D11Mapping.cpp
 )
 
 set(glCode
@@ -313,16 +314,16 @@ endif()
 
 
 if(${BUILD_ALL} EQUAL 1)
-        # HelloTriangleIndexed
-        set(targetName HelloTriangleIndexed_${GFX_API_STR})
-        set(mainCode ${sourceCode} src/Main_HelloTriangle_Indexed.cpp)
-        add_executable(${targetName} ${mainCode})
-        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
-        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
-
         # HelloTriangle
         set(targetName HelloTriangle_${GFX_API_STR})
         set(mainCode ${sourceCode} src/Main_HelloTriangle.cpp)
+        add_executable(${targetName} ${mainCode})
+        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
+        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
+        
+        # HelloTriangleIndexed
+        set(targetName HelloTriangleIndexed_${GFX_API_STR})
+        set(mainCode ${sourceCode} src/Main_HelloTriangle_Indexed.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
@@ -334,16 +335,16 @@ if(${BUILD_ALL} EQUAL 1)
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
 
-        # HelloCube
-        set(targetName HelloCube_${GFX_API_STR})
-        set(mainCode ${sourceCode} src/Main_HelloCube.cpp)
-        add_executable(${targetName} ${mainCode})
-        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
-        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
-        
         # Instanced
         set(targetName HelloTriangleInstanced_${GFX_API_STR})
         set(mainCode ${sourceCode} src/Main_HelloTriangle_Instanced.cpp)
+        add_executable(${targetName} ${mainCode})
+        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
+        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
+
+        # HelloCube
+        set(targetName HelloCube_${GFX_API_STR})
+        set(mainCode ${sourceCode} src/Main_HelloCube.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
@@ -368,7 +369,6 @@ if(${BUILD_ALL} EQUAL 1)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
-        
         
         # Offscreen
         set(targetName HelloTriangleOffscreen_${GFX_API_STR})
@@ -398,15 +398,9 @@ if(${BUILD_ALL} EQUAL 1)
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
         
-        # ModelViewer
-        set(targetName Main)
-        set(mainCode ${sourceCode} src/Main_HelloHLGFX.cpp)
-        add_executable(${targetName} ${mainCode})
-        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
-        install(TARGETS ${targetName} RUNTIME DESTINATION bin)
 else()
         set(targetName Main)
-        set(mainCode ${sourceCode} src/Main_HelloTriangle.cpp)
+        set(mainCode ${sourceCode} src/Main_HelloTriangle_Indexed.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)

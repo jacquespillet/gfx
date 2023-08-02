@@ -14,6 +14,7 @@ static sz CalcConstantBufferByteSize(sz byteSize)
 
 void buffer::Init(size_t ByteSize, sz Stride, bufferUsage::value Usage, memoryUsage MemoryUsage)
 {
+
     GET_CONTEXT(D11Data, context::Get());
     GET_API_DATA(D11Buffer, d3d11Buffer, this); 
     
@@ -21,17 +22,45 @@ void buffer::Init(size_t ByteSize, sz Stride, bufferUsage::value Usage, memoryUs
     this->Stride = Stride;
     this->MemoryUsage = MemoryUsage;
     
-    if(Usage ==bufferUsage::UniformBuffer)
-        this->Size = CalcConstantBufferByteSize(ByteSize);
+    //TODO : Structured buffer
     
+    D3D11_USAGE UsageNative = D3D11_USAGE_DEFAULT;
+    u32 BindFlags = 0;
+    if(Usage ==bufferUsage::UniformBuffer)
+    {
+        this->Size = CalcConstantBufferByteSize(ByteSize);
+        UsageNative = D3D11_USAGE_DYNAMIC;
+        BindFlags |= D3D11_BIND_CONSTANT_BUFFER;
+    }
+    
+    if(Usage == bufferUsage::VertexBuffer)
+    {
+        UsageNative = D3D11_USAGE_DEFAULT;
+        BindFlags |= D3D11_BIND_VERTEX_BUFFER;
+    }
+
+    if(Usage == bufferUsage::IndexBuffer)
+    {
+        UsageNative = D3D11_USAGE_DEFAULT;
+        BindFlags |= D3D11_BIND_INDEX_BUFFER;
+    }
+
+    if(Usage == bufferUsage::TransferSource && MemoryUsage == memoryUsage::CpuToGpu)
+    {
+        BindFlags |= D3D11_BIND_CONSTANT_BUFFER;
+        UsageNative = D3D11_USAGE_DYNAMIC;
+    }
+
+    u32 CpuAccessFlags = 0;
+    if(MemoryUsage == memoryUsage::CpuToGpu) CpuAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
     D3D11_BUFFER_DESC constantBufferDesc = {};
     constantBufferDesc.ByteWidth      = this->Size;
-    constantBufferDesc.Usage          = D3D11_USAGE_DYNAMIC;
-    constantBufferDesc.BindFlags      = D3D11_BIND_CONSTANT_BUFFER;
-    constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    constantBufferDesc.Usage          = UsageNative;
+    constantBufferDesc.BindFlags      = BindFlags;
+    constantBufferDesc.CPUAccessFlags = CpuAccessFlags;
 
-    D11Data->Device->CreateBuffer(&constantBufferDesc, nullptr, &D11Buffer->Handle);   
+    D11Data->Device->CreateBuffer(&constantBufferDesc, nullptr, &D11Buffer->Handle);  
 }
 
 
@@ -58,6 +87,10 @@ void buffer::UnmapMemory()
     this->MappedData=nullptr;
 }
 
+void buffer::FlushMemory(size_t ByteSize, size_t Offset)
+{
+}
+
 void buffer::CopyData(const uint8_t *Data, size_t ByteSize, size_t Offset)
 {
     GET_CONTEXT(D11Data, context::Get());
@@ -65,7 +98,12 @@ void buffer::CopyData(const uint8_t *Data, size_t ByteSize, size_t Offset)
 
     if(MemoryUsage == memoryUsage::GpuOnly)
     {
-        assert(false);
+        D11Data->StageBuffer.Submit(Data, ByteSize);
+        buffer *Buffer = context::Get()->GetBuffer(D11Data->StageBuffer.BufferHandle);
+        GET_API_DATA(D11StageBuffer, d3d11Buffer, Buffer); 
+        D3D11_BOX Box = {0,0,0, ByteSize, 1, 1};
+        D11Data->DeviceContext->CopySubresourceRegion(D11Buffer->Handle, 0, 0, 0, 0, D11StageBuffer->Handle, 0, &Box);
+        D11Data->StageBuffer.Reset();
     }
     else
     {
@@ -81,6 +119,61 @@ void buffer::CopyData(const uint8_t *Data, size_t ByteSize, size_t Offset)
         }
     }
 }
+
+stageBuffer::stageBuffer(){}
+stageBuffer::stageBuffer(sz Size)
+{
+    Init(Size);
+}
+
+stageBuffer::allocation stageBuffer::Submit(const uint8_t *Data, u32 ByteSize)
+{
+    buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
+    
+    assert(this->CurrentOffset + ByteSize <= Buffer->Size);
+
+    if(Data != nullptr)
+    {
+        Buffer->MapMemory();
+        Buffer->CopyData(Data, ByteSize, this->CurrentOffset);
+        Buffer->UnmapMemory();
+    }
+
+    this->CurrentOffset += ByteSize;
+    return allocation{ByteSize, this->CurrentOffset - ByteSize};
+}
+
+
+
+void stageBuffer::Flush()
+{
+    buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
+    Buffer->FlushMemory(this->CurrentOffset, 0);
+}
+
+void stageBuffer::Reset()
+{
+    this->CurrentOffset=0;
+}
+
+void stageBuffer::Init(sz Size)
+{
+    BufferHandle = context::Get()->CreateBuffer(Size, bufferUsage::TransferSource, memoryUsage::CpuToGpu);    
+    buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
+    this->CurrentOffset=0;
+}
+
+buffer *stageBuffer::GetBuffer()
+{
+    buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
+    return Buffer;
+}
+
+void stageBuffer::Destroy()
+{
+    context::Get()->ResourceManager.Buffers.ReleaseResource(BufferHandle);
+}
+
 
 vertexStreamData &vertexStreamData::Reset()
 {

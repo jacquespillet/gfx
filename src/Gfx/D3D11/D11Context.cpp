@@ -59,6 +59,8 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
     D11Data->CommandBuffer->Initialize();
 
 
+    D11Data->StageBuffer.Init(InitializeInfo.MaxStageBufferSize);
+
     return Singleton;
 }
 
@@ -168,16 +170,17 @@ vertexBufferHandle context::CreateVertexBuffer(const vertexBufferCreateInfo &Cre
     
     VertexBuffer->ApiData = std::make_shared<d3d11VertexBuffer>();
     GET_API_DATA(D11VertexBuffer, d3d11VertexBuffer, VertexBuffer);
+    
+    for (sz i = 0; i < CreateInfo.NumVertexStreams; i++)
+    {
+        D11VertexBuffer->VertexBuffers[i] = context::Get()->ResourceManager.Buffers.ObtainResource();
+        buffer *Buffer = context::Get()->GetBuffer(D11VertexBuffer->VertexBuffers[i]);
+        Buffer->ApiData = std::make_shared<d3d11Buffer>();
 
-    D3D11_BUFFER_DESC vertexBufferDesc = {};
-    vertexBufferDesc.ByteWidth = CreateInfo.VertexStreams[0].Size;
-    vertexBufferDesc.Usage     = D3D11_USAGE_IMMUTABLE;
-    vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-    D3D11_SUBRESOURCE_DATA vertexData = { CreateInfo.VertexStreams[0].Data};
-
-    ThrowIfFailed(D11Data->Device->CreateBuffer(&vertexBufferDesc, &vertexData, &D11VertexBuffer->Handle));    
-
+        Buffer->Init(VertexBuffer->VertexStreams[i].Size, VertexBuffer->VertexStreams[i].Stride, bufferUsage::VertexBuffer, memoryUsage::GpuOnly);
+        Buffer->CopyData((u8*)VertexBuffer->VertexStreams[i].Data, VertexBuffer->VertexStreams[i].Size, 0);
+    }
+    
     return Handle;
 }
 
@@ -192,6 +195,14 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsag
     Buffer->ApiData = std::make_shared<d3d11Buffer>();
     Buffer->Init(Size, Stride, Usage, MemoryUsage);
     return Handle;
+}
+
+void context::CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz Offset)
+{
+    GET_CONTEXT(D12Data, this);
+    
+    buffer *Buffer = GetBuffer(BufferHandle);
+    Buffer->CopyData((u8*)Ptr, Size, Offset);
 }
 
 std::shared_ptr<commandBuffer> context::GetCurrentFrameCommandBuffer()
@@ -227,13 +238,23 @@ void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pip
 {
 }
 
+void context::OnResize(u32 NewWidth, u32 NewHeight)
+{
+}
 
 void context::Present()
 {
     this->Swapchain->Present();
 }
 
+void context::WaitIdle()
+{
 
+}
+
+void context::Cleanup()
+{   
+}
 
 void context::DestroyPipeline(pipelineHandle PipelineHandle)
 {
@@ -250,9 +271,15 @@ void context::DestroyVertexBuffer(vertexBufferHandle VertexBufferHandle)
     assert(false);
 }
 
+
 void context::DestroyImage(imageHandle ImageHandle)
 {
     assert(false);
 }
+void context::DestroySwapchain()
+{
+    assert(false);
+}
+
 
 }

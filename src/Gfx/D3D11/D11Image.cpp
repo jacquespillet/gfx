@@ -28,6 +28,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     this->ApiData = std::make_shared<d3d11Image>();
     GET_API_DATA(D11Image, d3d11Image, this);
 
+    //TODO
     D3D11_TEXTURE2D_DESC TextureDesc = {};
     TextureDesc.Width              = ImageData.Width;  // in xdata.h
     TextureDesc.Height             = ImageData.Height; // in xdata.h
@@ -44,6 +45,8 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
 
     D11Data->Device->CreateTexture2D(&TextureDesc, &TextureData, &D11Image->Handle);
     D11Data->Device->CreateShaderResourceView(D11Image->Handle, nullptr, &D11Image->View);
+
+    //TODO: Mipmaps
 }
 
 }

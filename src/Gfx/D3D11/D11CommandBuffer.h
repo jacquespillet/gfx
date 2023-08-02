@@ -51,6 +51,8 @@ struct command
         struct indexBufferState
         {
             bufferHandle IndexBufferHandle;
+            indexType IndexType;
+            u32 Offset;
         } BindIndexBuffer;
         
         struct drawTrianglesState

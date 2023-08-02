@@ -2,7 +2,7 @@
 
 #include <d3d11_1.h>
 #include "../Include/Types.h"
-
+#include "../Include/Buffer.h"
 namespace gfx
 {
 struct d3d11Data
@@ -20,6 +20,8 @@ struct d3d11Data
     framebufferHandle SwapchainFramebuffer;
 
     std::shared_ptr<commandBuffer> CommandBuffer;
+
+    stageBuffer StageBuffer;
 };
 
 }

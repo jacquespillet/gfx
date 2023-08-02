@@ -12,7 +12,8 @@ struct d3d11Buffer
 
 struct d3d11VertexBuffer
 {
-    ID3D11Buffer* Handle;
+    u32 VertexBufferCount = 0;
+    bufferHandle VertexBuffers[commonConstants::MaxVertexStreams];
 };
 
 }
