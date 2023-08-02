@@ -97,14 +97,14 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
     framebuffer *SwapchainFramebuffer = Singleton->GetFramebuffer(D11Data->SwapchainFramebuffer);
     SwapchainFramebuffer->ApiData = std::make_shared<d3d11FramebufferData>();
     GET_API_DATA(D11Framebuffer, d3d11FramebufferData, SwapchainFramebuffer);
-
+    D11Framebuffer->RenderTargetCount=1;
     //Get Color
-    D11Swapchain->Handle->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&D11Framebuffer->Handle));
-    D11Data->Device->CreateRenderTargetView(D11Framebuffer->Handle, nullptr, &D11Framebuffer->View);
+    D11Swapchain->Handle->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&D11Framebuffer->ColorHandles[0]));
+    D11Data->Device->CreateRenderTargetView(D11Framebuffer->ColorHandles[0], nullptr, &D11Framebuffer->ColorViews[0]);
     
     //Get depth
     D3D11_TEXTURE2D_DESC DepthBufferDesc;
-    D11Framebuffer->Handle->GetDesc(&DepthBufferDesc); // copy from framebuffer properties
+    D11Framebuffer->ColorHandles[0]->GetDesc(&DepthBufferDesc); // copy from framebuffer properties
     DepthBufferDesc.Format    = DXGI_FORMAT_D24_UNORM_S8_UINT;
     DepthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
@@ -153,6 +153,47 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     D11Pipeline->Create(PipelineCreation);
     
     return Handle;
+}
+
+
+framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &CreateInfo)
+{
+    //Create the render pass
+    GET_CONTEXT(D12Data, this);
+    
+    framebufferHandle FramebufferHandle = ResourceManager.Framebuffers.ObtainResource();
+    if(FramebufferHandle == InvalidHandle)
+    {
+        assert(false);
+        return InvalidHandle;
+    }
+    framebuffer *Framebuffer = GetFramebuffer(FramebufferHandle);
+    Framebuffer->ApiData = std::make_shared<d3d11FramebufferData>();
+    GET_API_DATA(D12FramebufferData, d3d11FramebufferData, Framebuffer);
+    D12FramebufferData->Framebuffer = Framebuffer;
+
+    Framebuffer->Width = CreateInfo.Width;
+    Framebuffer->Height = CreateInfo.Height;
+    Framebuffer->RenderPass = context::Get()->ResourceManager.RenderPasses.ObtainResource();
+
+    renderPass *RenderPass = context::Get()->GetRenderPass(Framebuffer->RenderPass);
+    RenderPass->Output.NumColorFormats = (u32)CreateInfo.ColorFormats.size();
+    RenderPass->Output.DepthStencilFormat = CreateInfo.DepthFormat;
+    RenderPass->Output.SampleCount=1;
+
+    assert(CreateInfo.ColorFormats.size() < commonConstants::MaxImageOutputs);
+    
+    for(sz i=0; i<CreateInfo.ColorFormats.size(); i++)
+    {
+        RenderPass->Output.ColorFormats[i] = CreateInfo.ColorFormats[i];
+        D12FramebufferData->AddRenderTarget(CreateInfo.ColorFormats[i], &CreateInfo.ClearValues[0]);
+    }
+    D12FramebufferData->CreateDepthBuffer(CreateInfo.Width, CreateInfo.Height, CreateInfo.DepthFormat);
+    D12FramebufferData->CreateDescriptors();
+
+
+    return FramebufferHandle;
+    
 }
 
 vertexBufferHandle context::CreateVertexBuffer(const vertexBufferCreateInfo &CreateInfo)
@@ -259,6 +300,11 @@ void context::Cleanup()
 }
 
 void context::DestroyPipeline(pipelineHandle PipelineHandle)
+{
+    assert(false);
+}
+
+void context::DestroyFramebuffer(framebufferHandle FramebufferHandle)
 {
     assert(false);
 }

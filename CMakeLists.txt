@@ -194,6 +194,7 @@ set(d3d11Code
         src/Gfx/D3D11/D11Swapchain.cpp
         src/Gfx/D3D11/D11CommandBuffer.cpp
         src/Gfx/D3D11/D11Mapping.cpp
+        src/Gfx/D3D11/D11Framebuffer.cpp
 )
 
 set(glCode
@@ -217,7 +218,7 @@ set(commonCode
         src/Gfx/Common/Util.cpp
         src/Gfx/Common/Pipeline.cpp
         src/Gfx/Common/Uniform.cpp
-        # src/Gfx/Common/Framebuffer.cpp
+        src/Gfx/Common/Framebuffer.cpp
 )
 set(appCode
         src/App/Window.cpp
@@ -400,7 +401,7 @@ if(${BUILD_ALL} EQUAL 1)
         
 else()
         set(targetName Main)
-        set(mainCode ${sourceCode} src/Main_HelloTriangle_Compute.cpp)
+        set(mainCode ${sourceCode} src/Main_HelloTriangle_OffscreenRenderTarget.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)

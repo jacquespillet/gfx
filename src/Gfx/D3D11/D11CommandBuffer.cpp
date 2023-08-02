@@ -60,8 +60,11 @@ void ExecuteBeginPass(const command &Command, d3d11CommandBuffer &CommandBuffer)
     
     //TODO
     FLOAT BackgroundColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
-    D11Data->DeviceContext->OMSetRenderTargets(1, &D11Framebuffer->View, D11Framebuffer->DepthBufferView);
-    D11Data->DeviceContext->ClearRenderTargetView(D11Framebuffer->View, BackgroundColor);
+    D11Data->DeviceContext->OMSetRenderTargets(D11Framebuffer->RenderTargetCount, &D11Framebuffer->ColorViews[0], D11Framebuffer->DepthBufferView);
+    for (sz i = 0; i < D11Framebuffer->RenderTargetCount; i++)
+    {
+        D11Data->DeviceContext->ClearRenderTargetView(D11Framebuffer->ColorViews[i], BackgroundColor);
+    }
     D11Data->DeviceContext->ClearDepthStencilView(D11Framebuffer->DepthBufferView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
 
@@ -419,8 +422,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             command Command;
             Command.Type = commandType::BindUniforms;
             Command.BindUniformImage.Binding = Group->Uniforms[i].Binding;
-            assert(false);
-            // Command.BindUniformImage.Image = D11Framebuffer->ColorTextures[Group->Uniforms[i].ResourceIndex];
+            Command.BindUniformImage.Image = D11Framebuffer->SRVViews[Group->Uniforms[i].ResourceIndex];
             Command.CommandFunction = (commandFunction)&ExecuteBindUniformImage;
             GLCommandBuffer->Commands.push_back(Command);
         }
