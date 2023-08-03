@@ -203,7 +203,7 @@ buffer *stageBuffer::GetBuffer()
 
 void stageBuffer::Destroy()
 {
-    context::Get()->ResourceManager.Buffers.ReleaseResource(BufferHandle);
+    context::Get()->DestroyBuffer(this->BufferHandle);
 }
 
 

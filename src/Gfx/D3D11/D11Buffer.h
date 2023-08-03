@@ -9,9 +9,9 @@ namespace gfx
 
 struct d3d11Buffer
 {
-    ComPtr<ID3D11Buffer> Handle;
-    ComPtr<ID3D11ShaderResourceView> StructuredHandle;
-    ComPtr<ID3D11UnorderedAccessView> UAVHandle;
+    ComPtr<ID3D11Buffer> Handle = nullptr;
+    ComPtr<ID3D11ShaderResourceView> StructuredHandle = nullptr;
+    ComPtr<ID3D11UnorderedAccessView> UAVHandle = nullptr;
     D3D11_MAPPED_SUBRESOURCE MappedSubresource;
 };
 

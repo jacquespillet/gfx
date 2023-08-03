@@ -102,7 +102,10 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
 
         //Blend state
 
-        //
+        for(sz i=0; i<InputElementDescriptors.size(); i++)
+        {
+            DeallocateMemory((void*)InputElementDescriptors[i].SemanticName);
+        }
     }
     else
     {
@@ -130,6 +133,13 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
         hr = D11Data->Device->CreateComputeShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, ComputeShader.GetAddressOf());
         pBlob->Release();    
     }
+        
+    for (size_t j = 0; j < PipelineCreation.Shaders.StagesCount; j++)
+    {
+        DeallocateMemory((void*)PipelineCreation.Shaders.Stages[j].Code);
+        DeallocateMemory((void*)PipelineCreation.Shaders.Stages[j].FileName);
+    }
+    DeallocateMemory((void*)PipelineCreation.Name);
 }
 
 void d3d11Pipeline::DestroyD11Resources()

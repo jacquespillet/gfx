@@ -8,7 +8,7 @@ namespace gfx
 {
 struct d3d11Image
 {
-    ComPtr<ID3D11Texture2D> Handle;
-    ComPtr<ID3D11ShaderResourceView> View;
+    ComPtr<ID3D11Texture2D> Handle = nullptr;
+    ComPtr<ID3D11ShaderResourceView> View = nullptr;
 };
 }

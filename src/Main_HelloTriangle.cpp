@@ -94,7 +94,6 @@ struct application
 		GfxContext = gfx::context::Initialize(ContextInitialize, *Window);
 		Swapchain = GfxContext->CreateSwapchain(Width, Height);
 
-		
 		gfx::imageData ImageData = gfx::ImageFromFile("resources/Textures/Debug.jpg");
 		gfx::imageCreateInfo ImageCreateInfo = 
 		{
@@ -110,13 +109,13 @@ struct application
 		gfx::image *Texture1 = GfxContext->GetImage(TextureHandle1);
 
 		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle/Triangle.json");
+		
 		float vertices[] =
 		{
 			0.0f, 0.25f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
 			0.25f, -0.25f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
 			-0.25f, -0.25f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f
 		};
-		
 		gfx::vertexStreamData VertexStream1 = {};
 		VertexStream1
 			.SetSize(sizeof(vertices))
@@ -149,9 +148,8 @@ struct application
 	
 	void Cleanup()
 	{
-#if 0
-		GfxContext->WaitIdle();
 
+		GfxContext->WaitIdle();
 		DestroyProgramSpecific();
 
 		GfxContext->DestroySwapchain();
@@ -162,23 +160,14 @@ struct application
 		delete Memory;
 
 		system("pause");
-#endif
 	}
 
 	void DestroyProgramSpecific()
 	{
-#if 0
-		GfxContext->DestroyBuffer(UniformBufferHandle1);
-		GfxContext->DestroyBuffer(UniformBufferHandle2);
-		GfxContext->DestroyBuffer(UniformBufferHandle3);
-		GfxContext->DestroyBuffer(UniformBufferHandle4);
-		GfxContext->DestroyPipeline(PipelineHandleSwapchain);
-		GfxContext->DestroyPipeline(PipelineHandleOffscreen);
-		GfxContext->DestroyFramebuffer(OffscreenPass);
-		GfxContext->DestroyVertexBuffer(VertexBufferHandle);
 		GfxContext->DestroyImage(TextureHandle1);
-		GfxContext->DestroyImage(TextureHandle2);
-#endif
+		GfxContext->DestroyPipeline(PipelineHandleSwapchain);
+		GfxContext->DestroyVertexBuffer(VertexBufferHandle);
+		GfxContext->DestroyBuffer(UniformBufferHandle1);
 	}
 
 

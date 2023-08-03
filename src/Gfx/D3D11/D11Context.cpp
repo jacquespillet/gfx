@@ -9,6 +9,7 @@
 #include "D11Swapchain.h"
 #include "D11Pipeline.h"
 #include "D11Buffer.h"
+#include "D11Image.h"
 #include "D11CommandBuffer.h"
 
 #include <d3d11_1.h>
@@ -239,7 +240,7 @@ vertexBufferHandle context::CreateVertexBuffer(const vertexBufferCreateInfo &Cre
     
     VertexBuffer->ApiData = std::make_shared<d3d11VertexBuffer>();
     GET_API_DATA(D11VertexBuffer, d3d11VertexBuffer, VertexBuffer);
-    
+    D11VertexBuffer->VertexBufferCount = CreateInfo.NumVertexStreams;
     for (sz i = 0; i < CreateInfo.NumVertexStreams; i++)
     {
         D11VertexBuffer->VertexBuffers[i] = context::Get()->ResourceManager.Buffers.ObtainResource();
@@ -323,36 +324,108 @@ void context::WaitIdle()
 
 void context::Cleanup()
 {   
+    GET_CONTEXT(D11Data, this);
+
+    D11Data->StageBuffer.Destroy();
+    ResourceManager.Destroy();
+    D11Data->DeviceContext->ClearState();
+    D11Data->DeviceContext->Flush();
+    if (D11Data->Device)
+    {
+        ID3D11Debug* pDebug = nullptr;
+        if (SUCCEEDED(D11Data->Device->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&pDebug))))
+        {
+            pDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+            pDebug->Release();
+        }
+    }
+
+    D11Data->DXGIAdapter.Reset();
+    D11Data->DXGIDevice.Reset();
+    D11Data->Device.Reset();
+
+    D11Data->BaseDeviceContext.Reset();
+    D11Data->BaseDevice.Reset();
 }
 
 void context::DestroyPipeline(pipelineHandle PipelineHandle)
 {
-    assert(false);
+    pipeline *Pipeline = GetPipeline(PipelineHandle);
+    GET_API_DATA(D11Pipeline, d3d11Pipeline, Pipeline);
+
+    if(D11Pipeline->InputLayout != nullptr) D11Pipeline->InputLayout.Reset();
+    if(D11Pipeline->VertexShader != nullptr) D11Pipeline->VertexShader.Reset();
+    if(D11Pipeline->PixelShader != nullptr) D11Pipeline->PixelShader.Reset();
+    if(D11Pipeline->ComputeShader != nullptr) D11Pipeline->ComputeShader.Reset();
+    if(D11Pipeline->RasterizerState != nullptr) D11Pipeline->RasterizerState.Reset();
+    if(D11Pipeline->SamplerState != nullptr) D11Pipeline->SamplerState.Reset();
+    if(D11Pipeline->DepthStencilState != nullptr) D11Pipeline->DepthStencilState.Reset();
+
+
+    ResourceManager.Pipelines.ReleaseResource(PipelineHandle);
 }
 
 void context::DestroyFramebuffer(framebufferHandle FramebufferHandle)
 {
-    assert(false);
+    framebuffer *Framebuffer = GetFramebuffer(FramebufferHandle);
+    GET_API_DATA(D11Framebuffer, d3d11FramebufferData, Framebuffer);
+
+    for (sz i = 0; i < D11Framebuffer->RenderTargetCount; i++)
+    {
+        D11Framebuffer->ColorHandles[i].Reset();
+        D11Framebuffer->ColorViews[i].Reset();
+        if(D11Framebuffer->SRVViews[i] != nullptr) D11Framebuffer->SRVViews[i].Reset();
+    }
+    
+    D11Framebuffer->DepthBuffer.Reset();
+    D11Framebuffer->DepthBufferView.Reset();
+
+    ResourceManager.Framebuffers.ReleaseResource(FramebufferHandle);
 }
 
 void context::DestroyBuffer(bufferHandle BufferHandle)
 {
-    assert(false);
+    buffer *Buffer = GetBuffer(BufferHandle);
+    GET_API_DATA(D11Buffer, d3d11Buffer, Buffer);
+    
+    if(Buffer->MappedData != nullptr) Buffer->UnmapMemory();
+
+    if(D11Buffer->UAVHandle != nullptr) D11Buffer->UAVHandle.Reset();
+    if(D11Buffer->StructuredHandle != nullptr) D11Buffer->StructuredHandle.Reset();
+    if(D11Buffer->Handle != nullptr) D11Buffer->Handle.Reset();
+
+    ResourceManager.Buffers.ReleaseResource(BufferHandle);
 }
 
 void context::DestroyVertexBuffer(vertexBufferHandle VertexBufferHandle)
 {
-    assert(false);
+    vertexBuffer *VertexBuffer = GetVertexBuffer(VertexBufferHandle);
+    GET_API_DATA(D11vertexBuffer, d3d11VertexBuffer, VertexBuffer);
+
+    for (sz i = 0; i < VertexBuffer->NumVertexStreams; i++)
+    {
+        DestroyBuffer(D11vertexBuffer->VertexBuffers[i]);
+    }
+    ResourceManager.VertexBuffers.ReleaseResource(VertexBufferHandle);
 }
 
 
 void context::DestroyImage(imageHandle ImageHandle)
 {
-    assert(false);
+    image *Image = GetImage(ImageHandle);
+    GET_API_DATA(D11Image, d3d11Image, Image);
+
+    if(D11Image->Handle != nullptr) D11Image->Handle.Reset();
+    if(D11Image->View != nullptr) D11Image->View.Reset();
+
+    ResourceManager.Images.ReleaseResource(ImageHandle);
+    
 }
 void context::DestroySwapchain()
 {
-    assert(false);
+    DestroyFramebuffer(GetSwapchainFramebuffer());
+    GET_API_DATA(D11Swapchain, d3d11Swapchain, Swapchain);
+    D11Swapchain->Handle.Reset();
 }
 
 
