@@ -412,7 +412,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             command Command;
             Command.Type = commandType::BindUniforms;
             Command.BindUniformImage.Binding = Group->Uniforms[i].Binding;
-            Command.BindUniformImage.Image = D11Image->View;
+            Command.BindUniformImage.Image = D11Image->View.Get();
             Command.CommandFunction = (commandFunction)&ExecuteBindUniformImage;
             GLCommandBuffer->Commands.push_back(Command);
         }

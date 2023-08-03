@@ -44,8 +44,8 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     TextureData.pSysMem            = ImageData.Data;
     TextureData.SysMemPitch        = ImageData.Width * FormatSize(Format); // 4 bytes per pixel
 
-    D11Data->Device->CreateTexture2D(&TextureDesc, &TextureData, &D11Image->Handle);
-    D11Data->Device->CreateShaderResourceView(D11Image->Handle, nullptr, &D11Image->View);
+    D11Data->Device->CreateTexture2D(&TextureDesc, &TextureData, D11Image->Handle.GetAddressOf());
+    D11Data->Device->CreateShaderResourceView(D11Image->Handle.Get(), nullptr, D11Image->View.GetAddressOf());
 
     //TODO: Mipmaps
 }
@@ -91,7 +91,7 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
     cubemapDesc.Usage = D3D11_USAGE_DEFAULT;
     cubemapDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
     cubemapDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-    D11Data->Device->CreateTexture2D(&cubemapDesc, nullptr, &D11Image->Handle);
+    D11Data->Device->CreateTexture2D(&cubemapDesc, nullptr, D11Image->Handle.GetAddressOf());
 
 
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
@@ -100,7 +100,7 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
     srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
     srvDesc.TextureCube.MostDetailedMip = 0;
     srvDesc.TextureCube.MipLevels = 1;
-    D11Data->Device->CreateShaderResourceView(D11Image->Handle, &srvDesc, &D11Image->View);    
+    D11Data->Device->CreateShaderResourceView(D11Image->Handle.Get(), &srvDesc, D11Image->View.GetAddressOf());    
 
     const std::vector<std::reference_wrapper<const imageData>> Images = {Right, Left, Top, Bottom, Front, Back};
     for (int face = 0; face < 6; ++face)
@@ -117,14 +117,14 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
         u32 DestSubresource = D3D11CalcSubresource(0, face, 1);
         void *Data = Images[face].get().Data;
         sz Pitch = Images[face].get().DataSize / Images[face].get().Height;
-        D11Data->DeviceContext->UpdateSubresource(D11Image->Handle, DestSubresource, &box, Data, Pitch, 0);
+        D11Data->DeviceContext->UpdateSubresource(D11Image->Handle.Get(), DestSubresource, &box, Data, Pitch, 0);
     }
 }
 
 ImTextureID image::GetImGuiID()
 {
     GET_API_DATA(D11Image, d3d11Image, this);
-    return (ImTextureID) D11Image->View;
+    return (ImTextureID) D11Image->View.Get();
 }
 
 
