@@ -129,7 +129,7 @@ void ExecuteBindVertexBuffer(const command &Command, d3d11CommandBuffer &Command
 
         u32 Stride = VertexBuffer->VertexStreams[i].Stride;
         u32 Offset = 0;
-        D11Data->DeviceContext->IASetVertexBuffers(VertexBuffer->VertexStreams[i].StreamIndex, 1, &D11Buffer->Handle, &Stride, &Offset);
+        D11Data->DeviceContext->IASetVertexBuffers(VertexBuffer->VertexStreams[i].StreamIndex, 1, D11Buffer->Handle.GetAddressOf(), &Stride, &Offset);
     }
     
 }
@@ -141,7 +141,7 @@ void ExecuteBindIndexBuffer(const command &Command, d3d11CommandBuffer &CommandB
     buffer *IndexBuffer = context::Get()->GetBuffer(BufferHandle);
     GET_API_DATA(D11Buffer, d3d11Buffer, IndexBuffer);
     
-    D11Data->DeviceContext->IASetIndexBuffer(D11Buffer->Handle, IndexTypeToNative(Command.BindIndexBuffer.IndexType), Command.BindIndexBuffer.Offset);
+    D11Data->DeviceContext->IASetIndexBuffer(D11Buffer->Handle.Get(), IndexTypeToNative(Command.BindIndexBuffer.IndexType), Command.BindIndexBuffer.Offset);
 }
 
 void ExecuteDrawImgui(const command &Command, d3d11CommandBuffer &CommandBuffer)
@@ -387,7 +387,7 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             command Command;
             Command.Type = commandType::BindUniforms;
             Command.BindUniformBuffer.Binding = Group->Uniforms[i].Binding;
-            Command.BindUniformBuffer.Buffer = D11Buffer->Handle;
+            Command.BindUniformBuffer.Buffer = D11Buffer->Handle.Get();
             Command.CommandFunction = (commandFunction)&ExecuteBindUniformBuffer;
             GLCommandBuffer->Commands.push_back(Command);
         }
@@ -399,8 +399,8 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
             command Command;
             Command.Type = commandType::BindUniforms;
             Command.BindStorageBuffer.Binding = Group->Uniforms[i].Binding;
-            Command.BindStorageBuffer.SRV = D11Buffer->StructuredHandle;
-            Command.BindStorageBuffer.UAV = D11Buffer->UAVHandle;
+            Command.BindStorageBuffer.SRV = D11Buffer->StructuredHandle.Get();
+            Command.BindStorageBuffer.UAV = D11Buffer->UAVHandle.Get();
             Command.CommandFunction = (commandFunction)&ExecuteBindStorageBuffer;
             GLCommandBuffer->Commands.push_back(Command);
         }

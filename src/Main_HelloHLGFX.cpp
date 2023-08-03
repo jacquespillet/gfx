@@ -26,8 +26,8 @@ struct application
 		Camera = std::make_shared<hlgfx::camera>(60, (float)1280 / (float)720);
 		Camera->SetLocalPosition(hlgfx::v3f(0, 0, 3));
 		
-		// std::shared_ptr<hlgfx::object3D> Mesh = hlgfx::loaders::gltf::Load("C:/Users/jacqu/Documents/Boulot/Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
-		// Context->Scene->AddObject(Mesh);
+		std::shared_ptr<hlgfx::object3D> Mesh = hlgfx::loaders::gltf::Load("C:/Users/jacqu/Documents/Boulot/Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
+		Context->Scene->AddObject(Mesh);
 	}
 
 	void Run()
