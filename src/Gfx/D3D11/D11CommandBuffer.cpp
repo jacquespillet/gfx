@@ -170,12 +170,12 @@ void ExecuteBindGraphicsPipeline(const command &Command, d3d11CommandBuffer &Com
     pipeline *Pipeline = context::Get()->GetPipeline(Command.BindGraphicsPipeline.Pipeline);
     GET_API_DATA(D11Pipeline, d3d11Pipeline, Pipeline);
     
-    D11Data->DeviceContext->RSSetState(D11Pipeline->RasterizerState);
-    D11Data->DeviceContext->PSSetSamplers(0, 1, &D11Pipeline->SamplerState);
-    D11Data->DeviceContext->OMSetDepthStencilState(D11Pipeline->DepthStencilState, 0);
-    D11Data->DeviceContext->IASetInputLayout(D11Pipeline->InputLayout);
-    D11Data->DeviceContext->VSSetShader(D11Pipeline->VertexShader, nullptr, 0);
-    D11Data->DeviceContext->PSSetShader(D11Pipeline->PixelShader, nullptr, 0);
+    D11Data->DeviceContext->RSSetState(D11Pipeline->RasterizerState.Get());
+    D11Data->DeviceContext->PSSetSamplers(0, 1, D11Pipeline->SamplerState.GetAddressOf());
+    D11Data->DeviceContext->OMSetDepthStencilState(D11Pipeline->DepthStencilState.Get(), 0);
+    D11Data->DeviceContext->IASetInputLayout(D11Pipeline->InputLayout.Get());
+    D11Data->DeviceContext->VSSetShader(D11Pipeline->VertexShader.Get(), nullptr, 0);
+    D11Data->DeviceContext->PSSetShader(D11Pipeline->PixelShader.Get(), nullptr, 0);
     D11Data->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     CommandBuffer.BoundPipeline = Command.BindGraphicsPipeline.Pipeline;
@@ -186,7 +186,7 @@ void ExecuteBindComputePipeline(const command &Command, d3d11CommandBuffer &Comm
     GET_CONTEXT(D11Data, context::Get());
     pipeline *Pipeline = context::Get()->GetPipeline(Command.BindGraphicsPipeline.Pipeline);
     GET_API_DATA(D11Pipeline, d3d11Pipeline, Pipeline);
-    D11Data->DeviceContext->CSSetShader(D11Pipeline->ComputeShader, nullptr, 0);
+    D11Data->DeviceContext->CSSetShader(D11Pipeline->ComputeShader.Get(), nullptr, 0);
 
     CommandBuffer.BoundPipeline = Command.BindGraphicsPipeline.Pipeline;
 }

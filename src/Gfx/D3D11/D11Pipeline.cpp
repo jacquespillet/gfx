@@ -41,7 +41,7 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
                 assert(false);
             }
         }
-        D11Data->Device->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr, &VertexShader);
+        D11Data->Device->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr, VertexShader.GetAddressOf());
 
         std::vector<D3D11_INPUT_ELEMENT_DESC> InputElementDescriptors(PipelineCreation.VertexInput.NumVertexAttributes);        
         u32 Offset=0;
@@ -60,7 +60,7 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
             Offset += PipelineCreation.VertexInput.VertexStreams[PipelineCreation.VertexInput.VertexAttributes[i].Binding].Stride;
         }
         
-        D11Data->Device->CreateInputLayout(InputElementDescriptors.data(), InputElementDescriptors.size(), VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), &InputLayout);
+        D11Data->Device->CreateInputLayout(InputElementDescriptors.data(), InputElementDescriptors.size(), VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), InputLayout.GetAddressOf());
 
         //Pixel shader
         ID3DBlob* PSBlob;
@@ -74,7 +74,7 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
                 pErrorBlob->Release();
             }
         }
-        D11Data->Device->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr, &PixelShader);
+        D11Data->Device->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr, PixelShader.GetAddressOf());
 
         //TODO
         
@@ -82,7 +82,7 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
         D3D11_RASTERIZER_DESC1 rasterizerDesc = {};
         rasterizerDesc.FillMode = D3D11_FILL_SOLID;
         rasterizerDesc.CullMode = D3D11_CULL_NONE;
-        D11Data->Device->CreateRasterizerState1(&rasterizerDesc, &RasterizerState);    
+        D11Data->Device->CreateRasterizerState1(&rasterizerDesc, RasterizerState.GetAddressOf());    
 
         //Sampler
         D3D11_SAMPLER_DESC samplerDesc = {};
@@ -91,14 +91,14 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
         samplerDesc.AddressV       = D3D11_TEXTURE_ADDRESS_WRAP;
         samplerDesc.AddressW       = D3D11_TEXTURE_ADDRESS_WRAP;
         samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-        D11Data->Device->CreateSamplerState(&samplerDesc, &SamplerState);
+        D11Data->Device->CreateSamplerState(&samplerDesc, SamplerState.GetAddressOf());
 
         //Depth stencil
         D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
         depthStencilDesc.DepthEnable    = TRUE;
         depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
         depthStencilDesc.DepthFunc      = D3D11_COMPARISON_LESS;
-        D11Data->Device->CreateDepthStencilState(&depthStencilDesc, &DepthStencilState);
+        D11Data->Device->CreateDepthStencilState(&depthStencilDesc, DepthStencilState.GetAddressOf());
 
         //Blend state
 
@@ -127,7 +127,7 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
             }
         }
 
-        hr = D11Data->Device->CreateComputeShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &ComputeShader);
+        hr = D11Data->Device->CreateComputeShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, ComputeShader.GetAddressOf());
         pBlob->Release();    
     }
 }

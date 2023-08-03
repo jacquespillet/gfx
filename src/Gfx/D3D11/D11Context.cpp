@@ -86,7 +86,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
     SwapChainDesc.AlphaMode          = DXGI_ALPHA_MODE_UNSPECIFIED;
     SwapChainDesc.Flags              = 0;
 
-    D11Data->DXGIFactory->CreateSwapChainForHwnd(D11Data->Device.Get(), context::Get()->Window->GetNativeWindow(), &SwapChainDesc, nullptr, nullptr, &D11Swapchain->Handle);    
+    D11Data->DXGIFactory->CreateSwapChainForHwnd(D11Data->Device.Get(), context::Get()->Window->GetNativeWindow(), &SwapChainDesc, nullptr, nullptr, D11Swapchain->Handle.GetAddressOf());    
 
     //Create Framebuffer
     D11Data->SwapchainFramebuffer = Singleton->ResourceManager.Framebuffers.ObtainResource();
