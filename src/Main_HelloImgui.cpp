@@ -305,16 +305,18 @@ struct application
 
 			CommandBuffer->BindGraphicsPipeline(PipelineHandleSwapchain);
 			
+			bool show=true;
+			ImGui::ShowDemoWindow(&show);
+
 			CommandBuffer->BindUniformGroup(Uniforms, 0);
 
 			CommandBuffer->BindVertexBuffer(VertexBufferHandle);
 			CommandBuffer->DrawArrays(0, 36); 
 
-			Imgui->EndFrame(CommandBuffer);
 			
 			CommandBuffer->EndPass();
 			
-
+			Imgui->EndFrame(CommandBuffer);
 			GfxContext->EndFrame();
 			// Present the rendered frame
 			GfxContext->Present();

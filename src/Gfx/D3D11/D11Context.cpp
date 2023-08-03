@@ -148,6 +148,19 @@ imageHandle context::CreateImageCubemap(const imageData &Left, const imageData &
     return ImageHandle;
 }
 
+
+pipelineHandle context::RecreatePipeline(const pipelineCreation &PipelineCreation, pipelineHandle PipelineHandle)
+{
+    GET_CONTEXT(GLData, this);
+    pipeline *Pipeline = GetPipeline(PipelineHandle);
+    Pipeline->Name = std::string(PipelineCreation.Name);
+    Pipeline->Creation = PipelineCreation;    
+    GET_API_DATA(D11Pipeline, d3d11Pipeline, Pipeline);
+    D11Pipeline->DestroyD11Resources();
+    D11Pipeline->Create(PipelineCreation);
+    return PipelineHandle;
+}
+
 pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 {
     GET_CONTEXT(D11Data, this);

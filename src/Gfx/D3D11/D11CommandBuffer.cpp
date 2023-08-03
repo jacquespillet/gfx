@@ -15,6 +15,9 @@
 
 #include <GL/glew.h>
 
+#include "imgui_impl_dx11.h"
+
+
 #define GET_GL_COMMANDS std::shared_ptr<d3d11CommandBuffer> GLCommandBuffer = std::static_pointer_cast<d3d11CommandBuffer>(this->ApiData);
 namespace gfx
 {
@@ -143,7 +146,8 @@ void ExecuteBindIndexBuffer(const command &Command, d3d11CommandBuffer &CommandB
 
 void ExecuteDrawImgui(const command &Command, d3d11CommandBuffer &CommandBuffer)
 {
-    assert(false);
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
 
 void ExecuteDrawIndexed(const command &Command, d3d11CommandBuffer &CommandBuffer)

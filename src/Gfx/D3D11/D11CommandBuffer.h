@@ -105,6 +105,10 @@ struct command
             u32 Width;
             u32 Height;
         } Scissor;
+
+        struct drawImgui
+        {
+        } DrawImgui;
         
         
         struct graphicsPipelineState

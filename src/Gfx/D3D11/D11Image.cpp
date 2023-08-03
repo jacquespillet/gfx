@@ -121,5 +121,11 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
     }
 }
 
+ImTextureID image::GetImGuiID()
+{
+    GET_API_DATA(D11Image, d3d11Image, this);
+    return (ImTextureID) D11Image->View;
+}
+
 
 }

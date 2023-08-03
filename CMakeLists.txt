@@ -50,6 +50,7 @@ set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui
 elseif(${GFX_API} EQUAL ${GFX_API_VK})
 set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_vulkan.cpp)
 elseif(${GFX_API} EQUAL ${GFX_API_D3D11})
+set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_win32.cpp)
 set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_dx11.cpp)
 endif()
 
@@ -195,6 +196,7 @@ set(d3d11Code
         src/Gfx/D3D11/D11CommandBuffer.cpp
         src/Gfx/D3D11/D11Mapping.cpp
         src/Gfx/D3D11/D11Framebuffer.cpp
+        src/Gfx/D3D11/D11Imgui.cpp
 )
 
 set(glCode
@@ -257,20 +259,20 @@ elseif(${GFX_API} EQUAL ${GFX_API_D3D11})
         )
 endif()
 
-# set (sourceCode ${sourceCode}
-#                 src/Hlgfx/Context.cpp
-#                 src/Hlgfx/Texture.cpp
-#                 src/Hlgfx/Object3D.cpp
-#                 src/Hlgfx/Transform.cpp
-#                 src/Hlgfx/Mesh.cpp
-#                 src/Hlgfx/Material.cpp
-#                 src/Hlgfx/Geometry.cpp
-#                 src/Hlgfx/Camera.cpp
-#                 src/Hlgfx/Scene.cpp
-#                 src/Hlgfx/CameraController.cpp
-#                 src/Hlgfx/Util.cpp
-#                 src/Hlgfx/Loaders/GLTF.cpp
-# )
+set (sourceCode ${sourceCode}
+                src/Hlgfx/Context.cpp
+                src/Hlgfx/Texture.cpp
+                src/Hlgfx/Object3D.cpp
+                src/Hlgfx/Transform.cpp
+                src/Hlgfx/Mesh.cpp
+                src/Hlgfx/Material.cpp
+                src/Hlgfx/Geometry.cpp
+                src/Hlgfx/Camera.cpp
+                src/Hlgfx/Scene.cpp
+                src/Hlgfx/CameraController.cpp
+                src/Hlgfx/Util.cpp
+                src/Hlgfx/Loaders/GLTF.cpp
+)
 
 ################################################
 ##########      Libs              ##############
@@ -401,7 +403,7 @@ if(${BUILD_ALL} EQUAL 1)
         
 else()
         set(targetName Main)
-        set(mainCode ${sourceCode} src/Main_HelloCubeMap.cpp)
+        set(mainCode ${sourceCode} src/Main_HelloHLGFX.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)

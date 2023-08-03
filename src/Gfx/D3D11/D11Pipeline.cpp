@@ -131,4 +131,15 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
         pBlob->Release();    
     }
 }
+
+void d3d11Pipeline::DestroyD11Resources()
+{
+    if(InputLayout != nullptr) InputLayout->Release();
+    if(VertexShader != nullptr) VertexShader->Release();
+    if(PixelShader != nullptr) PixelShader->Release();
+    if(ComputeShader != nullptr) ComputeShader->Release();
+    if(RasterizerState != nullptr) RasterizerState->Release();
+    if(SamplerState != nullptr) SamplerState->Release();
+    if(DepthStencilState != nullptr) DepthStencilState->Release();    
+}
 }
