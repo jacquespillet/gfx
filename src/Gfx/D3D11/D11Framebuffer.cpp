@@ -23,8 +23,8 @@ void d3d11FramebufferData::AddRenderTarget(format Format, const f32 *ClearValues
     colorBufferDesc.Usage = D3D11_USAGE_DEFAULT;
     colorBufferDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
-    D11Data->Device->CreateTexture2D(&colorBufferDesc, nullptr, &this->ColorHandles[RenderTargetCount]);
-    D11Data->Device->CreateRenderTargetView(this->ColorHandles[RenderTargetCount], nullptr, &this->ColorViews[RenderTargetCount]);
+    D11Data->Device->CreateTexture2D(&colorBufferDesc, nullptr, this->ColorHandles[RenderTargetCount].GetAddressOf());
+    D11Data->Device->CreateRenderTargetView(this->ColorHandles[RenderTargetCount].Get(), nullptr, this->ColorViews[RenderTargetCount].GetAddressOf());
     
     
     D3D11_SHADER_RESOURCE_VIEW_DESC ShaderResourceViewDesc = {};
@@ -32,7 +32,7 @@ void d3d11FramebufferData::AddRenderTarget(format Format, const f32 *ClearValues
     ShaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
     ShaderResourceViewDesc.Texture2D.MipLevels = 1;
     ShaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
-    D11Data->Device->CreateShaderResourceView(this->ColorHandles[RenderTargetCount], &ShaderResourceViewDesc, &this->SRVViews[RenderTargetCount]);
+    D11Data->Device->CreateShaderResourceView(this->ColorHandles[RenderTargetCount].Get(), &ShaderResourceViewDesc, this->SRVViews[RenderTargetCount].GetAddressOf());
 
     RenderTargetCount++;  
 }
@@ -51,8 +51,8 @@ void d3d11FramebufferData::CreateDepthBuffer(u32 Width, u32 Height, format Forma
     depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
     depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
-    D11Data->Device->CreateTexture2D(&depthBufferDesc, nullptr, &DepthBuffer);
-    D11Data->Device->CreateDepthStencilView(DepthBuffer, nullptr, &DepthBufferView);
+    D11Data->Device->CreateTexture2D(&depthBufferDesc, nullptr, DepthBuffer.GetAddressOf());
+    D11Data->Device->CreateDepthStencilView(DepthBuffer.Get(), nullptr, DepthBufferView.GetAddressOf());
 }
 void d3d11FramebufferData::CreateDescriptors()
 {

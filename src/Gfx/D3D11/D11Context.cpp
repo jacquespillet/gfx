@@ -99,8 +99,8 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
     GET_API_DATA(D11Framebuffer, d3d11FramebufferData, SwapchainFramebuffer);
     D11Framebuffer->RenderTargetCount=1;
     //Get Color
-    D11Swapchain->Handle->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&D11Framebuffer->ColorHandles[0]));
-    D11Data->Device->CreateRenderTargetView(D11Framebuffer->ColorHandles[0], nullptr, &D11Framebuffer->ColorViews[0]);
+    D11Swapchain->Handle->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(D11Framebuffer->ColorHandles[0].GetAddressOf()));
+    D11Data->Device->CreateRenderTargetView(D11Framebuffer->ColorHandles[0].Get(), nullptr, D11Framebuffer->ColorViews[0].GetAddressOf());
     
     //Get depth
     D3D11_TEXTURE2D_DESC DepthBufferDesc;
@@ -108,8 +108,8 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
     DepthBufferDesc.Format    = DXGI_FORMAT_D24_UNORM_S8_UINT;
     DepthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
-    D11Data->Device->CreateTexture2D(&DepthBufferDesc, nullptr, &D11Framebuffer->DepthBuffer);
-    D11Data->Device->CreateDepthStencilView(D11Framebuffer->DepthBuffer, nullptr, &D11Framebuffer->DepthBufferView);    
+    D11Data->Device->CreateTexture2D(&DepthBufferDesc, nullptr, D11Framebuffer->DepthBuffer.GetAddressOf());
+    D11Data->Device->CreateDepthStencilView(D11Framebuffer->DepthBuffer.Get(), nullptr, D11Framebuffer->DepthBufferView.GetAddressOf());    
 
 
     SwapchainFramebuffer->Width = Width;
