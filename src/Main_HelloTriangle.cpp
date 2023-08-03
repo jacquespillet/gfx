@@ -93,6 +93,7 @@ struct application
 		ContextInitialize.Debug = true;
 		GfxContext = gfx::context::Initialize(ContextInitialize, *Window);
 		Swapchain = GfxContext->CreateSwapchain(Width, Height);
+#if 0
 
 		gfx::imageData ImageData = gfx::ImageFromFile("resources/Textures/Debug.jpg");
 		gfx::imageCreateInfo ImageCreateInfo = 
@@ -144,14 +145,15 @@ struct application
 		//It's possible to bind a uniform group to multiple pipelines.
 		GfxContext->BindUniformsToPipeline(Uniforms, PipelineHandleSwapchain, 0);
 		Uniforms->Update();
+#endif
 	}
 	
 	void Cleanup()
 	{
-
 		GfxContext->WaitIdle();
+#if 0
 		DestroyProgramSpecific();
-
+#endif
 		GfxContext->DestroySwapchain();
 		GfxContext->Cleanup();
 
@@ -173,6 +175,7 @@ struct application
 
 	void Run()
 	{
+#if 0
 		float t = 0;
 		while(!Window->ShouldClose())
 		{
@@ -208,6 +211,7 @@ struct application
 			// Present the rendered frame
 			GfxContext->Present();
 		}
+#endif
 	}
 
 	void OnResize(uint32_t NewWidth, uint32_t NewHeight)

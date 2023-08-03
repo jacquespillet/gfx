@@ -15,6 +15,7 @@
 #include "D12Common.h"
 #include "D12Swapchain.h"
 #include "D12Buffer.h"
+#include "D12Image.h"
 #include "D12Pipeline.h"
 #include "D12Framebuffer.h"
 #include "D12Mapping.h"
@@ -752,24 +753,53 @@ void context::DestroyVertexBuffer(bufferHandle VertexBufferHandle)
 
 void context::DestroyPipeline(pipelineHandle PipelineHandle)
 {
+    pipeline *Pipeline = GetPipeline(PipelineHandle);
+    GET_API_DATA(D12Pipeline, d3d12PipelineData, Pipeline);
+    D12Pipeline->RootSignature.Reset();
+    D12Pipeline->PipelineState.Reset();
+    if(D12Pipeline->vertexShader) D12Pipeline->vertexShader.Reset();
+    if(D12Pipeline->pixelShader) D12Pipeline->pixelShader.Reset();
+    if(D12Pipeline->computeShader) D12Pipeline->computeShader.Reset();
+
     ResourceManager.Pipelines.ReleaseResource(PipelineHandle);
 }
 void context::DestroyBuffer(bufferHandle BufferHandle)
 {
+    buffer *Buffer = GetBuffer(BufferHandle);
+    GET_API_DATA(D12Buffer, d3d12BufferData, Buffer);
+    if(Buffer->MappedData != nullptr) Buffer->UnmapMemory();
+
+    
+    D12Buffer->Handle.Reset();
+
     ResourceManager.Buffers.ReleaseResource(BufferHandle);
 }
 void context::DestroyImage(imageHandle ImageHandle)
 {
     image *Image = GetImage(ImageHandle);
     if(!Image) return;
+    GET_API_DATA(D12Image, d3d12ImageData, Image);
+    D12Image->Handle.Reset();
+
     ResourceManager.Images.ReleaseResource(ImageHandle);
 }
 void context::DestroyFramebuffer(framebufferHandle FramebufferHandle)
 {
     framebuffer *Framebuffer = GetFramebuffer(FramebufferHandle);
     GET_API_DATA(D12Framebuffer, d3d12FramebufferData, Framebuffer);
+
+    D12Framebuffer->RenderTargetViewHeap.Reset();
+    D12Framebuffer->DepthBufferViewHeap.Reset();
+    D12Framebuffer->DepthStencilBuffer.Reset();
+
+    if(D12Framebuffer->IsMultiSampled)
+    {
+        D12Framebuffer->MultisampledColorImage.Reset();
+        D12Framebuffer->MultisampledDepthImage.Reset();
+    }
     for (size_t i = 0; i < D12Framebuffer->RenderTargetsCount; i++)
     {
+        D12Framebuffer->RenderTargets[i].Reset();
         ResourceManager.Images.ReleaseResource(D12Framebuffer->RenderTargetsSRV[i]);
     }
     
@@ -781,10 +811,17 @@ void context::DestroySwapchain()
     GET_API_DATA(D12SwapchainData, d3d12SwapchainData, Swapchain);
     framebuffer *Framebuffer = GetFramebuffer(D12SwapchainData->FramebufferHandle);
     GET_API_DATA(D12Framebuffer, d3d12FramebufferData, Framebuffer);
+    D12SwapchainData->SwapChain.Reset();
     for (size_t i = 0; i < D12Framebuffer->RenderTargetsCount; i++)
     {
         ResourceManager.Images.ReleaseResource(D12Framebuffer->RenderTargetsSRV[i]);
     }
+    
+    for (sz i = 0; i < d12Constants::FrameCount; i++)
+    {
+        D12SwapchainData->Buffers[i].Reset();
+    }
+    
     
     ResourceManager.RenderPasses.ReleaseResource(Framebuffer->RenderPass);
     ResourceManager.Framebuffers.ReleaseResource(D12SwapchainData->FramebufferHandle);
@@ -800,10 +837,32 @@ void context::Cleanup()
 {   
     GET_CONTEXT(D12Data, this);
     D12Data->StageBuffer.Destroy();
-    
     ResourceManager.Destroy();
+    
+    GET_API_DATA(D12ImmediateCommandBuffer, d3d12CommandBufferData, D12Data->ImmediateCommandBuffer);
+    D12ImmediateCommandBuffer->CommandList.Reset();
 
-    D12Data->Device->Release();
+    D12Data->VirtualFrames.Destroy();
+
+    D12Data->CommandQueue.Reset();
+    D12Data->ImmediateCommandAllocator.Reset();
+    
+    D12Data->CommonDescriptorHeap.Reset();
+    D12Data->SrvDescriptorHeap.Reset();
+    D12Data->ImmediateFence.Reset();
+    
+    if (D12Data->Device)
+    {
+        ID3D12DebugDevice* pDebug = nullptr;
+        if (SUCCEEDED(D12Data->Device->QueryInterface(IID_PPV_ARGS(&pDebug))))
+        {
+            // pDebug->ReportLiveDeviceObjects(D3D12_RLDO_SUMMARY);
+            pDebug->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL);
+            pDebug->Release();
+        }
+    }
+    D12Data->Factory.Reset();
+    D12Data->Device.Reset();
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE d3d12Data::GetCPUDescriptorAt(sz Index)

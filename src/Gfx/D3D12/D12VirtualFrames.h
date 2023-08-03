@@ -14,6 +14,7 @@ struct virtualFramesProvider
     void WaitForPreviousFrame();
     void StartFrame();
     void EndFrame();
+    void Destroy();
     ComPtr<ID3D12CommandAllocator> CommandAllocators[d12Constants::FrameCount];
     UINT64 FenceValues[d12Constants::FrameCount];
     ComPtr<ID3D12Fence> Fence;

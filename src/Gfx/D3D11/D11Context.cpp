@@ -335,7 +335,8 @@ void context::Cleanup()
         ID3D11Debug* pDebug = nullptr;
         if (SUCCEEDED(D11Data->Device->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&pDebug))))
         {
-            pDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+            // pDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+            pDebug->ReportLiveDeviceObjects(D3D11_RLDO_SUMMARY);
             pDebug->Release();
         }
     }
@@ -414,6 +415,7 @@ void context::DestroyImage(imageHandle ImageHandle)
 {
     image *Image = GetImage(ImageHandle);
     GET_API_DATA(D11Image, d3d11Image, Image);
+    if(!Image) return;
 
     if(D11Image->Handle != nullptr) D11Image->Handle.Reset();
     if(D11Image->View != nullptr) D11Image->View.Reset();

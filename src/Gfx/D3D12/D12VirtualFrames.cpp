@@ -2,6 +2,7 @@
 
 #include "../Include/Context.h"
 #include "../Include/Swapchain.h"
+#include "../Include/Types.h"
 #include "D12Context.h"
 #include "D12Swapchain.h"
 #include "D12Common.h"
@@ -102,6 +103,17 @@ void virtualFramesProvider::EndFrame()
 
     // Set the fence value for the next frame.  
     FenceValues[D12SwapchainData->GetFrameIndex()] = currentFenceValue + 1;
+}
+
+void virtualFramesProvider::Destroy()
+{
+    Fence.Reset();
+    GET_API_DATA(D12ImmediateCommandBuffer, d3d12CommandBufferData, this->CommandBuffer);
+    D12ImmediateCommandBuffer->CommandList.Reset();
+    for (UINT n = 0; n < d12Constants::FrameCount; n++)
+    {
+        CommandAllocators[n].Reset();
+    }
 }
 
 }
