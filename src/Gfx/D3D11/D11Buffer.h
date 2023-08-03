@@ -1,18 +1,15 @@
 #pragma once
 #include "../Include/Buffer.h"
 
-#include <wrl.h>
-using namespace Microsoft::WRL;
-
 namespace gfx
 {
 
 struct d3d11Buffer
 {
-    ComPtr<ID3D11Buffer> Handle;
-    ComPtr<ID3D11ShaderResourceView> StructuredHandle;
-    ComPtr<ID3D11UnorderedAccessView> UAVHandle;
+    ID3D11Buffer* Handle;
     D3D11_MAPPED_SUBRESOURCE MappedSubresource;
+    ID3D11ShaderResourceView *StructuredHandle;
+    ID3D11UnorderedAccessView *UAVHandle;
 };
 
 struct d3d11VertexBuffer

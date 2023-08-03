@@ -47,13 +47,13 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
                       &D11Data->BaseDevice, 
                       nullptr, 
                       &D11Data->BaseDeviceContext);
-    D11Data->BaseDevice->QueryInterface(IID_PPV_ARGS(&D11Data->Device));
-    D11Data->BaseDeviceContext->QueryInterface(IID_PPV_ARGS(&D11Data->DeviceContext));
+    D11Data->BaseDevice->QueryInterface(__uuidof(ID3D11Device1), reinterpret_cast<void**>(&D11Data->Device));
+    D11Data->BaseDeviceContext->QueryInterface(__uuidof(ID3D11DeviceContext1), reinterpret_cast<void**>(&D11Data->DeviceContext));
 
 
-    D11Data->Device->QueryInterface(IID_PPV_ARGS(&D11Data->DXGIDevice));
+    D11Data->Device->QueryInterface(__uuidof(IDXGIDevice1), reinterpret_cast<void**>(&D11Data->DXGIDevice));
     D11Data->DXGIDevice->GetAdapter(&D11Data->DXGIAdapter);
-    D11Data->DXGIAdapter->GetParent(IID_PPV_ARGS(&D11Data->DXGIFactory));
+    D11Data->DXGIAdapter->GetParent(__uuidof(IDXGIFactory2), reinterpret_cast<void**>(&D11Data->DXGIFactory));
 
     D11Data->CommandBuffer = std::make_shared<commandBuffer>();
     D11Data->CommandBuffer->Initialize();
@@ -86,7 +86,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
     SwapChainDesc.AlphaMode          = DXGI_ALPHA_MODE_UNSPECIFIED;
     SwapChainDesc.Flags              = 0;
 
-    D11Data->DXGIFactory->CreateSwapChainForHwnd(D11Data->Device.Get(), context::Get()->Window->GetNativeWindow(), &SwapChainDesc, nullptr, nullptr, &D11Swapchain->Handle);    
+    D11Data->DXGIFactory->CreateSwapChainForHwnd(D11Data->Device, context::Get()->Window->GetNativeWindow(), &SwapChainDesc, nullptr, nullptr, &D11Swapchain->Handle);    
 
     //Create Framebuffer
     D11Data->SwapchainFramebuffer = Singleton->ResourceManager.Framebuffers.ObtainResource();
