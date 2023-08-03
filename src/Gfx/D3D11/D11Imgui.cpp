@@ -46,7 +46,7 @@ std::shared_ptr<imgui> imgui::Initialize(std::shared_ptr<context> Context, std::
 
     // Setup Platform/Renderer bindings
     ImGui_ImplWin32_Init(Window->GetNativeWindow());
-    ImGui_ImplDX11_Init(D11Context->Device, D11Context->DeviceContext);
+    ImGui_ImplDX11_Init(D11Context->Device.Get(), D11Context->DeviceContext.Get());
     // Load Fonts
     // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
     // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.

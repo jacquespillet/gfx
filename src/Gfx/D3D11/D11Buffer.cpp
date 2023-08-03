@@ -83,7 +83,7 @@ void buffer::Init(size_t ByteSize, sz Stride, bufferUsage::value Usage, memoryUs
         ShaderResourceViewDesc.Buffer.NumElements = ByteSize / Stride;
         ShaderResourceViewDesc.Buffer.ElementWidth = ByteSize / Stride;
     
-        ThrowIfFailed(D11Data->Device->CreateShaderResourceView(D11Buffer->Handle, &ShaderResourceViewDesc, &D11Buffer->StructuredHandle));
+        ThrowIfFailed(D11Data->Device->CreateShaderResourceView(D11Buffer->Handle.Get(), &ShaderResourceViewDesc, &D11Buffer->StructuredHandle));
 
         D3D11_UNORDERED_ACCESS_VIEW_DESC UAVDesc = {};
         UAVDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -91,7 +91,7 @@ void buffer::Init(size_t ByteSize, sz Stride, bufferUsage::value Usage, memoryUs
         UAVDesc.Buffer.FirstElement = 0;
         UAVDesc.Buffer.NumElements = ByteSize / Stride; // Number of elements in the buffer
         UAVDesc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_COUNTER;
-        ThrowIfFailed(D11Data->Device->CreateUnorderedAccessView(D11Buffer->Handle, &UAVDesc, &D11Buffer->UAVHandle));
+        ThrowIfFailed(D11Data->Device->CreateUnorderedAccessView(D11Buffer->Handle.Get(), &UAVDesc, &D11Buffer->UAVHandle));
     }
 }
 
@@ -104,7 +104,7 @@ u8 *buffer::MapMemory()
     //If unmapped, map it
     if(this->MappedData == nullptr)
     {
-        D11Data->DeviceContext->Map(D11Buffer->Handle, 0, D3D11_MAP_WRITE_DISCARD, 0, &D11Buffer->MappedSubresource);
+        D11Data->DeviceContext->Map(D11Buffer->Handle.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &D11Buffer->MappedSubresource);
         this->MappedData = (u8*)D11Buffer->MappedSubresource.pData;
     }
     if(this->MappedData == nullptr) assert(false);
@@ -115,7 +115,7 @@ void buffer::UnmapMemory()
 {
     GET_CONTEXT(D11Data, context::Get());
     GET_API_DATA(D11Buffer, d3d11Buffer, this); 
-    D11Data->DeviceContext->Unmap(D11Buffer->Handle, 0);
+    D11Data->DeviceContext->Unmap(D11Buffer->Handle.Get(), 0);
     this->MappedData=nullptr;
 }
 
@@ -134,7 +134,7 @@ void buffer::CopyData(const uint8_t *Data, size_t ByteSize, size_t Offset)
         buffer *Buffer = context::Get()->GetBuffer(D11Data->StageBuffer.BufferHandle);
         GET_API_DATA(D11StageBuffer, d3d11Buffer, Buffer); 
         D3D11_BOX Box = {0,0,0, ByteSize, 1, 1};
-        D11Data->DeviceContext->CopySubresourceRegion(D11Buffer->Handle, 0, 0, 0, 0, D11StageBuffer->Handle, 0, &Box);
+        D11Data->DeviceContext->CopySubresourceRegion(D11Buffer->Handle.Get(), 0, 0, 0, 0, D11StageBuffer->Handle.Get(), 0, &Box);
         D11Data->StageBuffer.Reset();
     }
     else
