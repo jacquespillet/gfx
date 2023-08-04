@@ -116,7 +116,7 @@ void object3D::AddObject(std::shared_ptr<object3D> Object)
     {
         Object->DeleteChild(Object);
     }
-    context::Get()->Scene->AddMesh(Object);
+
 
     Object->Parent = this;
     Object->Transform.SetParent(&this->Transform);

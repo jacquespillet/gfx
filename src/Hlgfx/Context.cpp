@@ -448,7 +448,8 @@ void context::AddObjectMenu()
 }
 void context::DrawAssetsWindow()
 {
-    ImGui::Begin("Assets");
+    ImGui::SetNextWindowSize(ImVec2(500, 500), ImGuiCond_Appearing);
+    ImGui::Begin("Assets", 0);
     ImGuiTabBarFlags TabBarFlags = ImGuiTabBarFlags_None;
     if (ImGui::BeginTabBar("Assets", TabBarFlags))
     {
@@ -456,15 +457,37 @@ void context::DrawAssetsWindow()
         {
             for (auto &Object : this->Project.Objects)
             {
-                ImGui::TreeNode(Object.second->Name.c_str());
+                ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
+                ImGui::TreeNodeEx(Object.second->Name.c_str(), Flags);
+                if(ImGui::IsItemClicked())
+                {
+                    this->SelectedObject3D = Object.second;
+                }
+                ImGui::TreePop();
             }
+            ImGui::BeginChild("Scene");
+            if(this->SelectedObject3D)
+            {
+                if(ImGui::Button("Add To Scene"))
+                {
+                    this->Scene->AddObject(this->SelectedObject3D->Clone());
+                }
+            }
+            ImGui::EndChild();
+
             ImGui::EndTabItem();
         }
         if(ImGui::BeginTabItem("Materials"))
         {
             for (auto &Material : this->Project.Materials)
             {
-                ImGui::TreeNode(Material.second->Name.c_str());
+                ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
+                ImGui::TreeNodeEx(Material.second->Name.c_str(), Flags);
+                if(ImGui::IsItemClicked())
+                {
+                    this->SelectedMaterial = Material.second;
+                }
+                ImGui::TreePop();
             }
             ImGui::EndTabItem();
         }
@@ -472,7 +495,13 @@ void context::DrawAssetsWindow()
         {
             for (auto &Texture : this->Project.Textures)
             {
-                ImGui::TreeNode(Texture.second->Name.c_str());
+                ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
+                ImGui::TreeNodeEx(Texture.second->Name.c_str(), Flags);
+                if(ImGui::IsItemClicked())
+                {
+                    this->SelectedTexture = Texture.second;
+                }
+                ImGui::TreePop();
             }
             ImGui::EndTabItem();
         }
@@ -480,7 +509,13 @@ void context::DrawAssetsWindow()
         {
             for (auto &Geometries : this->Project.Geometries)
             {
-                ImGui::TreeNode(Geometries.second->Name.c_str());
+                ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
+                ImGui::TreeNodeEx(Geometries.second->Name.c_str(), Flags);
+                if(ImGui::IsItemClicked())
+                {
+                    this->SelectedIndexedGeometryBuffers = Geometries.second;
+                }
+                ImGui::TreePop();
             }
             ImGui::EndTabItem();
         }
@@ -521,7 +556,7 @@ void context::DrawMainMenuBar()
                 nfdresult_t Result = NFD_OpenDialog( NULL, NULL, &OutPath );
                 if ( Result == NFD_OKAY ) {
                     std::shared_ptr<hlgfx::object3D> Mesh = hlgfx::loaders::gltf::Load(OutPath);
-                    this->Scene->AddObject(Mesh);                    
+                    this->AddObjectToProject(Mesh);
                 }                
             }
             ImGui::EndMenu();

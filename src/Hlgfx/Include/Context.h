@@ -78,9 +78,12 @@ struct context
         std::unordered_map<std::string, std::shared_ptr<object3D>> Objects;
         std::unordered_map<std::string, std::shared_ptr<scene>> Scenes;
     } Project;
-
     void AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level = 0);
     void AddMeshToProject(std::shared_ptr<mesh> Object);
+    std::shared_ptr<material> SelectedMaterial = nullptr;
+    std::shared_ptr<indexedGeometryBuffers> SelectedIndexedGeometryBuffers = nullptr;
+    std::shared_ptr<texture> SelectedTexture = nullptr;
+    std::shared_ptr<object3D> SelectedObject3D = nullptr;
 
 
     std::shared_ptr<gfx::imgui> Imgui;

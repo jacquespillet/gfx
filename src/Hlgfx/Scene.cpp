@@ -33,10 +33,11 @@ scene::scene() : object3D("Scene")
 void scene::AddObject(std::shared_ptr<object3D> Object)
 {
     object3D::AddObject(Object);
+    this->AddMeshesInObject(Object);
     this->NodeClicked = Object;
 }
 
-void scene::AddMesh(std::shared_ptr<object3D> Object)
+void scene::AddMeshesInObject(std::shared_ptr<object3D> Object)
 {
     // If it's a mesh, store it in the meshes map as well
     std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Object);
@@ -44,6 +45,12 @@ void scene::AddMesh(std::shared_ptr<object3D> Object)
     {
         this->Meshes[Mesh->Material->PipelineHandle].push_back(Mesh);
     }
+
+    for (sz i = 0; i < Object->Children.size(); i++)
+    {
+        AddMeshesInObject(Object->Children[i]);
+    }
+    
 }
 
 void scene::OnRender(std::shared_ptr<camera> Camera)
