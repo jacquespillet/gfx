@@ -9,6 +9,8 @@
 
 namespace hlgfx
 {
+UUIDv4::UUIDGenerator<std::mt19937_64> context::UUIDGenerator = UUIDv4::UUIDGenerator<std::mt19937_64>();
+
 void WindowErrorCallback(const std::string &errorMessage)
 {
     std::cout << "Window Error : " << errorMessage << std::endl;
@@ -281,6 +283,39 @@ void context::StartFrame()
     this->DrawGUI();
 }
 
+std::string context::GetUUID()
+{
+    UUIDv4::UUID UUID = UUIDGenerator.getUUID();
+    std::string Result = UUID.bytes();
+    return Result;
+}
+
+void context::AddMeshToProject(std::shared_ptr<mesh> Mesh)
+{
+    this->Project.Geometries[Mesh->GeometryBuffers->UUID] = Mesh->GeometryBuffers;
+    this->Project.Materials[Mesh->Material->UUID] = Mesh->Material;
+    for(auto &Texture : Mesh->Material->AllTextures)
+    {
+        this->Project.Textures[Texture.first] = Texture.second;
+    }
+}
+
+void context::AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level)
+{
+    if(Level == 0)
+        this->Project.Objects[Object->UUID] = (Object);
+    
+    std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Object);
+    if(Mesh)
+    {
+        AddMeshToProject(Mesh);
+    }
+    for (sz i = 0; i < Object->Children.size(); i++)
+    {
+        AddObjectToProject(Object->Children[i], 1);
+    }
+}
+
 void context::Update(std::shared_ptr<camera> Camera)
 {
 
@@ -411,6 +446,48 @@ void context::AddObjectMenu()
         }
     }
 }
+void context::DrawAssetsWindow()
+{
+    ImGui::Begin("Assets");
+    ImGuiTabBarFlags TabBarFlags = ImGuiTabBarFlags_None;
+    if (ImGui::BeginTabBar("Assets", TabBarFlags))
+    {
+        if(ImGui::BeginTabItem("Objects"))
+        {
+            for (auto &Object : this->Project.Objects)
+            {
+                ImGui::TreeNode(Object.second->Name.c_str());
+            }
+            ImGui::EndTabItem();
+        }
+        if(ImGui::BeginTabItem("Materials"))
+        {
+            for (auto &Material : this->Project.Materials)
+            {
+                ImGui::TreeNode(Material.second->Name.c_str());
+            }
+            ImGui::EndTabItem();
+        }
+        if(ImGui::BeginTabItem("Textures"))
+        {
+            for (auto &Texture : this->Project.Textures)
+            {
+                ImGui::TreeNode(Texture.second->Name.c_str());
+            }
+            ImGui::EndTabItem();
+        }
+        if(ImGui::BeginTabItem("Geometries"))
+        {
+            for (auto &Geometries : this->Project.Geometries)
+            {
+                ImGui::TreeNode(Geometries.second->Name.c_str());
+            }
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
+    ImGui::End();
+}
 
 void context::DrawMainMenuBar()
 {
@@ -463,6 +540,10 @@ void context::DrawMainMenuBar()
             }
             ImGui::EndMenu();
         }
+        if(ImGui::MenuItem("Assets"))
+        {
+            this->ShowAssetsWindow = !this->ShowAssetsWindow;
+        }
         ImGui::EndMainMenuBar();
     }
 }
@@ -471,6 +552,7 @@ void context::DrawGUI()
 {
     DrawGuizmoGUI();
     DrawMainMenuBar();
+    if(ShowAssetsWindow) DrawAssetsWindow();
 
 
     this->Scene->DrawGUI();
@@ -480,6 +562,10 @@ void context::Cleanup()
 {
     GfxContext->WaitIdle();
 
+    this->Project.Geometries.clear();
+    this->Project.Materials.clear();
+    this->Project.Objects.clear();
+    this->Project.Textures.clear();
 
     //Clears the scene, effectively dereferences all the pointers to call their destructors before we clean up
     this->Scene->Children = std::vector<std::shared_ptr<object3D>>();

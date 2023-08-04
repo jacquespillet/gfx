@@ -12,7 +12,12 @@ std::shared_ptr<texture> defaultTextures::BlackTexture = std::make_shared<textur
 std::shared_ptr<texture> defaultTextures::BlueTexture = std::make_shared<texture>(gfx::InvalidHandle);
 std::shared_ptr<texture> defaultTextures::WhiteTexture = std::make_shared<texture>(gfx::InvalidHandle);
 
-unlitMaterial::unlitMaterial()
+material::material()
+{
+    this->UUID = context::Get()->GetUUID();
+}
+
+unlitMaterial::unlitMaterial() : material()
 {
     gfx::context *Context = gfx::context::Get();
     Flags =  (materialFlags::bits)(materialFlags::Unlit | materialFlags::BlendEnabled | materialFlags::CullModeOn | materialFlags::DepthWriteEnabled | materialFlags::DepthTestEnabled);
@@ -53,7 +58,7 @@ unlitMaterial::unlitMaterial()
     Context->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(materialData), 0);
 }
 
-unlitMaterial::unlitMaterial(materialFlags::bits Flags)
+unlitMaterial::unlitMaterial(materialFlags::bits Flags) : material()
 {
     gfx::context *Context = gfx::context::Get();
 
@@ -101,41 +106,56 @@ void unlitMaterial::SetCullMode(gfx::cullMode Mode)
 
 void unlitMaterial::SetBaseColorTexture(std::shared_ptr<texture> Texture)
 {
+    this->AllTextures.erase(this->BaseColorTexture->UUID);
     this->BaseColorTexture = Texture;
     this->Uniforms->Uniforms[1].ResourceHandle = Texture->Handle;
     this->Uniforms->Update();
+    this->AllTextures[this->BaseColorTexture->UUID] = Texture;
 }
 
 void unlitMaterial::SetMetallicRoughnessTexture(std::shared_ptr<texture> Texture)
 {
+    this->AllTextures.erase(this->MetallicRoughnessTexture->UUID);
     this->MetallicRoughnessTexture = Texture;
     this->Uniforms->Uniforms[2].ResourceHandle = Texture->Handle;
     this->Uniforms->Update();    
+    this->AllTextures[this->MetallicRoughnessTexture->UUID] = Texture;
 }
 
 void unlitMaterial::SetOcclusionTexture(std::shared_ptr<texture> Texture)
 {
+    this->AllTextures.erase(this->OcclusionTexture->UUID);
     this->OcclusionTexture = Texture;
     this->Uniforms->Uniforms[3].ResourceHandle = Texture->Handle;
     this->Uniforms->Update(); 
+    this->AllTextures[this->OcclusionTexture->UUID] = Texture;
 }
 
 void unlitMaterial::SetNormalTexture(std::shared_ptr<texture> Texture)
 {
+    this->AllTextures.erase(this->NormalTexture->UUID);
     this->NormalTexture = Texture;
     this->Uniforms->Uniforms[4].ResourceHandle = Texture->Handle;
     this->Uniforms->Update();
+    this->AllTextures[this->NormalTexture->UUID] = Texture;
 }
 
 void unlitMaterial::SetEmissiveTexture(std::shared_ptr<texture> Texture)
 {
+    this->AllTextures.erase(this->EmissiveTexture->UUID);
     this->EmissiveTexture = Texture;
     this->Uniforms->Uniforms[5].ResourceHandle = Texture->Handle;
     this->Uniforms->Update();
+    this->AllTextures[this->EmissiveTexture->UUID] = Texture;
 }
 
 void unlitMaterial::RecreatePipeline()
 {
+    //TODO
+    //if this pipeline is being used by other objects, this will change it for these objects too!
+    //Should check if it's being used or not.
+    //If it's used, we should not recreate it, but just create a new one completely.
+
     gfx::context::Get()->WaitIdle();
     gfx::pipelineCreation PipelineCreation = context::Get()->GetPipelineCreation(this->Flags);
     gfx::context::Get()->RecreatePipeline(PipelineCreation, this->PipelineHandle);

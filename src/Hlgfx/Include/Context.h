@@ -5,16 +5,20 @@
 #include "Types.h"
 #include "Camera.h"
 #include "Material.h"
+#include "Geometry.h"
 
 #include <memory>
 #include <unordered_map>
 #include <imgui.h>
 #include <ImGuizmo.h>
+#include <uuid_v4/uuid_v4.h>
+
 
 namespace hlgfx
 {
 
 struct scene;  
+struct mesh;  
 void OnResizeWindow(app::window &Window, app::v2i NewSize);
 void OnClickedWindow(app::window &Window, app::mouseButton Button, bool Clicked);
 void OnMousePositionChangedWindow(app::window &Window, f64 PosX, f64 PosY);
@@ -22,6 +26,7 @@ void OnMouseWheelChangedWindow(app::window &Window, f64 OffsetX, f64 OffsetY);
 
 struct context
 {
+    static UUIDv4::UUIDGenerator<std::mt19937_64> UUIDGenerator;
     static std::shared_ptr<context> Singleton;
 
     static context *Get();
@@ -62,8 +67,21 @@ struct context
     static const u32 UnlitPipeline = 0;
     std::unordered_map<u32, gfx::pipelineHandle> Pipelines;
 
-
+    b8 ShowAssetsWindow = false;
     std::unordered_map<materialFlags::bits, gfx::pipelineHandle> AllPipelines;
+    std::string GetUUID();
+    struct project
+    {
+        std::unordered_map<std::string, std::shared_ptr<material>> Materials;
+        std::unordered_map<std::string, std::shared_ptr<indexedGeometryBuffers>> Geometries;
+        std::unordered_map<std::string, std::shared_ptr<texture>> Textures;
+        std::unordered_map<std::string, std::shared_ptr<object3D>> Objects;
+        std::unordered_map<std::string, std::shared_ptr<scene>> Scenes;
+    } Project;
+
+    void AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level = 0);
+    void AddMeshToProject(std::shared_ptr<mesh> Object);
+
 
     std::shared_ptr<gfx::imgui> Imgui;
 	
@@ -89,6 +107,7 @@ struct context
     void AddObjectMenu();
     void DrawGuizmoGUI();
     void DrawMainMenuBar();
+    void DrawAssetsWindow();
    
 };
 

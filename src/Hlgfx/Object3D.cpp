@@ -13,12 +13,33 @@
 
 namespace hlgfx
 {
-object3D::object3D(const char *Name)
+object3D::object3D(std::string Name)
 {
     this->Name = Name;
     this->Parent = nullptr;
+    this->UUID = context::Get()->GetUUID();
 }
 
+std::shared_ptr<object3D> object3D::Clone()
+{
+    std::shared_ptr<object3D> Result = std::make_shared<object3D>(this->Name);
+
+    Result->RenderOrder=this->RenderOrder;
+    Result->FrustumCulled=this->FrustumCulled;
+    Result->CastShadow=this->CastShadow;
+    Result->ReceiveShadow=this->ReceiveShadow;
+    Result->UUID= context::Get()->GetUUID();
+    Result->Transform =  this->Transform;
+
+    transform::DoCompute = false;
+    for (sz i = 0; i < this->Children.size(); i++)
+    {
+        Result->AddObject(this->Children[i]->Clone());
+    }
+    transform::DoCompute = true;
+      
+    return Result;
+}
 
 void object3D::SetRenderOrder(u32 RenderOrder)
 {

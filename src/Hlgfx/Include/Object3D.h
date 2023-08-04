@@ -19,22 +19,26 @@ enum class object3DType
 
 struct object3D
 {
-    object3D(const char *Name);
+    object3D(std::string);
+    object3D(const object3D &Other) = default;
     ~object3D();
+    
+    virtual std::shared_ptr<object3D> Clone();
+    
     void SetParent(std::shared_ptr<object3D> Parent);
+    
     std::string Name;
-
     object3D *Parent;
-    std::vector<std::shared_ptr<object3D>> Children;
     transform Transform;
-
-    virtual std::vector<u8> Serialize();
-
     u32 RenderOrder=0;
     b8 FrustumCulled=false;
     b8 CastShadow=false;
     b8 ReceiveShadow=false;
+    std::string UUID;
+    std::vector<std::shared_ptr<object3D>> Children;
+
     
+    virtual std::vector<u8> Serialize();
     void SetRenderOrder(u32 RenderOrder);
     void SetFrustumCulled(b8 FrustumCulled);
     void SetCastShadow(b8 CastShadow);

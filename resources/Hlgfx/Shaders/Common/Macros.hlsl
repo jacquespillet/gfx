@@ -11,3 +11,4 @@
 #define SampleTexture(Texture, Sampler, UV) Texture.Sample(Sampler, UV)
 
 #define mix(A, B, T) lerp(A, B, T)
+

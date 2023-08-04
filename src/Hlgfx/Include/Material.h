@@ -32,17 +32,21 @@ struct defaultTextures
 
 struct material
 {
+    material();
     gfx::pipelineHandle PipelineHandle;
     
     gfx::bufferHandle UniformBuffer;
     std::shared_ptr<gfx::uniformGroup> Uniforms;
     materialFlags::bits Flags;
-    
+    std::string Name;
+    std::string UUID;
     virtual void DrawGUI() = 0;
     virtual void SetCullMode(gfx::cullMode Mode) = 0;
     virtual std::vector<u8> Serialize()=0;
     virtual void RecreatePipeline() = 0;
     b8 ShouldRecreate = false;
+
+    std::unordered_map<std::string, std::shared_ptr<texture>> AllTextures;
 };
 
 struct unlitMaterial : public material

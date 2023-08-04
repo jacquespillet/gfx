@@ -8,6 +8,29 @@
 
 namespace hlgfx
 {
+mesh::mesh(std::string Name) : object3D(Name)
+{
+    this->Material = nullptr;
+    this->GeometryBuffers = nullptr;
+
+    this->UniformBuffer = gfx::context::Get()->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
+    this->Uniforms = std::make_shared<gfx::uniformGroup>();
+    this->Uniforms->Reset().AddUniformBuffer(ModelBinding, this->UniformBuffer);
+
+    //Bind the uniform group to the context pipelines
+    context *HighLevelContext = context::Get();
+    gfx::context *LowLevelContext = gfx::context::Get();
+    for(auto &Pipeline : HighLevelContext->Pipelines)
+    {
+        //This effectively allocates the descriptor sets based on the DS layouts of each pipeline.
+        LowLevelContext->BindUniformsToPipeline(this->Uniforms, Pipeline.second, ModelDescriptorSetBinding);
+    }
+    
+    this->UniformData.ModelMatrix = this->Transform.Matrices.LocalToWorld;
+    gfx::context::Get()->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(uniformData), 0);
+
+    this->Uniforms->Update(); 
+}
 
 mesh::mesh() : object3D("Mesh")
 {
@@ -32,6 +55,32 @@ mesh::mesh() : object3D("Mesh")
 
     this->Uniforms->Update();    
 }
+
+
+std::shared_ptr<object3D> mesh::Clone()
+{
+    std::shared_ptr<mesh> Result = std::make_shared<mesh>(this->Name);
+    
+    Result->RenderOrder=this->RenderOrder;
+    Result->FrustumCulled=this->FrustumCulled;
+    Result->CastShadow=this->CastShadow;
+    Result->ReceiveShadow=this->ReceiveShadow;
+    Result->UUID= context::Get()->GetUUID();
+    Result->Transform =  this->Transform;
+    Result->UniformData = this->UniformData; 
+    Result->GeometryBuffers = this->GeometryBuffers;
+    Result->Material = this->Material;   
+    
+    transform::DoCompute = false;
+    for (sz i = 0; i < this->Children.size(); i++)
+    {
+        Result->AddObject(this->Children[i]->Clone());
+    }
+    transform::DoCompute = true;
+    
+    return Result;
+}
+
 
 void mesh::OnEarlyUpdate()
 {

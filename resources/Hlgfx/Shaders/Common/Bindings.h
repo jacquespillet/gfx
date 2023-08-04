@@ -4,7 +4,7 @@
 #define MaterialDescriptorSetBinding 3
 
 //Each of the following bindings must be unique
-//Because there's no descriptor set in opengl so no overlapping possible
+//Because there's no descriptor set in opengl and d3d so no overlapping possible
 #define CameraBinding 0
 #define ModelBinding 1
 

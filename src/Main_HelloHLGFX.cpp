@@ -27,7 +27,9 @@ struct application
 		Camera->SetLocalPosition(hlgfx::v3f(0, 0, 3));
 		
 		std::shared_ptr<hlgfx::object3D> Mesh = hlgfx::loaders::gltf::Load("C:/Users/jacqu/Documents/Boulot/Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
-		Context->Scene->AddObject(Mesh);
+		Context->AddObjectToProject(Mesh);
+
+		Context->Scene->AddObject(Mesh->Clone());
 	}
 
 	void Run()

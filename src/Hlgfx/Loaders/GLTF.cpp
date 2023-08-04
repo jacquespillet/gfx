@@ -92,6 +92,7 @@ void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geomet
             Geometry = std::make_shared<geometryData>();
             Geometry->MaterialIndex = GLTFPrimitive.material;
             Geometry->Buffers = std::make_shared<indexedGeometryBuffers>();
+            Geometry->Buffers->Name = gltfMesh.name;
             
             InstanceMapping[MeshIndex][j] = BaseIndex + j;
 
@@ -373,6 +374,7 @@ void LoadTextures(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<textur
 		};
 		gfx::imageHandle Image = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);
         std::shared_ptr<texture> ImagePtr = std::make_shared<texture>(Image);
+        ImagePtr->Name = GLTFTex.name;
         Images.push_back(ImagePtr);
     }
 }
@@ -398,7 +400,8 @@ void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<mater
         
         Materials[i] = std::make_shared<unlitMaterial>(Flags);  
         std::shared_ptr<unlitMaterial> UnlitMat = std::static_pointer_cast<unlitMaterial>(Materials[i]);
-            
+        UnlitMat->Name = GLTFMaterial.name;
+        
         UnlitMat->UniformData.BaseColorFactor = v3f(PBR.baseColorFactor[0], PBR.baseColorFactor[1], PBR.baseColorFactor[2]);
         UnlitMat->UniformData.OpacityFactor = PBR.baseColorFactor[3];
         UnlitMat->UniformData.RoughnessFactor = PBR.roughnessFactor;
@@ -467,8 +470,8 @@ std::shared_ptr<object3D> Load(std::string FileName)
     std::vector<std::shared_ptr<geometryData>> Geometries;
     std::vector<std::shared_ptr<texture>> Textures;
     std::vector<std::shared_ptr<material>> Materials;
-    LoadTextures(GLTFModel, Textures);
     
+    LoadTextures(GLTFModel, Textures);
     LoadMaterials(GLTFModel, Materials, Textures);
     LoadGeometry(GLTFModel, Geometries, InstanceMapping);
     LoadInstances(GLTFModel, Geometries, InstanceMapping, Materials, Result);

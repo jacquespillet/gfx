@@ -16,7 +16,7 @@ struct vertex
 
 struct indexedGeometryBuffers
 {
-    indexedGeometryBuffers() = default;
+    indexedGeometryBuffers();
     gfx::vertexBufferHandle VertexBuffer = gfx::InvalidHandle;
     gfx::bufferHandle IndexBuffer = gfx::InvalidHandle;
     u32 Start = 0;
@@ -24,6 +24,9 @@ struct indexedGeometryBuffers
 
     std::vector<vertex> VertexData;
     std::vector<u32> IndexData;
+
+    std::string Name;
+    std::string UUID;
 
     void BuildBuffers();
 };

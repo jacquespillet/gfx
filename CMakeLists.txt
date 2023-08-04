@@ -64,6 +64,10 @@ include_directories(${GLM_INC_DIR})
 set(STB_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/stb)
 include_directories(${STB_INC_DIR})
 
+# # uuid
+set(UUID_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/uuid_v4)
+include_directories(${UUID_INC_DIR})
+
 # # tinygltf
 set(TINYGLTF_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/tinygltf)
 include_directories(${TINYGLTF_INC_DIR})
@@ -403,7 +407,7 @@ if(${BUILD_ALL} EQUAL 1)
         
 else()
         set(targetName Main)
-        set(mainCode ${sourceCode} src/Main_HelloTriangle.cpp)
+        set(mainCode ${sourceCode} src/Main_HelloHLGFX.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)

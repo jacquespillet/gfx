@@ -1,7 +1,12 @@
 #include "Include/Geometry.h"
+#include "Include/Context.h"
 
 namespace hlgfx
 {
+indexedGeometryBuffers::indexedGeometryBuffers()
+{
+    this->UUID = context::Get()->GetUUID();
+}
 
 void indexedGeometryBuffers::BuildBuffers()
 {
