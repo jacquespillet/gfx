@@ -290,6 +290,11 @@ std::string context::GetUUID()
     return Result;
 }
 
+void context::AddMaterialToProject(std::shared_ptr<material> Material)
+{
+    this->Project.Materials[Material->UUID] = Material;
+}
+
 void context::AddMeshToProject(std::shared_ptr<mesh> Mesh)
 {
     this->Project.Geometries[Mesh->GeometryBuffers->UUID] = Mesh->GeometryBuffers;
@@ -435,7 +440,7 @@ void context::AddObjectMenu()
     {
         std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<hlgfx::mesh>();
         Mesh->GeometryBuffers = hlgfx::GetTriangleGeometry();
-        Mesh->Material = std::make_shared<hlgfx::unlitMaterial>();
+        Mesh->Material = std::make_shared<hlgfx::unlitMaterial>("New Material");
         if(this->Scene->NodeClicked != nullptr)
         {
             this->Scene->NodeClicked->AddObject(Mesh);
@@ -462,13 +467,15 @@ void context::DrawAssetsWindow()
                 ImGui::TreeNodeEx(Object.second->Name.c_str(), Flags);
                 if(ImGui::IsItemClicked())
                 {
-                    this->SelectedObject3D = Object.second;
+                    if(this->SelectedObject3D == Object.second) this->SelectedObject3D = nullptr;
+                    else this->SelectedObject3D = Object.second;
                 }
                 ImGui::TreePop();
             }
-            ImGui::BeginChild("Scene");
+            
             if(this->SelectedObject3D)
             {
+                ImGui::BeginChild("Actions");
                 if(ImGui::Button("Add To Scene"))
                 {
                     this->Scene->AddObject(this->SelectedObject3D->Clone());
@@ -477,13 +484,30 @@ void context::DrawAssetsWindow()
                 {
                     this->AddObjectToProject(this->SelectedObject3D->Clone());
                 }
+                ImGui::EndChild();
             }
-            ImGui::EndChild();
+            
+            ImGui::Separator();
+            
+            if(ImGui::Button("Import"))
+            {
+                nfdchar_t *OutPath = NULL;
+                nfdresult_t Result = NFD_OpenDialog( NULL, NULL, &OutPath );
+                if ( Result == NFD_OKAY ) {
+                    std::shared_ptr<hlgfx::object3D> Mesh = hlgfx::loaders::gltf::Load(OutPath);
+                    this->AddObjectToProject(Mesh);
+                }                    
+            }
 
             ImGui::EndTabItem();
         }
         if(ImGui::BeginTabItem("Materials"))
         {
+            if (ImGui::Button("Add New"))
+            {
+                this->AddMaterialToProject(std::make_shared<unlitMaterial>("New Material"));
+            }
+
             for (auto &Material : this->Project.Materials)
             {
                 ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
@@ -491,18 +515,25 @@ void context::DrawAssetsWindow()
                 ImGui::TreeNodeEx(Material.second->Name.c_str(), Flags);
                 if(ImGui::IsItemClicked())
                 {
-                    this->SelectedMaterial = Material.second;
+                    if(this->SelectedMaterial == Material.second) this->SelectedMaterial = nullptr;
+                    else this->SelectedMaterial = Material.second;
                 }
+
                 ImGui::TreePop();
             }
 
-            ImGui::Separator();
-            ImGui::BeginChild("Material");
             if(this->SelectedMaterial)
             {
+                ImGui::BeginChild("Material");
+                if(ImGui::Button("Duplicate"))
+                {
+                    this->AddMaterialToProject(this->SelectedMaterial->Clone());
+                }
                 this->SelectedMaterial->DrawGUI();
+                ImGui::EndChild();
             }
-            ImGui::EndChild();
+            ImGui::Separator();
+
 
             ImGui::EndTabItem();
         }

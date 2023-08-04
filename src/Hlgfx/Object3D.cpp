@@ -344,7 +344,7 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
         {
             materialFlags::bits Flags;
             GetItem(Serialized, &Flags, Cursor, sizeof(u32));
-            std::shared_ptr<unlitMaterial> Material = std::make_shared<unlitMaterial>(Flags);
+            std::shared_ptr<unlitMaterial> Material = std::make_shared<unlitMaterial>("Material", Flags);
             GetItem(Serialized, glm::value_ptr(Material->UniformData.BaseColorFactor), Cursor, sizeof(v4f));
 
             u8 HasDiffuseTexture = 0;

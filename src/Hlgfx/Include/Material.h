@@ -32,32 +32,35 @@ struct defaultTextures
 
 struct material
 {
-    material();
-    gfx::pipelineHandle PipelineHandle;
+    material(std::string Name);
     
+    gfx::pipelineHandle PipelineHandle;
     gfx::bufferHandle UniformBuffer;
     std::shared_ptr<gfx::uniformGroup> Uniforms;
     materialFlags::bits Flags;
     std::string Name;
     std::string UUID;
+
     virtual void DrawGUI() = 0;
     virtual void SetCullMode(gfx::cullMode Mode) = 0;
     virtual std::vector<u8> Serialize()=0;
     virtual void RecreatePipeline() = 0;
+    virtual std::shared_ptr<material> Clone() = 0;
     b8 ShouldRecreate = false;
-
     std::unordered_map<std::string, std::shared_ptr<texture>> AllTextures;
+
 };
 
 struct unlitMaterial : public material
 {
-    unlitMaterial();
-    unlitMaterial(materialFlags::bits Flags);
+    unlitMaterial(std::string Name);
+    unlitMaterial(std::string Name, materialFlags::bits Flags);
     ~unlitMaterial();
   
     virtual void SetCullMode(gfx::cullMode Mode);
     virtual std::vector<u8> Serialize() override;
     virtual void RecreatePipeline() override;
+    virtual std::shared_ptr<material> Clone() override;
 
     void SetBaseColorTexture(std::shared_ptr<texture> Texture);
     void SetMetallicRoughnessTexture(std::shared_ptr<texture> Texture);
@@ -74,8 +77,6 @@ struct unlitMaterial : public material
     std::shared_ptr<texture> OcclusionTexture;
     std::shared_ptr<texture> NormalTexture;
     std::shared_ptr<texture> EmissiveTexture;
-
-    b8 UseBaseColor = true;
 
     struct materialData
     {

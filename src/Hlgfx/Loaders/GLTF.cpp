@@ -410,9 +410,8 @@ void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<mater
         
         Flags = (materialFlags::bits)(Flags |  materialFlags::Unlit);
         
-        Materials[i] = std::make_shared<unlitMaterial>(Flags);  
+        Materials[i] = std::make_shared<unlitMaterial>(GLTFMaterial.name, Flags);  
         std::shared_ptr<unlitMaterial> UnlitMat = std::static_pointer_cast<unlitMaterial>(Materials[i]);
-        UnlitMat->Name = GLTFMaterial.name;
         
         UnlitMat->UniformData.BaseColorFactor = v3f(PBR.baseColorFactor[0], PBR.baseColorFactor[1], PBR.baseColorFactor[2]);
         UnlitMat->UniformData.OpacityFactor = PBR.baseColorFactor[3];

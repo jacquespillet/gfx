@@ -12,12 +12,13 @@ std::shared_ptr<texture> defaultTextures::BlackTexture = std::make_shared<textur
 std::shared_ptr<texture> defaultTextures::BlueTexture = std::make_shared<texture>(gfx::InvalidHandle);
 std::shared_ptr<texture> defaultTextures::WhiteTexture = std::make_shared<texture>(gfx::InvalidHandle);
 
-material::material()
+material::material(std::string Name)
 {
+    this->Name = Name;
     this->UUID = context::Get()->GetUUID();
 }
 
-unlitMaterial::unlitMaterial() : material()
+unlitMaterial::unlitMaterial(std::string Name) : material(Name)
 {
     gfx::context *Context = gfx::context::Get();
     Flags =  (materialFlags::bits)(materialFlags::Unlit | materialFlags::BlendEnabled | materialFlags::CullModeOn | materialFlags::DepthWriteEnabled | materialFlags::DepthTestEnabled);
@@ -58,7 +59,7 @@ unlitMaterial::unlitMaterial() : material()
     Context->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(materialData), 0);
 }
 
-unlitMaterial::unlitMaterial(materialFlags::bits Flags) : material()
+unlitMaterial::unlitMaterial(std::string Name, materialFlags::bits Flags) : material(Name)
 {
     gfx::context *Context = gfx::context::Get();
 
@@ -241,6 +242,22 @@ bool DrawTexture(const char *Name, std::shared_ptr<texture> &Texture, f32 &Use)
     
     
     return Changed;
+}
+
+std::shared_ptr<material> unlitMaterial::Clone()
+{
+    std::shared_ptr<unlitMaterial> Result = std::make_shared<unlitMaterial>(this->Name + "_Duplicated", this->Flags);
+    Result->UniformData = this->UniformData;
+    Result->UUID = context::Get()->GetUUID();
+    Result->SetBaseColorTexture(this->BaseColorTexture);
+    Result->SetOcclusionTexture(this->OcclusionTexture);
+    Result->SetEmissiveTexture(this->EmissiveTexture);
+    Result->SetMetallicRoughnessTexture(this->MetallicRoughnessTexture);
+    Result->SetNormalTexture(this->NormalTexture);
+    Result->Uniforms->Update();
+    Result->Update();
+
+    return Result;
 }
 
 void unlitMaterial::DrawGUI()
