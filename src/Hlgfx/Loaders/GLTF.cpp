@@ -360,18 +360,30 @@ void LoadTextures(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<textur
         ImageData.Format = gfx::format::R8G8B8A8_UNORM;
         ImageData.Type = gfx::type::UNSIGNED_BYTE;
 
-        tinygltf::Sampler &Sampler = GLTFModel.samplers[GLTFTex.sampler];
-        //TODO
 		gfx::imageCreateInfo ImageCreateInfo = 
-		{
-			{0.0f,0.0f,0.0f,0.0f},
-			MinFilter(Sampler.minFilter),
-			MagFilter(Sampler.magFilter),
-			BorderMode(Sampler.wrapS),
-			BorderMode(Sampler.wrapT),
-			gfx::samplerWrapMode::Repeat,
-			true
-		};
+		    {
+			    {0.0f,0.0f,0.0f,0.0f},
+                gfx::samplerFilter::Linear,
+                gfx::samplerFilter::Linear,
+                gfx::samplerWrapMode::Repeat,
+                gfx::samplerWrapMode::Repeat,
+			    gfx::samplerWrapMode::Repeat,
+			    true
+		    };
+        if (GLTFTex.sampler >= 0)
+        {
+            tinygltf::Sampler &Sampler = GLTFModel.samplers[GLTFTex.sampler];
+            ImageCreateInfo =
+            {
+                {0.0f,0.0f,0.0f,0.0f},
+                MinFilter(Sampler.minFilter),
+                MagFilter(Sampler.magFilter),
+                BorderMode(Sampler.wrapS),
+                BorderMode(Sampler.wrapT),
+                gfx::samplerWrapMode::Repeat,
+                true
+            };
+        }
 		gfx::imageHandle Image = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);
         std::shared_ptr<texture> ImagePtr = std::make_shared<texture>(Image);
         ImagePtr->Name = GLTFTex.name;

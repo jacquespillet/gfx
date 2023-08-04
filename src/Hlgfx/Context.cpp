@@ -458,6 +458,7 @@ void context::DrawAssetsWindow()
             for (auto &Object : this->Project.Objects)
             {
                 ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
+                if(this->SelectedObject3D.get() == Object.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
                 ImGui::TreeNodeEx(Object.second->Name.c_str(), Flags);
                 if(ImGui::IsItemClicked())
                 {
@@ -472,6 +473,10 @@ void context::DrawAssetsWindow()
                 {
                     this->Scene->AddObject(this->SelectedObject3D->Clone());
                 }
+                if(ImGui::Button("Duplicate"))
+                {
+                    this->AddObjectToProject(this->SelectedObject3D->Clone());
+                }
             }
             ImGui::EndChild();
 
@@ -482,6 +487,7 @@ void context::DrawAssetsWindow()
             for (auto &Material : this->Project.Materials)
             {
                 ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
+                if(this->SelectedMaterial.get() == Material.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
                 ImGui::TreeNodeEx(Material.second->Name.c_str(), Flags);
                 if(ImGui::IsItemClicked())
                 {
@@ -489,6 +495,15 @@ void context::DrawAssetsWindow()
                 }
                 ImGui::TreePop();
             }
+
+            ImGui::Separator();
+            ImGui::BeginChild("Material");
+            if(this->SelectedMaterial)
+            {
+                this->SelectedMaterial->DrawGUI();
+            }
+            ImGui::EndChild();
+
             ImGui::EndTabItem();
         }
         if(ImGui::BeginTabItem("Textures"))
@@ -496,6 +511,7 @@ void context::DrawAssetsWindow()
             for (auto &Texture : this->Project.Textures)
             {
                 ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
+                if(this->SelectedTexture.get() == Texture.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
                 ImGui::TreeNodeEx(Texture.second->Name.c_str(), Flags);
                 if(ImGui::IsItemClicked())
                 {
@@ -510,6 +526,7 @@ void context::DrawAssetsWindow()
             for (auto &Geometries : this->Project.Geometries)
             {
                 ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
+                if(this->SelectedIndexedGeometryBuffers.get() == Geometries.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
                 ImGui::TreeNodeEx(Geometries.second->Name.c_str(), Flags);
                 if(ImGui::IsItemClicked())
                 {

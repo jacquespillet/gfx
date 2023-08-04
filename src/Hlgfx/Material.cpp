@@ -245,6 +245,8 @@ bool DrawTexture(const char *Name, std::shared_ptr<texture> &Texture, f32 &Use)
 
 void unlitMaterial::DrawGUI()
 {
+    ImGui::Separator();
+    ImGui::Text(this->Name.c_str());
     bool ShouldUpdate = false;
     bool ShouldRecreatePipeline = false;
     ShouldUpdate |= ImGui::ColorEdit3("Base Color", glm::value_ptr(this->UniformData.BaseColorFactor));

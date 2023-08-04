@@ -107,8 +107,43 @@ void mesh::OnRender(std::shared_ptr<camera> Camera)
     CommandBuffer->DrawIndexed(this->GeometryBuffers->Start, this->GeometryBuffers->Count, 1);
 }
 
+void mesh::ShowMaterialSelection(std::shared_ptr<material> &Material)
+{
+    if(ImGui::BeginPopupModal("Material Selection"))
+    {
+        context::project &Project = context::Get()->Project;
+        for (auto &Material : Project.Materials)
+        {
+            ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
+            if(SelectedMaterial.get() == Material.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
+            ImGui::TreeNodeEx(Material.second->Name.c_str(), Flags);
+            if(ImGui::IsItemClicked())
+            {
+                SelectedMaterial = Material.second;
+            }
+            ImGui::TreePop();
+        }
+        
+        if (ImGui::Button("Select"))
+        {
+            Material = SelectedMaterial;
+            ImGui::CloseCurrentPopup();
+        }
+        if (ImGui::Button("Close"))
+            ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
+    
+
+}
+
 void mesh::DrawMaterial()
 {
+    if(ImGui::Button("Set material"))
+    {
+        ImGui::OpenPopup("Material Selection");
+    }
+    ShowMaterialSelection(this->Material);
     this->Material->DrawGUI();
 }
 

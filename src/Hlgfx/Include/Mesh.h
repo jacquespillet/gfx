@@ -20,6 +20,9 @@ struct mesh : public object3D
     virtual std::vector<u8> Serialize() override;
     virtual std::shared_ptr<object3D> Clone() override;
 
+    b8 MaterialSelectionOpen = false;
+    std::shared_ptr<material> SelectedMaterial = nullptr;
+    void ShowMaterialSelection(std::shared_ptr<material> &Material);
     virtual void DrawMaterial() override;
     //Api data
     std::shared_ptr<material> Material;
