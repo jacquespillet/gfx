@@ -9,8 +9,8 @@ struct texture
     gfx::imageHandle Handle;
     std::string UUID;
     std::string Name;
-    texture();
-    texture(gfx::imageHandle Handle);
+    texture(std::string Name);
+    texture(std::string Name, gfx::imageHandle Handle);
     ~texture();
 };
 }

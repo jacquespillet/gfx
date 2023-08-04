@@ -80,6 +80,7 @@ struct context
     } Project;
     void AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level = 0);
     void AddMaterialToProject(std::shared_ptr<material> Material);
+    void AddTextureToProject(std::shared_ptr<texture> Texture);
     void AddMeshToProject(std::shared_ptr<mesh> Object);
     std::shared_ptr<material> SelectedMaterial = nullptr;
     std::shared_ptr<indexedGeometryBuffers> SelectedIndexedGeometryBuffers = nullptr;

@@ -8,9 +8,9 @@
 
 namespace hlgfx
 {
-std::shared_ptr<texture> defaultTextures::BlackTexture = std::make_shared<texture>(gfx::InvalidHandle);
-std::shared_ptr<texture> defaultTextures::BlueTexture = std::make_shared<texture>(gfx::InvalidHandle);
-std::shared_ptr<texture> defaultTextures::WhiteTexture = std::make_shared<texture>(gfx::InvalidHandle);
+std::shared_ptr<texture> defaultTextures::BlackTexture = std::make_shared<texture>("Black", gfx::InvalidHandle);
+std::shared_ptr<texture> defaultTextures::BlueTexture = std::make_shared<texture>("Blue", gfx::InvalidHandle);
+std::shared_ptr<texture> defaultTextures::WhiteTexture = std::make_shared<texture>("White", gfx::InvalidHandle);
 
 material::material(std::string Name)
 {
@@ -167,7 +167,41 @@ void unlitMaterial::RecreatePipeline()
     this->ShouldRecreate=false;
 }
 
-bool DrawTexture(const char *Name, std::shared_ptr<texture> &Texture, f32 &Use)
+
+b8 unlitMaterial::ShowTextureSelection(std::shared_ptr<texture> &Texture)
+{
+    bool Changed=false;
+    if(ImGui::BeginPopupModal(Texture->Name.c_str()))
+    {
+        context::project &Project = context::Get()->Project;
+        for (auto &Texture : Project.Textures)
+        {
+            ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
+            if(SelectedTexture.get() == Texture.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
+            ImGui::TreeNodeEx(Texture.second->Name.c_str(), Flags);
+            if(ImGui::IsItemClicked())
+            {
+                SelectedTexture = Texture.second;
+            }
+            ImGui::TreePop();
+        }
+        
+        if (ImGui::Button("Select"))
+        {
+            Texture = SelectedTexture;
+            ImGui::CloseCurrentPopup();
+            Changed = true;
+        }
+        if (ImGui::Button("Close"))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+    return Changed;
+}
+
+bool unlitMaterial::DrawTexture(const char *Name, std::shared_ptr<texture> &Texture, f32 &Use)
 {   
     b8 Changed=false;
     f32 TextHeight = ImGui::CalcTextSize(Name).y;
@@ -192,26 +226,10 @@ bool DrawTexture(const char *Name, std::shared_ptr<texture> &Texture, f32 &Use)
         ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
     if(ImGui::IsItemClicked())
     {
-        nfdchar_t *OutPath = NULL;
-        nfdresult_t Result = NFD_OpenDialog( NULL, NULL, &OutPath );
-        if ( Result == NFD_OKAY ) {
-            Changed = true;
-            gfx::imageData ImageData = gfx::ImageFromFile(OutPath);
-            gfx::imageCreateInfo ImageCreateInfo = 
-            {
-                {0.0f,0.0f,0.0f,0.0f},
-                gfx::samplerFilter::Linear,
-                gfx::samplerFilter::Linear,
-                gfx::samplerWrapMode::ClampToBorder,
-                gfx::samplerWrapMode::ClampToBorder,
-                gfx::samplerWrapMode::ClampToBorder,
-                true
-            };
-            gfx::imageHandle NewImage = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);                
-            Texture = std::make_shared<texture>(NewImage);
-        }        
+        ImGui::OpenPopup(Texture->Name.c_str());
     }
-
+    Changed |= ShowTextureSelection(Texture);            
+ 
     ImGui::SameLine();
     gfx::image *BlackImage = gfx::context::Get()->GetImage(defaultTextures::BlackTexture->Handle);
     ImGui::Image(BlackImage->GetImGuiID(), ImVec2(30, ImageHeight));

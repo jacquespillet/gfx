@@ -4,14 +4,16 @@
 
 namespace hlgfx
 {
-texture::texture()
+texture::texture(std::string Name)
 {
+    this->Name = Name;
     this->Handle = gfx::InvalidHandle;
     this->UUID = context::Get()->GetUUID();
 }
 
-texture::texture(gfx::imageHandle Handle) : Handle(Handle)
+texture::texture(std::string Name, gfx::imageHandle Handle) : Handle(Handle)
 {
+    this->Name = Name;
     this->UUID = context::Get()->GetUUID();
 }
 

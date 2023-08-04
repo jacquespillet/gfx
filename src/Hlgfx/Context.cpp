@@ -2,11 +2,11 @@
 #include "Include/Scene.h"
 #include "Include/CameraController.h"
 #include "Include/Material.h"
+#include "Include/Util.h"
 #include "Loaders/GLTF.h"
 #include <iostream>
 #include "Gfx/Include/CommandBuffer.h"
 #include <nfd.h>
-
 namespace hlgfx
 {
 UUIDv4::UUIDGenerator<std::mt19937_64> context::UUIDGenerator = UUIDv4::UUIDGenerator<std::mt19937_64>();
@@ -290,6 +290,10 @@ std::string context::GetUUID()
     return Result;
 }
 
+void context::AddTextureToProject(std::shared_ptr<texture> Texture)
+{
+    this->Project.Textures[Texture->UUID] = Texture;
+}
 void context::AddMaterialToProject(std::shared_ptr<material> Material)
 {
     this->Project.Materials[Material->UUID] = Material;
@@ -539,6 +543,27 @@ void context::DrawAssetsWindow()
         }
         if(ImGui::BeginTabItem("Textures"))
         {
+            if(ImGui::Button("Import"))
+            {
+                nfdchar_t *OutPath = NULL;
+                nfdresult_t Result = NFD_OpenDialog( NULL, NULL, &OutPath );
+                if ( Result == NFD_OKAY ) {
+                    gfx::imageData ImageData = gfx::ImageFromFile(OutPath);
+                    gfx::imageCreateInfo ImageCreateInfo = 
+                    {
+                        {0.0f,0.0f,0.0f,0.0f},
+                        gfx::samplerFilter::Linear,
+                        gfx::samplerFilter::Linear,
+                        gfx::samplerWrapMode::Repeat,
+                        gfx::samplerWrapMode::Repeat,
+                        gfx::samplerWrapMode::Repeat,
+                        true
+                    };
+                    gfx::imageHandle NewImage = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);                
+                    std::shared_ptr<texture> Texture = std::make_shared<texture>(FileNameFromPath(OutPath), NewImage);
+                    this->AddTextureToProject(Texture);
+                }                            
+            }
             for (auto &Texture : this->Project.Textures)
             {
                 ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
@@ -546,10 +571,19 @@ void context::DrawAssetsWindow()
                 ImGui::TreeNodeEx(Texture.second->Name.c_str(), Flags);
                 if(ImGui::IsItemClicked())
                 {
-                    this->SelectedTexture = Texture.second;
+                    if(this->SelectedTexture == Texture.second) this->SelectedTexture =nullptr;
+                    else this->SelectedTexture = Texture.second;
                 }
                 ImGui::TreePop();
             }
+            
+            if(this->SelectedTexture!=nullptr)
+            {
+                ImGui::BeginChild("Texture");
+            
+                ImGui::EndChild();
+            }
+
             ImGui::EndTabItem();
         }
         if(ImGui::BeginTabItem("Geometries"))

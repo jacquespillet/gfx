@@ -224,6 +224,7 @@ void object3D::DrawGUI()
         }
         if (ImGui::BeginTabItem("Geometry"))
         {
+            
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Material"))
@@ -373,7 +374,7 @@ std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
                 };
 
                 gfx::imageHandle ImageHandle = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);
-                Material->SetBaseColorTexture(std::make_shared<texture>(ImageHandle));
+                Material->SetBaseColorTexture(std::make_shared<texture>("Texture", ImageHandle));
 
                 gfx::DeallocateMemory(ImageData.Data);
             }

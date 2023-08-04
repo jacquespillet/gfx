@@ -385,8 +385,7 @@ void LoadTextures(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<textur
             };
         }
 		gfx::imageHandle Image = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);
-        std::shared_ptr<texture> ImagePtr = std::make_shared<texture>(Image);
-        ImagePtr->Name = GLTFTex.name;
+        std::shared_ptr<texture> ImagePtr = std::make_shared<texture>(GLTFTex.name, Image);
         Images.push_back(ImagePtr);
     }
 }

@@ -133,8 +133,6 @@ void mesh::ShowMaterialSelection(std::shared_ptr<material> &Material)
             ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
     }
-    
-
 }
 
 void mesh::DrawMaterial()
@@ -144,6 +142,7 @@ void mesh::DrawMaterial()
         ImGui::OpenPopup("Material Selection");
     }
     ShowMaterialSelection(this->Material);
+    
     this->Material->DrawGUI();
 }
 
