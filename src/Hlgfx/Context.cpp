@@ -171,19 +171,27 @@ gfx::pipelineCreation context::GetPipelineCreation(materialFlags::bits Flags)
 
     //
     std::string ApiDefinition;
+    ApiDefinition += "#define VK " + std::to_string(GFX_VK) + "\n";
+    ApiDefinition += "#define GL " + std::to_string(GFX_GL) + "\n";
+    ApiDefinition += "#define D3D11 " + std::to_string(GFX_D3D11) + "\n";
+    ApiDefinition += "#define GFX_D3D12 " + std::to_string(GFX_D3D12) + "\n";
     if(GFX_API == GFX_VK)
     {
-        ApiDefinition = "#define GRAPHICS_API VK\n";
+        ApiDefinition += "#define GRAPHICS_API VK\n";
     }
     if(GFX_API == GFX_GL)
     {
-        ApiDefinition = "#define GRAPHICS_API GL\n";
+        ApiDefinition += "#define GRAPHICS_API GL\n";
     }
     if(GFX_API == GFX_D3D12)
     {
-        ApiDefinition = "#define GRAPHICS_API D3D12\n";
+        ApiDefinition += "#define GRAPHICS_API D3D12\n";
     }
-    
+    if(GFX_API == GFX_D3D11)
+    {
+        ApiDefinition += "#define GRAPHICS_API D3D11\n";
+    }
+
     std::string VertexCode;
     gfx::ShaderConcatenate(ShaderFileName, VertexCode, ShaderParentPath);
     std::string VertexCustomDefines = "#define VERTEX\n";
@@ -244,6 +252,15 @@ gfx::pipelineCreation context::GetPipelineCreation(materialFlags::bits Flags)
     PipelineCreation.RenderPassHandle = gfx::context::Get()->SwapchainRenderPass;
 
     return PipelineCreation;    
+}
+
+gfx::pipelineHandle context::GetPipeline(materialFlags::bits Flags)
+{
+    if(this->AllPipelines.find(Flags) != this->AllPipelines.end())
+    {
+        return this->AllPipelines[Flags];    
+    }
+    return gfx::InvalidHandle;
 }
 
 gfx::pipelineHandle context::CreateOrGetPipeline(materialFlags::bits Flags)

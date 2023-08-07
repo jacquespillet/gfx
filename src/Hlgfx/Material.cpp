@@ -2,6 +2,8 @@
 #include "Include/Util.h"
 #include "Include/Bindings.h"
 #include "Include/Context.h"
+#include "Include/Scene.h"
+#include "Include/Mesh.h"
 
 #include <glm/ext.hpp>
 #include <nfd.h>
@@ -152,16 +154,35 @@ void unlitMaterial::SetEmissiveTexture(std::shared_ptr<texture> Texture)
 
 void unlitMaterial::RecreatePipeline()
 {
-    //TODO
-    //if this pipeline is being used by other objects, this will change it for these objects too!
-    //Should check if it's being used or not.
-    //If it's used, we should not recreate it, but just create a new one completely.
 
-    gfx::context::Get()->WaitIdle();
-    gfx::pipelineCreation PipelineCreation = context::Get()->GetPipelineCreation(this->Flags);
-    gfx::context::Get()->RecreatePipeline(PipelineCreation, this->PipelineHandle);
-    
-    
+    //Get the pipeline if it exists already
+    gfx::pipelineHandle Pipeline = context::Get()->GetPipeline(this->Flags);
+    if(Pipeline != gfx::InvalidHandle)
+    {
+        this->PipelineHandle = Pipeline;
+    }
+    else
+    {
+        u32 Uses = 0;
+        std::unordered_map<std::string, std::shared_ptr<material>> &Materials = context::Get()->Project.Materials;
+        for (auto &Material : Materials)
+        {
+            if(Material.second->PipelineHandle == this->PipelineHandle) Uses++;
+        }
+        
+        gfx::context::Get()->WaitIdle();
+        if(Uses == 1)
+        {
+            //If this is the only material that uses this pipeline, we can delete it and recreate it
+            gfx::pipelineCreation PipelineCreation = context::Get()->GetPipelineCreation(this->Flags);
+            gfx::context::Get()->RecreatePipeline(PipelineCreation, this->PipelineHandle);
+        }
+        else
+        {
+            //If other materials use this pipeline, we cannot delete it. we need to create a new one
+            this->PipelineHandle = context::Get()->CreateOrGetPipeline(this->Flags);
+        }
+    }
     gfx::context::Get()->BindUniformsToPipeline(this->Uniforms, this->PipelineHandle, MaterialDescriptorSetBinding, true);
     Uniforms->Update();
     this->ShouldRecreate=false;

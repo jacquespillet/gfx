@@ -62,14 +62,14 @@ void ExecuteBeginPass(const command &Command, d3d11CommandBuffer &CommandBuffer)
     GET_API_DATA(D11Framebuffer, d3d11FramebufferData, Framebuffer)
     
     //TODO
-    FLOAT BackgroundColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
+    FLOAT BackgroundColor[4] = { Command.BeginPass.ClearColor[0],Command.BeginPass.ClearColor[1],Command.BeginPass.ClearColor[2],Command.BeginPass.ClearColor[3] };
     ID3D11RenderTargetView *RTV = {D11Framebuffer->ColorViews[0].Get()};
     D11Data->DeviceContext->OMSetRenderTargets(D11Framebuffer->RenderTargetCount, D11Framebuffer->ColorViews[0].GetAddressOf(), D11Framebuffer->DepthBufferView.Get());
     for (sz i = 0; i < D11Framebuffer->RenderTargetCount; i++)
     {
         D11Data->DeviceContext->ClearRenderTargetView(D11Framebuffer->ColorViews[i].Get(), BackgroundColor);
     }
-    D11Data->DeviceContext->ClearDepthStencilView(D11Framebuffer->DepthBufferView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+    D11Data->DeviceContext->ClearDepthStencilView(D11Framebuffer->DepthBufferView.Get(), D3D11_CLEAR_DEPTH, Command.BeginPass.ClearDepth, Command.BeginPass.ClearStencil);
 }
 
 void ExecuteBindUniformBuffer(const command &Command, d3d11CommandBuffer &CommandBuffer)
@@ -177,7 +177,10 @@ void ExecuteBindGraphicsPipeline(const command &Command, d3d11CommandBuffer &Com
     D11Data->DeviceContext->VSSetShader(D11Pipeline->VertexShader.Get(), nullptr, 0);
     D11Data->DeviceContext->PSSetShader(D11Pipeline->PixelShader.Get(), nullptr, 0);
     D11Data->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
+    
+    UINT SampleMask = 0xffffffff;
+    D11Data->DeviceContext->OMSetBlendState(D11Pipeline->BlendState.Get(), nullptr, SampleMask);
+  
     CommandBuffer.BoundPipeline = Command.BindGraphicsPipeline.Pipeline;
 }
 

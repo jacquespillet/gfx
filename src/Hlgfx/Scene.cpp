@@ -30,6 +30,31 @@ scene::scene() : object3D("Scene")
     
 }
 
+void scene::UpdateMeshPipeline(gfx::pipelineHandle OldPipelineHandle, mesh *Mesh)
+{
+    std::vector<std::shared_ptr<mesh>> &Vec = this->Meshes[OldPipelineHandle];
+    sz IndexToRemove = (sz)-1;
+    std::shared_ptr<mesh> MeshPtr = nullptr;
+    for (sz i = 0; i < Vec.size(); i++)
+    {
+        if(Vec[i].get() == Mesh) 
+        {
+            MeshPtr = Vec[i];
+            IndexToRemove = i; 
+            break;
+        }
+    }
+
+    assert(IndexToRemove != (sz)-1);
+    assert(MeshPtr);
+    
+    Vec.erase(Vec.begin() + IndexToRemove);
+
+    gfx::pipelineHandle NewPipeline = Mesh->Material->PipelineHandle;
+    if(this->Meshes.find(NewPipeline) == this->Meshes.end()) this->Meshes[NewPipeline] = {};
+    this->Meshes[NewPipeline].push_back(MeshPtr);
+}
+
 void scene::AddObject(std::shared_ptr<object3D> Object)
 {
     object3D::AddObject(Object);

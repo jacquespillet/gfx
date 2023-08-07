@@ -8,6 +8,8 @@
 #include <GL/glew.h>
 #elif GFX_API==GFX_D3D12
 #include <d3d12.h>
+#elif GFX_API==GFX_D3D11
+#include <d3d11.h>
 #endif
 
 
@@ -657,10 +659,10 @@ struct cullMode
         Back = D3D12_CULL_MODE_BACK,
         FrontAndBack = D3D12_CULL_MODE_BACK | D3D12_CULL_MODE_FRONT
 #elif GFX_API==GFX_D3D11
-        None ,
-        Front,
-        Back,
-        FrontAndBack,
+        None = D3D11_CULL_NONE,
+        Front = D3D11_CULL_FRONT,
+        Back = D3D11_CULL_BACK,
+        FrontAndBack = D3D11_CULL_BACK | D3D11_CULL_FRONT
 #endif
     };
 };

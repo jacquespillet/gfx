@@ -229,4 +229,180 @@ DXGI_FORMAT FormatToNative(format Format)
 }
 
 
+D3D11_CULL_MODE CullModeToNative(cullMode::bits Mode)
+{
+    return (D3D11_CULL_MODE)Mode;
+}
+
+b8 FrontFaceToNative(frontFace Face)
+{
+    return (Face == frontFace::CounterClockwise) ? 1 : 0;
+}
+
+static D3D11_FILL_MODE FillModeTable[] = 
+{
+    D3D11_FILL_WIREFRAME,
+    D3D11_FILL_SOLID,
+    (D3D11_FILL_MODE)-1,
+};
+
+D3D11_FILL_MODE FillModeToNative(fillMode Mode)
+{
+    return FillModeTable[(sz)Mode];
+}
+D3D11_DEPTH_WRITE_MASK DepthWriteToNative(u8 DepthWriteEnabled)
+{
+    return DepthWriteEnabled ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
+}
+
+static D3D11_COMPARISON_FUNC DepthFuncTable[]
+{
+    D3D11_COMPARISON_NEVER,//Never,
+    D3D11_COMPARISON_LESS,//Less,
+    D3D11_COMPARISON_EQUAL,//Equal,
+    D3D11_COMPARISON_LESS_EQUAL,//LessOrEqual,
+    D3D11_COMPARISON_GREATER,//Greater,
+    D3D11_COMPARISON_NOT_EQUAL,//NotEqual,
+    D3D11_COMPARISON_GREATER_EQUAL,//GreaterOrEqual,
+    D3D11_COMPARISON_ALWAYS,//Always
+};
+
+D3D11_COMPARISON_FUNC DepthFuncToNative(compareOperation Operation)
+{
+    return DepthFuncTable[(sz)Operation];
+}
+
+static D3D11_BLEND BlendFactorTable[] = 
+{
+    D3D11_BLEND_ZERO,//Zero,
+    D3D11_BLEND_ONE,//One,
+    D3D11_BLEND_SRC_COLOR,//SrcColor,
+    D3D11_BLEND_INV_SRC_COLOR,//OneMinusSrcColor,
+    D3D11_BLEND_DEST_COLOR,//DstColor,
+    D3D11_BLEND_INV_DEST_COLOR,//OneMinusDstColor,
+    D3D11_BLEND_SRC_ALPHA,//SrcAlpha,
+    D3D11_BLEND_INV_SRC_ALPHA,//OneMinusSrcAlpha,
+    D3D11_BLEND_DEST_ALPHA,//DstAlpha,
+    D3D11_BLEND_INV_DEST_ALPHA,//OneMinusDstAlpha,
+    (D3D11_BLEND)-1,//ConstantColor,
+    (D3D11_BLEND)-1,//OneMinusConstantColor,
+    (D3D11_BLEND)-1,//ConstantAlpha,
+    (D3D11_BLEND)-1,//OneMinusConstantAlpha,
+    D3D11_BLEND_SRC_ALPHA_SAT,//SrcAlphaSaturate,
+    D3D11_BLEND_SRC1_COLOR,//Src1Color,
+    D3D11_BLEND_INV_SRC1_COLOR,//OneMinusSrc1Color,
+    D3D11_BLEND_SRC1_ALPHA,//Src1Alpha,
+    D3D11_BLEND_INV_SRC1_ALPHA,//OneMinusSrc1Alpha    
+};
+
+D3D11_BLEND BlendFactorToNative(blendFactor Factor)
+{
+    return BlendFactorTable[(sz)Factor];
+}
+
+static D3D11_BLEND BlendFactorAlphaTable[] = 
+{
+    D3D11_BLEND_ZERO,//Zero,
+    D3D11_BLEND_ONE,//One,
+    D3D11_BLEND_SRC_ALPHA,//SrcColor,
+    D3D11_BLEND_INV_SRC_ALPHA,//OneMinusSrcColor,
+    D3D11_BLEND_DEST_ALPHA,//DstColor,
+    D3D11_BLEND_INV_DEST_ALPHA,//OneMinusDstColor,
+    D3D11_BLEND_SRC_ALPHA,//SrcAlpha,
+    D3D11_BLEND_INV_SRC_ALPHA,//OneMinusSrcAlpha,
+    D3D11_BLEND_DEST_ALPHA,//DstAlpha,
+    D3D11_BLEND_INV_DEST_ALPHA,//OneMinusDstAlpha,
+    (D3D11_BLEND)-1,//ConstantColor,
+    (D3D11_BLEND)-1,//OneMinusConstantColor,
+    (D3D11_BLEND)-1,//ConstantAlpha,
+    (D3D11_BLEND)-1,//OneMinusConstantAlpha,
+    D3D11_BLEND_SRC_ALPHA_SAT,//SrcAlphaSaturate,
+    D3D11_BLEND_SRC1_ALPHA,//Src1Color,
+    D3D11_BLEND_INV_SRC1_ALPHA,//OneMinusSrc1Color,
+    D3D11_BLEND_SRC1_ALPHA,//Src1Alpha,
+    D3D11_BLEND_INV_SRC1_ALPHA,//OneMinusSrc1Alpha    
+};
+D3D11_BLEND BlendFactorAlphaToNative(blendFactor Factor)
+{
+    return BlendFactorAlphaTable[(sz)Factor];
+}
+
+static D3D11_BLEND_OP BlendOpTable[] = 
+{
+    D3D11_BLEND_OP_ADD,//Add,
+    D3D11_BLEND_OP_SUBTRACT,//Subtract,
+    D3D11_BLEND_OP_REV_SUBTRACT,//ReverseSubtract,
+    D3D11_BLEND_OP_MIN,//Min,
+    D3D11_BLEND_OP_MAX,//Max,
+    (D3D11_BLEND_OP)-1,//ZeroEXT,
+    (D3D11_BLEND_OP)-1,//SrcEXT,
+    (D3D11_BLEND_OP)-1,//DstEXT,
+    (D3D11_BLEND_OP)-1,//SrcOverEXT,
+    (D3D11_BLEND_OP)-1,//DstOverEXT,
+    (D3D11_BLEND_OP)-1,//SrcInEXT,
+    (D3D11_BLEND_OP)-1,//DstInEXT,
+    (D3D11_BLEND_OP)-1,//SrcOutEXT,
+    (D3D11_BLEND_OP)-1,//DstOutEXT,
+    (D3D11_BLEND_OP)-1,//SrcAtopEXT,
+    (D3D11_BLEND_OP)-1,//DstAtopEXT,
+    (D3D11_BLEND_OP)-1,//XorEXT,
+    (D3D11_BLEND_OP)-1,//MultiplyEXT,
+    (D3D11_BLEND_OP)-1,//ScreenEXT,
+    (D3D11_BLEND_OP)-1,//OverlayEXT,
+    (D3D11_BLEND_OP)-1,//DarkenEXT,
+    (D3D11_BLEND_OP)-1,//LightenEXT,
+    (D3D11_BLEND_OP)-1,//ColordodgeEXT,
+    (D3D11_BLEND_OP)-1,//ColorburnEXT,
+    (D3D11_BLEND_OP)-1,//HardlightEXT,
+    (D3D11_BLEND_OP)-1,//SoftlightEXT,
+    (D3D11_BLEND_OP)-1,//DifferenceEXT,
+    (D3D11_BLEND_OP)-1,//ExclusionEXT,
+    (D3D11_BLEND_OP)-1,//InvertEXT,
+    (D3D11_BLEND_OP)-1,//InvertRgbEXT,
+    (D3D11_BLEND_OP)-1,//LineardodgeEXT,
+    (D3D11_BLEND_OP)-1,//LinearburnEXT,
+    (D3D11_BLEND_OP)-1,//VividlightEXT,
+    (D3D11_BLEND_OP)-1,//LinearlightEXT,
+    (D3D11_BLEND_OP)-1,//PinlightEXT,
+    (D3D11_BLEND_OP)-1,//HardmixEXT,
+    (D3D11_BLEND_OP)-1,//HslHueEXT,
+    (D3D11_BLEND_OP)-1,//HslSaturationEXT,
+    (D3D11_BLEND_OP)-1,//HslColorEXT,
+    (D3D11_BLEND_OP)-1,//HslLuminosityEXT,
+    (D3D11_BLEND_OP)-1,//PlusEXT,
+    (D3D11_BLEND_OP)-1,//PlusClampedEXT,
+    (D3D11_BLEND_OP)-1,//PlusClampedAlphaEXT,
+    (D3D11_BLEND_OP)-1,//PlusDarkerEXT,
+    (D3D11_BLEND_OP)-1,//MinusEXT,
+    (D3D11_BLEND_OP)-1,//MinusClampedEXT,
+    (D3D11_BLEND_OP)-1,//ContrastEXT,
+    (D3D11_BLEND_OP)-1,//InvertOvgEXT,
+    (D3D11_BLEND_OP)-1,//RedEXT,
+    (D3D11_BLEND_OP)-1,//GreenEXT,
+    (D3D11_BLEND_OP)-1,//BlueEXT    
+};
+
+D3D11_BLEND_OP BlendOperationToNative(blendOperation Operation)
+{
+    return BlendOpTable[(sz)Operation];
+}
+
+u8 BlendWriteMaskToNative(colorWriteEnabled::mask Mask)
+{
+    u8 Result = 0;
+    if(Mask & colorWriteEnabled::RedMask)
+        Result |= D3D11_COLOR_WRITE_ENABLE_RED;
+    if(Mask & colorWriteEnabled::GreenMask)
+        Result |= D3D11_COLOR_WRITE_ENABLE_GREEN;
+    if(Mask & colorWriteEnabled::BlueMask)
+        Result |= D3D11_COLOR_WRITE_ENABLE_BLUE;
+    if(Mask & colorWriteEnabled::AlphaMask)
+        Result |= D3D11_COLOR_WRITE_ENABLE_ALPHA;
+
+    return Result;
+}
+
+
+
+
 }

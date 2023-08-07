@@ -43,6 +43,7 @@ struct context
 
     gfx::pipelineCreation GetPipelineCreation(materialFlags::bits Flags);
     gfx::pipelineHandle CreateOrGetPipeline(materialFlags::bits Flags);
+    gfx::pipelineHandle GetPipeline(materialFlags::bits Flags);
 
 
 

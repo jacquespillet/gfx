@@ -1,6 +1,7 @@
 #include "Include/Mesh.h"
 #include "Include/Material.h"
 #include "Include/Context.h"
+#include "Include/Scene.h"
 #include "Include/Util.h"
 #include "Include/Bindings.h"
 #include "gfx/Include/Context.h"
@@ -86,7 +87,10 @@ void mesh::OnEarlyUpdate()
 {
     if(this->Material->ShouldRecreate)
     {
+        gfx::pipelineHandle OldPipeline = this->Material->PipelineHandle;
         this->Material->RecreatePipeline();
+        if(OldPipeline != this->Material->PipelineHandle)
+            context::Get()->Scene->UpdateMeshPipeline(OldPipeline, this);
     }
 }
 
@@ -126,7 +130,9 @@ void mesh::ShowMaterialSelection(std::shared_ptr<material> &Material)
         
         if (ImGui::Button("Select"))
         {
+            gfx::pipelineHandle OldPipeline = Material->PipelineHandle;
             Material = SelectedMaterial;
+            context::Get()->Scene->UpdateMeshPipeline(OldPipeline, this);
             ImGui::CloseCurrentPopup();
         }
         if (ImGui::Button("Close"))

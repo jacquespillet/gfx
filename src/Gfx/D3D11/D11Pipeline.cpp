@@ -16,11 +16,12 @@ namespace gfx
 void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
 {
     GET_CONTEXT(D11Data, context::Get());
+    renderPass *RenderPass = context::Get()->GetRenderPass(PipelineCreation.RenderPassHandle);
 
     if(!PipelineCreation.IsCompute)
     {
 
-        //Vertex shader
+        //Vertex shadera
         ID3DBlob* VSBlob;
         ID3DBlob* pErrorBlob = nullptr;
         
@@ -80,8 +81,9 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
         
         //Rasterizer
         D3D11_RASTERIZER_DESC1 rasterizerDesc = {};
-        rasterizerDesc.FillMode = D3D11_FILL_SOLID;
-        rasterizerDesc.CullMode = D3D11_CULL_NONE;
+        rasterizerDesc.FillMode = FillModeToNative(PipelineCreation.Rasterization.Fill);
+        rasterizerDesc.CullMode = CullModeToNative(PipelineCreation.Rasterization.CullMode);
+        rasterizerDesc.FrontCounterClockwise = FrontFaceToNative(PipelineCreation.Rasterization.FrontFace);
         D11Data->Device->CreateRasterizerState1(&rasterizerDesc, RasterizerState.GetAddressOf());    
 
         //Sampler
@@ -95,12 +97,38 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
 
         //Depth stencil
         D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
-        depthStencilDesc.DepthEnable    = TRUE;
-        depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-        depthStencilDesc.DepthFunc      = D3D11_COMPARISON_LESS;
+        depthStencilDesc.DepthEnable    = PipelineCreation.DepthStencil.DepthEnable;
+        depthStencilDesc.DepthWriteMask = DepthWriteToNative(PipelineCreation.DepthStencil.DepthWriteEnable);
+        depthStencilDesc.DepthFunc      = DepthFuncToNative(PipelineCreation.DepthStencil.DepthComparison);
         D11Data->Device->CreateDepthStencilState(&depthStencilDesc, DepthStencilState.GetAddressOf());
 
         //Blend state
+        D3D11_BLEND_DESC BlendStateDesc = {};
+        for(sz i=0; i<PipelineCreation.BlendState.ActiveStates; i++)
+        {
+            BlendStateDesc.RenderTarget[i].SrcBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].SourceColor);
+            BlendStateDesc.RenderTarget[i].DestBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].DestinationColor);
+            if(PipelineCreation.BlendState.BlendStates[i].SeparateBlend)
+            {
+                BlendStateDesc.RenderTarget[i].SrcBlendAlpha = BlendFactorAlphaToNative(PipelineCreation.BlendState.BlendStates[i].SourceAlpha);
+                BlendStateDesc.RenderTarget[i].DestBlendAlpha = BlendFactorAlphaToNative(PipelineCreation.BlendState.BlendStates[i].DestinationAlpha);
+                BlendStateDesc.RenderTarget[i].SrcBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].SourceColor);
+                BlendStateDesc.RenderTarget[i].DestBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].DestinationColor);
+            }
+            else
+            {
+                BlendStateDesc.RenderTarget[i].SrcBlendAlpha = BlendFactorAlphaToNative(PipelineCreation.BlendState.BlendStates[i].SourceColor);
+                BlendStateDesc.RenderTarget[i].DestBlendAlpha = BlendFactorAlphaToNative(PipelineCreation.BlendState.BlendStates[i].DestinationColor);
+                BlendStateDesc.RenderTarget[i].SrcBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].SourceColor);
+                BlendStateDesc.RenderTarget[i].DestBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].DestinationColor);
+            }
+
+            BlendStateDesc.RenderTarget[i].BlendOp = BlendOperationToNative(PipelineCreation.BlendState.BlendStates[i].ColorOp);
+            BlendStateDesc.RenderTarget[i].BlendOpAlpha = BlendOperationToNative(PipelineCreation.BlendState.BlendStates[i].AlphaOp);
+            BlendStateDesc.RenderTarget[i].BlendEnable = (b8)PipelineCreation.BlendState.BlendStates[i].BlendEnabled;
+            BlendStateDesc.RenderTarget[i].RenderTargetWriteMask = BlendWriteMaskToNative(PipelineCreation.BlendState.BlendStates[i].ColorWriteMask);
+        }
+        D11Data->Device->CreateBlendState(&BlendStateDesc, BlendState.GetAddressOf());
 
         for(sz i=0; i<InputElementDescriptors.size(); i++)
         {

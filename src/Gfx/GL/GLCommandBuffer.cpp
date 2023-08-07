@@ -30,6 +30,8 @@ void commandBuffer::Initialize()
 void ExecuteEndPass(const command &Command)
 {
     glBindFramebuffer(GL_FRAMEBUFFER,0);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
 }
 
 

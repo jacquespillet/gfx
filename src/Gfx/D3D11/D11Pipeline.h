@@ -17,6 +17,8 @@ struct d3d11Pipeline
     ComPtr<ID3D11RasterizerState1> RasterizerState = nullptr;
     ComPtr<ID3D11SamplerState> SamplerState = nullptr;
     ComPtr<ID3D11DepthStencilState> DepthStencilState = nullptr;
+    ComPtr<ID3D11BlendState> BlendState = nullptr;
+
 
     void Create(const pipelineCreation &PipelineCreation);
     void DestroyD11Resources();
