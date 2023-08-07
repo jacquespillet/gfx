@@ -189,20 +189,28 @@ void unlitMaterial::RecreatePipeline()
 }
 
 
-b8 unlitMaterial::ShowTextureSelection(std::shared_ptr<texture> &Texture)
+b8 unlitMaterial::ShowTextureSelection(const char *ID, std::shared_ptr<texture> &Texture)
 {
+    const f32 ImageWidth = 50;
+    const f32 ImageHeight = 30;
+    // f32 Offset = ImageHeight / 2 - TextHeight/2;
+
     bool Changed=false;
-    if(ImGui::BeginPopupModal(Texture->Name.c_str()))
+    if(ImGui::BeginPopupModal(ID))
     {
         context::project &Project = context::Get()->Project;
-        for (auto &Texture : Project.Textures)
+        for (auto &Tex : Project.Textures)
         {
             ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
-            if(SelectedTexture.get() == Texture.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
-            ImGui::TreeNodeEx(Texture.second->Name.c_str(), Flags);
+            if(SelectedTexture.get() == Tex.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
+            
+            gfx::image *Image = gfx::context::Get()->GetImage(Tex.second->Handle);
+            ImGui::Image(Image->GetImGuiID(), ImVec2(ImageWidth, ImageHeight));
+            ImGui::SameLine();
+            ImGui::TreeNodeEx(Tex.second->Name.c_str(), Flags);
             if(ImGui::IsItemClicked())
             {
-                SelectedTexture = Texture.second;
+                SelectedTexture = Tex.second;
             }
             ImGui::TreePop();
         }
@@ -247,9 +255,9 @@ bool unlitMaterial::DrawTexture(const char *Name, std::shared_ptr<texture> &Text
         ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
     if(ImGui::IsItemClicked())
     {
-        ImGui::OpenPopup(Texture->Name.c_str());
+        ImGui::OpenPopup(Name);
     }
-    Changed |= ShowTextureSelection(Texture);            
+    Changed |= ShowTextureSelection(Name, Texture);            
  
     ImGui::SameLine();
     gfx::image *BlackImage = gfx::context::Get()->GetImage(defaultTextures::BlackTexture->Handle);

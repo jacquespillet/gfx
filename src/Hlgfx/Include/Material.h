@@ -71,7 +71,7 @@ struct unlitMaterial : public material
     void Update();
 
     std::shared_ptr<texture> SelectedTexture = nullptr;
-    b8 ShowTextureSelection(std::shared_ptr<texture> &Texture);
+    b8 ShowTextureSelection(const char *ID, std::shared_ptr<texture> &Texture);
     bool DrawTexture(const char *Name, std::shared_ptr<texture> &Texture, f32 &Use);
     virtual void DrawGUI() override;
  
