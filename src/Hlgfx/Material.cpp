@@ -560,9 +560,10 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
     {
         Result->SetEmissiveTexture(defaultTextures::BlackTexture);
     }
-
+    
+    Result->Uniforms->Update();
     Result->Update();
-    gfx::context::Get()->BindUniformsToPipeline(Result->Uniforms, Result->PipelineHandle, MaterialDataBinding, true);
+    // gfx::context::Get()->BindUniformsToPipeline(Result->Uniforms, Result->PipelineHandle, MaterialDescriptorSetBinding, true);
     return Result;
 }
 

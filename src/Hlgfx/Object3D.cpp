@@ -5,9 +5,11 @@
 #include "Include/Scene.h"
 #include "Include/Mesh.h"
 #include "Include/Material.h"
+#include "Include/Bindings.h"
 #include <imgui.h>
 #include <ImGuizmo.h>
 #include <glm/ext.hpp>
+
 
 #include <stb_image_write.h>
 #include <fstream>
@@ -327,6 +329,9 @@ std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
         std::string MaterialUUID; MaterialUUID.resize(MaterialUUIDSize);
         FileStream.read(MaterialUUID.data(), MaterialUUIDSize);
         Mesh->Material = context::Get()->Project.Materials[MaterialUUID];
+
+        // gfx::context::Get()->BindUniformsToPipeline(Mesh->Uniforms, Mesh->Material->PipelineHandle, ModelDescriptorSetBinding);
+        Mesh->Uniforms->Update();
     }
 
     u32 NumChildren;
