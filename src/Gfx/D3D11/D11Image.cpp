@@ -19,6 +19,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     this->Format = ImageData.Format;
     this->ChannelCount = ImageData.ChannelCount;
     this->Data.resize(ImageData.Width * ImageData.Height * FormatSize(Format));
+    memcpy(Data.data(), ImageData.Data, Data.size());
     this->Type = ImageData.Type;
 
     memcpy(this->Data.data(), ImageData.Data, ImageData.DataSize);

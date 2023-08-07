@@ -330,7 +330,8 @@ std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
         FileStream.read(MaterialUUID.data(), MaterialUUIDSize);
         Mesh->Material = context::Get()->Project.Materials[MaterialUUID];
 
-        // gfx::context::Get()->BindUniformsToPipeline(Mesh->Uniforms, Mesh->Material->PipelineHandle, ModelDescriptorSetBinding);
+        Mesh->UniformData.ModelMatrix = Mesh->Transform.Matrices.LocalToWorld;
+        gfx::context::Get()->CopyDataToBuffer(Mesh->UniformBuffer, &Mesh->UniformData, sizeof(mesh::uniformData), 0);
         Mesh->Uniforms->Update();
     }
 

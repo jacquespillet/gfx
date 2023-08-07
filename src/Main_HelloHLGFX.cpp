@@ -20,7 +20,7 @@ struct application
 	std::shared_ptr<hlgfx::camera> Camera;
 	std::shared_ptr<hlgfx::mesh> Mesh;
 
-	void Init()
+	void Init(std::string ProjectFolder)
 	{
 		Context = hlgfx::context::Initialize();
 		std::shared_ptr<hlgfx::scene> Scene = std::make_shared<hlgfx::scene>();
@@ -29,10 +29,10 @@ struct application
 		Camera = std::make_shared<hlgfx::camera>(60, (float)1280 / (float)720);
 		Camera->SetLocalPosition(hlgfx::v3f(0, 0, 3));
 		
-		// std::shared_ptr<hlgfx::object3D> Mesh = hlgfx::loaders::gltf::Load("C:/Users/jacqu/Documents/Boulot/Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
-		// Context->AddObjectToProject(Mesh);
-		// Context->Scene->AddObject(Mesh->Clone());
-
+		if(ProjectFolder != "")
+		{
+			Context->LoadProjectFromFolder(ProjectFolder.c_str());
+		}
 	}
 
 	void Run()
@@ -57,9 +57,12 @@ struct application
 application App;
 
 
-int main()
+int main(int argc, char *argv[])
 {	
-    App.Init();
+	std::string ProjectFolder="";
+	if(argc>1)
+		ProjectFolder = std::string(argv[1]);
+    App.Init(ProjectFolder);
 	App.Run();
 	return 0;
 }

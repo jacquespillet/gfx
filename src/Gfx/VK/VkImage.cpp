@@ -115,6 +115,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     Extent.Height = ImageData.Height;
     Format = ImageData.Format;
     Data.resize(ImageData.Width * ImageData.Height * FormatSize(Format));
+    memcpy(Data.data(), ImageData.Data, Data.size());
     ChannelCount = ChannelCountFromFormat(Format);
     this->Type = ImageData.Type;
 

@@ -563,7 +563,6 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
     
     Result->Uniforms->Update();
     Result->Update();
-    // gfx::context::Get()->BindUniformsToPipeline(Result->Uniforms, Result->PipelineHandle, MaterialDescriptorSetBinding, true);
     return Result;
 }
 

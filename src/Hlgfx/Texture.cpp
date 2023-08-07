@@ -91,6 +91,8 @@ std::shared_ptr<texture> texture::Deserialize(std::string FilePath)
         true
     };    
     Result->Handle = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);
+
+    gfx::DeallocateMemory(ImageData.Data);
     return Result;
 }
 
