@@ -1,5 +1,6 @@
 #include "Include/Geometry.h"
 #include "Include/Context.h"
+#include <fstream>
 
 namespace hlgfx
 {
@@ -105,4 +106,70 @@ std::shared_ptr<indexedGeometryBuffers>  GetTriangleGeometry()
     Result->Start=0;
     return Result;
 }    
+
+void indexedGeometryBuffers::Serialize(std::string FileName)
+{
+    std::ofstream FileStream;
+    FileStream.open(FileName, std::ios::trunc | std::ios::binary);
+    assert(FileStream.is_open());
+
+
+    
+    u32 NameSize = this->Name.size();
+    FileStream.write((char*)&NameSize, sizeof(u32));
+    FileStream.write(this->Name.data(), this->Name.size());
+
+    FileStream.write((char*)&Start, sizeof(u32));
+    FileStream.write((char*)&Count, sizeof(u32));
+    
+    u32 UUIDSize = this->UUID.size();
+    FileStream.write((char*)&UUIDSize, sizeof(u32));
+    FileStream.write(this->UUID.data(), this->UUID.size());
+
+    
+    sz VertexDataSize = this->VertexData.size();
+    FileStream.write((char*)&VertexDataSize, sizeof(sz));
+    FileStream.write((char*)this->VertexData.data(), VertexDataSize * sizeof(vertex));
+    
+    sz IndexDataSize = this->IndexData.size();
+    FileStream.write((char*)&IndexDataSize, sizeof(sz));
+    FileStream.write((char*)this->IndexData.data(), IndexDataSize * sizeof(u32));
+}
+
+std::shared_ptr<indexedGeometryBuffers> indexedGeometryBuffers::Deserialize(const std::string &FileName)
+{
+    std::shared_ptr<indexedGeometryBuffers> Result = std::make_shared<indexedGeometryBuffers>();
+
+    std::ifstream FileStream;
+    FileStream.open(FileName, std::ios::binary);
+    assert(FileStream.is_open());
+
+    u32 NameSize;
+    FileStream.read((char*)&NameSize, sizeof(u32));
+    Result->Name.resize(NameSize);
+    FileStream.read(Result->Name.data(), Result->Name.size());
+
+    FileStream.read((char*)&Result->Start, sizeof(u32));
+    FileStream.read((char*)&Result->Count, sizeof(u32));
+    
+    u32 UUIDSize = Result->UUID.size();
+    FileStream.read((char*)&UUIDSize, sizeof(u32));
+    Result->UUID.resize(UUIDSize);
+    FileStream.read(Result->UUID.data(), Result->UUID.size());
+
+    
+    sz VertexDataSize;
+    FileStream.read((char*)&VertexDataSize, sizeof(sz));
+    Result->VertexData.resize(VertexDataSize);
+    FileStream.read((char*)Result->VertexData.data(), VertexDataSize * sizeof(vertex));
+    
+    sz IndexDataSize;
+    FileStream.read((char*)&IndexDataSize, sizeof(sz));
+    Result->IndexData.resize(IndexDataSize);
+    FileStream.read((char*)Result->IndexData.data(), IndexDataSize * sizeof(u32));
+
+    Result->BuildBuffers();
+    return Result;
+}
+
 }

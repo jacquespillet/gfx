@@ -23,8 +23,9 @@ struct scene : public object3D
     void Clear();
     void DeleteObject(std::shared_ptr<object3D> Object);
     
-    void LoadFromFile(const char *FileName);
-    void SaveToFile(const char *FileName);
+    virtual void Serialize(std::string FilePath) override;
+    virtual void Serialize(std::ofstream &FileStream) override;
+
     std::shared_ptr<hlgfx::object3D> NodeClicked = nullptr;
     u32 GuiWidth = 400;
 };

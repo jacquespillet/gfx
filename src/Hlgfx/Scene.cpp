@@ -27,7 +27,7 @@ void RemoveMeshInChildren(std::vector<std::shared_ptr<mesh>>& Children, std::sha
 
 scene::scene() : object3D("Scene")
 {
-    
+    this->UUID = context::Get()->GetUUID();
 }
 
 void scene::UpdateMeshPipeline(gfx::pipelineHandle OldPipelineHandle, mesh *Mesh)
@@ -275,58 +275,41 @@ void scene::DrawGUI()
     ImGui::End();
 }
 
-void scene::LoadFromFile(const char *FileName)
+void scene::Serialize(std::string FilePath)
 {
-    transform::DoCompute=false;
-    this->Clear();
-    
-    std::ifstream InStream;
-    InStream.open(FileName, std::ios_base::binary);
-    if(!InStream.is_open())
-    {
-        printf("Could not open file %s", FileName);
-        assert(false);
-    }
-
-    u32 NumChildren;
-    InStream.read((char*)&NumChildren, sizeof(u32));
-
-    for(u32 i=0; i<NumChildren; i++)
-    {
-        u32 ChildSize;
-        InStream.read((char*)&ChildSize, sizeof(u32));
-        std::vector<u8> SerializedChild(ChildSize);
-        InStream.read((char*)SerializedChild.data(), ChildSize);
-        std::shared_ptr<object3D> Object3D = object3D::Deserialize(SerializedChild);
-        this->AddObject(Object3D);
-    }
-
-    InStream.close();
-    
-    transform::DoCompute=true;
+    std::ofstream FileStream;
+    FileStream.open(FilePath, std::ios::trunc | std::ios::binary);
+    assert(FileStream.is_open());
+    Serialize(FileStream);  
 }
 
-void scene::SaveToFile(const char *FileName)
+void scene::Serialize(std::ofstream &FileStream)
 {
-    std::ofstream OutStream;
-    OutStream.open(FileName, std::ios_base::binary | std::ios_base::trunc);
-    if(!OutStream.is_open())
-    {
-        printf("Could not open file %s", FileName); 
-        assert(false);
-    }
+    std::vector<u8> Result;
+
+    u32 Object3DType = (u32) object3DType::Scene;
+    FileStream.write((char*)&Object3DType, sizeof(u32));
+
+    u32 UUIDSize = this->UUID.size();
+    FileStream.write((char*)&UUIDSize, sizeof(u32));
+    FileStream.write(this->UUID.data(), this->UUID.size());
+    
+    u32 StringLength = this->Name.size();
+    FileStream.write((char*)&StringLength, sizeof(u32));
+    FileStream.write((char*)(void*)this->Name.data(), StringLength);
+    
+    FileStream.write((char*)&this->Transform.Matrices, sizeof(transform::matrices));
+    FileStream.write((char*)&this->Transform.LocalValues, sizeof(transform::localValues));
+    
 
     u32 NumChildren = this->Children.size();
-    OutStream.write((char*)&NumChildren, sizeof(u32));
-    for(u32 i=0; i<NumChildren; i++)
-    {
-        std::vector<u8> SerializedChild = this->Children[i]->Serialize();
-        u32 ChildSize = SerializedChild.size();
-        OutStream.write((char*)&ChildSize, sizeof(u32));
-        OutStream.write((char*)SerializedChild.data(), SerializedChild.size());
-    }
+    FileStream.write((char*)&NumChildren, sizeof(u32));
 
-    OutStream.close();
+    for (sz i = 0; i < NumChildren; i++)
+    {
+        this->Children[i]->Serialize(FileStream);
+    }
 }
+
 
 }

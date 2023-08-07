@@ -10,6 +10,7 @@
 #include <glm/ext.hpp>
 
 #include <stb_image_write.h>
+#include <fstream>
 
 namespace hlgfx
 {
@@ -28,7 +29,7 @@ std::shared_ptr<object3D> object3D::Clone()
     Result->FrustumCulled=this->FrustumCulled;
     Result->CastShadow=this->CastShadow;
     Result->ReceiveShadow=this->ReceiveShadow;
-    Result->UUID= context::Get()->GetUUID();
+    Result->UUID= this->UUID;
     Result->Transform =  this->Transform;
 
     transform::DoCompute = false;
@@ -238,31 +239,104 @@ void object3D::DrawGUI()
 }
 
 
-std::vector<u8> object3D::Serialize()
+void object3D::Serialize(std::string FilePath)
 {
-    std::vector<u8> Result;
-    
+    std::ofstream FileStream;
+    FileStream.open(FilePath, std::ios::trunc | std::ios::binary);
+    assert(FileStream.is_open());
+    Serialize(FileStream);  
+}
+
+void object3D::Serialize(std::ofstream &FileStream)
+{
     u32 Object3DType = (u32) object3DType::Object3d;
-    AddItem(Result, &Object3DType, sizeof(u32));
+    FileStream.write((char*)&Object3DType, sizeof(u32));
+
+    u32 UUIDSize = this->UUID.size();
+    FileStream.write((char*)&UUIDSize, sizeof(u32));
+    FileStream.write(this->UUID.data(), this->UUID.size());
 
     u32 StringLength = this->Name.size();
-    AddItem(Result, &StringLength, sizeof(u32));
-    AddItem(Result, (void*)this->Name.data(), StringLength);
+    FileStream.write((char*)&StringLength, sizeof(u32));
+    FileStream.write((char*)(void*)this->Name.data(), StringLength);
     
-    AddItem(Result, &this->Transform.Matrices, sizeof(transform::matrices));
-    AddItem(Result, &this->Transform.LocalValues, sizeof(transform::localValues));
+    FileStream.write((char*)&this->Transform.Matrices, sizeof(transform::matrices));
+    FileStream.write((char*)&this->Transform.LocalValues, sizeof(transform::localValues));
 
     u32 NumChildren = this->Children.size();
-    AddItem(Result, &NumChildren, sizeof(u32));
+    FileStream.write((char*)&NumChildren, sizeof(u32));
 
     for (sz i = 0; i < NumChildren; i++)
     {
-        std::vector<u8> ChildBlob = this->Children[i]->Serialize();
-        u32 ChildrenSize = ChildBlob.size();
-        AddItem(Result, &ChildrenSize, sizeof(u32));
-        AddItem(Result, ChildBlob.data(), ChildBlob.size());
+        this->Children[i]->Serialize(FileStream);
     }
-    
+}
+
+std::shared_ptr<object3D> object3D::Deserialize(const std::string &FileName)
+{
+    transform::DoCompute = false;
+    std::ifstream FileStream;
+    FileStream.open(FileName, std::ios::binary);
+    assert(FileStream.is_open());
+    std::shared_ptr<object3D> Result = Deserialize(FileStream);      
+    transform::DoCompute = true;
+    return Result;
+}
+
+std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
+{
+    u32 Object3DType;
+    FileStream.read((char*)&Object3DType, sizeof(u32));
+
+    u32 UUIDSize;
+    FileStream.read((char*)&UUIDSize, sizeof(u32));
+    std::string UUID; UUID.resize(UUIDSize);
+    FileStream.read(UUID.data(), UUID.size());
+
+    u32 NameLength;
+    FileStream.read((char*)&NameLength, sizeof(u32));
+    std::string Name; Name.resize(NameLength);
+    FileStream.read((char*)Name.data(), Name.size());
+
+    std::shared_ptr<object3D> Result;
+    if(Object3DType == (u32)(object3DType::Mesh))
+        Result = std::make_shared<mesh>(Name);
+    else if(Object3DType == (u32)(object3DType::Scene))
+        Result = std::make_shared<scene>();
+    else if(Object3DType == (u32)(object3DType::Object3d))
+        Result = std::make_shared<object3D>(Name);
+
+    Result->UUID = UUID;
+
+    FileStream.read((char*)&Result->Transform.Matrices, sizeof(transform::matrices));
+    FileStream.read((char*)&Result->Transform.LocalValues, sizeof(transform::localValues));
+
+    if(Object3DType == (u32)(object3DType::Mesh))
+    {
+        std::shared_ptr<mesh> Mesh = std::static_pointer_cast<mesh>(Result);
+
+        u32 GeometryUUIDSize;
+        FileStream.read((char*)&GeometryUUIDSize, sizeof(u32));
+        std::string GeometryUUID; GeometryUUID.resize(GeometryUUIDSize);
+        FileStream.read(GeometryUUID.data(), GeometryUUIDSize);
+        
+        Mesh->GeometryBuffers = context::Get()->Project.Geometries[GeometryUUID];
+
+        u32 MaterialUUIDSize;
+        FileStream.read((char*)&MaterialUUIDSize, sizeof(u32));
+        std::string MaterialUUID; MaterialUUID.resize(MaterialUUIDSize);
+        FileStream.read(MaterialUUID.data(), MaterialUUIDSize);
+        Mesh->Material = context::Get()->Project.Materials[MaterialUUID];
+    }
+
+    u32 NumChildren;
+    FileStream.read((char*)&NumChildren, sizeof(u32));
+    for (sz i = 0; i < NumChildren; i++)
+    {
+        std::shared_ptr<object3D> Child = Deserialize(FileStream);
+        Result->AddObject(Child);
+    }
+
     return Result;
 }
 
@@ -282,127 +356,6 @@ void GetItem(std::vector<u8> &Blob, void *Dest, u32 &Cursor, sz Size)
 }
 
 
-std::shared_ptr<object3D> object3D::Deserialize(std::vector<u8> &Serialized)
-{
-    u32 Cursor = 0;
-    
-    u32 ObjectType;
-    GetItem(Serialized, &ObjectType, Cursor, sizeof(u32));
-
-    u32 NameLength;
-    GetItem(Serialized, &NameLength, Cursor, sizeof(u32));
-
-    //TODO: Refactor that
-    if(ObjectType == (u32)object3DType::Object3d)
-    {
-        std::shared_ptr<object3D> Result = std::make_shared<object3D>("BLA");
-        
-        Result->Name.resize(NameLength);
-        GetItem(Serialized, (void*)Result->Name.data(), Cursor, NameLength);
-
-
-        GetItem(Serialized, &Result->Transform.Matrices, Cursor, sizeof(transform::matrices));
-        GetItem(Serialized, &Result->Transform.LocalValues, Cursor, sizeof(transform::localValues));
-        Result->Transform.HasChanged=true;
-
-        u32 NumChildren;
-        GetItem(Serialized, &NumChildren, Cursor, sizeof(u32));
-
-        for (sz i = 0; i < NumChildren; i++)
-        {
-            u32 ChildSize;
-            GetItem(Serialized, &ChildSize, Cursor, sizeof(u32));
-            std::vector<u8> SerializedChild(ChildSize);
-            GetItem(Serialized, SerializedChild.data(), Cursor, ChildSize);
-
-            std::shared_ptr<object3D> Object = object3D::Deserialize(SerializedChild);
-            Result->AddObject(Object);
-        }
-        return Result;  
-    }
-    else if(ObjectType == (u32) object3DType::Mesh)
-    {
-        std::shared_ptr<mesh> Result = std::make_shared<mesh>();
-
-        Result->Name.resize(NameLength);
-        GetItem(Serialized, (void*)Result->Name.data(), Cursor, NameLength);
-
-        sz VertexDataSize;
-        GetItem(Serialized, &VertexDataSize, Cursor, sizeof(sz));
-        std::vector<u8> VertexData(VertexDataSize);
-        GetItem(Serialized, VertexData.data(), Cursor, VertexDataSize);
-        
-        sz IndexDataSize;
-        GetItem(Serialized, &IndexDataSize, Cursor, sizeof(sz));
-        std::vector<u8> IndexData(IndexDataSize);
-        GetItem(Serialized, IndexData.data(), Cursor, IndexDataSize);
-
-        Result->GeometryBuffers = CreateGeometryFromBuffers(VertexData.data(), VertexData.size(), IndexData.data(), IndexData.size());
-
-        u32 MaterialType;
-        GetItem(Serialized, &MaterialType, Cursor, sizeof(u32));
-        if(MaterialType == (u32)materialType::Unlit)
-        {
-            materialFlags::bits Flags;
-            GetItem(Serialized, &Flags, Cursor, sizeof(u32));
-            std::shared_ptr<unlitMaterial> Material = std::make_shared<unlitMaterial>("Material", Flags);
-            GetItem(Serialized, glm::value_ptr(Material->UniformData.BaseColorFactor), Cursor, sizeof(v4f));
-
-            u8 HasDiffuseTexture = 0;
-            GetItem(Serialized, &HasDiffuseTexture, Cursor, sizeof(u8));
-            if(HasDiffuseTexture)
-            {
-                gfx::imageData ImageData = {};
-                GetItem(Serialized, &ImageData.Width, Cursor, sizeof(u32));
-                GetItem(Serialized, &ImageData.Height, Cursor, sizeof(u32));
-                GetItem(Serialized, &ImageData.Format, Cursor, sizeof(u32));
-                GetItem(Serialized, &ImageData.ChannelCount, Cursor, sizeof(u8));
-                GetItem(Serialized, &ImageData.Type, Cursor, sizeof(gfx::type));
-                GetItem(Serialized, &ImageData.DataSize, Cursor, sizeof(sz));
-                ImageData.Data = (u8*) gfx::AllocateMemory(ImageData.DataSize);
-                GetItem(Serialized, ImageData.Data, Cursor, ImageData.DataSize);
-
-                gfx::imageCreateInfo ImageCreateInfo = 
-                {
-                    {0.0f,0.0f,0.0f,0.0f},
-                    gfx::samplerFilter::Linear,
-                    gfx::samplerFilter::Linear,
-                    gfx::samplerWrapMode::ClampToBorder,
-                    gfx::samplerWrapMode::ClampToBorder,
-                    gfx::samplerWrapMode::ClampToBorder,
-                    true
-                };
-
-                gfx::imageHandle ImageHandle = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);
-                Material->SetBaseColorTexture(std::make_shared<texture>("Texture", ImageHandle));
-
-                gfx::DeallocateMemory(ImageData.Data);
-            }
-
-            Result->Material = Material;
-        }
-     
-        GetItem(Serialized, &Result->Transform.Matrices, Cursor, sizeof(transform::matrices));
-        GetItem(Serialized, &Result->Transform.LocalValues, Cursor, sizeof(transform::localValues));
-        Result->Transform.HasChanged=true;
-
-        u32 NumChildren;
-        GetItem(Serialized, &NumChildren, Cursor, sizeof(u32));
-
-        for (sz i = 0; i < NumChildren; i++)
-        {
-            u32 ChildSize;
-            GetItem(Serialized, &ChildSize, Cursor, sizeof(u32));
-            std::vector<u8> SerializedChild(ChildSize);
-            GetItem(Serialized, SerializedChild.data(), Cursor, ChildSize);
-
-            std::shared_ptr<object3D> Object = object3D::Deserialize(SerializedChild);
-            Result->AddObject(Object);
-        }
-        return Result; 
-
-    }
-}
 
 object3D::~object3D()
 {

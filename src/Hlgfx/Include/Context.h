@@ -52,8 +52,6 @@ struct context
 
     ~context();
 
-    std::shared_ptr<scene> Scene;
-
     u32 Width, Height;
     std::shared_ptr<app::window> Window;
 	std::shared_ptr<gfx::context> GfxContext;
@@ -83,11 +81,14 @@ struct context
     void AddMaterialToProject(std::shared_ptr<material> Material);
     void AddTextureToProject(std::shared_ptr<texture> Texture);
     void AddMeshToProject(std::shared_ptr<mesh> Object);
+    void AddSceneToProject(std::shared_ptr<scene> Scene);
     std::shared_ptr<material> SelectedMaterial = nullptr;
     std::shared_ptr<indexedGeometryBuffers> SelectedIndexedGeometryBuffers = nullptr;
     std::shared_ptr<texture> SelectedTexture = nullptr;
     std::shared_ptr<object3D> SelectedObject3D = nullptr;
-
+    void SaveProjectToFolder(const char *FolderName);
+    void LoadProjectFromFolder(const char *FolderName);
+    std::shared_ptr<scene> Scene = nullptr;
 
     std::shared_ptr<gfx::imgui> Imgui;
 	

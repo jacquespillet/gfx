@@ -3,6 +3,8 @@
 #include "Gfx/Api.h"
 #include "Texture.h"
 
+#include <string>
+
 namespace hlgfx
 {
 enum class materialType
@@ -43,7 +45,8 @@ struct material
 
     virtual void DrawGUI() = 0;
     virtual void SetCullMode(gfx::cullMode Mode) = 0;
-    virtual std::vector<u8> Serialize()=0;
+    virtual void Serialize(const std::string &FileName)=0;
+    static std::shared_ptr<material> Deserialize(const std::string &FileName);
     virtual void RecreatePipeline() = 0;
     virtual std::shared_ptr<material> Clone() = 0;
     b8 ShouldRecreate = false;
@@ -58,7 +61,7 @@ struct unlitMaterial : public material
     ~unlitMaterial();
   
     virtual void SetCullMode(gfx::cullMode Mode);
-    virtual std::vector<u8> Serialize() override;
+    virtual void Serialize(const std::string &FileName) override;
     virtual void RecreatePipeline() override;
     virtual std::shared_ptr<material> Clone() override;
 

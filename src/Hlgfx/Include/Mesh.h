@@ -3,6 +3,7 @@
 #include "Geometry.h"
 #include "Gfx/Api.h"
 #include <string>
+#include <fstream>
 
 namespace hlgfx
 {
@@ -13,11 +14,10 @@ struct mesh : public object3D
     mesh(std::string Name);
     mesh();
     ~mesh();
-    void SetVertexBuffer(gfx::vertexBufferHandle VertexBufferHandle);
 
     virtual void OnEarlyUpdate() override;
     virtual void OnRender(std::shared_ptr<camera> Camera) override;
-    virtual std::vector<u8> Serialize() override;
+    virtual void Serialize(std::ofstream &FileStream) override;
     virtual std::shared_ptr<object3D> Clone() override;
 
     b8 MaterialSelectionOpen = false;

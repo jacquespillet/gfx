@@ -4,9 +4,12 @@
 #include "Include/Material.h"
 #include "Include/Util.h"
 #include "Loaders/GLTF.h"
-#include <iostream>
 #include "Gfx/Include/CommandBuffer.h"
+
+#include <iostream>
 #include <nfd.h>
+#include <filesystem>
+
 namespace hlgfx
 {
 UUIDv4::UUIDGenerator<std::mt19937_64> context::UUIDGenerator = UUIDv4::UUIDGenerator<std::mt19937_64>();
@@ -97,7 +100,6 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->Swapchain = Singleton->GfxContext->CreateSwapchain(Singleton->Width, Singleton->Height);
     Singleton->SwapchainPass = Singleton->GfxContext->GetDefaultRenderPass();
 
-    Singleton->Scene = std::make_shared<scene>();
 
     Singleton->Pipelines[UnlitPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/Unlit/Unlit.json");
 
@@ -325,6 +327,13 @@ void context::AddMeshToProject(std::shared_ptr<mesh> Mesh)
         this->Project.Textures[Texture.first] = Texture.second;
     }
 }
+
+void context::AddSceneToProject(std::shared_ptr<scene> Scene)
+{
+    this->Project.Scenes[Scene->UUID] = Scene;
+    this->Scene = Scene;
+}
+
 
 void context::AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level)
 {
@@ -636,17 +645,17 @@ void context::DrawMainMenuBar()
             if(ImGui::MenuItem("Save"))
             {
                 nfdchar_t *OutPath = NULL;
-                nfdresult_t Result = NFD_SaveDialog( NULL, NULL, &OutPath );
+                nfdresult_t Result = NFD_PickFolder(NULL, &OutPath );
                 if ( Result == NFD_OKAY ) {
-                    this->Scene->SaveToFile(OutPath);
+                    this->SaveProjectToFolder(OutPath);
                 }
             }
             if(ImGui::MenuItem("Load"))
             {
                 nfdchar_t *OutPath = NULL;
-                nfdresult_t Result = NFD_OpenDialog( NULL, NULL, &OutPath );
+                nfdresult_t Result = NFD_PickFolder(NULL, &OutPath );
                 if ( Result == NFD_OKAY ) {
-                    this->Scene->LoadFromFile(OutPath);
+                    this->LoadProjectFromFolder(OutPath);
                 }                
             }
             if(ImGui::MenuItem("Import"))
@@ -729,6 +738,110 @@ void context::Cleanup()
     gfx::memory *Memory = gfx::memory::Get();
     Memory->Destroy();
     delete Memory;    
+}
+
+void context::LoadProjectFromFolder(const char *FolderName)
+{
+
+    std::vector<std::string> TextureFiles;
+    std::vector<std::string> MaterialFiles;
+    std::vector<std::string> GeometryFiles;
+    std::vector<std::string> ObjectFiles;
+    std::vector<std::string> SceneFiles;
+    
+    namespace fs = std::filesystem;
+    for (const auto& entry : fs::directory_iterator(FolderName)) {
+        if (fs::is_regular_file(entry)) {
+            std::string FileName = entry.path().filename().string();
+            std::string Extension = entry.path().extension().string();
+            if(Extension == ".mat")
+            {
+                MaterialFiles.push_back(entry.path().string());
+            }
+            else if(Extension == ".tex")
+            {
+                TextureFiles.push_back(entry.path().string());
+            }
+            else if(Extension == ".geom")
+            {
+                GeometryFiles.push_back(entry.path().string());
+            }
+            else if(Extension == ".obj")
+            {
+                ObjectFiles.push_back(entry.path().string());
+            }
+            else if(Extension == ".scene")
+            {
+                SceneFiles.push_back(entry.path().string());
+            }
+        }
+    }
+
+    for (sz i = 0; i < TextureFiles.size(); i++)
+    {
+        std::shared_ptr<texture> Texture = texture::Deserialize(TextureFiles[i]);
+        Project.Textures[Texture->UUID] = Texture;   
+    }
+
+    for (sz i = 0; i < MaterialFiles.size(); i++)
+    {
+        std::shared_ptr<material> Material = material::Deserialize(MaterialFiles[i]);
+        Project.Materials[Material->UUID] = Material;   
+    }
+    
+    for (sz i = 0; i < GeometryFiles.size(); i++)
+    {
+        std::shared_ptr<indexedGeometryBuffers> Geometry = indexedGeometryBuffers::Deserialize(GeometryFiles[i]);
+        Project.Geometries[Geometry->UUID] = Geometry;   
+    }
+    
+    for (sz i = 0; i < ObjectFiles.size(); i++)
+    {
+        std::shared_ptr<object3D> Object = object3D::Deserialize(ObjectFiles[i]);
+        Project.Objects[Object->UUID] = Object;   
+    }
+    
+    for (sz i = 0; i < SceneFiles.size(); i++)
+    {
+        std::shared_ptr<scene> Scene = std::static_pointer_cast<scene>(object3D::Deserialize(SceneFiles[i]));
+        Project.Scenes[Scene->UUID] = Scene;  
+        this->Scene = Scene;
+    }
+    
+}
+
+void context::SaveProjectToFolder(const char *FolderName)
+{
+    std::string FolderNameStr = FolderName;
+    //Save all the materials
+    for (auto &Material : Project.Materials)
+    {
+        Material.second->Serialize(FolderNameStr + "/" + Material.second->Name + ".mat");
+    }
+    
+    //Save all the textures
+    for (auto &Texture : Project.Textures)
+    {
+        Texture.second->Serialize(FolderNameStr + "/" + Texture.second->Name + ".tex");
+    }
+
+    //Save all the geometries
+    for (auto &Geometry : Project.Geometries)
+    {
+        Geometry.second->Serialize(FolderNameStr + "/" + Geometry.second->Name + ".geom");
+    }
+
+    //Save all the objects
+    for (auto &Object : Project.Objects)
+    {
+        Object.second->Serialize(FolderNameStr + "/" + Object.second->Name + ".obj");
+    }
+
+    //Save all the scenes
+    for (auto &Scene : Project.Scenes)
+    {
+        Scene.second->Serialize(FolderNameStr + "/" + Scene.second->Name + ".scene");
+    }
 }
 
 context::~context()

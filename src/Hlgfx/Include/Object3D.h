@@ -14,7 +14,8 @@ struct scene;
 enum class object3DType
 {
     Object3d,
-    Mesh
+    Mesh,
+    Scene,
 };
 
 struct object3D
@@ -38,7 +39,8 @@ struct object3D
     std::vector<std::shared_ptr<object3D>> Children;
 
     
-    virtual std::vector<u8> Serialize();
+    virtual void Serialize(std::string FilePath);
+    virtual void Serialize(std::ofstream &Stream);
     void SetRenderOrder(u32 RenderOrder);
     void SetFrustumCulled(b8 FrustumCulled);
     void SetCastShadow(b8 CastShadow);
@@ -57,6 +59,7 @@ struct object3D
     virtual void DrawMaterial();
 
 
-    static std::shared_ptr<object3D> Deserialize(std::vector<u8> &Serialized);
+    static std::shared_ptr<object3D> Deserialize(const std::string &FileName);
+    static std::shared_ptr<object3D> Deserialize(std::ifstream &FileStream);
 };
 }

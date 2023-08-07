@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "Hlgfx/Include/Mesh.h"
+#include "Hlgfx/Include/Scene.h"
 #include "Hlgfx/Include/Geometry.h"
 #include "Hlgfx/Include/Scene.h"
 #include "Hlgfx/Loaders/GLTF.h"
@@ -22,14 +23,16 @@ struct application
 	void Init()
 	{
 		Context = hlgfx::context::Initialize();
+		std::shared_ptr<hlgfx::scene> Scene = std::make_shared<hlgfx::scene>();
+		Context->AddSceneToProject(Scene);
 		
 		Camera = std::make_shared<hlgfx::camera>(60, (float)1280 / (float)720);
 		Camera->SetLocalPosition(hlgfx::v3f(0, 0, 3));
 		
-		std::shared_ptr<hlgfx::object3D> Mesh = hlgfx::loaders::gltf::Load("C:/Users/jacqu/Documents/Boulot/Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
-		Context->AddObjectToProject(Mesh);
+		// std::shared_ptr<hlgfx::object3D> Mesh = hlgfx::loaders::gltf::Load("C:/Users/jacqu/Documents/Boulot/Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf");
+		// Context->AddObjectToProject(Mesh);
+		// Context->Scene->AddObject(Mesh->Clone());
 
-		Context->Scene->AddObject(Mesh->Clone());
 	}
 
 	void Run()

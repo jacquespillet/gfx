@@ -152,45 +152,40 @@ void mesh::DrawMaterial()
     this->Material->DrawGUI();
 }
 
-std::vector<u8> mesh::Serialize()
+void mesh::Serialize(std::ofstream &FileStream)
 {
     std::vector<u8> Result;
 
     u32 Object3DType = (u32) object3DType::Mesh;
-    AddItem(Result, &Object3DType, sizeof(u32));
+    FileStream.write((char*)&Object3DType, sizeof(u32));
+
+    u32 UUIDSize = this->UUID.size();
+    FileStream.write((char*)&UUIDSize, sizeof(u32));
+    FileStream.write(this->UUID.data(), this->UUID.size());
     
     u32 StringLength = this->Name.size();
-    AddItem(Result, &StringLength, sizeof(u32));
-    AddItem(Result, (void*)this->Name.data(), StringLength);
+    FileStream.write((char*)&StringLength, sizeof(u32));
+    FileStream.write((char*)(void*)this->Name.data(), StringLength);
     
-    sz VertexDataSize = this->GeometryBuffers->VertexData.size() * sizeof(vertex);
-    AddItem(Result, &VertexDataSize, sizeof(sz));
-    AddItem(Result, this->GeometryBuffers->VertexData.data(), VertexDataSize);
+    FileStream.write((char*)&this->Transform.Matrices, sizeof(transform::matrices));
+    FileStream.write((char*)&this->Transform.LocalValues, sizeof(transform::localValues));
     
-    sz IndexDataSize = this->GeometryBuffers->IndexData.size() * sizeof(u32);
-    AddItem(Result, &IndexDataSize, sizeof(sz));
-    AddItem(Result, this->GeometryBuffers->IndexData.data(), IndexDataSize);
+    u32 GeometryUUIDSize = this->GeometryBuffers->UUID.size();
+    FileStream.write((char*)&GeometryUUIDSize, sizeof(u32));
+    FileStream.write(this->GeometryBuffers->UUID.data(), GeometryUUIDSize);
+    
+    u32 MaterialUUIDSize = this->Material->UUID.size();
+    FileStream.write((char*)&MaterialUUIDSize, sizeof(u32));
+    FileStream.write(this->Material->UUID.data(), MaterialUUIDSize);
 
-    std::vector<u8> MaterialData = this->Material->Serialize();
-    AddItem(Result, MaterialData.data(), MaterialData.size());
-
-    
-    AddItem(Result, &this->Transform.Matrices, sizeof(transform::matrices));
-    AddItem(Result, &this->Transform.LocalValues, sizeof(transform::localValues));
 
     u32 NumChildren = this->Children.size();
-    AddItem(Result, &NumChildren, sizeof(u32));
+    FileStream.write((char*)&NumChildren, sizeof(u32));
 
     for (sz i = 0; i < NumChildren; i++)
     {
-        std::vector<u8> ChildBlob = this->Children[i]->Serialize();
-        u32 ChildrenSize = ChildBlob.size();
-        AddItem(Result, &ChildrenSize, sizeof(u32));
-        AddItem(Result, ChildBlob.data(), ChildBlob.size());
+        this->Children[i]->Serialize(FileStream);
     }
-
-
-    return Result;
 }
 
 mesh::~mesh()

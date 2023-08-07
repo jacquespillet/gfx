@@ -29,6 +29,9 @@ struct indexedGeometryBuffers
     std::string UUID;
 
     void BuildBuffers();
+
+    void Serialize(std::string FileName);
+    static std::shared_ptr<indexedGeometryBuffers> Deserialize(const std::string &FileName);
 };
 
 
