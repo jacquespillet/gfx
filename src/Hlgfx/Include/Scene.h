@@ -9,7 +9,7 @@ namespace hlgfx
 
 struct scene : public object3D
 {
-    scene();
+    scene(std::string Name = "Scene");
     virtual void OnRender(std::shared_ptr<camera> Camera);
     virtual void AddObject(std::shared_ptr<object3D> Object) override;
     void AddMeshesInObject(std::shared_ptr<object3D> Object);

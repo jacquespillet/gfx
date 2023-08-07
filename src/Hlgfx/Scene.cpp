@@ -25,7 +25,7 @@ void RemoveMeshInChildren(std::vector<std::shared_ptr<mesh>>& Children, std::sha
     }
 }
 
-scene::scene() : object3D("Scene")
+scene::scene(std::string Name) : object3D(Name)
 {
     this->UUID = context::Get()->GetUUID();
 }

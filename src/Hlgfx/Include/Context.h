@@ -84,6 +84,7 @@ struct context
     void AddSceneToProject(std::shared_ptr<scene> Scene);
     std::shared_ptr<material> SelectedMaterial = nullptr;
     std::shared_ptr<indexedGeometryBuffers> SelectedIndexedGeometryBuffers = nullptr;
+    std::shared_ptr<scene> SelectedScene = nullptr;
     std::shared_ptr<texture> SelectedTexture = nullptr;
     std::shared_ptr<object3D> SelectedObject3D = nullptr;
     void SaveProjectToFolder(const char *FolderName);

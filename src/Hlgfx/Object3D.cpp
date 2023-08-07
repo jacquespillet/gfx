@@ -304,7 +304,7 @@ std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
     if(Object3DType == (u32)(object3DType::Mesh))
         Result = std::make_shared<mesh>(Name);
     else if(Object3DType == (u32)(object3DType::Scene))
-        Result = std::make_shared<scene>();
+        Result = std::make_shared<scene>(Name);
     else if(Object3DType == (u32)(object3DType::Object3d))
         Result = std::make_shared<object3D>(Name);
 

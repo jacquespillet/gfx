@@ -337,8 +337,31 @@ void context::AddSceneToProject(std::shared_ptr<scene> Scene)
 
 void context::AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level)
 {
-    if(Level == 0)
+    if (Level == 0)
+    {
+
+        //Check unicity of name
+        u32 Count = 0;
+        std::string BaseName = Object->Name;
+        while(true)
+        {
+            b8 OK = true;
+            for (auto &ProjectObject : this->Project.Objects)
+            {
+                //If another object has the same name, we append the count, and set OK to false so that we iterate again for this new name
+                if(ProjectObject.second->Name == Object->Name)
+                {
+                    Object->Name = BaseName + "_" + std::to_string(Count);
+                    OK = false;
+                    Count++;
+                }
+            }
+
+            if(OK) break;
+        }
         this->Project.Objects[Object->UUID] = (Object);
+    }
+    
     
     std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Object);
     if(Mesh)
@@ -627,6 +650,29 @@ void context::DrawAssetsWindow()
             }
             ImGui::EndTabItem();
         }
+        if(ImGui::BeginTabItem("Scenes"))
+        {
+            for (auto &Scene : this->Project.Scenes)
+            {
+                ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
+                if(this->SelectedScene.get() == Scene.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
+                ImGui::TreeNodeEx(Scene.second->Name.c_str(), Flags);
+                if(ImGui::IsItemClicked())
+                {
+                    this->SelectedScene = Scene.second;
+                }
+                ImGui::TreePop();
+            }
+
+            if(this->SelectedScene != nullptr)
+            {
+                if(ImGui::Button("Open"))
+                {
+                    this->Scene = this->SelectedScene;
+                }
+            }
+            ImGui::EndTabItem();
+        }
         ImGui::EndTabBar();
     }
     ImGui::End();
@@ -638,27 +684,13 @@ void context::DrawMainMenuBar()
     {
         if (ImGui::BeginMenu("File"))
         {
-            if(ImGui::MenuItem("New"))
+            if(ImGui::MenuItem("New Scene"))
             {
-                this->Scene->Clear();
+                std::shared_ptr<scene> NewScene = std::make_shared<scene>("New_Scene_" + this->Project.Scenes.size());
+                this->Project.Scenes[NewScene->UUID] = NewScene;
+                this->Scene = NewScene;
             }
-            if(ImGui::MenuItem("Save"))
-            {
-                nfdchar_t *OutPath = NULL;
-                nfdresult_t Result = NFD_PickFolder(NULL, &OutPath );
-                if ( Result == NFD_OKAY ) {
-                    this->SaveProjectToFolder(OutPath);
-                }
-            }
-            if(ImGui::MenuItem("Load"))
-            {
-                nfdchar_t *OutPath = NULL;
-                nfdresult_t Result = NFD_PickFolder(NULL, &OutPath );
-                if ( Result == NFD_OKAY ) {
-                    this->LoadProjectFromFolder(OutPath);
-                }                
-            }
-            if(ImGui::MenuItem("Import"))
+            if(ImGui::MenuItem("Import GLTF"))
             {
                 nfdchar_t *OutPath = NULL;
                 nfdresult_t Result = NFD_OpenDialog( NULL, NULL, &OutPath );
@@ -667,6 +699,24 @@ void context::DrawMainMenuBar()
                     this->AddObjectToProject(Mesh);
                 }                
             }
+            ImGui::Separator();
+            if(ImGui::MenuItem("Save Project"))
+            {
+                nfdchar_t *OutPath = NULL;
+                nfdresult_t Result = NFD_PickFolder(NULL, &OutPath );
+                if ( Result == NFD_OKAY ) {
+                    this->SaveProjectToFolder(OutPath);
+                }
+            }
+            if(ImGui::MenuItem("Load Project"))
+            {
+                nfdchar_t *OutPath = NULL;
+                nfdresult_t Result = NFD_PickFolder(NULL, &OutPath );
+                if ( Result == NFD_OKAY ) {
+                    this->LoadProjectFromFolder(OutPath);
+                }                
+            }
+            ImGui::Separator();
             ImGui::EndMenu();
         }
         if(ImGui::BeginMenu("Edit"))
@@ -805,7 +855,7 @@ void context::LoadProjectFromFolder(const char *FolderName)
     {
         std::shared_ptr<scene> Scene = std::static_pointer_cast<scene>(object3D::Deserialize(SceneFiles[i]));
         Project.Scenes[Scene->UUID] = Scene;  
-        this->Scene = Scene;
+        if(i==0) this->Scene = Scene;
     }
     
 }

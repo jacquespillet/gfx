@@ -19,6 +19,7 @@
 #include "../Include/Material.h"
 #include "../Include/Texture.h"
 #include "../Include/Mesh.h"
+#include "../Include/Util.h"
 #include "gfx/Include/Pipeline.h"
 
 #include <glm/gtx/matrix_decompose.hpp>
@@ -474,7 +475,7 @@ std::shared_ptr<object3D> Load(std::string FileName)
         return Result;
     }
 
-    Result = std::make_shared<object3D>("Model");
+    Result = std::make_shared<object3D>(FileNameFromPath(FileName));
     
     std::vector<std::vector<uint32_t>> InstanceMapping;
     std::vector<std::shared_ptr<geometryData>> Geometries;
