@@ -9,6 +9,7 @@
 #include <iostream>
 #include <nfd.h>
 #include <filesystem>
+#include <queue>
 
 namespace hlgfx
 {
@@ -145,6 +146,8 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     for (sz i = 0; i < TexWidth * TexHeight; i++)
         ColorData[i] = Color;
     defaultTextures::WhiteTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
+
+    Singleton->NoMaterial = std::make_shared<unlitMaterial>("NO_MATERIAL");
 
     return Singleton;
 }
@@ -334,6 +337,43 @@ void context::AddTextureToProject(std::shared_ptr<texture> Texture)
 
     this->Project.Textures[Texture->UUID] = Texture;
 }
+
+void context::RemoveTextureFromProject(std::shared_ptr<texture> Texture)
+{
+    //Remove from project
+    this->Project.Textures.erase(Texture->UUID);
+
+    //remove from all materials
+    for (auto &Material : this->Project.Materials)
+    {
+        std::shared_ptr<unlitMaterial> UnlitMaterial = std::dynamic_pointer_cast<unlitMaterial>(Material.second);
+        if(UnlitMaterial)
+        {
+            if(UnlitMaterial->BaseColorTexture.get() == Texture.get())
+            {
+                UnlitMaterial->SetBaseColorTexture(defaultTextures::BlackTexture);
+            }
+            if(UnlitMaterial->MetallicRoughnessTexture.get() == Texture.get())
+            {
+                UnlitMaterial->SetMetallicRoughnessTexture(defaultTextures::BlackTexture);
+            }
+            if(UnlitMaterial->NormalTexture.get() == Texture.get())
+            {
+                UnlitMaterial->SetNormalTexture(defaultTextures::BlackTexture);
+            }
+            if(UnlitMaterial->OcclusionTexture.get() == Texture.get())
+            {
+                UnlitMaterial->SetOcclusionTexture(defaultTextures::BlackTexture);
+            }
+            if(UnlitMaterial->EmissiveTexture.get() == Texture.get())
+            {
+                UnlitMaterial->SetEmissiveTexture(defaultTextures::BlackTexture);
+            }
+        }
+    }
+    
+}
+
 void context::AddMaterialToProject(std::shared_ptr<material> Material)
 {
     if(this->Project.Materials.find(Material->UUID) != this->Project.Materials.end()) return;
@@ -358,6 +398,61 @@ void context::AddMaterialToProject(std::shared_ptr<material> Material)
     }
 
     this->Project.Materials[Material->UUID] = Material;
+}
+
+void context::RemoveMaterialFromProject(std::shared_ptr<material> Material)
+{
+    //remove from materiails
+    this->Project.Materials.erase(Material->UUID);
+    //remove from all objects
+    for(auto &Object : this->Project.Objects)
+    {
+        std::queue<std::shared_ptr<object3D>> ToCheck;
+        ToCheck.push(Object.second);
+        while(!ToCheck.empty())
+        {
+            std::shared_ptr<object3D> Obj = ToCheck.back();
+            ToCheck.pop();
+            std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Obj);
+            if(Mesh)
+            {
+                if(Mesh->Material.get() == Material.get())
+                {
+                    Mesh->Material = this->NoMaterial;
+                }
+            }
+
+            for (sz i = 0; i < Obj->Children.size(); i++)
+            {
+                ToCheck.push(Obj->Children[i]);
+            }
+        }
+    }
+
+    //remove from all scenes
+    for(auto &Scene : this->Project.Scenes)
+    {
+        std::queue<std::shared_ptr<object3D>> ToCheck;
+        ToCheck.push(Scene.second);
+        while(!ToCheck.empty())
+        {
+            std::shared_ptr<object3D> Obj = ToCheck.back();
+            ToCheck.pop();
+            std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Obj);
+            if(Mesh)
+            {
+                if(Mesh->Material.get() == Material.get())
+                {
+                    Mesh->Material = this->NoMaterial;
+                }
+            }
+
+            for (sz i = 0; i < Obj->Children.size(); i++)
+            {
+                ToCheck.push(Obj->Children[i]);
+            }
+        }
+    }    
 }
 
 void context::AddGeometryToProject(std::shared_ptr<indexedGeometryBuffers> Geometry)
@@ -422,7 +517,11 @@ void context::AddSceneToProject(std::shared_ptr<scene> Scene)
     this->Scene = Scene;
 }
 
-
+void context::RemoveObjectFromProject(std::shared_ptr<object3D> Object)
+{
+    this->Project.Objects.erase(Object->UUID);
+}
+  
 void context::AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level)
 {
     if (Level == 0)
@@ -624,6 +723,10 @@ void context::DrawAssetsWindow()
                 {
                     this->AddObjectToProject(this->SelectedObject3D->Clone());
                 }
+                if(ImGui::Button("Delete"))
+                {
+                    this->RemoveObjectFromProject(this->SelectedObject3D);
+                }
                 ImGui::EndChild();
             }
             
@@ -668,6 +771,10 @@ void context::DrawAssetsWindow()
                 if(ImGui::Button("Duplicate"))
                 {
                     this->AddMaterialToProject(this->SelectedMaterial->Clone());
+                }
+                if(ImGui::Button("Delete"))
+                {
+                    this->RemoveMaterialFromProject(this->SelectedMaterial);
                 }
                 this->SelectedMaterial->DrawGUI();
                 ImGui::EndChild();
@@ -716,7 +823,10 @@ void context::DrawAssetsWindow()
             if(this->SelectedTexture!=nullptr)
             {
                 ImGui::BeginChild("Texture");
-            
+                if(ImGui::Button("Delete"))
+                {
+                    this->RemoveTextureFromProject(this->SelectedTexture);
+                }
                 ImGui::EndChild();
             }
 

@@ -78,8 +78,11 @@ struct context
         std::unordered_map<std::string, std::shared_ptr<scene>> Scenes;
     } Project;
     void AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level = 0);
+    void RemoveObjectFromProject(std::shared_ptr<object3D> Object);
     void AddMaterialToProject(std::shared_ptr<material> Material);
+    void RemoveMaterialFromProject(std::shared_ptr<material> Material);
     void AddTextureToProject(std::shared_ptr<texture> Texture);
+    void RemoveTextureFromProject(std::shared_ptr<texture> Texture);
     void AddMeshToProject(std::shared_ptr<mesh> Object);
     void AddSceneToProject(std::shared_ptr<scene> Scene);
     void AddGeometryToProject(std::shared_ptr<indexedGeometryBuffers> Geometry);
@@ -94,6 +97,7 @@ struct context
 
     std::shared_ptr<gfx::imgui> Imgui;
 	
+    std::shared_ptr<unlitMaterial> NoMaterial;
 
     //Inputs
     b8 IsInteractingGUI = false;
