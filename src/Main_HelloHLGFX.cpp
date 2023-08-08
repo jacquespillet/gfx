@@ -20,7 +20,7 @@ struct application
 	std::shared_ptr<hlgfx::camera> Camera;
 	std::shared_ptr<hlgfx::mesh> Mesh;
 
-	void Init(std::string ProjectFolder)
+	void Init(std::string ProjectFile)
 	{
 		Context = hlgfx::context::Initialize();
 		std::shared_ptr<hlgfx::scene> Scene = std::make_shared<hlgfx::scene>();
@@ -29,9 +29,9 @@ struct application
 		Camera = std::make_shared<hlgfx::camera>(60, (float)1280 / (float)720);
 		Camera->SetLocalPosition(hlgfx::v3f(0, 0, 3));
 		
-		if(ProjectFolder != "")
+		if(ProjectFile != "")
 		{
-			Context->LoadProjectFromFolder(ProjectFolder.c_str());
+			Context->LoadProjectFromFile(ProjectFile.c_str());
 		}
 	}
 

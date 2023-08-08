@@ -88,8 +88,8 @@ struct context
     std::shared_ptr<scene> SelectedScene = nullptr;
     std::shared_ptr<texture> SelectedTexture = nullptr;
     std::shared_ptr<object3D> SelectedObject3D = nullptr;
-    void SaveProjectToFolder(const char *FolderName);
-    void LoadProjectFromFolder(const char *FolderName);
+    void SaveProjectToFile(const char *FolderName);
+    void LoadProjectFromFile(const char *FolderName);
     std::shared_ptr<scene> Scene = nullptr;
 
     std::shared_ptr<gfx::imgui> Imgui;

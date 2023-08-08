@@ -311,6 +311,8 @@ std::string context::GetUUID()
 
 void context::AddTextureToProject(std::shared_ptr<texture> Texture)
 {
+    if(this->Project.Textures.find(Texture->UUID) != this->Project.Textures.end()) return;
+
     //Check unicity of name
     u32 Count = 0;
     std::string BaseName = Texture->Name;
@@ -334,6 +336,7 @@ void context::AddTextureToProject(std::shared_ptr<texture> Texture)
 }
 void context::AddMaterialToProject(std::shared_ptr<material> Material)
 {
+    if(this->Project.Materials.find(Material->UUID) != this->Project.Materials.end()) return;
     //Check unicity of name
     u32 Count = 0;
     std::string BaseName = Material->Name;
@@ -359,6 +362,8 @@ void context::AddMaterialToProject(std::shared_ptr<material> Material)
 
 void context::AddGeometryToProject(std::shared_ptr<indexedGeometryBuffers> Geometry)
 {
+    if(this->Project.Geometries.find(Geometry->UUID) != this->Project.Geometries.end()) return;
+
     //Check unicity of name
     u32 Count = 0;
     std::string BaseName = Geometry->Name;
@@ -784,17 +789,17 @@ void context::DrawMainMenuBar()
             if(ImGui::MenuItem("Save Project"))
             {
                 nfdchar_t *OutPath = NULL;
-                nfdresult_t Result = NFD_PickFolder(NULL, &OutPath );
+                nfdresult_t Result = NFD_SaveDialog(NULL, NULL, &OutPath );
                 if ( Result == NFD_OKAY ) {
-                    this->SaveProjectToFolder(OutPath);
+                    this->SaveProjectToFile(OutPath);
                 }
             }
             if(ImGui::MenuItem("Load Project"))
             {
                 nfdchar_t *OutPath = NULL;
-                nfdresult_t Result = NFD_PickFolder(NULL, &OutPath );
+                nfdresult_t Result = NFD_OpenDialog(NULL, NULL, &OutPath );
                 if ( Result == NFD_OKAY ) {
-                    this->LoadProjectFromFolder(OutPath);
+                    this->LoadProjectFromFile(OutPath);
                 }                
             }
             ImGui::Separator();
@@ -871,8 +876,9 @@ void context::Cleanup()
     delete Memory;    
 }
 
-void context::LoadProjectFromFolder(const char *FolderName)
+void context::LoadProjectFromFile(const char *FileName)
 {
+    std::string FolderName = std::filesystem::path(FileName).parent_path().string() + "/Assets";
 
     std::vector<std::string> TextureFiles;
     std::vector<std::string> MaterialFiles;
@@ -880,33 +886,50 @@ void context::LoadProjectFromFolder(const char *FolderName)
     std::vector<std::string> ObjectFiles;
     std::vector<std::string> SceneFiles;
     
+    std::ifstream ProjectFileStream;
+    ProjectFileStream.open(FileName, std::ios_base::binary);
+    assert(ProjectFileStream.is_open());
+
     namespace fs = std::filesystem;
-    for (const auto& entry : fs::directory_iterator(FolderName)) {
-        if (fs::is_regular_file(entry)) {
-            std::string FileName = entry.path().filename().string();
-            std::string Extension = entry.path().extension().string();
+    u32 FilesCount;
+    ProjectFileStream.read((char*)&FilesCount, sizeof(u32));
+    for (u32 i = 0; i < FilesCount; i++)
+    {
+        sz StringLength;
+        ProjectFileStream.read((char*)&StringLength, sizeof(sz));
+        std::string File; File.resize(StringLength);
+        ProjectFileStream.read(File.data(), File.size());
+
+        fs::directory_entry Entry = fs::directory_entry(FolderName +"/" + File);
+        std::string FileName = Entry.path().filename().string();
+        std::string Extension = Entry.path().extension().string();
+        
+        if (fs::is_regular_file(Entry)) {
             if(Extension == ".mat")
             {
-                MaterialFiles.push_back(entry.path().string());
+                MaterialFiles.push_back(Entry.path().string());
             }
             else if(Extension == ".tex")
             {
-                TextureFiles.push_back(entry.path().string());
+                TextureFiles.push_back(Entry.path().string());
             }
             else if(Extension == ".geom")
             {
-                GeometryFiles.push_back(entry.path().string());
+                GeometryFiles.push_back(Entry.path().string());
             }
             else if(Extension == ".obj")
             {
-                ObjectFiles.push_back(entry.path().string());
+                ObjectFiles.push_back(Entry.path().string());
             }
             else if(Extension == ".scene")
             {
-                SceneFiles.push_back(entry.path().string());
+                SceneFiles.push_back(Entry.path().string());
             }
         }
     }
+    
+
+
 
     for (sz i = 0; i < TextureFiles.size(); i++)
     {
@@ -941,42 +964,70 @@ void context::LoadProjectFromFolder(const char *FolderName)
     
 }
 
-void context::SaveProjectToFolder(const char *FolderName)
+void context::SaveProjectToFile(const char *FileName)
 {
-    //TODO:
-    //Add a .proj file that lists all the files
-    //Write all the files in an Assets/ folder
-    //Read this .proj file when deserializing
+    std::string FolderName = std::filesystem::path(FileName).parent_path().string() + "/Assets";
 
-    std::string FolderNameStr = FolderName;
+    if (!std::filesystem::exists(FolderName)) 
+    {
+        if (!std::filesystem::create_directory(FolderName))
+        {
+            std::cerr << "Error creating directory." << std::endl;
+        }
+    }
+
+    std::vector<std::string> AllFiles;
     //Save all the materials
     for (auto &Material : Project.Materials)
     {
-        Material.second->Serialize(FolderNameStr + "/" + Material.second->Name + ".mat");
+        std::string FileName = Material.second->Name + ".mat";
+        Material.second->Serialize(FolderName + "/" + FileName);
+        AllFiles.push_back(FileName);
     }
     
     //Save all the textures
     for (auto &Texture : Project.Textures)
     {
-        Texture.second->Serialize(FolderNameStr + "/" + Texture.second->Name + ".tex");
+        std::string FileName = Texture.second->Name + ".tex";
+        Texture.second->Serialize(FolderName + "/" + FileName);
+        AllFiles.push_back(FileName);
     }
 
     //Save all the geometries
     for (auto &Geometry : Project.Geometries)
     {
-        Geometry.second->Serialize(FolderNameStr + "/" + Geometry.second->Name + ".geom");
+        std::string FileName = Geometry.second->Name + ".geom";
+        Geometry.second->Serialize(FolderName + "/" + FileName);
+        AllFiles.push_back(FileName);
     }
 
     //Save all the objects
     for (auto &Object : Project.Objects)
     {
-        Object.second->Serialize(FolderNameStr + "/" + Object.second->Name + ".obj");
+        std::string FileName = Object.second->Name + ".obj";
+        Object.second->Serialize(FolderName + "/" + FileName);
+        AllFiles.push_back(FileName);
     }
 
     //Save all the scenes
     for (auto &Scene : Project.Scenes)
     {
-        Scene.second->Serialize(FolderNameStr + "/" + Scene.second->Name + ".scene");
+        std::string FileName = Scene.second->Name + ".scene";
+        Scene.second->Serialize(FolderName + "/" +FileName) ;
+        AllFiles.push_back(FileName);
+    }
+
+    std::ofstream ProjectFileStream;
+    ProjectFileStream.open(FileName, std::ios_base::trunc | std::ios_base::binary);
+    assert(ProjectFileStream.is_open());
+
+    u32 FilesCount = AllFiles.size();
+    ProjectFileStream.write((char*)&FilesCount, sizeof(u32));
+    for (sz i = 0; i < AllFiles.size(); i++)
+    {
+        sz Size = AllFiles[i].size();
+        ProjectFileStream.write((char*)&Size, sizeof(sz));
+        ProjectFileStream.write(AllFiles[i].data(), AllFiles[i].size());
     }
 }
 
