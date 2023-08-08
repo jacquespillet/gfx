@@ -328,7 +328,8 @@ std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
         FileStream.read((char*)&MaterialUUIDSize, sizeof(u32));
         std::string MaterialUUID; MaterialUUID.resize(MaterialUUIDSize);
         FileStream.read(MaterialUUID.data(), MaterialUUIDSize);
-        Mesh->Material = context::Get()->Project.Materials[MaterialUUID];
+        if(MaterialUUID == "NO_MATERIAL") Mesh->Material = context::Get()->NoMaterial;
+        else Mesh->Material = context::Get()->Project.Materials[MaterialUUID];
 
         Mesh->UniformData.ModelMatrix = Mesh->Transform.Matrices.LocalToWorld;
         gfx::context::Get()->CopyDataToBuffer(Mesh->UniformBuffer, &Mesh->UniformData, sizeof(mesh::uniformData), 0);

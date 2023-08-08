@@ -148,7 +148,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     defaultTextures::WhiteTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
 
     Singleton->NoMaterial = std::make_shared<unlitMaterial>("NO_MATERIAL");
-
+    Singleton->NoMaterial->UUID = "NO_MATERIAL";
     return Singleton;
 }
 
