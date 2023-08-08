@@ -82,6 +82,7 @@ struct context
     void AddTextureToProject(std::shared_ptr<texture> Texture);
     void AddMeshToProject(std::shared_ptr<mesh> Object);
     void AddSceneToProject(std::shared_ptr<scene> Scene);
+    void AddGeometryToProject(std::shared_ptr<indexedGeometryBuffers> Geometry);
     std::shared_ptr<material> SelectedMaterial = nullptr;
     std::shared_ptr<indexedGeometryBuffers> SelectedIndexedGeometryBuffers = nullptr;
     std::shared_ptr<scene> SelectedScene = nullptr;

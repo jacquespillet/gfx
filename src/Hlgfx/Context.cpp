@@ -311,25 +311,108 @@ std::string context::GetUUID()
 
 void context::AddTextureToProject(std::shared_ptr<texture> Texture)
 {
+    //Check unicity of name
+    u32 Count = 0;
+    std::string BaseName = Texture->Name;
+    while(true)
+    {
+        b8 OK = true;
+        for (auto &ProjectTexture : this->Project.Textures)
+        {
+            //If another object has the same name, we append the count, and set OK to false so that we iterate again for this new name
+            if(ProjectTexture.second->Name == Texture->Name)
+            {
+                Texture->Name = BaseName + "_" + std::to_string(Count);
+                OK = false;
+                Count++;
+            }
+        }
+        if(OK) break;
+    }    
+
     this->Project.Textures[Texture->UUID] = Texture;
 }
 void context::AddMaterialToProject(std::shared_ptr<material> Material)
 {
+    //Check unicity of name
+    u32 Count = 0;
+    std::string BaseName = Material->Name;
+    while(true)
+    {
+        b8 OK = true;
+        for (auto &ProjectMaterial : this->Project.Materials)
+        {
+            //If another object has the same name, we append the count, and set OK to false so that we iterate again for this new name
+            if(ProjectMaterial.second->Name == Material->Name)
+            {
+                Material->Name = BaseName + "_" + std::to_string(Count);
+                OK = false;
+                Count++;
+            }
+        }
+
+        if(OK) break;
+    }
+
     this->Project.Materials[Material->UUID] = Material;
+}
+
+void context::AddGeometryToProject(std::shared_ptr<indexedGeometryBuffers> Geometry)
+{
+    //Check unicity of name
+    u32 Count = 0;
+    std::string BaseName = Geometry->Name;
+    while(true)
+    {
+        b8 OK = true;
+        for (auto &ProjectGeometry : this->Project.Geometries)
+        {
+            //If another object has the same name, we append the count, and set OK to false so that we iterate again for this new name
+            if(ProjectGeometry.second->Name == Geometry->Name)
+            {
+                Geometry->Name = BaseName + "_" + std::to_string(Count);
+                OK = false;
+                Count++;
+            }
+        }
+
+        if(OK) break;
+    }
+
+    this->Project.Geometries[Geometry->UUID] = Geometry;
 }
 
 void context::AddMeshToProject(std::shared_ptr<mesh> Mesh)
 {
-    this->Project.Geometries[Mesh->GeometryBuffers->UUID] = Mesh->GeometryBuffers;
-    this->Project.Materials[Mesh->Material->UUID] = Mesh->Material;
+    AddMaterialToProject(Mesh->Material);
+    AddGeometryToProject(Mesh->GeometryBuffers);
     for(auto &Texture : Mesh->Material->AllTextures)
     {
-        this->Project.Textures[Texture.first] = Texture.second;
+        AddTextureToProject(Texture.second);
     }
 }
 
 void context::AddSceneToProject(std::shared_ptr<scene> Scene)
 {
+    //Check unicity of name
+    u32 Count = 0;
+    std::string BaseName = Scene->Name;
+    while(true)
+    {
+        b8 OK = true;
+        for (auto &ProjectScene : this->Project.Scenes)
+        {
+            //If another object has the same name, we append the count, and set OK to false so that we iterate again for this new name
+            if(ProjectScene.second->Name == Scene->Name)
+            {
+                Scene->Name = BaseName + "_" + std::to_string(Count);
+                OK = false;
+                Count++;
+            }
+        }
+
+        if(OK) break;
+    }
     this->Project.Scenes[Scene->UUID] = Scene;
     this->Scene = Scene;
 }
@@ -339,7 +422,6 @@ void context::AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level)
 {
     if (Level == 0)
     {
-
         //Check unicity of name
         u32 Count = 0;
         std::string BaseName = Object->Name;
@@ -686,9 +768,8 @@ void context::DrawMainMenuBar()
         {
             if(ImGui::MenuItem("New Scene"))
             {
-                std::shared_ptr<scene> NewScene = std::make_shared<scene>("New_Scene_" + this->Project.Scenes.size());
-                this->Project.Scenes[NewScene->UUID] = NewScene;
-                this->Scene = NewScene;
+                std::shared_ptr<scene> NewScene = std::make_shared<scene>("New_Scene_" + std::to_string(this->Project.Scenes.size()));
+                AddSceneToProject(NewScene);
             }
             if(ImGui::MenuItem("Import GLTF"))
             {
@@ -862,6 +943,11 @@ void context::LoadProjectFromFolder(const char *FolderName)
 
 void context::SaveProjectToFolder(const char *FolderName)
 {
+    //TODO:
+    //Add a .proj file that lists all the files
+    //Write all the files in an Assets/ folder
+    //Read this .proj file when deserializing
+
     std::string FolderNameStr = FolderName;
     //Save all the materials
     for (auto &Material : Project.Materials)
