@@ -109,7 +109,7 @@ struct context
     f64 MouseWheelX = 0;
     f64 MouseWheelY = 0;
 
-    ImGuizmo::OPERATION CurrentGizmoOperation = (ImGuizmo::ROTATE);
+    ImGuizmo::OPERATION CurrentGizmoOperation = (ImGuizmo::TRANSLATE);
     ImGuizmo::MODE CurrentGizmoMode = (ImGuizmo::WORLD);
 
     void DrawObjectMenu();

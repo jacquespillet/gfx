@@ -757,6 +757,19 @@ void context::DrawAssetsWindow()
                 {
                     this->Scene = this->SelectedScene;
                 }
+                if(ImGui::Button("Delete"))
+                {
+                    if(this->Project.Scenes.size() > 1)
+                    {
+                        this->Project.Scenes.erase(this->SelectedScene->UUID);
+                        for (auto &Scene : this->Project.Scenes)
+                        {
+                            this->Scene = Scene.second;
+                            this->SelectedScene = this->Scene;
+                            break;
+                        }
+                    }
+                }
             }
             ImGui::EndTabItem();
         }
@@ -878,6 +891,12 @@ void context::Cleanup()
 
 void context::LoadProjectFromFile(const char *FileName)
 {
+    this->Project.Geometries.clear();
+    this->Project.Scenes.clear();
+    this->Project.Objects.clear();
+    this->Project.Textures.clear();
+    this->Project.Scenes.clear();
+
     std::string FolderName = std::filesystem::path(FileName).parent_path().string() + "/Assets";
 
     std::vector<std::string> TextureFiles;

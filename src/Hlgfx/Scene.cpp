@@ -162,7 +162,7 @@ void scene::DrawSceneGUI()
 {
     std::shared_ptr<scene> ScenePtr = context::Get()->Scene;
 
-    static ImGuiTreeNodeFlags BaseFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
+    static ImGuiTreeNodeFlags BaseFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
     int NumChildren = this->Children.size();
     if(NumChildren == 0) BaseFlags |= ImGuiTreeNodeFlags_Leaf;
 
