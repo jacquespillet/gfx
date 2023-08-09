@@ -16,6 +16,8 @@ struct scene : public object3D
     void UpdateMeshPipeline(gfx::pipelineHandle OldPipelineHandle, mesh *Mesh);
     std::unordered_map<gfx::pipelineHandle, std::vector<std::shared_ptr<mesh>>> Meshes;
     
+    virtual std::shared_ptr<object3D> Clone(b8 CloneUUID) override;
+
     virtual void DrawGUI() override;
     void DrawNodeChildren(hlgfx::object3D *Object);
     void DrawSceneGUI();

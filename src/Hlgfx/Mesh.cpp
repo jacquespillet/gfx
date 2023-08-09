@@ -13,7 +13,7 @@ mesh::mesh(std::string Name) : object3D(Name)
 {
     this->Material = nullptr;
     this->GeometryBuffers = nullptr;
-
+    this->UUID = context::Get()->GetUUID();
     this->UniformBuffer = gfx::context::Get()->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
     this->Uniforms = std::make_shared<gfx::uniformGroup>();
     this->Uniforms->Reset().AddUniformBuffer(ModelBinding, this->UniformBuffer);
@@ -38,6 +38,7 @@ mesh::mesh() : object3D("Mesh")
     this->Material = nullptr;
     this->GeometryBuffers = nullptr;
 
+    this->UUID = context::Get()->GetUUID();
     this->UniformBuffer = gfx::context::Get()->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
     this->Uniforms = std::make_shared<gfx::uniformGroup>();
     this->Uniforms->Reset().AddUniformBuffer(ModelBinding, this->UniformBuffer);
@@ -58,7 +59,7 @@ mesh::mesh() : object3D("Mesh")
 }
 
 
-std::shared_ptr<object3D> mesh::Clone()
+std::shared_ptr<object3D> mesh::Clone(b8 CloneUUID)
 {
     std::shared_ptr<mesh> Result = std::make_shared<mesh>(this->Name);
     
@@ -66,18 +67,22 @@ std::shared_ptr<object3D> mesh::Clone()
     Result->FrustumCulled=this->FrustumCulled;
     Result->CastShadow=this->CastShadow;
     Result->ReceiveShadow=this->ReceiveShadow;
-    Result->UUID= context::Get()->GetUUID();
+    if(CloneUUID) Result->UUID= this->UUID;
     Result->Transform =  this->Transform;
+    Result->Transform.HasChanged=true;
+
     Result->UniformData = this->UniformData; 
     Result->GeometryBuffers = this->GeometryBuffers;
     Result->Material = this->Material;   
+
     
-    transform::DoCompute = false;
+    b8 DoCompute = transform::DoCompute;
+    transform::DoCompute=false;
     for (sz i = 0; i < this->Children.size(); i++)
     {
-        Result->AddObject(this->Children[i]->Clone());
+        Result->AddObject(this->Children[i]->Clone(CloneUUID));
     }
-    transform::DoCompute = true;
+    if(DoCompute) transform::DoCompute=true;
     
     return Result;
 }

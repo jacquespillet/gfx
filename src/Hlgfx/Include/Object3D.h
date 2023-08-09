@@ -24,7 +24,7 @@ struct object3D
     object3D(const object3D &Other) = default;
     ~object3D();
     
-    virtual std::shared_ptr<object3D> Clone();
+    virtual std::shared_ptr<object3D> Clone(b8 CloneUUID);
     
     void SetParent(std::shared_ptr<object3D> Parent);
     

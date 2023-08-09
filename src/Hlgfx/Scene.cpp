@@ -30,6 +30,27 @@ scene::scene(std::string Name) : object3D(Name)
     this->UUID = context::Get()->GetUUID();
 }
 
+std::shared_ptr<object3D> scene::Clone(b8 CloneUUID)
+{
+    std::shared_ptr<scene> Result = std::make_shared<scene>(this->Name);
+
+    Result->RenderOrder=this->RenderOrder;
+    Result->FrustumCulled=this->FrustumCulled;
+    Result->CastShadow=this->CastShadow;
+    Result->ReceiveShadow=this->ReceiveShadow;
+    Result->Transform =  this->Transform;
+    if(CloneUUID) Result->UUID = this->UUID;
+
+    transform::DoCompute = false;
+    for (sz i = 0; i < this->Children.size(); i++)
+    {
+        Result->AddObject(this->Children[i]->Clone(CloneUUID));
+    }
+    transform::DoCompute = true;
+      
+    return Result;    
+}
+
 void scene::UpdateMeshPipeline(gfx::pipelineHandle OldPipelineHandle, mesh *Mesh)
 {
     std::vector<std::shared_ptr<mesh>> &Vec = this->Meshes[OldPipelineHandle];

@@ -717,11 +717,11 @@ void context::DrawAssetsWindow()
                 ImGui::BeginChild("Actions");
                 if(ImGui::Button("Add To Scene"))
                 {
-                    this->Scene->AddObject(this->SelectedObject3D->Clone());
+                    this->Scene->AddObject(this->SelectedObject3D->Clone(false));
                 }
                 if(ImGui::Button("Duplicate"))
                 {
-                    this->AddObjectToProject(this->SelectedObject3D->Clone());
+                    this->AddObjectToProject(this->SelectedObject3D->Clone(false));
                 }
                 if(ImGui::Button("Delete"))
                 {
@@ -865,6 +865,12 @@ void context::DrawAssetsWindow()
             {
                 if(ImGui::Button("Open"))
                 {
+                    this->Scene = this->SelectedScene;
+                }
+                if(ImGui::Button("Duplicate"))
+                {
+                    std::shared_ptr<scene> Duplicate = std::static_pointer_cast<scene>(this->SelectedScene->Clone(false));
+                    this->AddSceneToProject(Duplicate);
                     this->Scene = this->SelectedScene;
                 }
                 if(ImGui::Button("Delete"))

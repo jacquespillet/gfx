@@ -18,7 +18,7 @@ struct mesh : public object3D
     virtual void OnEarlyUpdate() override;
     virtual void OnRender(std::shared_ptr<camera> Camera) override;
     virtual void Serialize(std::ofstream &FileStream) override;
-    virtual std::shared_ptr<object3D> Clone() override;
+    virtual std::shared_ptr<object3D> Clone(b8 CloneUUID) override;
 
     b8 MaterialSelectionOpen = false;
     std::shared_ptr<material> SelectedMaterial = nullptr;

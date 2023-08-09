@@ -23,7 +23,7 @@ object3D::object3D(std::string Name)
     this->UUID = context::Get()->GetUUID();
 }
 
-std::shared_ptr<object3D> object3D::Clone()
+std::shared_ptr<object3D> object3D::Clone(b8 CloneUUID)
 {
     std::shared_ptr<object3D> Result = std::make_shared<object3D>(this->Name);
 
@@ -31,15 +31,18 @@ std::shared_ptr<object3D> object3D::Clone()
     Result->FrustumCulled=this->FrustumCulled;
     Result->CastShadow=this->CastShadow;
     Result->ReceiveShadow=this->ReceiveShadow;
-    Result->UUID= this->UUID;
+    if(CloneUUID) Result->UUID= this->UUID;
     Result->Transform =  this->Transform;
-
-    transform::DoCompute = false;
+    Result->Transform.HasChanged=true;
+    
+    b8 DoCompute = transform::DoCompute;
+    transform::DoCompute=false;
     for (sz i = 0; i < this->Children.size(); i++)
     {
-        Result->AddObject(this->Children[i]->Clone());
+        Result->AddObject(this->Children[i]->Clone(CloneUUID));
     }
-    transform::DoCompute = true;
+    if(DoCompute) transform::DoCompute=true;
+    
       
     return Result;
 }
