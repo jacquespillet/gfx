@@ -40,7 +40,7 @@ void contextGUI::DrawGuizmoGUI()
 
 void contextGUI::DrawObjectMenu()
 {
-    if(ImGui::MenuItem("Clone"))
+    if(ImGui::MenuItem("Duplicate"))
     {
         if(Context->Scene->SceneGUI->NodeClicked)
         {
@@ -206,6 +206,8 @@ void contextGUI::DrawAssetsWindow()
                 {
                     if(this->SelectedObject3D == Object.second && !IsRenaming) this->SelectedObject3D = nullptr;
                     else this->SelectedObject3D = Object.second;
+
+                    context::Get()->Scene->SceneGUI->NodeClicked = nullptr;
                 }
                 ImGui::TreePop();
             }
@@ -226,9 +228,10 @@ void contextGUI::DrawAssetsWindow()
                 {
                     Context->AddObjectToProject(this->SelectedObject3D->Clone(false));
                 }
-                if(ImGui::Button("Delete"))
+                if(ImGui::Button("Delete") || ImGui::IsKeyPressed(261))
                 {
                     Context->RemoveObjectFromProject(this->SelectedObject3D);
+                    this->SelectedObject3D=nullptr;
                 }
                 ImGui::EndChild();
             }
@@ -288,6 +291,7 @@ void contextGUI::DrawAssetsWindow()
                 {
                     if(this->SelectedMaterial == Material.second && !this->IsRenaming) this->SelectedMaterial = nullptr;
                     else this->SelectedMaterial = Material.second;
+                    context::Get()->Scene->SceneGUI->NodeClicked = nullptr;
                 }
 
                 ImGui::TreePop();
@@ -305,9 +309,10 @@ void contextGUI::DrawAssetsWindow()
                 {
                     Context->AddMaterialToProject(this->SelectedMaterial->Clone());
                 }
-                if(ImGui::Button("Delete"))
+                if(ImGui::Button("Delete") || ImGui::IsKeyPressed(261))
                 {
                     Context->RemoveMaterialFromProject(this->SelectedMaterial);
+                    this->SelectedMaterial = nullptr;
                 }
                 this->SelectedMaterial->DrawGUI();
                 ImGui::EndChild();
@@ -378,6 +383,7 @@ void contextGUI::DrawAssetsWindow()
                 {
                     if(this->SelectedTexture == Texture.second && !IsRenaming) this->SelectedTexture =nullptr;
                     else this->SelectedTexture = Texture.second;
+                    context::Get()->Scene->SceneGUI->NodeClicked = nullptr;
                 }
                 ImGui::TreePop();
             }
@@ -396,9 +402,10 @@ void contextGUI::DrawAssetsWindow()
                 ImGui::Text("Mip Levels : %u", Image->MipLevelCount);
                 ImGui::Text("Format : %s", gfx::FormatToString(Image->Format));
 
-                if(ImGui::Button("Delete"))
+                if(ImGui::Button("Delete") || ImGui::IsKeyPressed(261))
                 {
                     Context->RemoveTextureFromProject(this->SelectedTexture);
+                    this->SelectedTexture=nullptr;
                 }
                 if(ImGui::Button("Duplicate"))
                 {
@@ -445,7 +452,8 @@ void contextGUI::DrawAssetsWindow()
                 if(ImGui::IsItemClicked())
                 {
                     if(this->SelectedIndexedGeometryBuffers == Geometry.second && !IsRenaming) this->SelectedIndexedGeometryBuffers =nullptr;
-                    else this->SelectedIndexedGeometryBuffers = Geometry.second;                    
+                    else this->SelectedIndexedGeometryBuffers = Geometry.second;    
+                    context::Get()->Scene->SceneGUI->NodeClicked = nullptr;                
                 }
                 ImGui::TreePop();
             }
@@ -502,7 +510,8 @@ void contextGUI::DrawAssetsWindow()
                 if(ImGui::IsItemClicked())
                 {
                     if(this->SelectedScene == Scene.second && !IsRenaming) this->SelectedScene =nullptr;
-                    else this->SelectedScene = Scene.second;                            
+                    else this->SelectedScene = Scene.second;          
+                    context::Get()->Scene->SceneGUI->NodeClicked = nullptr;                  
                 }
                 ImGui::TreePop();
             }
@@ -525,7 +534,7 @@ void contextGUI::DrawAssetsWindow()
                     Context->AddSceneToProject(Duplicate);
                     Context->Scene = this->SelectedScene;
                 }
-                if(ImGui::Button("Delete"))
+                if(ImGui::Button("Delete") || ImGui::IsKeyPressed(261))
                 {
                     if(Context->Project.Scenes.size() > 1)
                     {
@@ -537,6 +546,7 @@ void contextGUI::DrawAssetsWindow()
                             break;
                         }
                     }
+                    this->SelectedScene = nullptr;
                 }
             }
             ImGui::EndTabItem();
@@ -868,6 +878,12 @@ void object3D::DrawMaterial(){}
 
 void object3D::DrawGUI()
 {
+    if(ImGui::IsKeyPressed(261))
+    {
+        context::Get()->Scene->DeleteObject(context::Get()->Scene->SceneGUI->NodeClicked);
+        context::Get()->Scene->SceneGUI->NodeClicked=nullptr;
+        return;
+    }    
     ImGuiTabBarFlags TabBarFlags = ImGuiTabBarFlags_None;
     ImGui::Text(this->Name.c_str());
     if (ImGui::BeginTabBar("", TabBarFlags))
