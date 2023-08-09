@@ -6,6 +6,7 @@
 
 namespace hlgfx
 {
+struct sceneGUI;
 
 struct scene : public object3D
 {
@@ -19,18 +20,13 @@ struct scene : public object3D
     virtual std::shared_ptr<object3D> Clone(b8 CloneUUID) override;
 
     virtual void DrawGUI() override;
-    void DrawNodeChildren(hlgfx::object3D *Object);
-    void DrawSceneGUI();
+    std::shared_ptr<sceneGUI> SceneGUI;
 
     void Clear();
     void DeleteObject(std::shared_ptr<object3D> Object);
     
     virtual void Serialize(std::string FilePath) override;
     virtual void Serialize(std::ofstream &FileStream) override;
-
-    std::shared_ptr<hlgfx::object3D> NodeClicked = nullptr;
-    b8 IsRenaming = false;
-    u32 GuiWidth = 400;
 };
 
 }

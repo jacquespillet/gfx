@@ -42,17 +42,17 @@ void contextGUI::DrawObjectMenu()
 {
     if(ImGui::MenuItem("Clone"))
     {
-        if(Context->Scene->NodeClicked)
+        if(Context->Scene->SceneGUI->NodeClicked)
         {
 
         }
     }
     if(ImGui::MenuItem("Delete"))
     {
-        if(Context->Scene->NodeClicked)
+        if(Context->Scene->SceneGUI->NodeClicked)
         {
-            Context->Scene->DeleteObject(Context->Scene->NodeClicked);
-            Context->Scene->NodeClicked=nullptr;
+            Context->Scene->DeleteObject(Context->Scene->SceneGUI->NodeClicked);
+            Context->Scene->SceneGUI->NodeClicked=nullptr;
         }
     }
 }
@@ -62,9 +62,9 @@ void contextGUI::AddObjectMenu()
     if(ImGui::MenuItem("Empty"))
     {
         std::shared_ptr<hlgfx::object3D> Empty = std::make_shared<hlgfx::object3D>("Empty");
-        if(this->Context->Scene->NodeClicked != nullptr)
+        if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
         {
-            this->Context->Scene->NodeClicked->AddObject(Empty);
+            this->Context->Scene->SceneGUI->NodeClicked->AddObject(Empty);
         }
         else
         {
@@ -76,9 +76,9 @@ void contextGUI::AddObjectMenu()
         std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<hlgfx::mesh>();
         Mesh->GeometryBuffers = hlgfx::GetTriangleGeometry();
         Mesh->Material = std::make_shared<hlgfx::unlitMaterial>("New Material");
-        if(this->Context->Scene->NodeClicked != nullptr)
+        if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
         {
-            this->Context->Scene->NodeClicked->AddObject(Mesh);
+            this->Context->Scene->SceneGUI->NodeClicked->AddObject(Mesh);
         }
         else
         {
@@ -539,6 +539,195 @@ void contextGUI::DrawGUI()
     DrawMainMenuBar();
     if(ShowAssetsWindow) DrawAssetsWindow();
     this->Context->Scene->DrawGUI();
+}
+
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+
+sceneGUI::sceneGUI(scene *Scene) : Scene(Scene) {}
+
+
+void sceneGUI::DrawGUI()
+{
+    ImGui::ShowDemoWindow();
+
+    u32 WindowWidth = context::Get()->Width;
+    u32 WindowHeight = context::Get()->Height;
+
+    ImGui::SetNextWindowPos(ImVec2(WindowWidth - GuiWidth, 0), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(GuiWidth, WindowHeight), ImGuiCond_Always);
+    
+    ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_NoTitleBar;
+    ImGui::Begin("RightPanel", nullptr, WindowFlags);
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(1,1,1,1));
+
+    ImGui::BeginChild("Scene", ImVec2(GuiWidth, 300));
+    if(ImGui::BeginPopupContextWindow("Scene"))
+    {
+        if(ImGui::BeginMenu("Add Object"))
+        {
+            context::Get()->GUI->AddObjectMenu();
+            ImGui::EndMenu();
+        }
+        ImGui::EndPopup();
+    }
+    DrawSceneGUI();
+    ImGui::EndChild();  
+    ImGui::PopStyleColor(1);
+
+
+    if(NodeClicked != nullptr && NodeClicked != context::Get()->Scene)
+    {
+        NodeClicked->DrawGUI();
+    }
+    else if (NodeClicked == context::Get()->Scene)
+    {  
+
+    }
+
+    this->GuiWidth = ImGui::GetWindowSize().x;
+    ImGui::End();
+}
+
+
+
+
+void sceneGUI::DrawNodeChildren(hlgfx::object3D *Object)
+{
+    //For each children, draw it
+    static ImGuiTreeNodeFlags BaseFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
+    for(size_t i=0; i<Object->Children.size(); i++)
+    {
+        ImGuiTreeNodeFlags NodeFlags = BaseFlags;
+        
+        int NumChildren = Object->Children[i]->Children.size();
+        if(NumChildren == 0) NodeFlags |= ImGuiTreeNodeFlags_Leaf;
+        if(Object->Children[i] == NodeClicked) NodeFlags |= ImGuiTreeNodeFlags_Selected;
+
+        bool NodeOpen=false;
+        //If renaming
+        if(this->IsRenaming && Object->Children[i] == NodeClicked) 
+        {
+            //Get cursor pos so we render the text box at the same position as the treenode
+            f32 CursorPos = ImGui::GetCursorPosX();
+            NodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)i, NodeFlags, Object->Children[i]->Name.c_str(), i);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(CursorPos);
+            ImGui::PushID(i);
+
+            //Draw text input
+            static char Buffer[64];
+            memcpy(&Buffer, Object->Children[i]->Name.data(), Object->Children[i]->Name.size());
+            ImGui::SetKeyboardFocusHere();
+            if(ImGui::InputText("", Buffer, IM_ARRAYSIZE(Buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
+            {
+                Object->Children[i]->Name = Buffer;
+                this->IsRenaming=false;
+            }
+            ImGui::PopID();
+        }
+        else
+        {
+            NodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)i, NodeFlags, Object->Children[i]->Name.c_str(), i);
+        }
+
+        if(ImGui::IsItemClicked(0) || ImGui::IsItemClicked(1))
+        {
+            if(NodeClicked == Object->Children[i] && ImGui::IsItemClicked(0) && !this->IsRenaming) NodeClicked = nullptr;
+            else NodeClicked = Object->Children[i];
+        }
+
+        ImGui::PushID(i);
+        if (ImGui::BeginPopupContextItem("Actions"))
+        {
+            context::Get()->GUI->DrawObjectMenu();
+            if(ImGui::BeginMenu("Add"))
+            {
+                context::Get()->GUI->AddObjectMenu();
+                ImGui::EndMenu();
+            }
+            if(ImGui::MenuItem("Duplicate"))
+            {
+                std::shared_ptr<object3D> Duplicate = this->NodeClicked->Clone(false);
+                Scene->AddObject(Duplicate);
+            }
+            if(ImGui::MenuItem("Rename"))
+            {
+                this->IsRenaming=true;
+            }
+            ImGui::EndPopup();
+        }
+        ImGui::PopID();
+
+
+
+        //Drag and drop
+        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+        {
+            ImGui::SetDragDropPayload("DND_DEMO_CELL", &Object->Children[i], sizeof(std::shared_ptr<hlgfx::object3D>));    // Set payload to carry the index of our item (could be anything)
+            ImGui::Text("Move");
+            ImGui::EndDragDropSource();
+        }
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_DEMO_CELL"))
+            {
+                std::shared_ptr<hlgfx::object3D> Payload = *(std::shared_ptr<hlgfx::object3D>*)payload->Data;
+                Payload->SetParent(Object->Children[i]);
+            }
+            ImGui::EndDragDropTarget();
+        }			
+
+        if(NodeOpen)
+        {
+            if(i < Object->Children.size())
+            {
+                DrawNodeChildren(Object->Children[i].get());
+            }
+            ImGui::TreePop();
+        }
+    }
+}
+
+void sceneGUI::DrawSceneGUI()
+{
+    std::shared_ptr<scene> ScenePtr = context::Get()->Scene;
+
+    static ImGuiTreeNodeFlags BaseFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
+    int NumChildren = Scene->Children.size();
+    if(NumChildren == 0) BaseFlags |= ImGuiTreeNodeFlags_Leaf;
+
+    bool NodeOpen = ImGui::TreeNodeEx("Scene", BaseFlags, Scene->Name.c_str());
+
+    if(ImGui::IsItemClicked())
+    {
+        NodeClicked = ScenePtr;
+    }
+
+    // Drag and drop
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+    {
+        ImGui::SetDragDropPayload("DND_DEMO_CELL", &ScenePtr, sizeof(std::shared_ptr<hlgfx::object3D>));    // Set payload to carry the index of our item (could be anything)
+        ImGui::Text("Move");
+        ImGui::EndDragDropSource();
+    }
+    if (ImGui::BeginDragDropTarget())
+    {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_DEMO_CELL"))
+        {
+            std::shared_ptr<hlgfx::object3D> Payload = *(std::shared_ptr<hlgfx::object3D>*)payload->Data;
+            Payload->SetParent(ScenePtr);  
+        }
+        ImGui::EndDragDropTarget();
+    }
+
+    if(NodeOpen)
+    {
+        DrawNodeChildren(ScenePtr.get());
+        ImGui::TreePop();
+    }    
 }
 
 }

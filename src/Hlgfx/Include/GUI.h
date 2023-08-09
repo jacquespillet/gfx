@@ -42,4 +42,18 @@ struct contextGUI
         
 };
 
+struct sceneGUI
+{
+    sceneGUI(scene *Scene);
+    scene *Scene;
+
+    std::shared_ptr<hlgfx::object3D> NodeClicked = nullptr;
+    b8 IsRenaming = false;
+    u32 GuiWidth = 400;
+
+    void DrawGUI() ;
+    void DrawNodeChildren(hlgfx::object3D *Object);
+    void DrawSceneGUI();
+};
+
 }
