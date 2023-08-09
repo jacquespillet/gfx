@@ -87,12 +87,20 @@ struct context
     void AddGeometryToProject(std::shared_ptr<indexedGeometryBuffers> Geometry);
     void SaveProjectToFile(const char *FolderName);
     void LoadProjectFromFile(const char *FolderName);
+    void NewProject();
     std::shared_ptr<scene> Scene = nullptr;
 
     std::shared_ptr<gfx::imgui> Imgui;
     std::shared_ptr<contextGUI> GUI;
 	
     std::shared_ptr<unlitMaterial> NoMaterial;
+
+    std::shared_ptr<indexedGeometryBuffers> Quad;
+    std::shared_ptr<indexedGeometryBuffers> Cube;
+    std::shared_ptr<indexedGeometryBuffers> Sphere;
+    std::shared_ptr<indexedGeometryBuffers> Cone;
+    std::shared_ptr<indexedGeometryBuffers> Capsule;
+    std::shared_ptr<indexedGeometryBuffers> Cylinder;
 
     //Inputs
     b8 MouseClicked=false;

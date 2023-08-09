@@ -32,10 +32,17 @@ struct indexedGeometryBuffers
 
     void Serialize(std::string FileName);
     static std::shared_ptr<indexedGeometryBuffers> Deserialize(const std::string &FileName);
+
+    void Destroy();
 };
 
 
-std::shared_ptr<indexedGeometryBuffers>  GetTriangleGeometry();
+std::shared_ptr<indexedGeometryBuffers>  GetQuadGeometry();
+std::shared_ptr<indexedGeometryBuffers>  GetCubeGeometry();
+std::shared_ptr<indexedGeometryBuffers>  GetSphereGeometry();
+std::shared_ptr<indexedGeometryBuffers>  GetConeGeometry();
+std::shared_ptr<indexedGeometryBuffers>  GetCapsuleGeometry();
+std::shared_ptr<indexedGeometryBuffers>  GetCylinderGeometry();
 
 std::shared_ptr<indexedGeometryBuffers>  CreateGeometryFromBuffers(void *VertexBufferData, sz VertexBufferSize, void *IndexBufferData, sz IndexBufferSize);
 

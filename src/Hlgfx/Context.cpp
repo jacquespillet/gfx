@@ -3,6 +3,7 @@
 #include "Include/CameraController.h"
 #include "Include/Material.h"
 #include "Include/Util.h"
+#include "Include/Geometry.h"
 #include "Include/GUI.h"
 #include "Loaders/GLTF.h"
 #include "Gfx/Include/CommandBuffer.h"
@@ -148,6 +149,26 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
 
     Singleton->NoMaterial = std::make_shared<unlitMaterial>("NO_MATERIAL");
     Singleton->NoMaterial->UUID = "NO_MATERIAL";
+    
+    //Initialize default 3d objects WITHOUT materials. materials are created when these objects are instanciated.
+    Singleton->Quad = GetQuadGeometry();
+    Singleton->Quad->UUID = "DEFAULT_QUAD";
+
+    Singleton->Cube = GetCubeGeometry();
+    Singleton->Cube->UUID = "DEFAULT_CUBE";
+
+    Singleton->Sphere = GetSphereGeometry();
+    Singleton->Sphere->UUID = "DEFAULT_SPHERE";
+
+    Singleton->Cone = GetConeGeometry();
+    Singleton->Cone->UUID = "DEFAULT_CONE";
+
+    Singleton->Capsule = GetCapsuleGeometry();
+    Singleton->Capsule->UUID = "DEFAULT_CAPSULE";
+
+    Singleton->Cylinder = GetCylinderGeometry();
+    Singleton->Cylinder->UUID = "DEFAULT_CYLINDER";
+    
     return Singleton;
 }
 
@@ -560,6 +581,18 @@ void context::AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level)
     }
 }
 
+void context::NewProject()
+{
+    this->Project.Geometries.clear();
+    this->Project.Materials.clear();
+    this->Project.Objects.clear();
+    this->Project.Textures.clear();
+    this->Project.Scenes.clear();
+    this->Scene = nullptr;
+
+    this->Scene = std::make_shared<scene>("New Scene");
+}
+
 void context::Update(std::shared_ptr<camera> Camera)
 {
 
@@ -633,6 +666,9 @@ void context::Cleanup()
     this->Project.Scenes.clear();
     this->Scene = nullptr;
 
+    
+
+    this->Quad = nullptr;
     
 
     

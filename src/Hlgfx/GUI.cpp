@@ -59,31 +59,107 @@ void contextGUI::DrawObjectMenu()
 
 void contextGUI::AddObjectMenu()
 {
+    std::shared_ptr<object3D> ObjectToAdd;
+    std::shared_ptr<object3D> ParentObject;
+    b8 Add = false;
     if(ImGui::MenuItem("Empty"))
     {
-        std::shared_ptr<hlgfx::object3D> Empty = std::make_shared<hlgfx::object3D>("Empty");
+        Add = true;
+        ObjectToAdd = std::make_shared<hlgfx::object3D>("Empty");
         if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
-        {
-            this->Context->Scene->SceneGUI->NodeClicked->AddObject(Empty);
-        }
+            ParentObject = this->Context->Scene->SceneGUI->NodeClicked;
         else
-        {
-            this->Context->Scene->AddObject(Empty);
-        }
+            ParentObject = this->Context->Scene;
     }
     if(ImGui::MenuItem("Quad"))
     {
-        std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<hlgfx::mesh>();
-        Mesh->GeometryBuffers = hlgfx::GetTriangleGeometry();
-        Mesh->Material = std::make_shared<hlgfx::unlitMaterial>("New Material");
+        Add = true;
+        std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<mesh>("Quad");
+        Mesh->GeometryBuffers = context::Get()->Quad;
+        Mesh->Material = context::Get()->NoMaterial->Clone();
+        context::Get()->AddMaterialToProject(Mesh->Material);
+        
+        ObjectToAdd = Mesh;
         if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
-        {
-            this->Context->Scene->SceneGUI->NodeClicked->AddObject(Mesh);
-        }
+            ParentObject = this->Context->Scene->SceneGUI->NodeClicked;
         else
-        {
-            this->Context->Scene->AddObject(Mesh);
-        }
+            ParentObject = this->Context->Scene;
+        
+    }
+    if(ImGui::MenuItem("Cube"))
+    {
+        Add = true;
+        std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<mesh>("Cube");
+        Mesh->GeometryBuffers = context::Get()->Cube;
+        Mesh->Material = context::Get()->NoMaterial->Clone();
+        context::Get()->AddMaterialToProject(Mesh->Material);
+        
+        ObjectToAdd = Mesh;
+        if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
+            ParentObject = this->Context->Scene->SceneGUI->NodeClicked;
+        else
+            ParentObject = this->Context->Scene;
+    }
+    if(ImGui::MenuItem("Sphere"))
+    {
+        Add = true;
+        std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<mesh>("Sphere");
+        Mesh->GeometryBuffers = context::Get()->Sphere;
+        Mesh->Material = context::Get()->NoMaterial->Clone();
+        context::Get()->AddMaterialToProject(Mesh->Material);
+        
+        ObjectToAdd = Mesh;
+        if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
+            ParentObject = this->Context->Scene->SceneGUI->NodeClicked;
+        else
+            ParentObject = this->Context->Scene;
+    }
+    if(ImGui::MenuItem("Cone"))
+    {
+        Add = true;
+        std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<mesh>("Cone");
+        Mesh->GeometryBuffers = context::Get()->Cone;
+        Mesh->Material = context::Get()->NoMaterial->Clone();
+        context::Get()->AddMaterialToProject(Mesh->Material);
+        
+        ObjectToAdd = Mesh;
+        if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
+            ParentObject = this->Context->Scene->SceneGUI->NodeClicked;
+        else
+            ParentObject = this->Context->Scene;
+    }
+    if(ImGui::MenuItem("Capsule"))
+    {
+        Add = true;
+        std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<mesh>("Capsule");
+        Mesh->GeometryBuffers = context::Get()->Capsule;
+        Mesh->Material = context::Get()->NoMaterial->Clone();
+        context::Get()->AddMaterialToProject(Mesh->Material);
+        
+        ObjectToAdd = Mesh;
+        if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
+            ParentObject = this->Context->Scene->SceneGUI->NodeClicked;
+        else
+            ParentObject = this->Context->Scene;
+    }
+    if(ImGui::MenuItem("Cylinder"))
+    {
+        Add = true;
+        std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<mesh>("Cylinder");
+        Mesh->GeometryBuffers = context::Get()->Cylinder;
+        Mesh->Material = context::Get()->NoMaterial->Clone();
+        context::Get()->AddMaterialToProject(Mesh->Material);
+        
+        ObjectToAdd = Mesh;
+        if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
+            ParentObject = this->Context->Scene->SceneGUI->NodeClicked;
+        else
+            ParentObject = this->Context->Scene;
+    }  
+
+    if(Add)
+    {
+        ParentObject->AddObject(ObjectToAdd);
     }
 }
 void contextGUI::DrawAssetsWindow()
@@ -491,6 +567,15 @@ void contextGUI::DrawMainMenuBar()
                 }                
             }
             ImGui::Separator();
+            if(ImGui::MenuItem("New Project"))
+            {
+                nfdchar_t *OutPath = NULL;
+                nfdresult_t Result = NFD_SaveDialog(NULL, NULL, &OutPath );
+                if ( Result == NFD_OKAY ) {
+                    Context->SaveProjectToFile(OutPath);
+                    Context->NewProject();
+                }
+            }
             if(ImGui::MenuItem("Save Project"))
             {
                 nfdchar_t *OutPath = NULL;

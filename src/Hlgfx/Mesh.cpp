@@ -158,8 +158,7 @@ mesh::~mesh()
     gfx::context::Get()->QueueDestroyBuffer(this->UniformBuffer);
     if(this->GeometryBuffers.use_count() == 1)
     {
-        gfx::context::Get()->QueueDestroyBuffer(this->GeometryBuffers->IndexBuffer);
-        gfx::context::Get()->QueueDestroyVertexBuffer(this->GeometryBuffers->VertexBuffer);
+        this->GeometryBuffers->Destroy();
     }
 }
 

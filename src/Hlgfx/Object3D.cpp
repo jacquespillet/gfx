@@ -281,7 +281,20 @@ std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
         std::string GeometryUUID; GeometryUUID.resize(GeometryUUIDSize);
         FileStream.read(GeometryUUID.data(), GeometryUUIDSize);
         
-        Mesh->GeometryBuffers = context::Get()->Project.Geometries[GeometryUUID];
+        if(GeometryUUID == "DEFAULT_QUAD")
+            Mesh->GeometryBuffers = context::Get()->Quad;
+        else if(GeometryUUID == "DEFAULT_CUBE")
+            Mesh->GeometryBuffers = context::Get()->Cube;
+        else if(GeometryUUID == "DEFAULT_SPHERE")
+            Mesh->GeometryBuffers = context::Get()->Sphere;
+        else if(GeometryUUID == "DEFAULT_CONE")
+            Mesh->GeometryBuffers = context::Get()->Cone;
+        else if(GeometryUUID == "DEFAULT_CAPSULE")
+            Mesh->GeometryBuffers = context::Get()->Capsule;
+        else if(GeometryUUID == "DEFAULT_CYLINDER")
+            Mesh->GeometryBuffers = context::Get()->Cylinder;
+        else
+            Mesh->GeometryBuffers = context::Get()->Project.Geometries[GeometryUUID];
 
         u32 MaterialUUIDSize;
         FileStream.read((char*)&MaterialUUIDSize, sizeof(u32));
