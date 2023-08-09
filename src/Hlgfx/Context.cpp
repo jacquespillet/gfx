@@ -97,15 +97,14 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     ContextInitialize.InfoCallback = InfoCallback;
     ContextInitialize.Debug = true;
     Singleton->GfxContext = gfx::context::Initialize(ContextInitialize, *Singleton->Window);
-
     Singleton->Swapchain = Singleton->GfxContext->CreateSwapchain(Singleton->Width, Singleton->Height);
     Singleton->SwapchainPass = Singleton->GfxContext->GetDefaultRenderPass();
 
 
-    Singleton->Pipelines[UnlitPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/Unlit/Unlit.json");
-
     Singleton->Imgui = gfx::imgui::Initialize(Singleton->GfxContext, Singleton->Window, Singleton->SwapchainPass);
     Singleton->GUI = std::make_shared<contextGUI>(Singleton.get());
+    Singleton->Pipelines[UnlitPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/Unlit/Unlit.json");
+
     
     struct rgba {uint8_t r, g, b, a;};
     u32 TexWidth = 64;
@@ -136,7 +135,6 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     };    
 
     defaultTextures::BlackTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
-
 
     Color = {0,0,255,255};
     for (sz i = 0; i < TexWidth * TexHeight; i++)
@@ -627,16 +625,19 @@ void context::Cleanup()
 {
     GfxContext->WaitIdle();
 
+    //Clean project
     this->Project.Geometries.clear();
     this->Project.Materials.clear();
     this->Project.Objects.clear();
     this->Project.Textures.clear();
+    this->Project.Scenes.clear();
+    this->Scene = nullptr;
 
-    //Clears the scene, effectively dereferences all the pointers to call their destructors before we clean up
-    this->Scene->Children = std::vector<std::shared_ptr<object3D>>();
-    this->Scene->Meshes = std::unordered_map<gfx::pipelineHandle, std::vector<std::shared_ptr<mesh>>>();
-    this->Scene->SceneGUI->NodeClicked = nullptr;
     
+
+    
+    NoMaterial = nullptr;
+
     GfxContext->QueueDestroyImage(defaultTextures::BlackTexture->Handle);
     GfxContext->QueueDestroyImage(defaultTextures::WhiteTexture->Handle);
     GfxContext->QueueDestroyImage(defaultTextures::BlueTexture->Handle);
@@ -653,7 +654,6 @@ void context::Cleanup()
     }
 
     Imgui->Cleanup();
-
     GfxContext->DestroySwapchain();
     GfxContext->Cleanup();
 
@@ -722,7 +722,6 @@ void context::LoadProjectFromFile(const char *FileName)
     
 
 
-
     for (sz i = 0; i < TextureFiles.size(); i++)
     {
         std::shared_ptr<texture> Texture = texture::Deserialize(TextureFiles[i]);
@@ -753,7 +752,8 @@ void context::LoadProjectFromFile(const char *FileName)
         Project.Scenes[Scene->UUID] = Scene;  
         if(i==0) this->Scene = Scene;
     }
-    
+#if 0
+#endif
 }
 
 void context::SaveProjectToFile(const char *FileName)
