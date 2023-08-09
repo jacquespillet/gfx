@@ -14,6 +14,8 @@ struct scene : public object3D
     virtual void OnRender(std::shared_ptr<camera> Camera);
     virtual void AddObject(std::shared_ptr<object3D> Object) override;
     void AddMeshesInObject(std::shared_ptr<object3D> Object);
+    void AddMesh(std::shared_ptr<object3D> Object);
+
     void UpdateMeshPipeline(gfx::pipelineHandle OldPipelineHandle, mesh *Mesh);
     std::unordered_map<gfx::pipelineHandle, std::vector<std::shared_ptr<mesh>>> Meshes;
     

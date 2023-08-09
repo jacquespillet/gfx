@@ -744,7 +744,7 @@ void sceneGUI::DrawNodeChildren(hlgfx::object3D *Object)
         this->IsRenaming=true;
     }
     //For each children, draw it
-    static ImGuiTreeNodeFlags BaseFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
+    static ImGuiTreeNodeFlags BaseFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_NavLeftJumpsBackHere;
     for(size_t i=0; i<Object->Children.size(); i++)
     {
         ImGuiTreeNodeFlags NodeFlags = BaseFlags;
@@ -760,6 +760,7 @@ void sceneGUI::DrawNodeChildren(hlgfx::object3D *Object)
             //Get cursor pos so we render the text box at the same position as the treenode
             f32 CursorPos = ImGui::GetCursorPosX();
             NodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)i, NodeFlags, Object->Children[i]->Name.c_str(), i);
+
             ImGui::SameLine();
             ImGui::SetCursorPosX(CursorPos);
             ImGui::PushID(i);
@@ -780,6 +781,10 @@ void sceneGUI::DrawNodeChildren(hlgfx::object3D *Object)
             NodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)i, NodeFlags, Object->Children[i]->Name.c_str(), i);
         }
 
+        if(ImGui::IsItemFocused())
+        {
+            NodeClicked = Object->Children[i];
+        }
         if(ImGui::IsItemClicked(0) || ImGui::IsItemClicked(1))
         {
             if(NodeClicked == Object->Children[i] && ImGui::IsItemClicked(0) && !this->IsRenaming) NodeClicked = nullptr;
@@ -856,7 +861,7 @@ void sceneGUI::DrawSceneGUI()
     // Drag and drop
     if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
     {
-        ImGui::SetDragDropPayload("DND_DEMO_CELL", &ScenePtr, sizeof(std::shared_ptr<hlgfx::object3D>));    // Set payload to carry the index of our item (could be anything)
+        ImGui::SetDragDropPayload("DND_DEMO_CELL", &ScenePtr, sizeof(std::shared_ptr<hlgfx::object3D>));
         ImGui::Text("Move");
         ImGui::EndDragDropSource();
     }

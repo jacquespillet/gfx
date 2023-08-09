@@ -122,15 +122,17 @@ void transform::SetParent(transform *Parent)
         return;
     }
     
-    v3f ScaleDifference = this->GetWorldScale() / Parent->GetWorldScale();
+    v3f ParentScale = Parent->GetWorldScale();
+    v3f ThisScale = this->GetWorldScale();
+    v3f ScaleDifference = ThisScale / ParentScale;
     this->LocalValues.LocalScale = ScaleDifference;
     
     quat ThisRotation = this->GetWorldRotation();
     quat ParentRotation = Parent->GetWorldRotation();
     this->LocalValues.LocalRotationQuat = glm::inverse(ParentRotation) * (ThisRotation);
 
-    v3f PositionDifference = this->GetWorldPosition() - Parent->GetWorldPosition();
-    this->LocalValues.LocalPosition = (glm::inverse(ParentRotation) * PositionDifference) * this->LocalValues.LocalScale;
+    v3f PositionDifference = (this->GetWorldPosition()  - Parent->GetWorldPosition()) / ParentScale;
+    this->LocalValues.LocalPosition = (glm::inverse(ParentRotation) * PositionDifference);
 
     this->Parent = Parent;
 
