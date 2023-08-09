@@ -224,7 +224,7 @@ void contextGUI::DrawAssetsWindow()
                 {
                     this->Context->Scene->AddObject(this->SelectedObject3D->Clone(false));
                 }
-                if(ImGui::Button("Duplicate"))
+                if(ImGui::Button("Duplicate") || (context::Get()->CtrlPressed && ImGui::IsKeyPressed(68)))
                 {
                     Context->AddObjectToProject(this->SelectedObject3D->Clone(false));
                 }
@@ -305,7 +305,7 @@ void contextGUI::DrawAssetsWindow()
                 }
 
                 ImGui::BeginChild("Material");
-                if(ImGui::Button("Duplicate"))
+                if(ImGui::Button("Duplicate") || (context::Get()->CtrlPressed && ImGui::IsKeyPressed(68)))
                 {
                     Context->AddMaterialToProject(this->SelectedMaterial->Clone());
                 }
@@ -407,7 +407,7 @@ void contextGUI::DrawAssetsWindow()
                     Context->RemoveTextureFromProject(this->SelectedTexture);
                     this->SelectedTexture=nullptr;
                 }
-                if(ImGui::Button("Duplicate"))
+                if(ImGui::Button("Duplicate") || (context::Get()->CtrlPressed && ImGui::IsKeyPressed(68)))
                 {
                     Context->AddTextureToProject(this->SelectedTexture->Clone());
                 }
@@ -528,7 +528,7 @@ void contextGUI::DrawAssetsWindow()
                 {
                     Context->Scene = this->SelectedScene;
                 }
-                if(ImGui::Button("Duplicate"))
+                if(ImGui::Button("Duplicate") || (context::Get()->CtrlPressed && ImGui::IsKeyPressed(68)))
                 {
                     std::shared_ptr<scene> Duplicate = std::static_pointer_cast<scene>(this->Context->Scene->Clone(false));
                     Context->AddSceneToProject(Duplicate);
@@ -739,6 +739,10 @@ void sceneGUI::DrawGUI()
 
 void sceneGUI::DrawNodeChildren(hlgfx::object3D *Object)
 {
+    if(ImGui::IsKeyPressed(291))
+    {
+        this->IsRenaming=true;
+    }
     //For each children, draw it
     static ImGuiTreeNodeFlags BaseFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
     for(size_t i=0; i<Object->Children.size(); i++)
@@ -883,7 +887,16 @@ void object3D::DrawGUI()
         context::Get()->Scene->DeleteObject(context::Get()->Scene->SceneGUI->NodeClicked);
         context::Get()->Scene->SceneGUI->NodeClicked=nullptr;
         return;
-    }    
+    }
+
+    if(context::Get()->CtrlPressed && ImGui::IsKeyPressed(68))
+    {
+        std::shared_ptr<object3D> Clone = this->Clone(false);
+        transform::DoCompute=false;
+        this->Parent->AddObject(Clone);
+        transform::DoCompute=true;
+    }
+
     ImGuiTabBarFlags TabBarFlags = ImGuiTabBarFlags_None;
     ImGui::Text(this->Name.c_str());
     if (ImGui::BeginTabBar("", TabBarFlags))
