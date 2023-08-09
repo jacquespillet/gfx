@@ -320,6 +320,8 @@ void context::StartFrame()
     CommandBuffer->SetScissor(0, 0, Width, Height);
 
     Imgui->StartFrame();
+    this->CtrlPressed = ImGui::GetIO().KeyCtrl;
+
     this->GUI->StartFrame();
 
 
@@ -606,6 +608,8 @@ void context::Update(std::shared_ptr<camera> Camera)
 void context::EndFrame()
 {
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();    
+    ImGui::GetIO().KeyCtrl = this->CtrlPressed;
+    
     Imgui->EndFrame(CommandBuffer);
     CommandBuffer->EndPass();
     GfxContext->EndFrame();
@@ -666,7 +670,12 @@ void context::Cleanup()
     this->Project.Scenes.clear();
     this->Scene = nullptr;
 
-    
+    Quad->Destroy();
+    Cube->Destroy();
+    Sphere->Destroy();
+    Cone->Destroy();
+    Capsule->Destroy();
+    Cylinder->Destroy();    
 
     this->Quad = nullptr;
     

@@ -546,6 +546,46 @@ void contextGUI::DrawAssetsWindow()
     ImGui::End();
 }
 
+
+void contextGUI::SaveAsProject()
+{
+    nfdchar_t *OutPath = NULL;
+    nfdresult_t Result = NFD_SaveDialog(NULL, NULL, &OutPath );
+    if ( Result == NFD_OKAY ) {
+        Context->SaveProjectToFile(OutPath);
+        this->ProjectFile = OutPath;
+    }
+}
+
+void contextGUI::SaveProject()
+{
+    assert(this->ProjectFile != "");
+    Context->SaveProjectToFile(ProjectFile.c_str());
+}
+
+void contextGUI::OpenProject()
+{
+    nfdchar_t *OutPath = NULL;
+    nfdresult_t Result = NFD_OpenDialog(NULL, NULL, &OutPath );
+    if ( Result == NFD_OKAY ) {
+        Context->NewProject(); //This clears the project
+        Context->LoadProjectFromFile(OutPath);
+        this->ProjectFile = OutPath;
+    }     
+}
+
+void contextGUI::NewProject()
+{
+    nfdchar_t *OutPath = NULL;
+    nfdresult_t Result = NFD_SaveDialog(NULL, NULL, &OutPath );
+    if ( Result == NFD_OKAY ) {
+        Context->SaveProjectToFile(OutPath);
+        Context->NewProject();
+        this->ProjectFile = "";
+    }
+}
+
+
 void contextGUI::DrawMainMenuBar()
 {
     if (ImGui::BeginMainMenuBar())
@@ -567,30 +607,28 @@ void contextGUI::DrawMainMenuBar()
                 }                
             }
             ImGui::Separator();
-            if(ImGui::MenuItem("New Project"))
+            if(ImGui::MenuItem("New Project", "Ctrl + N"))
             {
-                nfdchar_t *OutPath = NULL;
-                nfdresult_t Result = NFD_SaveDialog(NULL, NULL, &OutPath );
-                if ( Result == NFD_OKAY ) {
-                    Context->SaveProjectToFile(OutPath);
-                    Context->NewProject();
+                NewProject();
+            }
+            if(ImGui::MenuItem("Save Project", "Ctrl + S"))
+            {
+                if(this->ProjectFile != "")
+                {
+                    SaveProject();
+                }
+                else
+                {
+                    SaveAsProject();
                 }
             }
-            if(ImGui::MenuItem("Save Project"))
+            if(ImGui::MenuItem("Save Project As", "Ctrl + S"))
             {
-                nfdchar_t *OutPath = NULL;
-                nfdresult_t Result = NFD_SaveDialog(NULL, NULL, &OutPath );
-                if ( Result == NFD_OKAY ) {
-                    Context->SaveProjectToFile(OutPath);
-                }
+                SaveAsProject();
             }
-            if(ImGui::MenuItem("Load Project"))
+            if(ImGui::MenuItem("Open Project", "Ctrl + O"))
             {
-                nfdchar_t *OutPath = NULL;
-                nfdresult_t Result = NFD_OpenDialog(NULL, NULL, &OutPath );
-                if ( Result == NFD_OKAY ) {
-                    Context->LoadProjectFromFile(OutPath);
-                }                
+                OpenProject();
             }
             ImGui::Separator();
             ImGui::EndMenu();
@@ -624,6 +662,16 @@ void contextGUI::DrawGUI()
     DrawMainMenuBar();
     if(ShowAssetsWindow) DrawAssetsWindow();
     this->Context->Scene->DrawGUI();
+
+    if(Context->CtrlPressed)
+    {
+        if(ImGui::IsKeyPressed(83))
+            SaveProject();
+        else if(ImGui::IsKeyPressed(78))
+            NewProject();
+        else if(ImGui::IsKeyPressed(79))
+            OpenProject();
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////

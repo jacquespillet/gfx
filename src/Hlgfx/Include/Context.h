@@ -114,6 +114,7 @@ struct context
     b8 MouseWheelChanged=false;
     f64 MouseWheelX = 0;
     f64 MouseWheelY = 0;
+    b8 CtrlPressed = false;
 
     
 };

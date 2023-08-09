@@ -3,6 +3,8 @@
 #include <imgui.h>
 #include <ImGuizmo.h>
 #include <memory>
+#include <string>
+
 namespace hlgfx
 {
 struct object3D;
@@ -22,6 +24,11 @@ struct contextGUI
     void DrawGuizmoGUI();
     void DrawMainMenuBar();
     void DrawAssetsWindow();
+
+    void SaveProject();
+    void SaveAsProject();
+    void OpenProject();
+    void NewProject();
    
     context *Context;
     
@@ -39,7 +46,8 @@ struct contextGUI
     std::shared_ptr<scene> SelectedScene = nullptr;
     std::shared_ptr<texture> SelectedTexture = nullptr;
     std::shared_ptr<object3D> SelectedObject3D = nullptr;
-        
+
+    std::string ProjectFile = "";      
 };
 
 struct sceneGUI
