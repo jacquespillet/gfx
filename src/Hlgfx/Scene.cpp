@@ -2,6 +2,7 @@
 #include "Include/Context.h"
 
 #include "Include/Scene.h"
+#include "Include/GUI.h"
 #include "Include/Mesh.h"
 #include "Include/Material.h"
 #include "Include/Bindings.h"
@@ -128,22 +129,56 @@ void scene::DrawNodeChildren(hlgfx::object3D *Object)
         if(NumChildren == 0) NodeFlags |= ImGuiTreeNodeFlags_Leaf;
         if(Object->Children[i] == NodeClicked) NodeFlags |= ImGuiTreeNodeFlags_Selected;
 
-        bool NodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)i, NodeFlags, Object->Children[i]->Name.c_str(), i);
-        
+        bool NodeOpen=false;
+        //If renaming
+        if(this->IsRenaming && Object->Children[i] == NodeClicked) 
+        {
+            //Get cursor pos so we render the text box at the same position as the treenode
+            f32 CursorPos = ImGui::GetCursorPosX();
+            NodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)i, NodeFlags, Object->Children[i]->Name.c_str(), i);
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(CursorPos);
+            ImGui::PushID(i);
+
+            //Draw text input
+            static char Buffer[64];
+            memcpy(&Buffer, Object->Children[i]->Name.data(), Object->Children[i]->Name.size());
+            ImGui::SetKeyboardFocusHere();
+            if(ImGui::InputText("", Buffer, IM_ARRAYSIZE(Buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
+            {
+                Object->Children[i]->Name = Buffer;
+                this->IsRenaming=false;
+            }
+            ImGui::PopID();
+        }
+        else
+        {
+            NodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)i, NodeFlags, Object->Children[i]->Name.c_str(), i);
+        }
+
         if(ImGui::IsItemClicked(0) || ImGui::IsItemClicked(1))
         {
-            if(NodeClicked == Object->Children[i] && ImGui::IsItemClicked(0)) NodeClicked = nullptr;
+            if(NodeClicked == Object->Children[i] && ImGui::IsItemClicked(0) && !this->IsRenaming) NodeClicked = nullptr;
             else NodeClicked = Object->Children[i];
         }
 
         ImGui::PushID(i);
         if (ImGui::BeginPopupContextItem("Actions"))
         {
-            context::Get()->DrawObjectMenu();
+            context::Get()->GUI->DrawObjectMenu();
             if(ImGui::BeginMenu("Add"))
             {
-                context::Get()->AddObjectMenu();
+                context::Get()->GUI->AddObjectMenu();
                 ImGui::EndMenu();
+            }
+            if(ImGui::MenuItem("Duplicate"))
+            {
+                std::shared_ptr<object3D> Duplicate = this->NodeClicked->Clone(false);
+                this->AddObject(Duplicate);
+            }
+            if(ImGui::MenuItem("Rename"))
+            {
+                this->IsRenaming=true;
             }
             ImGui::EndPopup();
         }
@@ -273,7 +308,7 @@ void scene::DrawGUI()
     {
         if(ImGui::BeginMenu("Add Object"))
         {
-            context::Get()->AddObjectMenu();
+            context::Get()->GUI->AddObjectMenu();
             ImGui::EndMenu();
         }
         ImGui::EndPopup();

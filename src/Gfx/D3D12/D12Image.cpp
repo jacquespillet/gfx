@@ -67,6 +67,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     memcpy(this->Data.data(), ImageData.Data, ImageData.DataSize);
     this->ChannelCount = ImageData.ChannelCount;
     this->Type = ImageData.Type;
+    this->CreateInfo = CreateInfo;
 
     context *D12Context = context::Get();
 

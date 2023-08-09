@@ -265,6 +265,7 @@ endif()
 
 set (sourceCode ${sourceCode}
                 src/Hlgfx/Context.cpp
+                src/Hlgfx/GUI.cpp
                 src/Hlgfx/Texture.cpp
                 src/Hlgfx/Object3D.cpp
                 src/Hlgfx/Transform.cpp

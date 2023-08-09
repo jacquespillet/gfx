@@ -51,6 +51,8 @@ struct image
 
     std::vector<u8> Data;
     
+    imageCreateInfo CreateInfo;
+
     std::shared_ptr<void> ApiData;
     image() = default;
     void Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage, u32 SampleCount=1);

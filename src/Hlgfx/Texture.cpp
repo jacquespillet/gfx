@@ -46,6 +46,23 @@ void texture::Serialize(std::string FilePath)
     FileStream.close();
 }
 
+std::shared_ptr<texture> texture::Clone()
+{
+    gfx::image *Image = gfx::context::Get()->GetImage(this->Handle);
+    gfx::imageData ImageData = {};
+    ImageData.ChannelCount = Image->ChannelCount;
+    ImageData.Data = Image->Data.data();
+    ImageData.DataSize = Image->Data.size();
+    ImageData.Format = Image->Format;
+    ImageData.Type = Image->Type;
+    ImageData.Width = Image->Extent.Width;
+    ImageData.Height = Image->Extent.Height;
+
+    gfx::imageHandle DuplicatedImage = gfx::context::Get()->CreateImage(ImageData, Image->CreateInfo);
+    std::shared_ptr<texture> Result = std::make_shared<texture>(this->Name + "_Duplicated", DuplicatedImage);
+    return Result;
+}
+
 std::shared_ptr<texture> texture::Deserialize(std::string FilePath)
 {
     std::ifstream FileStream;

@@ -417,7 +417,7 @@ void unlitMaterial::Serialize(const std::string &FileName)
         FileStream.write(this->MetallicRoughnessTexture->UUID.data(), this->MetallicRoughnessTexture->UUID.size()); 
     }
 
-    u8 HasOcclusionTexture = u8(this->OcclusionTexture->Handle != defaultTextures::WhiteTexture->Handle); 
+    u8 HasOcclusionTexture = u8(this->OcclusionTexture->Handle != defaultTextures::WhiteTexture->Handle && this->OcclusionTexture->Handle != defaultTextures::BlackTexture->Handle); 
     FileStream.write((char*)&HasOcclusionTexture, sizeof(u8));
     if(HasOcclusionTexture)
     {
@@ -426,7 +426,7 @@ void unlitMaterial::Serialize(const std::string &FileName)
         FileStream.write(this->OcclusionTexture->UUID.data(), this->OcclusionTexture->UUID.size()); 
     }
 
-    u8 HasNormalTexture = u8(this->NormalTexture->Handle != defaultTextures::BlueTexture->Handle); 
+    u8 HasNormalTexture = u8(this->NormalTexture->Handle != defaultTextures::BlueTexture->Handle && this->OcclusionTexture->Handle != defaultTextures::BlackTexture->Handle); 
     FileStream.write((char*)&HasNormalTexture, sizeof(u8));
     if(HasNormalTexture)
     {

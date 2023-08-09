@@ -118,6 +118,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     memcpy(Data.data(), ImageData.Data, Data.size());
     ChannelCount = ChannelCountFromFormat(Format);
     this->Type = ImageData.Type;
+    this->CreateInfo = CreateInfo;
 
 
     MipLevelCount = CreateInfo.GenerateMipmaps ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;

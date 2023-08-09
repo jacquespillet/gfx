@@ -5,6 +5,7 @@
 #include "Include/Scene.h"
 #include "Include/Mesh.h"
 #include "Include/Material.h"
+#include "Include/GUI.h"
 #include "Include/Bindings.h"
 #include <imgui.h>
 #include <ImGuizmo.h>
@@ -154,7 +155,7 @@ void object3D::OnBeforeRender(std::shared_ptr<camera> Camera)
     
         ImGuiIO& io = ImGui::GetIO();
         ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-        if(ImGuizmo::Manipulate(glm::value_ptr(Camera->Data.ViewMatrix), glm::value_ptr(Camera->Data.ProjectionMatrix), context::Get()->CurrentGizmoOperation, context::Get()->CurrentGizmoMode, glm::value_ptr(ModelMatrix), NULL, NULL))
+        if(ImGuizmo::Manipulate(glm::value_ptr(Camera->Data.ViewMatrix), glm::value_ptr(Camera->Data.ProjectionMatrix), context::Get()->GUI->CurrentGizmoOperation, context::Get()->GUI->CurrentGizmoMode, glm::value_ptr(ModelMatrix), NULL, NULL))
         {
             //Remove the localToWorld component
             ModelMatrix = glm::inverse(this->Transform.Parent->Matrices.LocalToWorld) * ModelMatrix;

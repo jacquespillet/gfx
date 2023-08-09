@@ -19,6 +19,7 @@ namespace hlgfx
 
 struct scene;  
 struct mesh;  
+struct contextGUI;  
 void OnResizeWindow(app::window &Window, app::v2i NewSize);
 void OnClickedWindow(app::window &Window, app::mouseButton Button, bool Clicked);
 void OnMousePositionChangedWindow(app::window &Window, f64 PosX, f64 PosY);
@@ -47,7 +48,6 @@ struct context
 
 
 
-    void DrawGUI();
     b8 ShouldClose();
 
     ~context();
@@ -66,7 +66,6 @@ struct context
     static const u32 UnlitPipeline = 0;
     std::unordered_map<u32, gfx::pipelineHandle> Pipelines;
 
-    b8 ShowAssetsWindow = false;
     std::unordered_map<materialFlags::bits, gfx::pipelineHandle> AllPipelines;
     std::string GetUUID();
     struct project
@@ -86,21 +85,16 @@ struct context
     void AddMeshToProject(std::shared_ptr<mesh> Object);
     void AddSceneToProject(std::shared_ptr<scene> Scene);
     void AddGeometryToProject(std::shared_ptr<indexedGeometryBuffers> Geometry);
-    std::shared_ptr<material> SelectedMaterial = nullptr;
-    std::shared_ptr<indexedGeometryBuffers> SelectedIndexedGeometryBuffers = nullptr;
-    std::shared_ptr<scene> SelectedScene = nullptr;
-    std::shared_ptr<texture> SelectedTexture = nullptr;
-    std::shared_ptr<object3D> SelectedObject3D = nullptr;
     void SaveProjectToFile(const char *FolderName);
     void LoadProjectFromFile(const char *FolderName);
     std::shared_ptr<scene> Scene = nullptr;
 
     std::shared_ptr<gfx::imgui> Imgui;
+    std::shared_ptr<contextGUI> GUI;
 	
     std::shared_ptr<unlitMaterial> NoMaterial;
 
     //Inputs
-    b8 IsInteractingGUI = false;
     b8 MouseClicked=false;
     b8 MouseReleased =false;
     app::mouseButton ButtonClicked;
@@ -113,15 +107,7 @@ struct context
     f64 MouseWheelX = 0;
     f64 MouseWheelY = 0;
 
-    ImGuizmo::OPERATION CurrentGizmoOperation = (ImGuizmo::TRANSLATE);
-    ImGuizmo::MODE CurrentGizmoMode = (ImGuizmo::WORLD);
-
-    void DrawObjectMenu();
-    void AddObjectMenu();
-    void DrawGuizmoGUI();
-    void DrawMainMenuBar();
-    void DrawAssetsWindow();
-   
+    
 };
 
 }

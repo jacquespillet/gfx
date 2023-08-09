@@ -29,6 +29,7 @@ struct scene : public object3D
     virtual void Serialize(std::ofstream &FileStream) override;
 
     std::shared_ptr<hlgfx::object3D> NodeClicked = nullptr;
+    b8 IsRenaming = false;
     u32 GuiWidth = 400;
 };
 

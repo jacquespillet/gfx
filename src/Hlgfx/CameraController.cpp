@@ -1,5 +1,6 @@
 #include "Include/CameraController.h"
 #include "Include/Context.h"
+#include "Include/Gui.h"
 #include <glm/ext.hpp>
 
 namespace hlgfx
@@ -22,7 +23,7 @@ void orbitCameraController::Recalculate()
 void orbitCameraController::OnUpdate()
 {
     context *Context = context::Get();
-    if(Context->IsInteractingGUI) return;
+    if(Context->GUI->IsInteractingGUI) return;
 
     b8 ShouldRecalculate=false;
     if(Context->LeftButtonPressed)

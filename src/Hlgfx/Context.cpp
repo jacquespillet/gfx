@@ -3,11 +3,11 @@
 #include "Include/CameraController.h"
 #include "Include/Material.h"
 #include "Include/Util.h"
+#include "Include/GUI.h"
 #include "Loaders/GLTF.h"
 #include "Gfx/Include/CommandBuffer.h"
-
+#include "Gfx/Common/Util.h"
 #include <iostream>
-#include <nfd.h>
 #include <filesystem>
 #include <queue>
 
@@ -105,6 +105,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->Pipelines[UnlitPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/Unlit/Unlit.json");
 
     Singleton->Imgui = gfx::imgui::Initialize(Singleton->GfxContext, Singleton->Window, Singleton->SwapchainPass);
+    Singleton->GUI = std::make_shared<contextGUI>(Singleton.get());
     
     struct rgba {uint8_t r, g, b, a;};
     u32 TexWidth = 64;
@@ -285,6 +286,7 @@ void context::StartFrame()
     this->MouseReleased=false;
     this->MouseMoved=false;
     this->MouseWheelChanged=false;
+
     Window->PollEvents();
     
     this->Scene->OnEarlyUpdate();
@@ -299,10 +301,10 @@ void context::StartFrame()
     CommandBuffer->SetScissor(0, 0, Width, Height);
 
     Imgui->StartFrame();
-    IsInteractingGUI = (ImGui::IsAnyItemHovered() || ImGui::IsAnyItemActive() || ImGui::IsAnyItemFocused() || ImGui::IsAnyWindowHovered() || ImGuizmo::IsUsingAny());
+    this->GUI->StartFrame();
 
 
-    this->DrawGUI();
+    this->GUI->DrawGUI();
 }
 
 std::string context::GetUUID()
@@ -620,351 +622,6 @@ void context::OnMouseWheelChanged(f64 OffsetX, f64 OffsetY)
     this->MouseWheelY = OffsetY;
 }
 
-void context::DrawGuizmoGUI()
-{
-    ImGui::SetNextWindowPos(ImVec2(40, 40), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(100, 100), ImGuiCond_Always);
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.3, 0.3, 0.3, 0.3));
-    ImGui::Begin("Guizmo", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoTitleBar);
-    if (ImGui::Button("Translate"))
-        CurrentGizmoOperation = ImGuizmo::TRANSLATE;
-    if (ImGui::Button("Rotate"))
-        CurrentGizmoOperation = ImGuizmo::ROTATE;
-    if (ImGui::Button("Scale"))
-        CurrentGizmoOperation = ImGuizmo::SCALE;
-    
-    b8 IsLocal = CurrentGizmoMode == ImGuizmo::LOCAL;
-    if(ImGui::Checkbox("Local", &IsLocal))
-    {
-        CurrentGizmoMode = IsLocal ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
-    }
-    ImGui::End();
-    ImGui::PopStyleColor();
-}
-
-void context::DrawObjectMenu()
-{
-    if(ImGui::MenuItem("Clone"))
-    {
-        if(Scene->NodeClicked)
-        {
-
-        }
-    }
-    if(ImGui::MenuItem("Delete"))
-    {
-        if(Scene->NodeClicked)
-        {
-            Scene->DeleteObject(Scene->NodeClicked);
-            Scene->NodeClicked=nullptr;
-        }
-    }
-}
-
-void context::AddObjectMenu()
-{
-    if(ImGui::MenuItem("Empty"))
-    {
-        std::shared_ptr<hlgfx::object3D> Empty = std::make_shared<hlgfx::object3D>("Empty");
-        if(this->Scene->NodeClicked != nullptr)
-        {
-            this->Scene->NodeClicked->AddObject(Empty);
-        }
-        else
-        {
-            this->Scene->AddObject(Empty);
-        }
-    }
-    if(ImGui::MenuItem("Quad"))
-    {
-        std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<hlgfx::mesh>();
-        Mesh->GeometryBuffers = hlgfx::GetTriangleGeometry();
-        Mesh->Material = std::make_shared<hlgfx::unlitMaterial>("New Material");
-        if(this->Scene->NodeClicked != nullptr)
-        {
-            this->Scene->NodeClicked->AddObject(Mesh);
-        }
-        else
-        {
-            this->Scene->AddObject(Mesh);
-        }
-    }
-}
-void context::DrawAssetsWindow()
-{
-    ImGui::SetNextWindowSize(ImVec2(500, 500), ImGuiCond_Appearing);
-    ImGui::Begin("Assets", 0);
-    ImGuiTabBarFlags TabBarFlags = ImGuiTabBarFlags_None;
-    if (ImGui::BeginTabBar("Assets", TabBarFlags))
-    {
-        if(ImGui::BeginTabItem("Objects"))
-        {
-            for (auto &Object : this->Project.Objects)
-            {
-                ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
-                if(this->SelectedObject3D.get() == Object.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
-                ImGui::TreeNodeEx(Object.second->Name.c_str(), Flags);
-                if(ImGui::IsItemClicked())
-                {
-                    if(this->SelectedObject3D == Object.second) this->SelectedObject3D = nullptr;
-                    else this->SelectedObject3D = Object.second;
-                }
-                ImGui::TreePop();
-            }
-            
-            if(this->SelectedObject3D)
-            {
-                ImGui::BeginChild("Actions");
-                if(ImGui::Button("Add To Scene"))
-                {
-                    this->Scene->AddObject(this->SelectedObject3D->Clone(false));
-                }
-                if(ImGui::Button("Duplicate"))
-                {
-                    this->AddObjectToProject(this->SelectedObject3D->Clone(false));
-                }
-                if(ImGui::Button("Delete"))
-                {
-                    this->RemoveObjectFromProject(this->SelectedObject3D);
-                }
-                ImGui::EndChild();
-            }
-            
-            ImGui::Separator();
-            
-            if(ImGui::Button("Import"))
-            {
-                nfdchar_t *OutPath = NULL;
-                nfdresult_t Result = NFD_OpenDialog( NULL, NULL, &OutPath );
-                if ( Result == NFD_OKAY ) {
-                    std::shared_ptr<hlgfx::object3D> Mesh = hlgfx::loaders::gltf::Load(OutPath);
-                    this->AddObjectToProject(Mesh);
-                }                    
-            }
-
-            ImGui::EndTabItem();
-        }
-        if(ImGui::BeginTabItem("Materials"))
-        {
-            if (ImGui::Button("Add New"))
-            {
-                this->AddMaterialToProject(std::make_shared<unlitMaterial>("New Material"));
-            }
-
-            for (auto &Material : this->Project.Materials)
-            {
-                ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
-                if(this->SelectedMaterial.get() == Material.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
-                ImGui::TreeNodeEx(Material.second->Name.c_str(), Flags);
-                if(ImGui::IsItemClicked())
-                {
-                    if(this->SelectedMaterial == Material.second) this->SelectedMaterial = nullptr;
-                    else this->SelectedMaterial = Material.second;
-                }
-
-                ImGui::TreePop();
-            }
-
-            if(this->SelectedMaterial)
-            {
-                ImGui::BeginChild("Material");
-                if(ImGui::Button("Duplicate"))
-                {
-                    this->AddMaterialToProject(this->SelectedMaterial->Clone());
-                }
-                if(ImGui::Button("Delete"))
-                {
-                    this->RemoveMaterialFromProject(this->SelectedMaterial);
-                }
-                this->SelectedMaterial->DrawGUI();
-                ImGui::EndChild();
-            }
-            ImGui::Separator();
-
-
-            ImGui::EndTabItem();
-        }
-        if(ImGui::BeginTabItem("Textures"))
-        {
-            if(ImGui::Button("Import"))
-            {
-                nfdchar_t *OutPath = NULL;
-                nfdresult_t Result = NFD_OpenDialog( NULL, NULL, &OutPath );
-                if ( Result == NFD_OKAY ) {
-                    gfx::imageData ImageData = gfx::ImageFromFile(OutPath);
-                    gfx::imageCreateInfo ImageCreateInfo = 
-                    {
-                        {0.0f,0.0f,0.0f,0.0f},
-                        gfx::samplerFilter::Linear,
-                        gfx::samplerFilter::Linear,
-                        gfx::samplerWrapMode::Repeat,
-                        gfx::samplerWrapMode::Repeat,
-                        gfx::samplerWrapMode::Repeat,
-                        true
-                    };
-                    gfx::imageHandle NewImage = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);                
-                    std::shared_ptr<texture> Texture = std::make_shared<texture>(FileNameFromPath(OutPath), NewImage);
-                    this->AddTextureToProject(Texture);
-                }                            
-            }
-            for (auto &Texture : this->Project.Textures)
-            {
-                ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
-                if(this->SelectedTexture.get() == Texture.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
-                ImGui::TreeNodeEx(Texture.second->Name.c_str(), Flags);
-                if(ImGui::IsItemClicked())
-                {
-                    if(this->SelectedTexture == Texture.second) this->SelectedTexture =nullptr;
-                    else this->SelectedTexture = Texture.second;
-                }
-                ImGui::TreePop();
-            }
-            
-            if(this->SelectedTexture!=nullptr)
-            {
-                ImGui::BeginChild("Texture");
-                if(ImGui::Button("Delete"))
-                {
-                    this->RemoveTextureFromProject(this->SelectedTexture);
-                }
-                ImGui::EndChild();
-            }
-
-            ImGui::EndTabItem();
-        }
-        if(ImGui::BeginTabItem("Geometries"))
-        {
-            for (auto &Geometries : this->Project.Geometries)
-            {
-                ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
-                if(this->SelectedIndexedGeometryBuffers.get() == Geometries.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
-                ImGui::TreeNodeEx(Geometries.second->Name.c_str(), Flags);
-                if(ImGui::IsItemClicked())
-                {
-                    this->SelectedIndexedGeometryBuffers = Geometries.second;
-                }
-                ImGui::TreePop();
-            }
-            ImGui::EndTabItem();
-        }
-        if(ImGui::BeginTabItem("Scenes"))
-        {
-            for (auto &Scene : this->Project.Scenes)
-            {
-                ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
-                if(this->SelectedScene.get() == Scene.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
-                ImGui::TreeNodeEx(Scene.second->Name.c_str(), Flags);
-                if(ImGui::IsItemClicked())
-                {
-                    this->SelectedScene = Scene.second;
-                }
-                ImGui::TreePop();
-            }
-
-            if(this->SelectedScene != nullptr)
-            {
-                if(ImGui::Button("Open"))
-                {
-                    this->Scene = this->SelectedScene;
-                }
-                if(ImGui::Button("Duplicate"))
-                {
-                    std::shared_ptr<scene> Duplicate = std::static_pointer_cast<scene>(this->SelectedScene->Clone(false));
-                    this->AddSceneToProject(Duplicate);
-                    this->Scene = this->SelectedScene;
-                }
-                if(ImGui::Button("Delete"))
-                {
-                    if(this->Project.Scenes.size() > 1)
-                    {
-                        this->Project.Scenes.erase(this->SelectedScene->UUID);
-                        for (auto &Scene : this->Project.Scenes)
-                        {
-                            this->Scene = Scene.second;
-                            this->SelectedScene = this->Scene;
-                            break;
-                        }
-                    }
-                }
-            }
-            ImGui::EndTabItem();
-        }
-        ImGui::EndTabBar();
-    }
-    ImGui::End();
-}
-
-void context::DrawMainMenuBar()
-{
-    if (ImGui::BeginMainMenuBar())
-    {
-        if (ImGui::BeginMenu("File"))
-        {
-            if(ImGui::MenuItem("New Scene"))
-            {
-                std::shared_ptr<scene> NewScene = std::make_shared<scene>("New_Scene_" + std::to_string(this->Project.Scenes.size()));
-                AddSceneToProject(NewScene);
-            }
-            if(ImGui::MenuItem("Import GLTF"))
-            {
-                nfdchar_t *OutPath = NULL;
-                nfdresult_t Result = NFD_OpenDialog( NULL, NULL, &OutPath );
-                if ( Result == NFD_OKAY ) {
-                    std::shared_ptr<hlgfx::object3D> Mesh = hlgfx::loaders::gltf::Load(OutPath);
-                    this->AddObjectToProject(Mesh);
-                }                
-            }
-            ImGui::Separator();
-            if(ImGui::MenuItem("Save Project"))
-            {
-                nfdchar_t *OutPath = NULL;
-                nfdresult_t Result = NFD_SaveDialog(NULL, NULL, &OutPath );
-                if ( Result == NFD_OKAY ) {
-                    this->SaveProjectToFile(OutPath);
-                }
-            }
-            if(ImGui::MenuItem("Load Project"))
-            {
-                nfdchar_t *OutPath = NULL;
-                nfdresult_t Result = NFD_OpenDialog(NULL, NULL, &OutPath );
-                if ( Result == NFD_OKAY ) {
-                    this->LoadProjectFromFile(OutPath);
-                }                
-            }
-            ImGui::Separator();
-            ImGui::EndMenu();
-        }
-        if(ImGui::BeginMenu("Edit"))
-        {
-            DrawObjectMenu();
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Add"))
-        {
-            if (ImGui::BeginMenu("Add Object")) 
-            {
-                AddObjectMenu();
-                ImGui::EndMenu();
-            }
-            ImGui::EndMenu();
-        }
-        if(ImGui::MenuItem("Assets"))
-        {
-            this->ShowAssetsWindow = !this->ShowAssetsWindow;
-        }
-        ImGui::EndMainMenuBar();
-    }
-}
-
-void context::DrawGUI()
-{
-    DrawGuizmoGUI();
-    DrawMainMenuBar();
-    if(ShowAssetsWindow) DrawAssetsWindow();
-
-
-    this->Scene->DrawGUI();
-}
 
 void context::Cleanup()
 {

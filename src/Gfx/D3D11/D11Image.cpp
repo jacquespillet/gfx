@@ -21,6 +21,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     this->Data.resize(ImageData.Width * ImageData.Height * FormatSize(Format));
     memcpy(Data.data(), ImageData.Data, Data.size());
     this->Type = ImageData.Type;
+    this->CreateInfo = CreateInfo;
 
     memcpy(this->Data.data(), ImageData.Data, ImageData.DataSize);
 
