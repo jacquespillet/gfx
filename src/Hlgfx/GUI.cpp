@@ -730,4 +730,91 @@ void sceneGUI::DrawSceneGUI()
     }    
 }
 
+
+void object3D::DrawMaterial(){}
+
+void object3D::DrawGUI()
+{
+    ImGuiTabBarFlags TabBarFlags = ImGuiTabBarFlags_None;
+    ImGui::Text(this->Name.c_str());
+    if (ImGui::BeginTabBar("", TabBarFlags))
+    {
+        if(ImGui::BeginTabItem("Object"))
+        {
+            v3f LocalPosition = Transform.LocalValues.LocalPosition;
+            v3f LocalRotation = Transform.LocalValues.LocalRotation;
+            v3f LocalScale = Transform.LocalValues.LocalScale;
+            if(ImGui::DragFloat3("Position", (float*)&LocalPosition, 0.01f))
+            {
+                this->Transform.SetLocalPosition(LocalPosition);
+            }
+            if(ImGui::DragFloat3("Rotation", (float*)&LocalRotation, 0.01f))
+            {
+                this->Transform.SetLocalRotation(LocalRotation);
+            }
+            if(ImGui::DragFloat3("Scale", (float*)&LocalScale, 0.01f))
+            {
+                this->Transform.SetLocalScale(LocalScale);
+            }
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Geometry"))
+        {
+            
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Material"))
+        {
+            DrawMaterial();
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
+    }
+}
+
+
+void mesh::DrawMaterial()
+{
+    if(ImGui::Button("Set material"))
+    {
+        ImGui::OpenPopup("Material Selection");
+    }
+    ShowMaterialSelection(this->Material);
+    
+    this->Material->DrawGUI();
+}
+
+
+void mesh::ShowMaterialSelection(std::shared_ptr<material> &Material)
+{
+    if(ImGui::BeginPopupModal("Material Selection"))
+    {
+        context::project &Project = context::Get()->Project;
+        for (auto &Material : Project.Materials)
+        {
+            ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
+            if(SelectedMaterial.get() == Material.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
+            ImGui::TreeNodeEx(Material.second->Name.c_str(), Flags);
+            if(ImGui::IsItemClicked())
+            {
+                SelectedMaterial = Material.second;
+            }
+            ImGui::TreePop();
+        }
+        
+        if (ImGui::Button("Select"))
+        {
+            gfx::pipelineHandle OldPipeline = Material->PipelineHandle;
+            Material = SelectedMaterial;
+            context::Get()->Scene->UpdateMeshPipeline(OldPipeline, this);
+            ImGui::CloseCurrentPopup();
+        }
+        if (ImGui::Button("Close"))
+            ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
+}
+
+
 }
