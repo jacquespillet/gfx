@@ -5,6 +5,7 @@ struct PSInput
 {
     vec4 position : SV_POSITION;
     vec2 FragUV : TEXCOORD;
+    vec3 Tangent : NORMAL;
 };
 
 cbuffer Camera : register(b0)
@@ -49,14 +50,14 @@ Texture2D EmissionTexture : register(t8);
 
 SamplerState DefaultSampler : register(s0);
 
-PSInput VSMain(vec4 PositionUvX : POSITION0, vec4 NormalUvY : POSITION1)
+PSInput VSMain(vec4 PositionUvX : POSITION0, vec4 NormalUvY : POSITION1, vec4 Tangent : POSITION2)
 {
-    PSInput result;
+    PSInput Output;
 
-    result.FragUV = vec2(PositionUvX.w, NormalUvY.w);
-    result.position = mul(mul(ViewProjectionMatrix, ModelMatrix), vec4(PositionUvX.xyz, 1));
-
-    return result;
+    Output.FragUV = vec2(PositionUvX.w, NormalUvY.w);
+    Output.position = mul(mul(ViewProjectionMatrix, ModelMatrix), vec4(PositionUvX.xyz, 1));
+    Output.Tangent = Tangent.xyz;
+    return Output;
 }
 
 vec4 PSMain(PSInput Input) : SV_TARGET
@@ -78,5 +79,6 @@ vec4 PSMain(PSInput Input) : SV_TARGET
     FinalColor.rgb = BaseColor.rgb * BaseColorFactor.rgb * Occlusion;
     FinalColor.rgb += FinalEmission;
     FinalColor.a = OpacityFactor * BaseColor.a;
-    return FinalColor;
+    
+    return FinalColor + vec4(Input.Tangent, 0);
 }

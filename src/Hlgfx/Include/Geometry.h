@@ -12,6 +12,7 @@ struct vertex
 {
     v4f PositionUvX;
     v4f NormalUvY; 
+    v4f Tangent; 
 };
 
 struct indexedGeometryBuffers

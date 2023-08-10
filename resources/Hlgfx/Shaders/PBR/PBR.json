@@ -8,7 +8,7 @@
 				{
 					"stream_binding":0,
 					"stream_rate":"Vertex",
-					"stream_stride":32
+					"stream_stride":48
 				}
 			],
 			"vertex_input" : [
@@ -23,6 +23,13 @@
 					"vertex_stream" : 0,
 					"attribute_location" : 1,
 					"attribute_offset" : 16,
+					"attribute_format" : "Float4",
+					"name" : "Position"
+				},
+				{
+					"vertex_stream" : 0,
+					"attribute_location" : 2,
+					"attribute_offset" : 32,
 					"attribute_format" : "Float4",
 					"name" : "Position"
 				}

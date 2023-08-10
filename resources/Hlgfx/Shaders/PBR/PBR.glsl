@@ -6,6 +6,7 @@
 struct PSInput
 {
     vec2 FragUV;
+    vec3 Tangent;
 };
 
 DECLARE_UNIFORM_BUFFER(CameraDescriptorSetBinding, CameraBinding, Camera)
@@ -55,6 +56,7 @@ DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, EmissiveTextureBinding, Em
 #if defined(VERTEX)
 layout(location = 0) in vec4 PositionUvX;
 layout(location = 1) in vec4 NormalUvY;
+layout(location = 2) in vec4 Tangent;
 
 layout (location = 0) out PSInput Output;
 
@@ -62,6 +64,7 @@ void main()
 {
     gl_Position = ViewProjectionMatrix * ModelMatrix *vec4(PositionUvX.xyz, 1.0);
     Output.FragUV = vec2(PositionUvX.w, NormalUvY.w);
+    Output.Tangent = Tangent.xyz;
 }
 
 #endif
@@ -97,7 +100,7 @@ void main()
     FinalColor.rgb += FinalEmission;
     FinalColor.a = OpacityFactor * BaseColor.a;
     
-    OutputColor = FinalColor;
+    OutputColor = FinalColor + vec4(Input.Tangent, 0);
 }
 
 #endif

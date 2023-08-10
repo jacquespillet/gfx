@@ -258,6 +258,13 @@ gfx::pipelineCreation context::GetPipelineCreation(materialFlags::bits Flags)
     VertexAttribute1.Format = gfx::vertexComponentFormat::Float4;
     VertexAttribute1.SemanticIndex = 1;
     PipelineCreation.VertexInput.AddVertexAttribute(VertexAttribute1);
+    gfx::vertexAttribute VertexAttribute2{};
+    VertexAttribute1.Location = 2;
+    VertexAttribute1.Binding = 0;
+    VertexAttribute1.Offset = 2 * sizeof(v4f);
+    VertexAttribute1.Format = gfx::vertexComponentFormat::Float4;
+    VertexAttribute1.SemanticIndex = 2;
+    PipelineCreation.VertexInput.AddVertexAttribute(VertexAttribute1);
 
     u8 T = Flags & materialFlags::DepthTestEnabled;
 

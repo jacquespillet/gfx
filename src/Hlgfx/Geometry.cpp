@@ -23,7 +23,8 @@ void indexedGeometryBuffers::BuildBuffers()
         .SetData(this->VertexData.data())
         .SetStreamIndex(0)
         .AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 0})
-        .AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 1});
+        .AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 1})
+        .AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 2});
     gfx::vertexBufferCreateInfo VertexBufferCreateInfo = {};
     VertexBufferCreateInfo.Init().AddVertexStream(VertexStream1);
     this->VertexBuffer = Context->CreateVertexBuffer(VertexBufferCreateInfo);
@@ -33,7 +34,7 @@ void indexedGeometryBuffers::BuildBuffers()
     
     this->Count = this->IndexData.size();
     this->Start=0;  
-}
+}  
 
 std::shared_ptr<indexedGeometryBuffers> CreateGeometryFromBuffers(void *VertexBufferData, sz VertexBufferSize, void *IndexBufferData, sz IndexBufferSize)
 {
@@ -47,7 +48,8 @@ std::shared_ptr<indexedGeometryBuffers> CreateGeometryFromBuffers(void *VertexBu
         .SetData(VertexBufferData)
         .SetStreamIndex(0)
         .AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 0})
-        .AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 1});
+        .AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 1})
+        .AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 2});
     gfx::vertexBufferCreateInfo VertexBufferCreateInfo = {};
     VertexBufferCreateInfo.Init().AddVertexStream(VertexStream1);
     Result->VertexBuffer = Context->CreateVertexBuffer(VertexBufferCreateInfo);

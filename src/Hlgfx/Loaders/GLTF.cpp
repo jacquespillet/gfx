@@ -182,8 +182,9 @@ void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geomet
             Geometry->Buffers->VertexData.resize(PositionAccessor.count);
             for (size_t k = 0; k < PositionAccessor.count; k++)
             {
-                glm::vec3 Position, Normal;
-                glm::vec2 UV;
+                v3f Position, Normal;
+                v4f Tangent;
+                v2f UV;
 
                 {
                     const uint8_t *address = PositionBufferAddress + PositionBufferView.byteOffset + PositionAccessor.byteOffset + (k * PositionStride);
@@ -196,6 +197,12 @@ void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geomet
                     memcpy(&Normal, address, 12);
                 }
 
+                if(TangentIndex>=0)
+                {
+                    const uint8_t *address = TangentBufferAddress + TangentBufferView.byteOffset + TangentAccessor.byteOffset + (k * TangentStride);
+                    memcpy(&Tangent, address, 16);
+                }
+
                 if(UVIndex>=0)
                 {
                     const uint8_t *address = UVBufferAddress + UVBufferView.byteOffset + UVAccessor.byteOffset + (k * UVStride);
@@ -206,6 +213,7 @@ void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geomet
                 {
                     v4f(Position.x, Position.y, Position.z, UV.x),
                     v4f(Normal.x, Normal.y, Normal.z, UV.y),
+                    Tangent
                 };
             }
 
