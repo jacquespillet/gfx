@@ -35,7 +35,7 @@ void d3d12PipelineData::DestroyD12Resources()
     memset(UsedRootParams, 0, sizeof(UsedRootParams));
 }
 
-ComPtr<IDxcBlob> CompileShader2(const shaderStage &Stage, std::vector<D3D12_ROOT_PARAMETER> &OutRootParams, std::unordered_map<u32, u32> &BindingRootParamMapping, std::vector<CD3DX12_DESCRIPTOR_RANGE> &DescriptorRanges)
+ComPtr<IDxcBlob> CompileShader2(const shaderStage &Stage, std::vector<D3D12_ROOT_PARAMETER> &OutRootParams, std::unordered_map<u32, u32> &BindingRootParamMapping, std::vector<CD3DX12_DESCRIPTOR_RANGE> &DescriptorRanges, b8 *UsedRootParams)
 {
     GET_CONTEXT(D12Data, context::Get());
 
@@ -144,7 +144,7 @@ ComPtr<IDxcBlob> CompileShader2(const shaderStage &Stage, std::vector<D3D12_ROOT
     {
         D3D12_SHADER_INPUT_BIND_DESC shaderInputBindDesc{};
         ThrowIfFailed(shaderReflection->GetResourceBindingDesc(i, &shaderInputBindDesc));
-        if (shaderInputBindDesc.Type == D3D_SIT_CBUFFER)
+        if (shaderInputBindDesc.Type == D3D_SIT_CBUFFER && !UsedRootParams[shaderInputBindDesc.BindPoint])
         {
             BindingRootParamMapping[shaderInputBindDesc.BindPoint] = static_cast<uint32_t>(OutRootParams.size());
 
@@ -154,10 +154,10 @@ ComPtr<IDxcBlob> CompileShader2(const shaderStage &Stage, std::vector<D3D12_ROOT
             rootParameter.Descriptor.ShaderRegister = shaderInputBindDesc.BindPoint,
             rootParameter.Descriptor.RegisterSpace = shaderInputBindDesc.Space,
             // rootParameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE,
-            
+            UsedRootParams[shaderInputBindDesc.BindPoint] = true;
             OutRootParams.push_back(rootParameter);
         }
-        else if (shaderInputBindDesc.Type == D3D_SIT_UAV_RWSTRUCTURED)
+        else if (shaderInputBindDesc.Type == D3D_SIT_UAV_RWSTRUCTURED && !UsedRootParams[shaderInputBindDesc.BindPoint])
         {
             BindingRootParamMapping[shaderInputBindDesc.BindPoint] = static_cast<uint32_t>(OutRootParams.size());
 
@@ -167,10 +167,11 @@ ComPtr<IDxcBlob> CompileShader2(const shaderStage &Stage, std::vector<D3D12_ROOT
             rootParameter.Descriptor.ShaderRegister = shaderInputBindDesc.BindPoint,
             rootParameter.Descriptor.RegisterSpace = shaderInputBindDesc.Space,
             // rootParameter.Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_NONE,
+            UsedRootParams[shaderInputBindDesc.BindPoint] = true;
             
             OutRootParams.push_back(rootParameter);
         }
-        else if (shaderInputBindDesc.Type == D3D_SIT_TEXTURE)
+        else if (shaderInputBindDesc.Type == D3D_SIT_TEXTURE && !UsedRootParams[shaderInputBindDesc.BindPoint])
         {
             // For now, each individual texture belongs in its own descriptor table. This can cause the root signature to quickly exceed the 64WORD size limit.
             BindingRootParamMapping[shaderInputBindDesc.BindPoint] = static_cast<uint32_t>(OutRootParams.size());
@@ -188,7 +189,9 @@ ComPtr<IDxcBlob> CompileShader2(const shaderStage &Stage, std::vector<D3D12_ROOT
             RootParameter.DescriptorTable.NumDescriptorRanges = 1u,
             RootParameter.DescriptorTable.pDescriptorRanges = &DescriptorRanges.back(),
             RootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL,
-            
+
+            UsedRootParams[shaderInputBindDesc.BindPoint] = true;
+
             OutRootParams.push_back(RootParameter);  
         }
     } 
@@ -208,32 +211,32 @@ void d3d12PipelineData::Create(const pipelineCreation &PipelineCreation)
         std::vector<CD3DX12_DESCRIPTOR_RANGE> DescriptorRanges;
         DescriptorRanges.reserve(1024);
 
+        memset(&this->UsedRootParams[0], 0, d12Constants::MaxResourceBindings * sizeof(b8));
         this->RootParams.clear();
         this->BindingRootParamMapping.clear();
         for(u32 i=0; i<PipelineCreation.Shaders.StagesCount; i++)
         {
             if(PipelineCreation.Shaders.Stages[i].Stage == shaderStageFlags::Vertex)
-                this->vertexShader = CompileShader2(PipelineCreation.Shaders.Stages[i], this->RootParams, this->BindingRootParamMapping, DescriptorRanges);
+                this->vertexShader = CompileShader2(PipelineCreation.Shaders.Stages[i], this->RootParams, this->BindingRootParamMapping, DescriptorRanges, UsedRootParams);
             if(PipelineCreation.Shaders.Stages[i].Stage == shaderStageFlags::Fragment)
-                this->pixelShader = CompileShader2(PipelineCreation.Shaders.Stages[i], this->RootParams, this->BindingRootParamMapping, DescriptorRanges);
+                this->pixelShader = CompileShader2(PipelineCreation.Shaders.Stages[i], this->RootParams, this->BindingRootParamMapping, DescriptorRanges, UsedRootParams);
             if(PipelineCreation.Shaders.Stages[i].Stage == shaderStageFlags::Compute)
-                this->computeShader = CompileShader2(PipelineCreation.Shaders.Stages[i], this->RootParams, this->BindingRootParamMapping, DescriptorRanges);
+                this->computeShader = CompileShader2(PipelineCreation.Shaders.Stages[i], this->RootParams, this->BindingRootParamMapping, DescriptorRanges, UsedRootParams);
         }
 
-        memset(&this->UsedRootParams[0], 0, d12Constants::MaxResourceBindings * sizeof(b8));
-        for(sz i=0; i<this->RootParams.size(); i++)
-        {
-            if(this->RootParams[i].ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
-            {
-                this->UsedRootParams[this->RootParams[i].DescriptorTable.pDescriptorRanges[0].BaseShaderRegister]=true;
-            }
-            else
-            {
-                this->UsedRootParams[this->RootParams[i].Descriptor.ShaderRegister]=true;
-            }
-        }
+        // for(sz i=0; i<this->RootParams.size(); i++)
+        // {
+        //     if(this->RootParams[i].ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
+        //     {
+        //         this->UsedRootParams[this->RootParams[i].DescriptorTable.pDescriptorRanges[0].BaseShaderRegister]=true;
+        //     }
+        //     else
+        //     {
+        //         this->UsedRootParams[this->RootParams[i].Descriptor.ShaderRegister]=true;
+        //     }
+        // }
 
-        const CD3DX12_STATIC_SAMPLER_DESC pointWrap( 0, // shaderRegister    
+        const CD3DX12_STATIC_SAMPLER_DESC pointWrap( 10, // shaderRegister    
                                             D3D12_FILTER_MIN_MAG_MIP_POINT, // filter    
                                             D3D12_TEXTURE_ADDRESS_MODE_WRAP, // addressU    
                                             D3D12_TEXTURE_ADDRESS_MODE_WRAP, // addressV    

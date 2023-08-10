@@ -241,7 +241,7 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
             CustomDefines += "#define VK " + std::to_string(GFX_VK) + "\n";
             CustomDefines += "#define GL " + std::to_string(GFX_GL) + "\n";
             CustomDefines += "#define D3D11 " + std::to_string(GFX_D3D11) + "\n";
-            CustomDefines += "#define GFX_D3D12 " + std::to_string(GFX_D3D12) + "\n";
+            CustomDefines += "#define D3D12 " + std::to_string(GFX_D3D12) + "\n";
             if(Name == "vertex")
                 CustomDefines += "#define VERTEX\n";
             if(Name == "fragment")

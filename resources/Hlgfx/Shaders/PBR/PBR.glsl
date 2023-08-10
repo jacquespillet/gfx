@@ -8,7 +8,9 @@ struct PSInput
     vec2 FragUV;
     vec3 FragPosition;
     vec3 FragNormal;
-    mat3 TBN;
+    vec3 T;
+    vec3 B;
+    vec3 N;
 };
 
 DECLARE_UNIFORM_BUFFER(CameraDescriptorSetBinding, CameraBinding, Camera)
@@ -77,21 +79,18 @@ layout (location = 0) out PSInput Output;
 
 void main() 
 {
-    // vec4 OutPosition = ViewProjectionMatrix * ModelMatrix *vec4(PositionUvX.xyz, 1.0); 
-    // Output.FragUV = vec2(PositionUvX.w, NormalUvY.w);
-    // Output.Tangent = Tangent.xyz;
-
-    /////////
-	mat4 ModelViewProjection = ViewProjectionMatrix * ModelMatrix;
-	vec4 OutPosition = ModelViewProjection * vec4(PositionUvX.xyz, 1.0);
-	Output.FragPosition = (ModelMatrix * vec4(PositionUvX.xyz, 1.0)).xyz;
+ 	mat4 ModelViewProjection = mul(ViewProjectionMatrix , ModelMatrix);
+	vec4 OutPosition = mul(ModelViewProjection, vec4(PositionUvX.xyz, 1.0));
+	Output.FragPosition = (mul(ModelMatrix, vec4(PositionUvX.xyz, 1.0))).xyz;
 	Output.FragUV = vec2(PositionUvX.w, NormalUvY.w);
 
 
-	Output.FragNormal = normalize((NormalMatrix * vec4(NormalUvY.xyz, 0.0)).xyz);
-    vec3 FragTangent = normalize((NormalMatrix * vec4(Tangent.xyz, 0.0)).xyz);  
-    vec3 FragBitangent = normalize(cross(Output.FragNormal, FragTangent.xyz) * Tangent.w); 
-	Output.TBN = mat3(FragTangent, FragBitangent, Output.FragNormal);  
+	Output.FragNormal = normalize((mul(NormalMatrix, vec4(NormalUvY.xyz, 0.0))).xyz);
+    vec3 FragTangent = normalize((mul(NormalMatrix, vec4(Tangent.xyz, 0.0))).xyz);  
+    vec3 FragBitangent = normalize(mul(cross(Output.FragNormal, FragTangent.xyz), Tangent.w)); 
+	Output.T = FragTangent;
+	Output.B = FragBitangent;
+	Output.N = Output.FragNormal;
 
     gl_Position = OutPosition;
 }
@@ -118,11 +117,11 @@ float LightIntensity = 4;
 void main() 
 {
     //Color
-    vec4 BaseColor = GetBaseColor();
+    vec4 BaseColor = GetBaseColor(Input.FragUV);
 
     //Normal
     vec3 View = normalize(CameraPosition.xyz - Input.FragPosition);
-    normalInfo NormalInfo = GetNormalInfo();
+    normalInfo NormalInfo = GetNormalInfo(Input.T, Input.B, Input.N, Input.FragUV);
     vec3 Normal = NormalInfo.ShadingNormal;
     vec3 Tangent = NormalInfo.Tangent;
     vec3 Bitangent = NormalInfo.Bitangent;
@@ -134,16 +133,16 @@ void main()
     materialInfo MaterialInfo;
     MaterialInfo.BaseColor = BaseColor.rgb;
     MaterialInfo.ior = 1.5;
-    MaterialInfo.f0 = vec3(0.04);
+    MaterialInfo.f0 = vec3(0.04,0.04,0.04);
     MaterialInfo.SpecularWeight = 1.0;
-    MaterialInfo = GetMetallicRoughnessInfo(MaterialInfo);
+    MaterialInfo = GetMetallicRoughnessInfo(MaterialInfo, Input.FragUV);
 
     float Reflectance = max(max(MaterialInfo.f0.r, MaterialInfo.f0.g), MaterialInfo.f0.b);
 
-    MaterialInfo.F90 = vec3(1.0);
-    vec3 FinalSpecular = vec3(0.0);
-    vec3 FinalDiffuse = vec3(0.0);
-    vec3 FinalEmissive = vec3(0.0);
+    MaterialInfo.F90 = vec3(1.0,1.0,1.0);
+    vec3 FinalSpecular = vec3(0.0,0.0,0.0);
+    vec3 FinalDiffuse = vec3(0.0,0.0,0.0);
+    vec3 FinalEmissive = vec3(0.0,0.0,0.0);
 
     //Lighting
     vec3 H = normalize(-LightDirection + View);
@@ -156,18 +155,18 @@ void main()
 
     //AO
     float AmbientOcclusion = 1.0;
-    AmbientOcclusion = texture(OcclusionTexture, Input.FragUV).r;
+    AmbientOcclusion = SampleTexture(OcclusionTexture, DefaultSampler, Input.FragUV).r;
     AmbientOcclusion = mix(1, AmbientOcclusion, Material.UseOcclusionTexture);
     FinalDiffuse = mix(FinalDiffuse, FinalDiffuse * AmbientOcclusion, Material.OcclusionStrength);
     FinalSpecular = mix(FinalSpecular, FinalSpecular * AmbientOcclusion, Material.OcclusionStrength);
 
     //Emissive
     FinalEmissive = Material.Emission * Material.EmissiveFactor;
-    vec3 EmissiveSample = texture(EmissionTexture, Input.FragUV).rgb;
-    EmissiveSample = mix(vec3(1), EmissiveSample, Material.UseEmissionTexture);
+    vec3 EmissiveSample = SampleTexture(EmissionTexture, DefaultSampler, Input.FragUV).rgb;
+    EmissiveSample = mix(vec3(1,1,1), EmissiveSample, Material.UseEmissionTexture);
     FinalEmissive *= EmissiveSample;
 
-    vec3 FinalColor = vec3(0);
+    vec3 FinalColor = vec3(0,0,0);
     FinalColor = FinalEmissive + FinalDiffuse + FinalSpecular;
 
     if(BaseColor.a < Material.AlphaCutoff)

@@ -1,4 +1,51 @@
 
+vec4 GetBaseColor(vec2 FragUV)
+{
+    vec4 BaseColor = vec4(1,1,1,1);
+
+    BaseColor = vec4(Material.BaseColorFactor, Material.OpacityFactor);
+
+    vec4 SampleCol = SampleTexture(BaseColorTexture, DefaultSampler, FragUV);
+    SampleCol.rgb = pow(SampleCol.rgb, vec3(2.2,2.2,2.2));
+    SampleCol = mix(vec4(1,1,1,1), SampleCol, Material.UseBaseColor);
+    BaseColor.rgb *= SampleCol.rgb;
+    BaseColor.a *= SampleCol.a;
+    return BaseColor;
+}
+
+struct normalInfo {
+    vec3 GeometricNormal;  
+    vec3 Tangent;   
+    vec3 Bitangent;   
+    vec3 ShadingNormal;   
+    vec3 TextureNormal;
+};
+
+normalInfo GetNormalInfo(vec3 T, vec3 B, vec3 N, vec2 FragUV)
+{
+    vec3 ShadingNormal, Tangent, Bitangent, GeometricNormal;
+   
+    Tangent = normalize(T);
+    Bitangent = normalize(B);
+    GeometricNormal = normalize(N);
+
+    normalInfo NormalInfo;
+    NormalInfo.GeometricNormal = GeometricNormal;
+    NormalInfo.ShadingNormal = GeometricNormal;
+
+
+    NormalInfo.TextureNormal = SampleTexture(NormalTexture, DefaultSampler, FragUV).rgb * 2.0 - vec3(1.0,1.0,1.0);
+    NormalInfo.TextureNormal = normalize(NormalInfo.TextureNormal);
+    NormalInfo.TextureNormal = mix(vec3(0,0,1), NormalInfo.TextureNormal, Material.UseNormalTexture);
+    NormalInfo.ShadingNormal = normalize(mul(mat3(Tangent, Bitangent, GeometricNormal), NormalInfo.TextureNormal));
+
+
+    NormalInfo.Tangent = Tangent;
+    NormalInfo.Bitangent = Bitangent;
+    return NormalInfo;
+}
+
+
 struct materialInfo
 {
     float ior;
@@ -38,65 +85,18 @@ struct materialInfo
 };
 
 
-vec4 GetBaseColor()
-{
-    vec4 BaseColor = vec4(1);
-
-    BaseColor = vec4(Material.BaseColorFactor, Material.OpacityFactor);
-
-    vec4 SampleCol = texture(BaseColorTexture, Input.FragUV);
-    SampleCol.rgb = pow(SampleCol.rgb, vec3(2.2));
-    SampleCol = mix(vec4(1,1,1,1), SampleCol, Material.UseBaseColor);
-    BaseColor.rgb *= SampleCol.rgb;
-    BaseColor.a *= SampleCol.a;
-
-    return BaseColor;
-}
-
-struct normalInfo {
-    vec3 GeometricNormal;  
-    vec3 Tangent;   
-    vec3 Bitangent;   
-    vec3 ShadingNormal;   
-    vec3 TextureNormal;
-};
-
-normalInfo GetNormalInfo()
-{
-    vec3 ShadingNormal, Tangent, Bitangent, GeometricNormal;
-   
-    Tangent = normalize(Input.TBN[0]);
-    Bitangent = normalize(Input.TBN[1]);
-    GeometricNormal = normalize(Input.TBN[2]);
-
-    normalInfo NormalInfo;
-    NormalInfo.GeometricNormal = GeometricNormal;
-    NormalInfo.ShadingNormal = GeometricNormal;
-
-
-    NormalInfo.TextureNormal = texture(NormalTexture, Input.FragUV).rgb * 2.0 - vec3(1.0);
-    NormalInfo.TextureNormal = normalize(NormalInfo.TextureNormal);
-    NormalInfo.TextureNormal = mix(vec3(0,0,1), NormalInfo.TextureNormal, Material.UseNormalTexture);
-    NormalInfo.ShadingNormal = normalize(mat3(Tangent, Bitangent, GeometricNormal) * NormalInfo.TextureNormal);
-
-
-    NormalInfo.Tangent = Tangent;
-    NormalInfo.Bitangent = Bitangent;
-    return NormalInfo;
-}
-
-materialInfo GetMetallicRoughnessInfo(materialInfo info)
+materialInfo GetMetallicRoughnessInfo(materialInfo info, vec2 FragUV)
 {
     info.Metallic = Material.MetallicFactor;
     info.PerceptualRoughness = Material.RoughnessFactor;
 
-    vec4 MetallicRoughnessSample = texture(MetallicRoughnessTexture, Input.FragUV);
-    MetallicRoughnessSample = mix(vec4(1), MetallicRoughnessSample, Material.UseMetallicRoughnessTexture);
+    vec4 MetallicRoughnessSample = SampleTexture(MetallicRoughnessTexture, DefaultSampler, FragUV);
+    MetallicRoughnessSample = mix(vec4(1,1,1,1), MetallicRoughnessSample, Material.UseMetallicRoughnessTexture);
     info.PerceptualRoughness *= MetallicRoughnessSample.g;
     info.Metallic *= MetallicRoughnessSample.b;
 
     // Achromatic f0 based on IOR.
-    info.CDiff = mix(info.BaseColor.rgb,  vec3(0), info.Metallic);
+    info.CDiff = mix(info.BaseColor.rgb,  vec3(0,0,0), info.Metallic);
     info.f0 = mix(info.f0, info.BaseColor.rgb, info.Metallic);
 
 

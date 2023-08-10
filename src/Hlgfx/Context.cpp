@@ -199,7 +199,7 @@ gfx::pipelineCreation context::GetPipelineCreation(materialFlags::bits Flags)
     ApiDefinition += "#define VK " + std::to_string(GFX_VK) + "\n";
     ApiDefinition += "#define GL " + std::to_string(GFX_GL) + "\n";
     ApiDefinition += "#define D3D11 " + std::to_string(GFX_D3D11) + "\n";
-    ApiDefinition += "#define GFX_D3D12 " + std::to_string(GFX_D3D12) + "\n";
+    ApiDefinition += "#define D3D12 " + std::to_string(GFX_D3D12) + "\n";
     if(GFX_API == GFX_VK)
     {
         ApiDefinition += "#define GRAPHICS_API VK\n";

@@ -2,6 +2,7 @@
 #define vec3 float3
 #define vec4 float4
 #define mat4 float4x4 
+#define mat3 float3x3 
 
 #define ivec2 int2
 #define ivec3 int3
