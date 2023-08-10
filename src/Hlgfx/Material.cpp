@@ -21,10 +21,10 @@ material::material(std::string Name)
     this->UUID = context::Get()->GetUUID();
 }
 
-unlitMaterial::unlitMaterial(std::string Name) : material(Name)
+pbrMaterial::pbrMaterial(std::string Name) : material(Name)
 {
     gfx::context *Context = gfx::context::Get();
-    Flags =  (materialFlags::bits)(materialFlags::Unlit | materialFlags::BlendEnabled | materialFlags::CullModeOn | materialFlags::DepthWriteEnabled | materialFlags::DepthTestEnabled);
+    Flags =  (materialFlags::bits)(materialFlags::PBR | materialFlags::BlendEnabled | materialFlags::CullModeOn | materialFlags::DepthWriteEnabled | materialFlags::DepthTestEnabled);
     this->PipelineHandle = context::Get()->CreateOrGetPipeline(Flags);
 
     this->BaseColorTexture = defaultTextures::BlackTexture;
@@ -62,7 +62,7 @@ unlitMaterial::unlitMaterial(std::string Name) : material(Name)
     Context->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(materialData), 0);
 }
 
-unlitMaterial::unlitMaterial(std::string Name, materialFlags::bits Flags) : material(Name)
+pbrMaterial::pbrMaterial(std::string Name, materialFlags::bits Flags) : material(Name)
 {
     gfx::context *Context = gfx::context::Get();
 
@@ -103,12 +103,12 @@ unlitMaterial::unlitMaterial(std::string Name, materialFlags::bits Flags) : mate
     Context->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(materialData), 0);
 }
   
-void unlitMaterial::SetCullMode(gfx::cullMode Mode)
+void pbrMaterial::SetCullMode(gfx::cullMode Mode)
 {
     //Rebuild pipeline and replace the handle
 }
 
-void unlitMaterial::SetBaseColorTexture(std::shared_ptr<texture> Texture)
+void pbrMaterial::SetBaseColorTexture(std::shared_ptr<texture> Texture)
 {
     this->AllTextures.erase(this->BaseColorTexture->UUID);
     this->BaseColorTexture = Texture;
@@ -117,7 +117,7 @@ void unlitMaterial::SetBaseColorTexture(std::shared_ptr<texture> Texture)
     this->AllTextures[this->BaseColorTexture->UUID] = Texture;
 }
 
-void unlitMaterial::SetMetallicRoughnessTexture(std::shared_ptr<texture> Texture)
+void pbrMaterial::SetMetallicRoughnessTexture(std::shared_ptr<texture> Texture)
 {
     this->AllTextures.erase(this->MetallicRoughnessTexture->UUID);
     this->MetallicRoughnessTexture = Texture;
@@ -126,7 +126,7 @@ void unlitMaterial::SetMetallicRoughnessTexture(std::shared_ptr<texture> Texture
     this->AllTextures[this->MetallicRoughnessTexture->UUID] = Texture;
 }
 
-void unlitMaterial::SetOcclusionTexture(std::shared_ptr<texture> Texture)
+void pbrMaterial::SetOcclusionTexture(std::shared_ptr<texture> Texture)
 {
     this->AllTextures.erase(this->OcclusionTexture->UUID);
     this->OcclusionTexture = Texture;
@@ -135,7 +135,7 @@ void unlitMaterial::SetOcclusionTexture(std::shared_ptr<texture> Texture)
     this->AllTextures[this->OcclusionTexture->UUID] = Texture;
 }
 
-void unlitMaterial::SetNormalTexture(std::shared_ptr<texture> Texture)
+void pbrMaterial::SetNormalTexture(std::shared_ptr<texture> Texture)
 {
     this->AllTextures.erase(this->NormalTexture->UUID);
     this->NormalTexture = Texture;
@@ -144,7 +144,7 @@ void unlitMaterial::SetNormalTexture(std::shared_ptr<texture> Texture)
     this->AllTextures[this->NormalTexture->UUID] = Texture;
 }
 
-void unlitMaterial::SetEmissiveTexture(std::shared_ptr<texture> Texture)
+void pbrMaterial::SetEmissiveTexture(std::shared_ptr<texture> Texture)
 {
     this->AllTextures.erase(this->EmissiveTexture->UUID);
     this->EmissiveTexture = Texture;
@@ -153,7 +153,7 @@ void unlitMaterial::SetEmissiveTexture(std::shared_ptr<texture> Texture)
     this->AllTextures[this->EmissiveTexture->UUID] = Texture;
 }
 
-void unlitMaterial::RecreatePipeline()
+void pbrMaterial::RecreatePipeline()
 {
 
     //Get the pipeline if it exists already
@@ -190,111 +190,9 @@ void unlitMaterial::RecreatePipeline()
 }
 
 
-b8 unlitMaterial::ShowTextureSelection(const char *ID, std::shared_ptr<texture> &Texture)
+std::shared_ptr<material> pbrMaterial::Clone()
 {
-    const f32 ImageWidth = 50;
-    const f32 ImageHeight = 30;
-    // f32 Offset = ImageHeight / 2 - TextHeight/2;
-
-    bool Changed=false;
-    if(ImGui::BeginPopupModal(ID))
-    {
-        context::project &Project = context::Get()->Project;
-        for (auto &Tex : Project.Textures)
-        {
-            ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
-            if(SelectedTexture.get() == Tex.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
-            
-            gfx::image *Image = gfx::context::Get()->GetImage(Tex.second->Handle);
-            ImGui::Image(Image->GetImGuiID(), ImVec2(ImageWidth, ImageHeight));
-            ImGui::SameLine();
-            ImGui::TreeNodeEx(Tex.second->Name.c_str(), Flags);
-            if(ImGui::IsItemClicked())
-            {
-                SelectedTexture = Tex.second;
-            }
-            ImGui::TreePop();
-        }
-        
-        if (ImGui::Button("Select"))
-        {
-            Texture = SelectedTexture;
-            ImGui::CloseCurrentPopup();
-            Changed = true;
-        }
-        if (ImGui::Button("Close"))
-        {
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-    }
-    return Changed;
-}
-
-bool unlitMaterial::DrawTexture(const char *Name, std::shared_ptr<texture> &Texture, f32 &Use)
-{   
-    b8 Changed=false;
-    f32 TextHeight = ImGui::CalcTextSize(Name).y;
-    const f32 ImageWidth = 50;
-    const f32 ImageHeight = 30;
-    f32 Offset = ImageHeight / 2 - TextHeight/2;
-
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + Offset);
-    b8 UseBool = Use > 0.0f; 
-    if(ImGui::Checkbox(Name, &UseBool))
-    {
-        Use = UseBool ? 1.0f : 0.0f;
-        Changed = true;
-    }
-
-    ImGui::SameLine();
-
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() - Offset);
-    gfx::image *Image = gfx::context::Get()->GetImage(Texture->Handle);
-    ImGui::Image(Image->GetImGuiID(), ImVec2(ImageWidth, ImageHeight));
-    if (ImGui::IsItemHovered() || ImGui::IsItemFocused())
-        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-    if(ImGui::IsItemClicked())
-    {
-        ImGui::OpenPopup(Name);
-    }
-    Changed |= ShowTextureSelection(Name, Texture);            
- 
-    ImGui::SameLine();
-    gfx::image *BlackImage = gfx::context::Get()->GetImage(defaultTextures::BlackTexture->Handle);
-    ImGui::Image(BlackImage->GetImGuiID(), ImVec2(30, ImageHeight));
-    if(ImGui::IsItemClicked())
-    {
-        Changed = true;
-        Texture = defaultTextures::BlackTexture;
-    }
-
-    ImGui::SameLine();
-    gfx::image *WhiteImage = gfx::context::Get()->GetImage(defaultTextures::WhiteTexture->Handle);
-    ImGui::Image(WhiteImage->GetImGuiID(), ImVec2(30, ImageHeight));
-    if(ImGui::IsItemClicked())
-    {
-        Changed = true;
-        Texture = defaultTextures::WhiteTexture;
-    }
-
-    ImGui::SameLine();
-    gfx::image *BlueImage = gfx::context::Get()->GetImage(defaultTextures::BlueTexture->Handle);
-    ImGui::Image(BlueImage->GetImGuiID(), ImVec2(30, ImageHeight));
-    if(ImGui::IsItemClicked())
-    {
-        Changed = true;
-        Texture = defaultTextures::BlueTexture;
-    }
-
-    
-    
-    return Changed;
-}
-
-std::shared_ptr<material> unlitMaterial::Clone()
-{
-    std::shared_ptr<unlitMaterial> Result = std::make_shared<unlitMaterial>(this->Name + "_Duplicated", this->Flags);
+    std::shared_ptr<pbrMaterial> Result = std::make_shared<pbrMaterial>(this->Name + "_Duplicated", this->Flags);
     Result->UniformData = this->UniformData;
     Result->UUID = context::Get()->GetUUID();
     Result->SetBaseColorTexture(this->BaseColorTexture);
@@ -307,84 +205,20 @@ std::shared_ptr<material> unlitMaterial::Clone()
 
     return Result;
 }
-
-void unlitMaterial::DrawGUI()
-{
-    ImGui::Separator();
-    ImGui::Text(this->Name.c_str());
-    bool ShouldUpdate = false;
-    bool ShouldRecreatePipeline = false;
-    ShouldUpdate |= ImGui::ColorEdit3("Base Color", glm::value_ptr(this->UniformData.BaseColorFactor));
-    ShouldUpdate |= ImGui::ColorEdit3("Emission", glm::value_ptr(this->UniformData.Emission));
-    ShouldUpdate |= ImGui::DragFloat("Opacity", &this->UniformData.OpacityFactor, 0.005f, 0, 1);
-    ShouldUpdate |= ImGui::DragFloat("Occlusion Strength", &this->UniformData.OcclusionStrength, 0.005f, 0, 1);
-    ShouldUpdate |= ImGui::DragFloat("Emission Strength", &this->UniformData.EmissiveFactor, 0.005f, 0, 1);
-    
-
-    if(DrawTexture("Base Color Texture", this->BaseColorTexture, this->UniformData.UseBaseColor))
-    {
-        SetBaseColorTexture(this->BaseColorTexture);
-        ShouldUpdate=true;
-    }
-
-    if(DrawTexture("Occlusion Texture", this->OcclusionTexture, this->UniformData.UseOcclusionTexture))
-    {
-        SetOcclusionTexture(this->OcclusionTexture);
-        ShouldUpdate=true;
-    }
-
-    if(DrawTexture("Emissive Texture", this->EmissiveTexture, this->UniformData.UseEmissionTexture))
-    {
-        SetEmissiveTexture(this->EmissiveTexture);
-        ShouldUpdate=true;
-    }
-
-    bool DepthWriteEnabled = this->Flags & materialFlags::DepthWriteEnabled;
-    if(ImGui::Checkbox("Depth Write", &DepthWriteEnabled))
-    {
-        Flags = (materialFlags::bits)(Flags ^ materialFlags::DepthWriteEnabled);
-        this->ShouldRecreate = true;
-    }
-
-    bool DepthTestEnabled = this->Flags & materialFlags::DepthTestEnabled;
-    if(ImGui::Checkbox("Depth Test", &DepthTestEnabled))
-    {
-        Flags = (materialFlags::bits)(Flags ^ materialFlags::DepthTestEnabled);
-        this->ShouldRecreate = true;
-    }
-
-    bool DoubleSided = !(this->Flags & materialFlags::CullModeOn);
-    if(ImGui::Checkbox("Double Sided", &DoubleSided))
-    {
-        Flags = (materialFlags::bits)(Flags ^ materialFlags::CullModeOn);
-        this->ShouldRecreate = true;
-    }
-
-    bool BlendEnabled = this->Flags & materialFlags::BlendEnabled;
-    if(ImGui::Checkbox("Transparent", &BlendEnabled))
-    {
-        Flags = (materialFlags::bits)(Flags ^ materialFlags::BlendEnabled);
-        this->ShouldRecreate = true;
-    }
-
-
-    if(ShouldUpdate)
-        Update();
-}
-
-unlitMaterial::~unlitMaterial()  
+  
+pbrMaterial::~pbrMaterial()  
 {
     printf("Destroying Material \n");
     gfx::context::Get()->QueueDestroyBuffer(this->UniformBuffer);
 }
 
-void unlitMaterial::Serialize(const std::string &FileName) 
+void pbrMaterial::Serialize(const std::string &FileName) 
 {
     std::ofstream FileStream;
     FileStream.open(FileName, std::ios::trunc | std::ios::binary);
     assert(FileStream.is_open());
 
-    u32 MaterialType = (u32)materialType::Unlit;
+    u32 MaterialType = (u32)materialType::PBR;
     FileStream.write((char*)&MaterialType, sizeof(u32));
 
     u32 UUIDSize = this->UUID.size();
@@ -470,10 +304,10 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
     u32 Flags;
     FileStream.read((char*)&Flags, sizeof(u32));
 
-    std::shared_ptr<unlitMaterial> Result = std::make_shared<unlitMaterial>(Name, (materialFlags::bits)Flags);
+    std::shared_ptr<pbrMaterial> Result = std::make_shared<pbrMaterial>(Name, (materialFlags::bits)Flags);
     Result->UUID = UUID;
     
-    FileStream.read((char*)&Result->UniformData, sizeof(unlitMaterial::materialData));
+    FileStream.read((char*)&Result->UniformData, sizeof(pbrMaterial::materialData));
     
     
     u8 HasBaseColorTexture;
@@ -566,7 +400,7 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
     return Result;
 }
 
-void unlitMaterial::Update()
+void pbrMaterial::Update()
 {
     gfx::context::Get()->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(materialData), 0);
 }

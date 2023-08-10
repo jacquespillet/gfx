@@ -406,42 +406,42 @@ void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<mater
         if(!GLTFMaterial.doubleSided)
             Flags = (materialFlags::bits)(Flags |  materialFlags::CullModeOn);
         
-        Flags = (materialFlags::bits)(Flags |  materialFlags::Unlit);
+        Flags = (materialFlags::bits)(Flags |  materialFlags::PBR);
         
-        Materials[i] = std::make_shared<unlitMaterial>(GLTFMaterial.name, Flags);  
-        std::shared_ptr<unlitMaterial> UnlitMat = std::static_pointer_cast<unlitMaterial>(Materials[i]);
+        Materials[i] = std::make_shared<pbrMaterial>(GLTFMaterial.name, Flags);  
+        std::shared_ptr<pbrMaterial> PBRMat = std::static_pointer_cast<pbrMaterial>(Materials[i]);
         
-        UnlitMat->UniformData.BaseColorFactor = v3f(PBR.baseColorFactor[0], PBR.baseColorFactor[1], PBR.baseColorFactor[2]);
-        UnlitMat->UniformData.OpacityFactor = PBR.baseColorFactor[3];
-        UnlitMat->UniformData.RoughnessFactor = PBR.roughnessFactor;
-        UnlitMat->UniformData.MetallicFactor = PBR.metallicFactor;
-        UnlitMat->UniformData.Emission = v3f(GLTFMaterial.emissiveFactor[0], GLTFMaterial.emissiveFactor[1], GLTFMaterial.emissiveFactor[2]);
-        UnlitMat->UniformData.EmissiveFactor = 1.0f;
-        UnlitMat->UniformData.AlphaCutoff = GLTFMaterial.alphaCutoff;
-        UnlitMat->UniformData.OcclusionStrength = 1.0f;
+        PBRMat->UniformData.BaseColorFactor = v3f(PBR.baseColorFactor[0], PBR.baseColorFactor[1], PBR.baseColorFactor[2]);
+        PBRMat->UniformData.OpacityFactor = PBR.baseColorFactor[3];
+        PBRMat->UniformData.RoughnessFactor = PBR.roughnessFactor;
+        PBRMat->UniformData.MetallicFactor = PBR.metallicFactor;
+        PBRMat->UniformData.Emission = v3f(GLTFMaterial.emissiveFactor[0], GLTFMaterial.emissiveFactor[1], GLTFMaterial.emissiveFactor[2]);
+        PBRMat->UniformData.EmissiveFactor = 1.0f;
+        PBRMat->UniformData.AlphaCutoff = GLTFMaterial.alphaCutoff;
+        PBRMat->UniformData.OcclusionStrength = 1.0f;
 
         if(PBR.baseColorTexture.index > -1)
         {
-            UnlitMat->SetBaseColorTexture(Textures[PBR.baseColorTexture.index]);
+            PBRMat->SetBaseColorTexture(Textures[PBR.baseColorTexture.index]);
         }
         if(PBR.metallicRoughnessTexture.index > -1)
         {
-            UnlitMat->SetMetallicRoughnessTexture(Textures[PBR.metallicRoughnessTexture.index]);
+            PBRMat->SetMetallicRoughnessTexture(Textures[PBR.metallicRoughnessTexture.index]);
         }
         if(GLTFMaterial.occlusionTexture.index > -1)
         {
-            UnlitMat->SetOcclusionTexture(Textures[GLTFMaterial.occlusionTexture.index]);
+            PBRMat->SetOcclusionTexture(Textures[GLTFMaterial.occlusionTexture.index]);
         }
         if(GLTFMaterial.normalTexture.index > -1)
         {
-            UnlitMat->SetNormalTexture(Textures[GLTFMaterial.normalTexture.index]);
+            PBRMat->SetNormalTexture(Textures[GLTFMaterial.normalTexture.index]);
         }
         if(GLTFMaterial.emissiveTexture.index > -1)
         {
-            UnlitMat->SetEmissiveTexture(Textures[GLTFMaterial.emissiveTexture.index]);
+            PBRMat->SetEmissiveTexture(Textures[GLTFMaterial.emissiveTexture.index]);
         }
 
-        UnlitMat->Update();
+        PBRMat->Update();
 
     }
 }    

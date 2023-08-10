@@ -72,13 +72,13 @@ void LoadMaterials(std::string Path, const aiScene *Scene, std::vector<std::shar
     {
         aiMaterial *aMaterial = Scene->mMaterials[i];
 
-        materialFlags::bits Flags = (materialFlags::bits)(materialFlags::DepthWriteEnabled | materialFlags::DepthTestEnabled | materialFlags::Unlit);
+        materialFlags::bits Flags = (materialFlags::bits)(materialFlags::DepthWriteEnabled | materialFlags::DepthTestEnabled | materialFlags::PBR);
         
         float OpacityFactor;
         aMaterial->Get(AI_MATKEY_OPACITY, OpacityFactor);
         if(OpacityFactor < 0.99) Flags = (materialFlags::bits)(Flags | materialFlags::BlendEnabled);
         
-        std::shared_ptr<unlitMaterial> Material = std::make_shared<unlitMaterial>(aMaterial->GetName().C_Str(), Flags);
+        std::shared_ptr<pbrMaterial> Material = std::make_shared<pbrMaterial>(aMaterial->GetName().C_Str(), Flags);
 
         b8 PBR = false;
 
@@ -138,7 +138,7 @@ void LoadMaterials(std::string Path, const aiScene *Scene, std::vector<std::shar
         Material->UniformData.OpacityFactor = OpacityFactor;
         Material->UniformData.RoughnessFactor = RoughnessFactor > 0 ? RoughnessFactor : 1;
         Material->UniformData.MetallicFactor = MetallicFactor > 0 ? MetallicFactor : 0;
-        Material->UniformData.EmissiveFactor = EmissiveFactor ? 0 ? EmissiveFactor : 0;
+        Material->UniformData.EmissiveFactor = EmissiveFactor > 0 ? EmissiveFactor : 0;
         Material->UniformData.Emission = v3f(Emission.r, Emission.g, Emission.b);
         Material->UniformData.OcclusionStrength = 1.0f;
         Material->UniformData.AlphaCutoff = 0.0f;

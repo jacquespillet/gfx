@@ -63,7 +63,7 @@ struct context
     //We create these global pipelines only so we can get their descriptor layouts
     //So we can call BindUniformsToPipeline() on them
     //Then each material instantiates another pipeline
-    static const u32 UnlitPipeline = 0;
+    static const u32 PBRPipeline = 0;
     std::unordered_map<u32, gfx::pipelineHandle> Pipelines;
 
     std::unordered_map<materialFlags::bits, gfx::pipelineHandle> AllPipelines;
@@ -93,7 +93,7 @@ struct context
     std::shared_ptr<gfx::imgui> Imgui;
     std::shared_ptr<contextGUI> GUI;
 	
-    std::shared_ptr<unlitMaterial> NoMaterial;
+    std::shared_ptr<pbrMaterial> NoMaterial;
 
     std::shared_ptr<indexedGeometryBuffers> Quad;
     std::shared_ptr<indexedGeometryBuffers> Cube;

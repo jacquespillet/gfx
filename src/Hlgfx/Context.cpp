@@ -104,7 +104,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
 
     Singleton->Imgui = gfx::imgui::Initialize(Singleton->GfxContext, Singleton->Window, Singleton->SwapchainPass);
     Singleton->GUI = std::make_shared<contextGUI>(Singleton.get());
-    Singleton->Pipelines[UnlitPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/Unlit/Unlit.json");
+    Singleton->Pipelines[PBRPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/PBR/PBR.json");
 
     
     struct rgba {uint8_t r, g, b, a;};
@@ -147,7 +147,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
         ColorData[i] = Color;
     defaultTextures::WhiteTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
 
-    Singleton->NoMaterial = std::make_shared<unlitMaterial>("NO_MATERIAL");
+    Singleton->NoMaterial = std::make_shared<pbrMaterial>("NO_MATERIAL");
     Singleton->NoMaterial->UUID = "NO_MATERIAL";
     
     //Initialize default 3d objects WITHOUT materials. materials are created when these objects are instanciated.
@@ -179,17 +179,17 @@ gfx::pipelineCreation context::GetPipelineCreation(materialFlags::bits Flags)
 
     std::string ShaderParentPath;
     std::string ShaderFileName;
-    if(Flags & materialFlags::Unlit)
+    if(Flags & materialFlags::PBR)
     {
-        PipelineCreation.Name = gfx::AllocateCString("Unlit");
-        ShaderParentPath = "resources/Hlgfx/Shaders/Unlit/";
+        PipelineCreation.Name = gfx::AllocateCString("PBR");
+        ShaderParentPath = "resources/Hlgfx/Shaders/PBR/";
         if(GFX_API == GFX_VK || GFX_API == GFX_GL)
         {
-            ShaderFileName = "Unlit.glsl";
+            ShaderFileName = "PBR.glsl";
         }
         else
         {
-            ShaderFileName = "Unlit.hlsl";
+            ShaderFileName = "PBR.hlsl";
         }
     }
 
@@ -369,28 +369,28 @@ void context::RemoveTextureFromProject(std::shared_ptr<texture> Texture)
     //remove from all materials
     for (auto &Material : this->Project.Materials)
     {
-        std::shared_ptr<unlitMaterial> UnlitMaterial = std::dynamic_pointer_cast<unlitMaterial>(Material.second);
-        if(UnlitMaterial)
+        std::shared_ptr<pbrMaterial> PBRMaterial = std::dynamic_pointer_cast<pbrMaterial>(Material.second);
+        if(PBRMaterial)
         {
-            if(UnlitMaterial->BaseColorTexture.get() == Texture.get())
+            if(PBRMaterial->BaseColorTexture.get() == Texture.get())
             {
-                UnlitMaterial->SetBaseColorTexture(defaultTextures::BlackTexture);
+                PBRMaterial->SetBaseColorTexture(defaultTextures::BlackTexture);
             }
-            if(UnlitMaterial->MetallicRoughnessTexture.get() == Texture.get())
+            if(PBRMaterial->MetallicRoughnessTexture.get() == Texture.get())
             {
-                UnlitMaterial->SetMetallicRoughnessTexture(defaultTextures::BlackTexture);
+                PBRMaterial->SetMetallicRoughnessTexture(defaultTextures::BlackTexture);
             }
-            if(UnlitMaterial->NormalTexture.get() == Texture.get())
+            if(PBRMaterial->NormalTexture.get() == Texture.get())
             {
-                UnlitMaterial->SetNormalTexture(defaultTextures::BlackTexture);
+                PBRMaterial->SetNormalTexture(defaultTextures::BlackTexture);
             }
-            if(UnlitMaterial->OcclusionTexture.get() == Texture.get())
+            if(PBRMaterial->OcclusionTexture.get() == Texture.get())
             {
-                UnlitMaterial->SetOcclusionTexture(defaultTextures::BlackTexture);
+                PBRMaterial->SetOcclusionTexture(defaultTextures::BlackTexture);
             }
-            if(UnlitMaterial->EmissiveTexture.get() == Texture.get())
+            if(PBRMaterial->EmissiveTexture.get() == Texture.get())
             {
-                UnlitMaterial->SetEmissiveTexture(defaultTextures::BlackTexture);
+                PBRMaterial->SetEmissiveTexture(defaultTextures::BlackTexture);
             }
         }
     }

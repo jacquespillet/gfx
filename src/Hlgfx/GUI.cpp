@@ -5,7 +5,7 @@
 #include "Loaders/GLTF.h"
 #include "Loaders/Assimp.h"
 #include <nfd.h>
-
+#include <glm/ext.hpp>
 
 namespace hlgfx
 {
@@ -255,7 +255,7 @@ void contextGUI::DrawAssetsWindow()
         {
             if (ImGui::Button("Add New"))
             {
-                Context->AddMaterialToProject(std::make_shared<unlitMaterial>("New Material"));
+                Context->AddMaterialToProject(std::make_shared<pbrMaterial>("New Material"));
             }
 
             for (auto &Material : Context->Project.Materials)
@@ -996,6 +996,179 @@ void mesh::ShowMaterialSelection(std::shared_ptr<material> &Material)
         ImGui::EndPopup();
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void pbrMaterial::DrawGUI()
+{
+    ImGui::Separator();
+    ImGui::Text(this->Name.c_str());
+    bool ShouldUpdate = false;
+    bool ShouldRecreatePipeline = false;
+    ShouldUpdate |= ImGui::ColorEdit3("Base Color", glm::value_ptr(this->UniformData.BaseColorFactor));
+    ShouldUpdate |= ImGui::ColorEdit3("Emission", glm::value_ptr(this->UniformData.Emission));
+    ShouldUpdate |= ImGui::DragFloat("Opacity", &this->UniformData.OpacityFactor, 0.005f, 0, 1);
+    ShouldUpdate |= ImGui::DragFloat("Occlusion Strength", &this->UniformData.OcclusionStrength, 0.005f, 0, 1);
+    ShouldUpdate |= ImGui::DragFloat("Emission Strength", &this->UniformData.EmissiveFactor, 0.005f, 0, 1);
+    
+
+    if(DrawTexture("Base Color Texture", this->BaseColorTexture, this->UniformData.UseBaseColor))
+    {
+        SetBaseColorTexture(this->BaseColorTexture);
+        ShouldUpdate=true;
+    }
+
+    if(DrawTexture("Occlusion Texture", this->OcclusionTexture, this->UniformData.UseOcclusionTexture))
+    {
+        SetOcclusionTexture(this->OcclusionTexture);
+        ShouldUpdate=true;
+    }
+
+    if(DrawTexture("Emissive Texture", this->EmissiveTexture, this->UniformData.UseEmissionTexture))
+    {
+        SetEmissiveTexture(this->EmissiveTexture);
+        ShouldUpdate=true;
+    }
+
+    bool DepthWriteEnabled = this->Flags & materialFlags::DepthWriteEnabled;
+    if(ImGui::Checkbox("Depth Write", &DepthWriteEnabled))
+    {
+        Flags = (materialFlags::bits)(Flags ^ materialFlags::DepthWriteEnabled);
+        this->ShouldRecreate = true;
+    }
+
+    bool DepthTestEnabled = this->Flags & materialFlags::DepthTestEnabled;
+    if(ImGui::Checkbox("Depth Test", &DepthTestEnabled))
+    {
+        Flags = (materialFlags::bits)(Flags ^ materialFlags::DepthTestEnabled);
+        this->ShouldRecreate = true;
+    }
+
+    bool DoubleSided = !(this->Flags & materialFlags::CullModeOn);
+    if(ImGui::Checkbox("Double Sided", &DoubleSided))
+    {
+        Flags = (materialFlags::bits)(Flags ^ materialFlags::CullModeOn);
+        this->ShouldRecreate = true;
+    }
+
+    bool BlendEnabled = this->Flags & materialFlags::BlendEnabled;
+    if(ImGui::Checkbox("Transparent", &BlendEnabled))
+    {
+        Flags = (materialFlags::bits)(Flags ^ materialFlags::BlendEnabled);
+        this->ShouldRecreate = true;
+    }
+
+
+    if(ShouldUpdate)
+        Update();
+}
+
+
+b8 pbrMaterial::ShowTextureSelection(const char *ID, std::shared_ptr<texture> &Texture)
+{
+    const f32 ImageWidth = 50;
+    const f32 ImageHeight = 30;
+    // f32 Offset = ImageHeight / 2 - TextHeight/2;
+
+    bool Changed=false;
+    if(ImGui::BeginPopupModal(ID))
+    {
+        context::project &Project = context::Get()->Project;
+        for (auto &Tex : Project.Textures)
+        {
+            ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
+            if(SelectedTexture.get() == Tex.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
+            
+            gfx::image *Image = gfx::context::Get()->GetImage(Tex.second->Handle);
+            ImGui::Image(Image->GetImGuiID(), ImVec2(ImageWidth, ImageHeight));
+            ImGui::SameLine();
+            ImGui::TreeNodeEx(Tex.second->Name.c_str(), Flags);
+            if(ImGui::IsItemClicked())
+            {
+                SelectedTexture = Tex.second;
+            }
+            ImGui::TreePop();
+        }
+        
+        if (ImGui::Button("Select"))
+        {
+            Texture = SelectedTexture;
+            ImGui::CloseCurrentPopup();
+            Changed = true;
+        }
+        if (ImGui::Button("Close"))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+    return Changed;
+}
+
+bool pbrMaterial::DrawTexture(const char *Name, std::shared_ptr<texture> &Texture, f32 &Use)
+{   
+    b8 Changed=false;
+    f32 TextHeight = ImGui::CalcTextSize(Name).y;
+    const f32 ImageWidth = 50;
+    const f32 ImageHeight = 30;
+    f32 Offset = ImageHeight / 2 - TextHeight/2;
+
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + Offset);
+    b8 UseBool = Use > 0.0f; 
+    if(ImGui::Checkbox(Name, &UseBool))
+    {
+        Use = UseBool ? 1.0f : 0.0f;
+        Changed = true;
+    }
+
+    ImGui::SameLine();
+
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() - Offset);
+    gfx::image *Image = gfx::context::Get()->GetImage(Texture->Handle);
+    ImGui::Image(Image->GetImGuiID(), ImVec2(ImageWidth, ImageHeight));
+    if (ImGui::IsItemHovered() || ImGui::IsItemFocused())
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+    if(ImGui::IsItemClicked())
+    {
+        ImGui::OpenPopup(Name);
+    }
+    Changed |= ShowTextureSelection(Name, Texture);            
+ 
+    ImGui::SameLine();
+    gfx::image *BlackImage = gfx::context::Get()->GetImage(defaultTextures::BlackTexture->Handle);
+    ImGui::Image(BlackImage->GetImGuiID(), ImVec2(30, ImageHeight));
+    if(ImGui::IsItemClicked())
+    {
+        Changed = true;
+        Texture = defaultTextures::BlackTexture;
+    }
+
+    ImGui::SameLine();
+    gfx::image *WhiteImage = gfx::context::Get()->GetImage(defaultTextures::WhiteTexture->Handle);
+    ImGui::Image(WhiteImage->GetImGuiID(), ImVec2(30, ImageHeight));
+    if(ImGui::IsItemClicked())
+    {
+        Changed = true;
+        Texture = defaultTextures::WhiteTexture;
+    }
+
+    ImGui::SameLine();
+    gfx::image *BlueImage = gfx::context::Get()->GetImage(defaultTextures::BlueTexture->Handle);
+    ImGui::Image(BlueImage->GetImGuiID(), ImVec2(30, ImageHeight));
+    if(ImGui::IsItemClicked())
+    {
+        Changed = true;
+        Texture = defaultTextures::BlueTexture;
+    }
+
+    
+    
+    return Changed;
+}
+
 
 
 }

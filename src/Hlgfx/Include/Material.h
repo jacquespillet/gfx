@@ -9,7 +9,7 @@ namespace hlgfx
 {
 enum class materialType
 {
-    Unlit
+    PBR
 };
 
 struct materialFlags
@@ -18,7 +18,7 @@ struct materialFlags
     {
         None                 = 0 << 0,
         BlendEnabled         = 1 << 0,
-        Unlit                = 1 << 1,
+        PBR                  = 1 << 1,
         CullModeOn           = 1 << 3,
         DepthTestEnabled     = 1 << 4,
         DepthWriteEnabled    = 1 << 5,
@@ -54,11 +54,11 @@ struct material
 
 };
 
-struct unlitMaterial : public material
+struct pbrMaterial : public material
 {
-    unlitMaterial(std::string Name);
-    unlitMaterial(std::string Name, materialFlags::bits Flags);
-    ~unlitMaterial();
+    pbrMaterial(std::string Name);
+    pbrMaterial(std::string Name, materialFlags::bits Flags);
+    ~pbrMaterial();
   
     virtual void SetCullMode(gfx::cullMode Mode);
     virtual void Serialize(const std::string &FileName) override;
