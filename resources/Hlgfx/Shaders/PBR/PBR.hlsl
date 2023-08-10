@@ -152,9 +152,21 @@ vec4 PSMain(PSInput Input) : SV_TARGET
     //Lighting
     for(int i=0; i<LightCount; i++)
     {
-        if(Lights[i].Type == 0)
+        if(Lights[i].Type == PointLight)
         {
             vec3 LightDirection = -normalize(Lights[i].Position - Input.FragPosition);
+            vec3 LightIntensity = Lights[i].Intensity * Lights[i].Color;
+
+            vec3 H = normalize(-LightDirection + View);
+            float NdotL = ClampedDot(Normal, -LightDirection);
+            float VdotH = ClampedDot(View, H);
+            float NdotH = ClampedDot(Normal, H);
+            FinalDiffuse += LightIntensity * NdotL *  GetBRDFLambertian(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.CDiff, MaterialInfo.SpecularWeight, VdotH);
+            FinalSpecular += LightIntensity * NdotL * GetBRDFSpecularGGX(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.AlphaRoughness, MaterialInfo.SpecularWeight, VdotH, NdotL, NdotV, NdotH);
+        }
+        else if(Lights[i].Type == DirectionalLight)
+        {
+            vec3 LightDirection = normalize(Lights[i].Direction);
             vec3 LightIntensity = Lights[i].Intensity * Lights[i].Color;
 
             vec3 H = normalize(-LightDirection + View);

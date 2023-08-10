@@ -130,18 +130,9 @@ void scene::AddLight(std::shared_ptr<object3D> Object)
     {
         if(std::find(Lights, Lights + 32, Light) == (Lights + 32))
         {
-            u32 AddInx = 0;
-            if(FreeIndices.size() > 0)
-            {
-                AddInx = FreeIndices.top();
-                FreeIndices.pop();
-            }
-            else
-            {
-                AddInx = SceneBufferData.LightCount++;
-            }
+            u32 AddInx = SceneBufferData.LightCount++;
+            Light->IndexInScene = AddInx;
             this->Lights[AddInx] = Light;
-            this->SceneBufferData.Lights[AddInx] = Light->Data;
             UpdateLight(AddInx);
         }
     }
@@ -149,8 +140,13 @@ void scene::AddLight(std::shared_ptr<object3D> Object)
 
 void scene::UpdateLight(u32 Inx)
 {
+    this->SceneBufferData.Lights[Inx] = Lights[Inx]->Data;
     gfx::context::Get()->CopyDataToBuffer(this->SceneBuffer, &this->SceneBufferData, sizeof(v4i), 0);
     gfx::context::Get()->CopyDataToBuffer(this->SceneBuffer, &this->SceneBufferData.Lights[Inx], sizeof(light::lightData), sizeof(v4i) +  Inx * sizeof(light::lightData));
+}
+void scene::UpdateLightsAfter(u32 Index)
+{
+    gfx::context::Get()->CopyDataToBuffer(this->SceneBuffer, &this->SceneBufferData, sizeof(sceneBuffer), 0);
 }
 
 void scene::AddLightsInObject(std::shared_ptr<object3D> Object)
@@ -213,12 +209,16 @@ void ClearObject(std::shared_ptr<object3D> Object)
     std::shared_ptr<light> Light = std::dynamic_pointer_cast<light>(Object);
     if(Light)
     {
-        std::shared_ptr<light> *Lights = context::Get()->Scene->Lights; 
+        std::shared_ptr<scene> Scene = context::Get()->Scene;
+        std::shared_ptr<light> *Lights = Scene->Lights; 
         auto it = std::find(Lights, Lights + 32, Light);
         sz Inx = std::distance(Lights, it);
         if (it != Lights + 32) {
-            context::Get()->Scene->FreeIndices.push(Inx);
+            memcpy(&Scene->SceneBufferData.Lights[Inx], &Scene->SceneBufferData.Lights[Inx+1], (Scene->SceneBufferData.LightCount - Inx-1) * sizeof(light::lightData));
+            memcpy(&Scene->Lights[Inx], &Scene->Lights[Inx+1], (Scene->SceneBufferData.LightCount - Inx-1) * sizeof(std::shared_ptr<light>));
         }        
+        Scene->SceneBufferData.LightCount--;
+        Scene->UpdateLightsAfter(Inx);
     }
 
     //Delete all children

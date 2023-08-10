@@ -926,7 +926,7 @@ void sceneGUI::DrawSceneGUI()
 
 
 void object3D::DrawMaterial(){}
-
+void object3D::DrawCustomGUI(){}
 void object3D::DrawGUI()
 {
     if(ImGui::IsKeyPressed(261))
@@ -967,21 +967,21 @@ void object3D::DrawGUI()
             }
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("Geometry"))
-        {
-            
-            ImGui::EndTabItem();
-        }
-        if (ImGui::BeginTabItem("Material"))
-        {
-            DrawMaterial();
-            ImGui::EndTabItem();
-        }
+        
+        DrawCustomGUI();
 
         ImGui::EndTabBar();
     }
 }
 
+void mesh::DrawCustomGUI()
+{
+    if (ImGui::BeginTabItem("Material"))
+    {
+        DrawMaterial();
+        ImGui::EndTabItem();
+    }
+}
 
 void mesh::DrawMaterial()
 {
@@ -1025,6 +1025,28 @@ void mesh::ShowMaterialSelection(std::shared_ptr<material> &Material)
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+void light::DrawCustomGUI()
+{
+    if (ImGui::BeginTabItem("Light"))
+    {
+        b8 Changed = false;
+        s32 LightType = (s32) this->Data.Type;
+        Changed |= ImGui::Combo("Render Mode", &LightType, "Point\0Directional\0Spot\0Area\0Rasterizer\0PathTraceCompute\0\0");
+        this->Data.Type = (f32)LightType;
+        
+        Changed |= ImGui::ColorEdit3("Color", glm::value_ptr(this->Data.Color));
+        Changed |= ImGui::SliderFloat("Intensity", &this->Data.Intensity, 0, 100);
+
+        if(Changed)
+        {
+            context::Get()->Scene->UpdateLight(this->IndexInScene);
+        }
+        ImGui::EndTabItem();
+    }
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////

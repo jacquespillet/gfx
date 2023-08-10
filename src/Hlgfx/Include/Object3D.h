@@ -16,6 +16,7 @@ enum class object3DType
     Object3d,
     Mesh,
     Scene,
+    Light,
 };
 
 struct object3D
@@ -58,6 +59,7 @@ struct object3D
     void DeleteChild(std::shared_ptr<object3D> Child);
 
     virtual void DrawGUI();
+    virtual void DrawCustomGUI();
     virtual void DrawMaterial();
 
 

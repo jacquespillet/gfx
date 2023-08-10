@@ -24,6 +24,7 @@ struct mesh : public object3D
     std::shared_ptr<material> SelectedMaterial = nullptr;
     void ShowMaterialSelection(std::shared_ptr<material> &Material);
     virtual void DrawMaterial() override;
+    virtual void DrawCustomGUI() override;
     //Api data
     std::shared_ptr<material> Material;
     std::shared_ptr<indexedGeometryBuffers> GeometryBuffers;

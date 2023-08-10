@@ -32,11 +32,11 @@ struct scene : public object3D
         light::lightData Lights[32];
     } SceneBufferData;
     std::shared_ptr<light> Lights[32];
-    std::stack<u32> FreeIndices;
     std::shared_ptr<gfx::uniformGroup> Uniforms;
 
     gfx::bufferHandle SceneBuffer;
     void UpdateLight(u32 Index);
+    void UpdateLightsAfter(u32 Index);
 
     virtual void DrawGUI() override;
     std::shared_ptr<sceneGUI> SceneGUI;

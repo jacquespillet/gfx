@@ -272,6 +272,8 @@ std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
         Result = std::make_shared<scene>(Name);
     else if(Object3DType == (u32)(object3DType::Object3d))
         Result = std::make_shared<object3D>(Name);
+    else if(Object3DType == (u32)(object3DType::Light))
+        Result = std::make_shared<light>(Name);
 
     Result->UUID = UUID;
 
@@ -312,6 +314,11 @@ std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
         Mesh->UniformData.ModelMatrix = Mesh->Transform.Matrices.LocalToWorld;
         gfx::context::Get()->CopyDataToBuffer(Mesh->UniformBuffer, &Mesh->UniformData, sizeof(mesh::uniformData), 0);
         Mesh->Uniforms->Update();
+    }
+    else if(Object3DType == (u32)(object3DType::Light))
+    {
+        std::shared_ptr<light> Light = std::static_pointer_cast<light>(Result);
+        FileStream.read((char*)&Light->Data, sizeof(light::lightData));
     }
 
     u32 NumChildren;

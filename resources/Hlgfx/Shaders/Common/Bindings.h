@@ -16,3 +16,8 @@
 #define NormalTextureBinding 7
 #define EmissiveTextureBinding 8 
 
+
+#define PointLight 0
+#define DirectionalLight 1
+#define SpotLight 2
+#define AreaLight 2
