@@ -5,7 +5,7 @@
 
 #define SampleTexture(Texture, Sampler, UV) Texture.Sample(Sampler, UV)
 
-#if API == D3D11
+#if GRAPHICS_API == D3D11
 #define DECLARE_STORAGE_BUFFER(Set, Binding, Name, Type) StructuredBuffer<Type> Name : register(t##Binding)
 #else
 #define DECLARE_STORAGE_BUFFER(Set, Binding, Name, Type) RWStructuredBuffer<Type> Name : register(u##Binding)

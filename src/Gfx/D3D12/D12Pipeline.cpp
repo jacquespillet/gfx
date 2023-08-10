@@ -85,9 +85,11 @@ ComPtr<IDxcBlob> CompileShader2(const shaderStage &Stage, std::vector<D3D12_ROOT
         CompileArgs.push_back(DXC_ARG_OPTIMIZATION_LEVEL3);
     }    
 
+    CompileArgs.push_back(L"-DGL=0");
+    CompileArgs.push_back(L"-DVK=1");
     CompileArgs.push_back(L"-DD3D11=3");
     CompileArgs.push_back(L"-DD3D12=2");
-    CompileArgs.push_back(L"-DAPI=2");
+    CompileArgs.push_back(L"-DGRAPHICS_API=2");
 
     // Load the shader source file to a blob.
     ComPtr<IDxcBlobEncoding> sourceBlob{};
@@ -236,7 +238,7 @@ void d3d12PipelineData::Create(const pipelineCreation &PipelineCreation)
         //     }
         // }
 
-        const CD3DX12_STATIC_SAMPLER_DESC pointWrap( 10, // shaderRegister    
+        const CD3DX12_STATIC_SAMPLER_DESC pointWrap( 0, // shaderRegister    
                                             D3D12_FILTER_MIN_MAG_MIP_POINT, // filter    
                                             D3D12_TEXTURE_ADDRESS_MODE_WRAP, // addressU    
                                             D3D12_TEXTURE_ADDRESS_MODE_WRAP, // addressV    

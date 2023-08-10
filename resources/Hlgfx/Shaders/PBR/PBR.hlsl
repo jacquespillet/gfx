@@ -8,9 +8,9 @@ struct PSInput
     vec2 FragUV : TEXCOORD;
     vec3 FragPosition : NORMAL0;
     vec3 FragNormal : NORMAL1;
-    vec3 T : NORMAL2;
-    vec3 B : NORMAL3;
-    vec3 N : NORMAL4;
+    vec3 T : POSITION2;
+    vec3 B : POSITION3;
+    vec3 N : POSITION4;
 };
 
 cbuffer Camera : register(b0)
@@ -65,7 +65,7 @@ Texture2D MetallicRoughnessTexture : register(t5);
 Texture2D OcclusionTexture : register(t6);
 Texture2D NormalTexture : register(t7);
 Texture2D EmissionTexture : register(t8);
-SamplerState DefaultSampler : register(s10);
+SamplerState DefaultSampler : register(s0);
 
 #include "resources/Hlgfx/Shaders/PBR/Util.glsl"
 #include "resources/Hlgfx/Shaders/PBR/Material.glsl"

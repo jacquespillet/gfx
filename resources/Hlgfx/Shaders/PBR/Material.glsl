@@ -37,7 +37,11 @@ normalInfo GetNormalInfo(vec3 T, vec3 B, vec3 N, vec2 FragUV)
     NormalInfo.TextureNormal = SampleTexture(NormalTexture, DefaultSampler, FragUV).rgb * 2.0 - vec3(1.0,1.0,1.0);
     NormalInfo.TextureNormal = normalize(NormalInfo.TextureNormal);
     NormalInfo.TextureNormal = mix(vec3(0,0,1), NormalInfo.TextureNormal, Material.UseNormalTexture);
-    NormalInfo.ShadingNormal = normalize(mul(mat3(Tangent, Bitangent, GeometricNormal), NormalInfo.TextureNormal));
+    mat3 TBN = mat3(Tangent, Bitangent, GeometricNormal);
+#if GRAPHICS_API == D3D11 || GRAPHICS_API == D3D12
+    TBN = transpose(TBN);
+#endif
+    NormalInfo.ShadingNormal = normalize(mul(TBN, NormalInfo.TextureNormal));
 
 
     NormalInfo.Tangent = Tangent;

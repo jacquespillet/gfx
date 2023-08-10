@@ -76,7 +76,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
     DXGI_SWAP_CHAIN_DESC1 SwapChainDesc;
     SwapChainDesc.Width              = 0; // use window width
     SwapChainDesc.Height             = 0; // use window height
-    SwapChainDesc.Format             = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+    SwapChainDesc.Format             = DXGI_FORMAT_R8G8B8A8_UNORM;
     SwapChainDesc.Stereo             = FALSE;
     SwapChainDesc.SampleDesc.Count   = context::Get()->MultiSampleCount;
     SwapChainDesc.SampleDesc.Quality = 0;

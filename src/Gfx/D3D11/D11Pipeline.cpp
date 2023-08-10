@@ -26,9 +26,11 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
         ID3DBlob* pErrorBlob = nullptr;
         
         D3D_SHADER_MACRO defines[] = {
+            { "GL", "0" }, 
+            { "VK", "1" }, 
             { "D3D11", "3" }, 
             { "D3D12", "2" }, 
-            { "API",   "3" }, 
+            { "GRAPHICS_API",   "3" }, 
             nullptr
         };
         HRESULT hr = D3DCompileFromFile(ConstCharToLPCWSTR(PipelineCreation.Shaders.Stages[0].FileName), defines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", 0, 0, &VSBlob, nullptr);

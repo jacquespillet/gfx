@@ -37,7 +37,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     TextureDesc.Height             = ImageData.Height; // in xdata.h
     TextureDesc.MipLevels          = 1;
     TextureDesc.ArraySize          = 1;
-    TextureDesc.Format             = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    TextureDesc.Format             = FormatToNative(ImageData.Format);
     TextureDesc.SampleDesc.Count   = 1;
     TextureDesc.Usage              = D3D11_USAGE_IMMUTABLE;
     TextureDesc.BindFlags          = D3D11_BIND_SHADER_RESOURCE;
