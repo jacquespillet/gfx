@@ -3,6 +3,7 @@
 #include "Include/Scene.h"
 #include "Include/Util.h"
 #include "Loaders/GLTF.h"
+#include "Loaders/Assimp.h"
 #include <nfd.h>
 
 
@@ -612,8 +613,21 @@ void contextGUI::DrawMainMenuBar()
                 nfdchar_t *OutPath = NULL;
                 nfdresult_t Result = NFD_OpenDialog( NULL, NULL, &OutPath );
                 if ( Result == NFD_OKAY ) {
+                    object3D::AddToScene = false;
                     std::shared_ptr<hlgfx::object3D> Mesh = hlgfx::loaders::gltf::Load(OutPath);
                     Context->AddObjectToProject(Mesh);
+                    object3D::AddToScene = true;
+                }                
+            }
+            if(ImGui::MenuItem("Import Other"))
+            {
+                nfdchar_t *OutPath = NULL;
+                nfdresult_t Result = NFD_OpenDialog( NULL, NULL, &OutPath );
+                if ( Result == NFD_OKAY ) {
+                    object3D::AddToScene = false;
+                    std::shared_ptr<hlgfx::object3D> Mesh = hlgfx::loaders::assimp::Load(OutPath);
+                    Context->AddObjectToProject(Mesh);
+                    object3D::AddToScene = true;
                 }                
             }
             ImGui::Separator();

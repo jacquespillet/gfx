@@ -23,6 +23,8 @@ struct object3D
     object3D(std::string);
     object3D(const object3D &Other) = default;
     ~object3D();
+
+    static bool AddToScene;
     
     virtual std::shared_ptr<object3D> Clone(b8 CloneUUID);
     

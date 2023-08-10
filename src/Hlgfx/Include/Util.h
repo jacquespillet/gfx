@@ -7,6 +7,6 @@ namespace hlgfx
 {
 void AddItem(std::vector<u8> &Blob, void *Item, sz Size);
 
-std::string FileNameFromPath(const std::string& fullPath);
-
+std::string FileNameFromPath(const std::string& FullPath);
+std::string PathFromFile(const std::string &FullPath);
 }

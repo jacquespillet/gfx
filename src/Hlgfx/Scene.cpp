@@ -81,7 +81,7 @@ void scene::UpdateMeshPipeline(gfx::pipelineHandle OldPipelineHandle, mesh *Mesh
 void scene::AddObject(std::shared_ptr<object3D> Object)
 {
     object3D::AddObject(Object);
-    this->AddMeshesInObject(Object);
+    if(object3D::AddToScene) this->AddMeshesInObject(Object);
     this->SceneGUI->NodeClicked = Object;
 }
 

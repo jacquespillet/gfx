@@ -17,6 +17,9 @@
 
 namespace hlgfx
 {
+
+bool object3D::AddToScene = true;
+
 object3D::object3D(std::string Name)
 {
     this->Name = Name;
@@ -125,7 +128,8 @@ void object3D::AddObject(std::shared_ptr<object3D> Object)
     }
     Object->Parent = this;
 
-    context::Get()->Scene->AddMesh(Object);
+    //When we're adding an object to a prefab, we don't want to add to the scene.
+    if(AddToScene) context::Get()->Scene->AddMesh(Object);
     
     Object->Transform.SetParent(&this->Transform);
     

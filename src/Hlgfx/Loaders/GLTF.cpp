@@ -239,8 +239,6 @@ void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geomet
             }
 
             Geometry->Buffers->BuildBuffers();
-
-            Geometries.push_back(Geometry);
         }
     }
 }    
@@ -254,7 +252,7 @@ void TraverseNodes(tinygltf::Model &GLTFModel, uint32_t nodeIndex, std::vector<s
     {
         NodeName = "Node";
     }
-    std::shared_ptr<object3D> Node = std::make_shared<object3D>(GLTFNode.name.c_str());
+    std::shared_ptr<object3D> Node = std::make_shared<object3D>(NodeName.c_str());
     
     if(GLTFNode.matrix.size() > 0)
     {

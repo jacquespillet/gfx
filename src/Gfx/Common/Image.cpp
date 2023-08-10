@@ -13,14 +13,15 @@ imageData ImageFromFile(char *FileName)
 
     s32 Width, Height, ChannelCount;
     Result.Data = stbi_load(FileName, &Width, &Height, &ChannelCount, 4);
-    
+    assert(Result.Data);
     Result.Width = Width;
     Result.Height = Height;
     Result.ChannelCount = 4;
     Result.Format = format::R8G8B8A8_UNORM;
     Result.Type = type::UNSIGNED_BYTE;
     Result.DataSize = Width * Height * Result.ChannelCount * sizeof(u8);
-    return Result;    
+    return Result;
+    //TODO: Memory leak here !
 }
 u32 image::GetMipLevelWidth(u32 MipLevel)
 {
