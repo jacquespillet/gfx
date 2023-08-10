@@ -14,7 +14,7 @@ set(GFX_API_GL 0)
 set(GFX_API_VK 1)
 set(GFX_API_D3D12 2)
 set(GFX_API_D3D11 3)
-set(GFX_API ${GFX_API_D3D11})
+set(GFX_API ${GFX_API_D3D12})
 
 add_definitions(-DGFX_GL=${GFX_API_GL})
 add_definitions(-DGFX_VK=${GFX_API_VK})
@@ -272,6 +272,7 @@ endif()
 
 set (sourceCode ${sourceCode}
                 src/Hlgfx/Context.cpp
+                src/Hlgfx/Light.cpp
                 src/Hlgfx/GUI.cpp
                 src/Hlgfx/Texture.cpp
                 src/Hlgfx/Object3D.cpp

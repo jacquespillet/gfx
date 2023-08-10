@@ -2,6 +2,7 @@
 #include "Include/Context.h"
 #include "Include/Scene.h"
 #include "Include/Util.h"
+#include "Include/Light.h"
 #include "Loaders/GLTF.h"
 #include "Loaders/Assimp.h"
 #include <nfd.h>
@@ -71,6 +72,33 @@ void contextGUI::AddObjectMenu()
             ParentObject = this->Context->Scene->SceneGUI->NodeClicked;
         else
             ParentObject = this->Context->Scene;
+    }
+    if(ImGui::BeginMenu("Light"))
+    {
+        if(ImGui::MenuItem("Point"))
+        {
+            Add = true;
+            ObjectToAdd = std::make_shared<light>("Point Light");
+            std::shared_ptr<light> Light = std::static_pointer_cast<light>(ObjectToAdd);
+            Light->Data.Type = (f32)light::lightType::Point;
+            if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
+                ParentObject = this->Context->Scene->SceneGUI->NodeClicked;
+            else
+                ParentObject = this->Context->Scene;            
+        }
+        if(ImGui::MenuItem("Directional"))
+        {
+
+        }
+        if(ImGui::MenuItem("Area"))
+        {
+
+        }
+        if(ImGui::MenuItem("Spot"))
+        {
+
+        }
+        ImGui::EndMenu();
     }
     if(ImGui::MenuItem("Quad"))
     {

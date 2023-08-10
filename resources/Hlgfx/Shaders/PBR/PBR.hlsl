@@ -27,6 +27,28 @@ cbuffer Camera : register(b0)
     vec4 CameraPosition;
 };
 
+
+struct lightData
+{
+    vec3 Color;
+    float Intensity;
+    
+    vec3 Size;
+    float Type;
+    
+    vec3 Position;
+    float Padding1;
+
+    vec3 Direction;
+    float Padding2;
+};
+cbuffer Scene : register(b2)
+{
+    int LightCount;
+    ivec3 Padding0;
+    lightData Lights[32];    
+};
+
 cbuffer Model : register(b1)
 {
     mat4 ModelMatrix;    
@@ -96,8 +118,6 @@ PSInput VSMain(vec4 PositionUvX : POSITION0, vec4 NormalUvY : POSITION1, vec4 Ta
 
 vec4 PSMain(PSInput Input) : SV_TARGET
 {
-    vec3 LightDirection = vec3(-1,-1,-1);
-    float LightIntensity = 4;
 
     vec4 OutputColor = vec4(0,0,0,0);
 
@@ -130,12 +150,21 @@ vec4 PSMain(PSInput Input) : SV_TARGET
     vec3 FinalEmissive = vec3(0.0,0.0,0.0);
 
     //Lighting
-    vec3 H = normalize(-LightDirection + View);
-    float NdotL = ClampedDot(Normal, -LightDirection);
-    float VdotH = ClampedDot(View, H);
-    float NdotH = ClampedDot(Normal, H);
-    FinalDiffuse += LightIntensity * NdotL *  GetBRDFLambertian(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.CDiff, MaterialInfo.SpecularWeight, VdotH);
-    FinalSpecular += LightIntensity * NdotL * GetBRDFSpecularGGX(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.AlphaRoughness, MaterialInfo.SpecularWeight, VdotH, NdotL, NdotV, NdotH);
+    for(int i=0; i<LightCount; i++)
+    {
+        if(Lights[i].Type == 0)
+        {
+            vec3 LightDirection = -normalize(Lights[i].Position - Input.FragPosition);
+            vec3 LightIntensity = Lights[i].Intensity * Lights[i].Color;
+
+            vec3 H = normalize(-LightDirection + View);
+            float NdotL = ClampedDot(Normal, -LightDirection);
+            float VdotH = ClampedDot(View, H);
+            float NdotH = ClampedDot(Normal, H);
+            FinalDiffuse += LightIntensity * NdotL *  GetBRDFLambertian(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.CDiff, MaterialInfo.SpecularWeight, VdotH);
+            FinalSpecular += LightIntensity * NdotL * GetBRDFSpecularGGX(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.AlphaRoughness, MaterialInfo.SpecularWeight, VdotH, NdotL, NdotV, NdotH);
+        }
+    }
 
 
     //AO

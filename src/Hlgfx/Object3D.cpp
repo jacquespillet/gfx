@@ -129,7 +129,8 @@ void object3D::AddObject(std::shared_ptr<object3D> Object)
     Object->Parent = this;
 
     //When we're adding an object to a prefab, we don't want to add to the scene.
-    if(AddToScene) context::Get()->Scene->AddMesh(Object);
+    if(AddToScene) context::Get()->Scene->AddMeshesInObject(Object);
+    if(AddToScene) context::Get()->Scene->AddLightsInObject(Object);
     
     Object->Transform.SetParent(&this->Transform);
     

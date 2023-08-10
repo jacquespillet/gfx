@@ -30,6 +30,19 @@ scene::scene(std::string Name) : object3D(Name)
 {
     this->UUID = context::Get()->GetUUID();
     this->SceneGUI = std::make_shared<sceneGUI>(this);
+    this->SceneBufferData.LightCount = 0;
+    this->SceneBuffer = gfx::context::Get()->CreateBuffer(sizeof(sceneBuffer), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu, sizeof(sceneBuffer));
+    
+    this->Uniforms = std::make_shared<gfx::uniformGroup>();
+    this->Uniforms->Reset();
+    this->Uniforms->AddUniformBuffer(SceneBinding, this->SceneBuffer);
+
+    //Bind the uniform group to the context pipelines
+    for(auto &Pipeline : context::Get()->Pipelines)
+    {
+        //This allocates the descriptor sets based on the DS layouts of each pipeline
+        gfx::context::Get()->BindUniformsToPipeline(this->Uniforms, Pipeline.second, CameraDescriptorSetBinding);
+    }    
 }
 
 std::shared_ptr<object3D> scene::Clone(b8 CloneUUID)
@@ -82,6 +95,7 @@ void scene::AddObject(std::shared_ptr<object3D> Object)
 {
     object3D::AddObject(Object);
     if(object3D::AddToScene) this->AddMeshesInObject(Object);
+    if(object3D::AddToScene) this->AddLightsInObject(Object);
     this->SceneGUI->NodeClicked = Object;
 }
 
@@ -109,19 +123,76 @@ void scene::AddMeshesInObject(std::shared_ptr<object3D> Object)
     }
 }
 
+void scene::AddLight(std::shared_ptr<object3D> Object)
+{
+    std::shared_ptr<light> Light = std::dynamic_pointer_cast<light>(Object);
+    if(Light)
+    {
+        if(std::find(Lights, Lights + 32, Light) == (Lights + 32))
+        {
+            u32 AddInx = 0;
+            if(FreeIndices.size() > 0)
+            {
+                AddInx = FreeIndices.top();
+                FreeIndices.pop();
+            }
+            else
+            {
+                AddInx = SceneBufferData.LightCount++;
+            }
+            this->Lights[AddInx] = Light;
+            this->SceneBufferData.Lights[AddInx] = Light->Data;
+            UpdateLight(AddInx);
+        }
+    }
+}
+
+void scene::UpdateLight(u32 Inx)
+{
+    gfx::context::Get()->CopyDataToBuffer(this->SceneBuffer, &this->SceneBufferData, sizeof(v4i), 0);
+    gfx::context::Get()->CopyDataToBuffer(this->SceneBuffer, &this->SceneBufferData.Lights[Inx], sizeof(light::lightData), sizeof(v4i) +  Inx * sizeof(light::lightData));
+}
+
+void scene::AddLightsInObject(std::shared_ptr<object3D> Object)
+{
+    // If it's a Light, store it in the Lights map
+    AddLight(Object);
+
+    for (sz i = 0; i < Object->Children.size(); i++)
+    {
+        AddLightsInObject(Object->Children[i]);
+    }
+}
+
 void scene::OnRender(std::shared_ptr<camera> Camera)
 {
+
+    
     for(auto &PipelineMeshes : this->Meshes)
     {
         if (PipelineMeshes.second.size() == 0) continue;
         std::shared_ptr<gfx::commandBuffer> CommandBuffer = gfx::context::Get()->GetCurrentFrameCommandBuffer();
         CommandBuffer->BindGraphicsPipeline(PipelineMeshes.first);
         CommandBuffer->BindUniformGroup(Camera->Uniforms, CameraDescriptorSetBinding);
+        CommandBuffer->BindUniformGroup(this->Uniforms, SceneDescriptorSetBinding);
         for(sz i=0; i<PipelineMeshes.second.size(); i++)
         {
             PipelineMeshes.second[i]->OnRender(Camera);
         }
     }
+}
+void scene::OnAfterRender(std::shared_ptr<camera> Camera)
+{
+    for (sz i = 0; i < this->SceneBufferData.LightCount; i++)
+    {
+        if(this->Lights[i]->Transform.HasChanged)
+        {
+            this->SceneBufferData.Lights[i] = this->Lights[i]->Data;
+            UpdateLight(i);
+        }
+    }
+
+    object3D::OnAfterRender(Camera);
 }
 
 void scene::DrawGUI()
@@ -137,6 +208,17 @@ void ClearObject(std::shared_ptr<object3D> Object)
     if(Mesh)
     {
         RemoveMeshInChildren(context::Get()->Scene->Meshes[Mesh->Material->PipelineHandle], Mesh);
+    }
+
+    std::shared_ptr<light> Light = std::dynamic_pointer_cast<light>(Object);
+    if(Light)
+    {
+        std::shared_ptr<light> *Lights = context::Get()->Scene->Lights; 
+        auto it = std::find(Lights, Lights + 32, Light);
+        sz Inx = std::distance(Lights, it);
+        if (it != Lights + 32) {
+            context::Get()->Scene->FreeIndices.push(Inx);
+        }        
     }
 
     //Delete all children
