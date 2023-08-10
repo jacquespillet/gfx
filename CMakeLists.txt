@@ -98,6 +98,13 @@ set(GLEW_DLL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/bin/Release/x64)
 include_directories(${GLEW_INC_DIR})
 link_directories(${GLEW_LIB_DIR})
 
+# ASSIMP
+set(ASSIMP_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/assimp/include)
+set(ASSIMP_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/assimp/lib)
+set(ASSIMP_DLL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/assimp/bin)
+include_directories(${ASSIMP_INC_DIR})
+link_directories(${ASSIMP_LIB_DIR})
+
 
 # tlsf
 set(TLSF_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/tlsf)
@@ -277,12 +284,13 @@ set (sourceCode ${sourceCode}
                 src/Hlgfx/CameraController.cpp
                 src/Hlgfx/Util.cpp
                 src/Hlgfx/Loaders/GLTF.cpp
+                src/Hlgfx/Loaders/Assimp.cpp
 )
 
 ################################################
 ##########      Libs              ##############
 ################################################
-set(commonLibs glfw3)
+set(commonLibs glfw3 assimp-vc141-mt.lib)
 
 if(${GFX_API} EQUAL ${GFX_API_VK})
         set(gfxApiLibs ${gfxApiLibs} vulkan-1)
@@ -405,7 +413,6 @@ if(${BUILD_ALL} EQUAL 1)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
-        
 else()
         set(targetName Main)
         set(mainCode ${sourceCode} src/Main_HelloHLGFX.cpp)
@@ -415,9 +422,10 @@ else()
 endif()
 
 
+install(FILES ${ASSIMP_DLL_DIR}/assimp-vc141-mt.dll DESTINATION bin)
 
 # Install
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources/
         DESTINATION bin/resources
 )
- 
+
