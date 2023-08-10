@@ -58,6 +58,8 @@ pbrMaterial::pbrMaterial(std::string Name) : material(Name)
     this->UniformData.UseBaseColor = 1.0f;
     this->UniformData.UseEmissionTexture = 1.0f;
     this->UniformData.UseOcclusionTexture = 1.0f;
+    this->UniformData.UseNormalTexture = 1.0f;
+    this->UniformData.UseMetallicRoughnessTexture = 1.0f;
 
     Context->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(materialData), 0);
 }
@@ -99,6 +101,9 @@ pbrMaterial::pbrMaterial(std::string Name, materialFlags::bits Flags) : material
     this->UniformData.UseBaseColor = 1.0f;
     this->UniformData.UseEmissionTexture = 1.0f;
     this->UniformData.UseOcclusionTexture = 1.0f;
+    this->UniformData.UseNormalTexture = 1.0f;
+    this->UniformData.UseMetallicRoughnessTexture = 1.0f;
+
 
     Context->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(materialData), 0);
 }

@@ -570,8 +570,8 @@ void contextGUI::SaveAsProject()
 
 void contextGUI::SaveProject()
 {
-    assert(this->ProjectFile != "");
-    Context->SaveProjectToFile(ProjectFile.c_str());
+    if(this->ProjectFile == "") SaveAsProject();
+    else Context->SaveProjectToFile(ProjectFile.c_str());
 }
 
 void contextGUI::OpenProject()
@@ -1013,6 +1013,9 @@ void pbrMaterial::DrawGUI()
     ShouldUpdate |= ImGui::DragFloat("Opacity", &this->UniformData.OpacityFactor, 0.005f, 0, 1);
     ShouldUpdate |= ImGui::DragFloat("Occlusion Strength", &this->UniformData.OcclusionStrength, 0.005f, 0, 1);
     ShouldUpdate |= ImGui::DragFloat("Emission Strength", &this->UniformData.EmissiveFactor, 0.005f, 0, 1);
+    ShouldUpdate |= ImGui::DragFloat("Roughness", &this->UniformData.RoughnessFactor, 0.005f, 0, 1);
+    ShouldUpdate |= ImGui::DragFloat("Metallic", &this->UniformData.MetallicFactor, 0.005f, 0, 1);
+    ShouldUpdate |= ImGui::DragFloat("Alpha Cutoff", &this->UniformData.AlphaCutoff, 0.005f, 0, 1);
     
 
     if(DrawTexture("Base Color Texture", this->BaseColorTexture, this->UniformData.UseBaseColor))
@@ -1030,6 +1033,18 @@ void pbrMaterial::DrawGUI()
     if(DrawTexture("Emissive Texture", this->EmissiveTexture, this->UniformData.UseEmissionTexture))
     {
         SetEmissiveTexture(this->EmissiveTexture);
+        ShouldUpdate=true;
+    }
+
+    if(DrawTexture("Normal Texture", this->NormalTexture, this->UniformData.UseNormalTexture))
+    {
+        SetNormalTexture(this->NormalTexture);
+        ShouldUpdate=true;
+    }
+
+    if(DrawTexture("Metallic/Roughness Texture", this->MetallicRoughnessTexture, this->UniformData.UseMetallicRoughnessTexture))
+    {
+        SetMetallicRoughnessTexture(this->MetallicRoughnessTexture);
         ShouldUpdate=true;
     }
 

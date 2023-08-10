@@ -60,6 +60,7 @@ void camera::RecalculateMatrices()
     this->Data.ProjectionMatrix = glm::perspective(glm::radians(this->Data.FOV), this->Data.AspectRatio, this->Data.NearClip, this->Data.FarClip);
     this->Data.ViewMatrix = this->Transform.Matrices.WorldToLocal;
     this->Data.ViewProjectionMatrix = this->Data.ProjectionMatrix * this->Data.ViewMatrix;
+    this->Data.CameraPosition = v4f(this->Transform.GetWorldPosition(), 1);
     gfx::context::Get()->CopyDataToBuffer(this->UniformBuffer, &this->Data, sizeof(cameraUniformData), 0);
 }
 

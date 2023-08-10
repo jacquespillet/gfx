@@ -21,6 +21,8 @@ struct camera : public object3D
         m4x4 ProjectionMatrix;
         m4x4 ViewMatrix;
         m4x4 ViewProjectionMatrix;
+
+        v4f CameraPosition;
     } Data;
 
     void RecalculateMatrices();

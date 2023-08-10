@@ -28,6 +28,16 @@ void glShader::SetSource(const char* Source, shaderStageFlags::value Type)
     this->Source = Source;
 }
 
+void PrintStringWithLineNumbers(const std::string& inputString) {
+    std::istringstream stream(inputString);
+    std::string line;
+    int lineNumber = 1;
+    
+    while (std::getline(stream, line)) {
+        printf("Line %d: %s \n", lineNumber,  line.c_str());
+        lineNumber++;
+    }
+}
 
 void glShader::Compile()
 {
@@ -43,6 +53,8 @@ void glShader::Compile()
         int LogLength; 
         glGetShaderInfoLog(ShaderObject, 5000, &LogLength, Log);
         printf("shader log: %s\n", Log);
+        std::string SourceStr = std::string(Source);
+        PrintStringWithLineNumbers(SourceStr);
     }	
 	Compiled = true;
 }

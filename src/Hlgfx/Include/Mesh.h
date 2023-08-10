@@ -30,6 +30,7 @@ struct mesh : public object3D
     struct uniformData
     {
         m4x4 ModelMatrix;
+        m4x4 NormalMatrix;
     } UniformData;
     gfx::bufferHandle UniformBuffer;
     std::shared_ptr<gfx::uniformGroup> Uniforms;

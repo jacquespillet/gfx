@@ -101,6 +101,10 @@ struct pbrMaterial : public material
         f32 UseBaseColor;
         f32 UseEmissionTexture;
         f32 UseOcclusionTexture;
+
+        f32 UseNormalTexture;
+        f32 UseMetallicRoughnessTexture;
+        v2f Padding;
     } UniformData;
 
 };

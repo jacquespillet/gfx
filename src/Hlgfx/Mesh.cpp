@@ -28,6 +28,7 @@ mesh::mesh(std::string Name) : object3D(Name)
     }
     
     this->UniformData.ModelMatrix = this->Transform.Matrices.LocalToWorld;
+    this->UniformData.NormalMatrix = this->Transform.Matrices.LocalToWorldNormal;
     gfx::context::Get()->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(uniformData), 0);
 
     this->Uniforms->Update(); 
@@ -53,6 +54,7 @@ mesh::mesh() : object3D("Mesh")
     }
     
     this->UniformData.ModelMatrix = this->Transform.Matrices.LocalToWorld;
+    this->UniformData.NormalMatrix = this->Transform.Matrices.LocalToWorldNormal;
     gfx::context::Get()->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(uniformData), 0);
 
     this->Uniforms->Update();    
@@ -105,6 +107,7 @@ void mesh::OnRender(std::shared_ptr<camera> Camera)
     if(this->Transform.HasChanged)
     {
         this->UniformData.ModelMatrix = this->Transform.Matrices.LocalToWorld;
+        this->UniformData.NormalMatrix = this->Transform.Matrices.LocalToWorldNormal;
         gfx::context::Get()->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(uniformData), 0);
     }
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = gfx::context::Get()->GetCurrentFrameCommandBuffer();    
