@@ -6,17 +6,21 @@ namespace hlgfx
 
 light::light(std::string Name) : object3D(Name)
 {
-    this->Data.Color = v3f(1,1,1);
-    this->Data.Intensity = 10.0f;
-    this->Data.Size = v3f(1,1,1);
-    this->Data.Position = this->Transform.GetWorldPosition();
-    this->Data.Direction = glm::column(this->Transform.Matrices.LocalToWorld, 2);
+    this->Data.ColorAndIntensity.r = 1; this->Data.ColorAndIntensity.g = 1; this->Data.ColorAndIntensity.b = 1;
+    this->Data.ColorAndIntensity.w = 10.0f;
+    this->Data.SizeAndType.x = 1; this->Data.SizeAndType.y = 1; this->Data.SizeAndType.z = 1;
+    v3f Pos =  this->Transform.GetWorldPosition();
+    this->Data.Position[0] = Pos.x; this->Data.Position[1] = Pos.y; this->Data.Position[2] = Pos.z;  
+    v3f Dir = glm::column(this->Transform.Matrices.LocalToWorld, 2);
+    this->Data.Direction[0] = Dir.x; this->Data.Direction[1] = Dir.y; this->Data.Direction[2] = Dir.z;
 }
 
 void light::OnUpdate()
 {
-    this->Data.Position = this->Transform.GetWorldPosition();
-    this->Data.Direction = glm::column(this->Transform.Matrices.LocalToWorld, 2);
+    v3f Pos =  this->Transform.GetWorldPosition();
+    this->Data.Position[0] = Pos.x; this->Data.Position[1] = Pos.y; this->Data.Position[2] = Pos.z;  
+    v3f Dir = glm::column(this->Transform.Matrices.LocalToWorld, 2);
+    this->Data.Direction[0] = Dir.x; this->Data.Direction[1] = Dir.y; this->Data.Direction[2] = Dir.z;    
 }
 
 void light::Serialize(std::ofstream &FileStream)

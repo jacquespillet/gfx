@@ -80,7 +80,7 @@ void contextGUI::AddObjectMenu()
             Add = true;
             ObjectToAdd = std::make_shared<light>("Point Light");
             std::shared_ptr<light> Light = std::static_pointer_cast<light>(ObjectToAdd);
-            Light->Data.Type = (f32)light::lightType::Point;
+            Light->Data.SizeAndType.w = (f32)light::lightType::Point;
             if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
                 ParentObject = this->Context->Scene->SceneGUI->NodeClicked;
             else
@@ -1033,12 +1033,12 @@ void light::DrawCustomGUI()
     if (ImGui::BeginTabItem("Light"))
     {
         b8 Changed = false;
-        s32 LightType = (s32) this->Data.Type;
+        s32 LightType = (s32) this->Data.SizeAndType.w;
         Changed |= ImGui::Combo("Render Mode", &LightType, "Point\0Directional\0Spot\0Area\0Rasterizer\0PathTraceCompute\0\0");
-        this->Data.Type = (f32)LightType;
+        this->Data.SizeAndType.w = (f32)LightType;
         
-        Changed |= ImGui::ColorEdit3("Color", glm::value_ptr(this->Data.Color));
-        Changed |= ImGui::SliderFloat("Intensity", &this->Data.Intensity, 0, 100);
+        Changed |= ImGui::ColorEdit3("Color", glm::value_ptr(this->Data.ColorAndIntensity));
+        Changed |= ImGui::SliderFloat("Intensity", &this->Data.ColorAndIntensity.w, 0, 100);
 
         if(Changed)
         {

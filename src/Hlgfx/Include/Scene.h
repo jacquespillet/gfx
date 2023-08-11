@@ -25,13 +25,13 @@ struct scene : public object3D
     
     virtual std::shared_ptr<object3D> Clone(b8 CloneUUID) override;
 
+    static const u32 MaxLights = 32;
     struct sceneBuffer
     {
-        s32 LightCount = 0;
-        v3i Padding0;
-        light::lightData Lights[32];
+        v4f LightCount;
+        light::lightData Lights[MaxLights];
     } SceneBufferData;
-    std::shared_ptr<light> Lights[32];
+    std::shared_ptr<light> Lights[MaxLights];
     std::shared_ptr<gfx::uniformGroup> Uniforms;
 
     gfx::bufferHandle SceneBuffer;

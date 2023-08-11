@@ -30,23 +30,15 @@ cbuffer Camera : register(b0)
 
 struct lightData
 {
-    vec3 Color;
-    float Intensity;
-    
-    vec3 Size;
-    float Type;
-    
-    vec3 Position;
-    float Padding1;
-
-    vec3 Direction;
-    float Padding2;
+    vec4 ColorAndIntensity;
+    vec4 SizeAndType;
+    vec4 Position;
+    vec4 Direction;    
 };
 cbuffer Scene : register(b2)
 {
-    int LightCount;
-    ivec3 Padding0;
-    lightData Lights[32];    
+    vec4 LightCount;
+    lightData Lights[32];      
 };
 
 cbuffer Model : register(b1)
@@ -150,12 +142,12 @@ vec4 PSMain(PSInput Input) : SV_TARGET
     vec3 FinalEmissive = vec3(0.0,0.0,0.0);
 
     //Lighting
-    for(int i=0; i<LightCount; i++)
+    for(int i=0; i<LightCount.x; i++)
     {
-        if(Lights[i].Type == PointLight)
+        if(Lights[i].SizeAndType.w == PointLight)
         {
-            vec3 LightDirection = -normalize(Lights[i].Position - Input.FragPosition);
-            vec3 LightIntensity = Lights[i].Intensity * Lights[i].Color;
+            vec3 LightDirection = -normalize(Lights[i].Position.xyz - Input.FragPosition);
+            vec3 LightIntensity = Lights[i].ColorAndIntensity.w * Lights[i].ColorAndIntensity.xyz;
 
             vec3 H = normalize(-LightDirection + View);
             float NdotL = ClampedDot(Normal, -LightDirection);
@@ -164,10 +156,10 @@ vec4 PSMain(PSInput Input) : SV_TARGET
             FinalDiffuse += LightIntensity * NdotL *  GetBRDFLambertian(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.CDiff, MaterialInfo.SpecularWeight, VdotH);
             FinalSpecular += LightIntensity * NdotL * GetBRDFSpecularGGX(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.AlphaRoughness, MaterialInfo.SpecularWeight, VdotH, NdotL, NdotV, NdotH);
         }
-        else if(Lights[i].Type == DirectionalLight)
+        else if(Lights[i].SizeAndType.w == DirectionalLight)
         {
-            vec3 LightDirection = normalize(Lights[i].Direction);
-            vec3 LightIntensity = Lights[i].Intensity * Lights[i].Color;
+            vec3 LightDirection = normalize(Lights[i].Direction.xyz);
+            vec3 LightIntensity = Lights[i].ColorAndIntensity.w * Lights[i].ColorAndIntensity.xyz;
 
             vec3 H = normalize(-LightDirection + View);
             float NdotL = ClampedDot(Normal, -LightDirection);
@@ -177,7 +169,6 @@ vec4 PSMain(PSInput Input) : SV_TARGET
             FinalSpecular += LightIntensity * NdotL * GetBRDFSpecularGGX(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.AlphaRoughness, MaterialInfo.SpecularWeight, VdotH, NdotL, NdotV, NdotH);
         }
     }
-
 
     //AO
     float AmbientOcclusion = 1.0;

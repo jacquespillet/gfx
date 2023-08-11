@@ -27,6 +27,20 @@ DECLARE_UNIFORM_BUFFER(CameraDescriptorSetBinding, CameraBinding, Camera)
     vec4 CameraPosition;
 };
 
+struct lightData
+{
+    vec4 ColorAndIntensity;
+    vec4 SizeAndType;
+    vec4 Position;
+    vec4 Direction;
+};
+
+DECLARE_UNIFORM_BUFFER(SceneDescriptorSetBinding, SceneBinding, Scene)
+{
+    vec4 LightCount;
+    lightData Lights[3];    
+};
+
 DECLARE_UNIFORM_BUFFER(ModelDescriptorSetBinding, ModelBinding, Model)
 {
     mat4 ModelMatrix;    
@@ -111,9 +125,6 @@ layout(location = 0) out vec4 OutputColor;
 #include "Tonemapping.glsl"
 #include "BRDF.glsl"
 
-vec3 LightDirection = vec3(-1,-1,-1);
-float LightIntensity = 4;
-
 void main() 
 {
     //Color
@@ -145,12 +156,33 @@ void main()
     vec3 FinalEmissive = vec3(0.0,0.0,0.0);
 
     //Lighting
-    vec3 H = normalize(-LightDirection + View);
-    float NdotL = ClampedDot(Normal, -LightDirection);
-    float VdotH = ClampedDot(View, H);
-    float NdotH = ClampedDot(Normal, H);
-    FinalDiffuse += LightIntensity * NdotL *  GetBRDFLambertian(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.CDiff, MaterialInfo.SpecularWeight, VdotH);
-    FinalSpecular += LightIntensity * NdotL * GetBRDFSpecularGGX(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.AlphaRoughness, MaterialInfo.SpecularWeight, VdotH, NdotL, NdotV, NdotH);
+    for(int i=0; i<LightCount.x; i++)
+    {
+        if(Lights[i].SizeAndType.w == PointLight)
+        {
+            vec3 LightDirection = -normalize(Lights[i].Position.xyz - Input.FragPosition);
+            vec3 LightIntensity = Lights[i].ColorAndIntensity.w * Lights[i].ColorAndIntensity.xyz;
+
+            vec3 H = normalize(-LightDirection + View);
+            float NdotL = ClampedDot(Normal, -LightDirection);
+            float VdotH = ClampedDot(View, H);
+            float NdotH = ClampedDot(Normal, H);
+            FinalDiffuse += LightIntensity * NdotL *  GetBRDFLambertian(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.CDiff, MaterialInfo.SpecularWeight, VdotH);
+            FinalSpecular += LightIntensity * NdotL * GetBRDFSpecularGGX(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.AlphaRoughness, MaterialInfo.SpecularWeight, VdotH, NdotL, NdotV, NdotH);
+        }
+        else if(Lights[i].SizeAndType.w == DirectionalLight)
+        {
+            vec3 LightDirection = normalize(Lights[i].Direction.xyz);
+            vec3 LightIntensity = Lights[i].ColorAndIntensity.w * Lights[i].ColorAndIntensity.xyz;
+
+            vec3 H = normalize(-LightDirection + View);
+            float NdotL = ClampedDot(Normal, -LightDirection);
+            float VdotH = ClampedDot(View, H);
+            float NdotH = ClampedDot(Normal, H);
+            FinalDiffuse += LightIntensity * NdotL *  GetBRDFLambertian(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.CDiff, MaterialInfo.SpecularWeight, VdotH);
+            FinalSpecular += LightIntensity * NdotL * GetBRDFSpecularGGX(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.AlphaRoughness, MaterialInfo.SpecularWeight, VdotH, NdotL, NdotV, NdotH);
+        }
+    }
 
 
     //AO

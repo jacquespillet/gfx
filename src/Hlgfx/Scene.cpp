@@ -30,7 +30,7 @@ scene::scene(std::string Name) : object3D(Name)
 {
     this->UUID = context::Get()->GetUUID();
     this->SceneGUI = std::make_shared<sceneGUI>(this);
-    this->SceneBufferData.LightCount = 0;
+    this->SceneBufferData.LightCount.x = 0;
     this->SceneBuffer = gfx::context::Get()->CreateBuffer(sizeof(sceneBuffer), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu, sizeof(sceneBuffer));
     
     this->Uniforms = std::make_shared<gfx::uniformGroup>();
@@ -41,8 +41,9 @@ scene::scene(std::string Name) : object3D(Name)
     for(auto &Pipeline : context::Get()->Pipelines)
     {
         //This allocates the descriptor sets based on the DS layouts of each pipeline
-        gfx::context::Get()->BindUniformsToPipeline(this->Uniforms, Pipeline.second, CameraDescriptorSetBinding);
+        gfx::context::Get()->BindUniformsToPipeline(this->Uniforms, Pipeline.second, SceneDescriptorSetBinding);
     }    
+    this->Uniforms->Update();
 }
 
 std::shared_ptr<object3D> scene::Clone(b8 CloneUUID)
@@ -128,9 +129,9 @@ void scene::AddLight(std::shared_ptr<object3D> Object)
     std::shared_ptr<light> Light = std::dynamic_pointer_cast<light>(Object);
     if(Light)
     {
-        if(std::find(Lights, Lights + 32, Light) == (Lights + 32))
+        if(std::find(Lights, Lights + MaxLights, Light) == (Lights + MaxLights))
         {
-            u32 AddInx = SceneBufferData.LightCount++;
+            u32 AddInx = SceneBufferData.LightCount.x++;
             Light->IndexInScene = AddInx;
             this->Lights[AddInx] = Light;
             UpdateLight(AddInx);
@@ -162,7 +163,7 @@ void scene::AddLightsInObject(std::shared_ptr<object3D> Object)
 
 void scene::OnRender(std::shared_ptr<camera> Camera)
 {
-
+    UpdateLightsAfter(0);
     
     for(auto &PipelineMeshes : this->Meshes)
     {
@@ -179,7 +180,7 @@ void scene::OnRender(std::shared_ptr<camera> Camera)
 }
 void scene::OnAfterRender(std::shared_ptr<camera> Camera)
 {
-    for (sz i = 0; i < this->SceneBufferData.LightCount; i++)
+    for (sz i = 0; i < this->SceneBufferData.LightCount.x; i++)
     {
         if(this->Lights[i]->Transform.HasChanged)
         {
@@ -211,11 +212,11 @@ void ClearObject(std::shared_ptr<object3D> Object)
     {
         std::shared_ptr<scene> Scene = context::Get()->Scene;
         std::shared_ptr<light> *Lights = Scene->Lights; 
-        auto it = std::find(Lights, Lights + 32, Light);
+        auto it = std::find(Lights, Lights + scene::MaxLights, Light);
         sz Inx = std::distance(Lights, it);
-        if (it != Lights + 32) {
-            memcpy(&Scene->SceneBufferData.Lights[Inx], &Scene->SceneBufferData.Lights[Inx+1], (Scene->SceneBufferData.LightCount - Inx-1) * sizeof(light::lightData));
-            memcpy(&Scene->Lights[Inx], &Scene->Lights[Inx+1], (Scene->SceneBufferData.LightCount - Inx-1) * sizeof(std::shared_ptr<light>));
+        if (it != Lights + scene::MaxLights) {
+            memcpy(&Scene->SceneBufferData.Lights[Inx], &Scene->SceneBufferData.Lights[Inx+1], (Scene->SceneBufferData.LightCount.x - Inx-1) * sizeof(light::lightData));
+            memcpy(&Scene->Lights[Inx], &Scene->Lights[Inx+1], (Scene->SceneBufferData.LightCount.x - Inx-1) * sizeof(std::shared_ptr<light>));
         }        
         Scene->SceneBufferData.LightCount--;
         Scene->UpdateLightsAfter(Inx);

@@ -48,6 +48,8 @@ void buffer::Init(size_t ByteSize, sz Stride, bufferUsage::value Usage, memoryUs
     GET_CONTEXT(VkData, context::Get());
     VmaAllocationInfo AllocInfo;
     vmaGetAllocationInfo(VkData->Allocator, VkBufferData->Allocation, &AllocInfo);
+
+    if(Usage & bufferUsage::UniformBuffer) MapMemory();
 }
 
 u8 *buffer::MapMemory()
@@ -103,7 +105,7 @@ void buffer::CopyData(const uint8_t *Data, size_t ByteSize, size_t Offset)
     {
         (void)this->MapMemory();
 
-#if 0
+#if 1
         std::memcpy((void*)(this->MappedData + Offset), (const void*)Data, ByteSize);
 #else
         for(sz i=0; i<ByteSize; i++)
