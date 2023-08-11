@@ -46,12 +46,22 @@ struct material
     virtual void DrawGUI() = 0;
     virtual void SetCullMode(gfx::cullMode Mode) = 0;
     virtual void Serialize(const std::string &FileName)=0;
-    static std::shared_ptr<material> Deserialize(const std::string &FileName);
     virtual void RecreatePipeline() = 0;
     virtual std::shared_ptr<material> Clone() = 0;
+    static std::shared_ptr<material> Deserialize(const std::string &FileName);
     b8 ShouldRecreate = false;
     std::unordered_map<std::string, std::shared_ptr<texture>> AllTextures;
+};
 
+struct customMaterial : public material
+{
+    customMaterial(std::string Name, gfx::pipelineHandle Pipeline);
+    
+    virtual void DrawGUI() override;
+    virtual void SetCullMode(gfx::cullMode Mode) override;
+    virtual void Serialize(const std::string &FileName) override;
+    virtual void RecreatePipeline() override;
+    virtual std::shared_ptr<material> Clone() override;
 };
 
 struct pbrMaterial : public material

@@ -1,0 +1,66 @@
+{
+	"name" : "main",
+	"pipelines" : [
+		{
+			"name" : "ShadowMaps",
+			"vertex_streams":
+			[
+				{
+					"stream_binding":0,
+					"stream_rate":"Vertex",
+					"stream_stride":48
+				}
+			],
+			"vertex_input" : [
+				{
+					"vertex_stream" : 0,
+					"attribute_location" : 0,
+					"attribute_offset" : 0,
+					"attribute_format" : "Float4",
+					"name" : "Position"
+				},
+				{
+					"vertex_stream" : 0,
+					"attribute_location" : 1,
+					"attribute_offset" : 16,
+					"attribute_format" : "Float4",
+					"name" : "Position"
+				},
+				{
+					"vertex_stream" : 0,
+					"attribute_location" : 2,
+					"attribute_offset" : 32,
+					"attribute_format" : "Float4",
+					"name" : "Position"
+				}
+			],
+			"render_pass" : "ShadowPass",
+			"depth" : {
+				"write" : true,
+				"test" : "less_or_equal"
+			},
+			"shaders" : [
+				{
+					"language": "GLSL",
+					"stage" : "vertex",
+					"shader" : "ShadowMaps.glsl"
+				},
+				{
+					"language": "GLSL",
+					"stage" : "fragment",
+					"shader" : "ShadowMaps.glsl"
+				},
+				{
+					"language": "HLSL",
+					"stage" : "vertex",
+					"shader" : "ShadowMaps.hlsl"
+				},
+				{
+					"language": "HLSL",
+					"stage" : "fragment",
+					"shader" : "ShadowMaps.hlsl"
+				}				
+			]
+		}
+	]
+}

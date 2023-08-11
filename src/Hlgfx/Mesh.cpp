@@ -112,7 +112,9 @@ void mesh::OnRender(std::shared_ptr<camera> Camera)
     }
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = gfx::context::Get()->GetCurrentFrameCommandBuffer();    
     CommandBuffer->BindUniformGroup(this->Uniforms, ModelDescriptorSetBinding);
-    CommandBuffer->BindUniformGroup(this->Material->Uniforms, MaterialDescriptorSetBinding);
+    
+    std::shared_ptr<material> Material = context::Get()->Scene->OverrideMaterial ? context::Get()->Scene->OverrideMaterial : this->Material; 
+    if(Material->Uniforms) CommandBuffer->BindUniformGroup(Material->Uniforms, MaterialDescriptorSetBinding);
     
     CommandBuffer->BindVertexBuffer(this->GeometryBuffers->VertexBuffer);
     CommandBuffer->BindIndexBuffer(this->GeometryBuffers->IndexBuffer, this->GeometryBuffers->Start, gfx::indexType::Uint32);

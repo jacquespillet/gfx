@@ -169,7 +169,10 @@ void scene::OnRender(std::shared_ptr<camera> Camera)
     {
         if (PipelineMeshes.second.size() == 0) continue;
         std::shared_ptr<gfx::commandBuffer> CommandBuffer = gfx::context::Get()->GetCurrentFrameCommandBuffer();
-        CommandBuffer->BindGraphicsPipeline(PipelineMeshes.first);
+        
+        if(this->OverrideMaterial != nullptr) CommandBuffer->BindGraphicsPipeline(this->OverrideMaterial->PipelineHandle);
+        else CommandBuffer->BindGraphicsPipeline(PipelineMeshes.first);
+        
         CommandBuffer->BindUniformGroup(Camera->Uniforms, CameraDescriptorSetBinding);
         CommandBuffer->BindUniformGroup(this->Uniforms, SceneDescriptorSetBinding);
         for(sz i=0; i<PipelineMeshes.second.size(); i++)

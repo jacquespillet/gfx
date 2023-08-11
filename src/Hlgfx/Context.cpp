@@ -105,6 +105,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->Imgui = gfx::imgui::Initialize(Singleton->GfxContext, Singleton->Window, Singleton->SwapchainPass);
     Singleton->GUI = std::make_shared<contextGUI>(Singleton.get());
     Singleton->Pipelines[PBRPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/PBR/PBR.json");
+    Singleton->Pipelines[ShadowsPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/ShadowMaps/ShadowMaps.json");
 
     
     struct rgba {uint8_t r, g, b, a;};
@@ -318,21 +319,9 @@ void context::StartFrame()
     this->Scene->OnEarlyUpdate();
     
     GfxContext->StartFrame();	
-
+    
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();
     CommandBuffer->Begin();    
-
-    CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
-    CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);
-    CommandBuffer->SetScissor(0, 0, Width, Height);
-
-    Imgui->StartFrame();
-    this->CtrlPressed = ImGui::GetIO().KeyCtrl;
-
-    this->GUI->StartFrame();
-
-
-    this->GUI->DrawGUI();
 }
 
 std::string context::GetUUID()
@@ -602,23 +591,40 @@ void context::NewProject()
     this->Scene = std::make_shared<scene>("New Scene");
 }
 
-void context::Update(std::shared_ptr<camera> Camera)
+void context::Render(std::shared_ptr<camera> Camera)
 {
-
     Camera->Controls->OnUpdate();
-    this->Scene->OnUpdate();
+    
+    std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();    
+
+    CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
+    CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);
+    CommandBuffer->SetScissor(0, 0, Width, Height);
+
+    Imgui->StartFrame();
+    this->CtrlPressed = ImGui::GetIO().KeyCtrl;
+
+    this->GUI->StartFrame();
+
+    this->GUI->DrawGUI();
+
     this->Scene->OnBeforeRender(Camera);
     this->Scene->OnRender(Camera);
     this->Scene->OnAfterRender(Camera);
-}
-
-void context::EndFrame()
-{
-    std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();    
+    
     ImGui::GetIO().KeyCtrl = this->CtrlPressed;
     
     Imgui->EndFrame(CommandBuffer);
     CommandBuffer->EndPass();
+}
+
+void context::Update()
+{
+    this->Scene->OnUpdate();
+}
+
+void context::EndFrame()
+{
     GfxContext->EndFrame();
     GfxContext->Present();   
      

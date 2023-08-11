@@ -16,7 +16,7 @@
 
 namespace hlgfx
 {
-
+struct renderer;
 struct scene;  
 struct mesh;  
 struct contextGUI;  
@@ -35,12 +35,14 @@ struct context
 
     void StartFrame();
     void EndFrame();
-    void Update(std::shared_ptr<camera> Camera);
+    void Update();
     void OnResize(u32 Width, u32 Height);
     void OnMouseClicked(app::mouseButton Button, bool Clicked);
     void OnMousePositionChanged(f64 NewPosX, f64 NewPosY);
     void OnMouseWheelChanged(f64 OffsetX, f64 OffsetY);
     void Cleanup();
+
+    void Render(std::shared_ptr<camera> Camera);
 
     gfx::pipelineCreation GetPipelineCreation(materialFlags::bits Flags);
     gfx::pipelineHandle CreateOrGetPipeline(materialFlags::bits Flags);
@@ -64,6 +66,7 @@ struct context
     //So we can call BindUniformsToPipeline() on them
     //Then each material instantiates another pipeline
     static const u32 PBRPipeline = 0;
+    static const u32 ShadowsPipeline = 1;
     std::unordered_map<u32, gfx::pipelineHandle> Pipelines;
 
     std::unordered_map<materialFlags::bits, gfx::pipelineHandle> AllPipelines;

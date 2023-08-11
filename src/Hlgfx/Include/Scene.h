@@ -38,6 +38,8 @@ struct scene : public object3D
     void UpdateLight(u32 Index);
     void UpdateLightsAfter(u32 Index);
 
+    std::shared_ptr<material> OverrideMaterial = nullptr;
+
     virtual void DrawGUI() override;
     std::shared_ptr<sceneGUI> SceneGUI;
 

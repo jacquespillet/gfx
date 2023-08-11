@@ -21,6 +21,19 @@ material::material(std::string Name)
     this->UUID = context::Get()->GetUUID();
 }
 
+customMaterial::customMaterial(std::string Name, gfx::pipelineHandle Pipeline) : material(Name)
+{
+    this->PipelineHandle = Pipeline;
+}
+void customMaterial::DrawGUI(){}
+void customMaterial::SetCullMode(gfx::cullMode Mode) {}
+void customMaterial::Serialize(const std::string &FileName){}
+void customMaterial::RecreatePipeline() {}
+std::shared_ptr<material> customMaterial::Clone() {
+    std::shared_ptr<customMaterial> Result = std::make_shared<customMaterial>(this->Name + "_Duplicated", this->PipelineHandle);
+    return Result;    
+}
+
 pbrMaterial::pbrMaterial(std::string Name) : material(Name)
 {
     gfx::context *Context = gfx::context::Get();
