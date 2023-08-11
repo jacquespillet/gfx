@@ -39,6 +39,8 @@ struct framebuffer;
 
 struct uniformGroup
 {
+    static const u32 DepthAttachment = 0xffffffff;
+    
     std::unordered_map<pipelineHandle, u32> Bindings; //Store where this uniform group is bound in each pipeline
     std::vector<uniform> Uniforms;
     

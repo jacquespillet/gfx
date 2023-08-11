@@ -78,10 +78,19 @@ uniformGroup & uniformGroup::Update()
                 GET_API_DATA(VKFramebuffer, vkFramebufferData, Framebuffer);
                 // vk::DescriptorImageInfo DescriptorImageInfo(Textur   e->GetSampler(), Texture->GetNativeView(imageView::NATIVE), vk::ImageLayout::eShaderReadOnlyOptimal);
 
-                std::shared_ptr<vkImageData> VKImage = std::static_pointer_cast<vkImageData>(VKFramebuffer->ColorImages[Uniforms[i].ResourceIndex]->ApiData);
-                DescriptorImages.push_back(vk::DescriptorImageInfo(VKImage->Sampler, VKImage->DefaultImageViews.NativeView, vk::ImageLayout::eShaderReadOnlyOptimal));
+                std::shared_ptr<vkImageData> VKImage;
+                if(Uniforms[i].ResourceIndex == uniformGroup::DepthAttachment)
+                {
+                    VKImage = std::static_pointer_cast<vkImageData>(VKFramebuffer->DepthStencilImage->ApiData);
+                    DescriptorImages.push_back(vk::DescriptorImageInfo(VKImage->Sampler, VKImage->DefaultImageViews.DepthOnlyView, vk::ImageLayout::eDepthStencilReadOnlyOptimal));
+                }
+                else
+                {
+                    VKImage = std::static_pointer_cast<vkImageData>(VKFramebuffer->ColorImages[Uniforms[i].ResourceIndex]->ApiData);
+                    DescriptorImages.push_back(vk::DescriptorImageInfo(VKImage->Sampler, VKImage->DefaultImageViews.NativeView, vk::ImageLayout::eShaderReadOnlyOptimal));
+                }
                 DescriptorWrite.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-                                   .setPImageInfo(&DescriptorImages[DescriptorImages.size()-1]);
+                                .setPImageInfo(&DescriptorImages[DescriptorImages.size()-1]);
             }
 
             DescriptorWrites.push_back(DescriptorWrite);

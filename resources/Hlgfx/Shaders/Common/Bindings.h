@@ -21,3 +21,5 @@
 #define DirectionalLight 1
 #define SpotLight 2
 #define AreaLight 2
+
+#define ShadowMapsBindingStart 10

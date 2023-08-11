@@ -282,7 +282,7 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
     this->Data.resize(Width * Height * FormatSize(Format));
     this->Type = type::BYTE;
     
-    if(ImageUsage == imageUsage::COLOR_ATTACHMENT) ImageUsage |= imageUsage::SHADER_READ;
+    if(ImageUsage == imageUsage::COLOR_ATTACHMENT || ImageUsage == imageUsage::DEPTH_STENCIL_ATTACHMENT) ImageUsage |= imageUsage::SHADER_READ;
 
     vk::ImageCreateInfo ImageCreateInfo;
     ImageCreateInfo.setImageType(vk::ImageType::e2D)

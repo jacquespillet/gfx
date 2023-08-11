@@ -4,6 +4,7 @@
 #include "Include/Material.h"
 #include "Include/Util.h"
 #include "Include/Geometry.h"
+#include "Include/Renderer.h"
 #include "Include/GUI.h"
 #include "Loaders/GLTF.h"
 #include "Gfx/Include/CommandBuffer.h"
@@ -169,6 +170,20 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
 
     Singleton->Cylinder = GetCylinderGeometry();
     Singleton->Cylinder->UUID = "DEFAULT_CYLINDER";
+
+
+    //Shadow maps renderer
+	gfx::framebufferCreateInfo FramebufferCreateInfo = {};
+    FramebufferCreateInfo.SetSize(1024, 1024)
+                            .AddColorFormat(gfx::format::R8G8B8A8_UNORM)
+                            .SetDepthFormat(gfx::format::D24_UNORM_S8_UINT)
+                            .SetClearColor(1, 0, 0, 0);
+    Singleton->ShadowsFramebuffer = gfx::context::Get()->CreateFramebuffer(FramebufferCreateInfo);
+    Singleton->PipelineHandleOffscreen = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/ShadowMaps/ShadowMaps.json", Singleton->ShadowsFramebuffer);
+    
+    Singleton->ShadowsRenderer = std::make_shared<hlgfx::renderer>();
+    Singleton->ShadowsRenderer->RenderTarget = Singleton->ShadowsFramebuffer;
+    Singleton->ShadowsRenderer->OverrideMaterial = std::make_shared<hlgfx::customMaterial>("ShadowMaterial", Singleton->PipelineHandleOffscreen);    
     
     return Singleton;
 }
@@ -595,6 +610,8 @@ void context::Render(std::shared_ptr<camera> Camera)
 {
     Camera->Controls->OnUpdate();
     
+    ShadowsRenderer->Render(Scene, Camera);
+    
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();    
 
     CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
@@ -616,6 +633,9 @@ void context::Render(std::shared_ptr<camera> Camera)
     
     Imgui->EndFrame(CommandBuffer);
     CommandBuffer->EndPass();
+
+			
+
 }
 
 void context::Update()

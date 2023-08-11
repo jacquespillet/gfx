@@ -105,6 +105,12 @@ struct context
     std::shared_ptr<indexedGeometryBuffers> Capsule;
     std::shared_ptr<indexedGeometryBuffers> Cylinder;
 
+    //Shadow maps
+    std::shared_ptr<hlgfx::renderer> ShadowsRenderer;
+	gfx::framebufferHandle ShadowsFramebuffer;
+	gfx::pipelineHandle PipelineHandleOffscreen;
+
+
     //Inputs
     b8 MouseClicked=false;
     b8 MouseReleased =false;

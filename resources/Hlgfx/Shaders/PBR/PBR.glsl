@@ -80,6 +80,7 @@ DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, MetallicRoughnessTextureBi
 DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, OcclusionTextureBinding, OcclusionTexture);
 DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, EmissiveTextureBinding, EmissionTexture);
 
+DECLARE_UNIFORM_TEXTURE(SceneDescriptorSetBinding, ShadowMapsBindingStart, ShadowMap);
 
 /////////////////////////////////
 //////////VERTEX/////////////////
@@ -206,6 +207,8 @@ void main()
     
 
     OutputColor = vec4(Tonemap(FinalColor, 1), BaseColor.a);
+
+    OutputColor = SampleTexture(ShadowMap, DefaultSampler, Input.FragUV);
 }
 
 #endif

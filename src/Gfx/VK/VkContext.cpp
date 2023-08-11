@@ -878,7 +878,7 @@ renderPassHandle context::CreateRenderPass(const renderPassOutput &Output)
                         .setStencilLoadOp(StencilOp)
                         .setStencilStoreOp(vk::AttachmentStoreOp::eStore)
                         .setInitialLayout(DepthInitialLayout)
-                        .setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+                        .setFinalLayout(ImageLayoutToNative(Output.DepthStencilFinalLayout));
 
         DepthRef.attachment = Output.SampleCount > 1 ? Output.NumColorFormats * 2 : C;
         DepthRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
@@ -991,7 +991,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     {
         RenderPassOutput.Color(CreateInfo.ColorFormats[i], imageLayout::ShaderReadOnlyOptimal, renderPassOperation::Clear);
     }
-    RenderPassOutput.Depth(CreateInfo.DepthFormat, imageLayout::DepthAttachmentOptimal);
+    RenderPassOutput.Depth(CreateInfo.DepthFormat, imageLayout::DepthStencilReadOnlyOptimal);
     RenderPassOutput.SetDepthStencilOperation(renderPassOperation::Clear, renderPassOperation::Clear);
     renderPassHandle RenderPassHandle = CreateRenderPass(RenderPassOutput);
     renderPass *RenderPass = GetRenderPass(RenderPassHandle);
