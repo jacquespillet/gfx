@@ -3,7 +3,6 @@
 	"pipelines" : [
 		{
 			"name" : "ShadowMaps",
-			"frontFace" : "clockwise",
 			"cull" : "front",
 			"vertex_streams":
 			[

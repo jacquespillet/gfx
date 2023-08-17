@@ -589,6 +589,8 @@ struct shaderStageFlags
     };
 };
 
+//Do not use this direct mapping, but a ImagUsageTONative instead.
+// will allow to have DEPTH_STENCIL_SHADER_READ option
 struct imageUsage
 {
     using value = u32;

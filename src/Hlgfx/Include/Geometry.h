@@ -37,6 +37,7 @@ struct indexedGeometryBuffers
     void Destroy();
 };
 
+void CalculateTangents(std::vector<vertex>& Vertices, std::vector<u32> Indices);
 
 std::shared_ptr<indexedGeometryBuffers>  GetQuadGeometry();
 std::shared_ptr<indexedGeometryBuffers>  GetCubeGeometry();

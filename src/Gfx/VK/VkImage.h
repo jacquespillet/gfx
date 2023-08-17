@@ -36,5 +36,6 @@ struct vkImageData
 vk::ImageSubresourceRange GetDefaultImageSubresourceRange(const image &Image);
 vk::ImageSubresourceLayers GetDefaultImageSubresourceLayers(const image &Image, u32 MipLevel, u32 LayerStart, u32 LayerCount=1);
 vk::ImageMemoryBarrier GetImageMemoryBarrier(const image &Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout);
+vk::ImageMemoryBarrier GetImageMemoryBarrier(const image &Texture, imageLayout OldLayout, imageLayout NewLayout);
 
 }

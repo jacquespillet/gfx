@@ -246,6 +246,11 @@ void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geomet
                 memcpy(Geometry->Buffers->IndexData.data(), baseAddress, (IndicesAccessor.count) * IndicesStride);
             }
 
+            if(TangentIndex<0)
+            {
+                CalculateTangents(Geometry->Buffers->VertexData, Geometry->Buffers->IndexData);
+            }
+
             Geometry->Buffers->BuildBuffers();
         }
     }

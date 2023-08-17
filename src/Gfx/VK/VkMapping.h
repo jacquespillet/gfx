@@ -164,8 +164,11 @@ vk::ImageAspectFlags ImageFormatToImageAspect(format Format);
 
 
 vk::ImageLayout ImageUsageToImageLayout(imageUsage::bits Usage);
+imageUsage::bits ImageLayoutToImageUsage(imageLayout Layout);
 vk::AccessFlags ImageUsageToAccessFlags(imageUsage::bits Usage);
 vk::PipelineStageFlags ImageUsageToPipelineStage(imageUsage::bits Usage);
+vk::AccessFlags ImageLayoutToAccessFlags(imageLayout Layout);
+vk::PipelineStageFlags ImageLayoutToPipelineStage(imageLayout Layout);
 
 static vk::Format ToVkVertexFormat( vertexComponentFormat::values Value ) {
     static vk::Format Mapping[ vertexComponentFormat::Count ] = { vk::Format::eR32Sfloat, vk::Format::eR32G32Sfloat, vk::Format::eR32G32B32Sfloat, vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat,

@@ -75,6 +75,36 @@ vk::ImageLayout ImageUsageToImageLayout(imageUsage::bits Usage)
     }    
 }
 
+imageUsage::bits ImageLayoutToImageUsage(imageLayout Layout)
+{
+    switch (Layout)
+    {
+    case imageLayout::Undefined:
+        return imageUsage::UNKNOWN;
+    case imageLayout::TransferSrcOptimal:
+        return imageUsage::TRANSFER_SOURCE;
+    case imageLayout::TransferDstOptimal:
+        return imageUsage::TRANSFER_DESTINATION;
+    case imageLayout::ShaderReadOnlyOptimal:
+        return imageUsage::SHADER_READ;
+    case imageLayout::General:
+        return imageUsage::STORAGE;
+    case imageLayout::ColorAttachmentOptimal:
+        return imageUsage::COLOR_ATTACHMENT;
+    case imageLayout::DepthStencilAttachmentOptimal:
+        return imageUsage::DEPTH_STENCIL_ATTACHMENT;
+    case imageLayout::AttachmentOptimalKHR:
+        return imageUsage::INPUT_ATTACHMENT;
+    case imageLayout::DepthStencilReadOnlyOptimal:
+        return imageUsage::SHADER_READ;
+    case imageLayout::ShadingRateOptimalNV :
+        return imageUsage::FRAGNENT_SHADING_RATE_ATTACHMENT;
+    default:
+        assert(false);
+        return imageUsage::UNKNOWN;
+    }    
+}
+
 
 
 vk::AccessFlags ImageUsageToAccessFlags(imageUsage::bits Usage)
@@ -99,6 +129,83 @@ vk::AccessFlags ImageUsageToAccessFlags(imageUsage::bits Usage)
         return vk::AccessFlagBits::eInputAttachmentRead;
     case imageUsage::FRAGNENT_SHADING_RATE_ATTACHMENT:
         return vk::AccessFlagBits::eFragmentShadingRateAttachmentReadKHR;
+    default:
+        assert(false);
+        return vk::AccessFlags{ };
+    }    
+}
+
+
+vk::AccessFlags ImageLayoutToAccessFlags(imageLayout Layout)
+{
+    switch (Layout)
+    {
+        case imageLayout::Undefined:
+            return vk::AccessFlagBits();
+            break;
+        case imageLayout::General:
+            return vk::AccessFlagBits::eShaderRead;
+            break;
+        case imageLayout::ColorAttachmentOptimal:
+            return vk::AccessFlagBits::eColorAttachmentWrite;
+            break;
+        case imageLayout::DepthStencilAttachmentOptimal:
+            return vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+            break;
+        case imageLayout::DepthStencilReadOnlyOptimal:
+            return vk::AccessFlagBits::eShaderRead;
+            break;
+        case imageLayout::ShaderReadOnlyOptimal:
+            return vk::AccessFlagBits::eShaderRead;
+            break;
+        case imageLayout::TransferSrcOptimal:
+            return vk::AccessFlagBits::eTransferRead;
+            break;
+        case imageLayout::TransferDstOptimal:
+            return vk::AccessFlagBits::eTransferWrite;
+            break;
+        case imageLayout::Preinitialized:
+            return vk::AccessFlagBits::eNone;
+            break;
+        case imageLayout::DepthReadOnlyStencilAttachmentOptimal:
+            return vk::AccessFlagBits::eDepthStencilAttachmentRead;
+            break;
+        case imageLayout::DepthAttachmentStencilReadOnlyOptimal:
+            return vk::AccessFlagBits::eDepthStencilAttachmentRead;
+            break;
+        case imageLayout::DepthAttachmentOptimal:
+            return vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+            break;
+        case imageLayout::DepthReadOnlyOptimal:
+            return vk::AccessFlagBits::eDepthStencilAttachmentRead;
+            break;
+        case imageLayout::StencilAttachmentOptimal:
+            return vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+            break;
+        case imageLayout::StencilReadOnlyOptimal:
+            return vk::AccessFlagBits::eDepthStencilAttachmentRead;
+            break;
+        case imageLayout::ReadOnlyOptimal:
+            return vk::AccessFlagBits::eShaderRead;
+            break;
+        case imageLayout::AttachmentOptimal:
+            return vk::AccessFlagBits::eColorAttachmentWrite;
+            break;
+        case imageLayout::PresentSrcKHR:
+        case imageLayout::VideoDecodeDstKHR:
+        case imageLayout::VideoDecodeSrcKHR:
+        case imageLayout::VideoDecodeDpbKHR:
+        case imageLayout::SharedPresentKHR:
+        case imageLayout::ShadingRateOptimalNV:
+        case imageLayout::FragmentDensityMapOptimalEXT:
+        case imageLayout::DepthAttachmentOptimalKHR:
+        case imageLayout::DepthReadOnlyOptimalKHR:
+        case imageLayout::StencilAttachmentOptimalKHR:
+        case imageLayout::StencilReadOnlyOptimalKHR:
+        case imageLayout::ReadOnlyOptimalKHR:
+        case imageLayout::AttachmentOptimalKHR:
+            return vk::AccessFlagBits::eNone;
+            break;
     default:
         assert(false);
         return vk::AccessFlags{ };
@@ -132,6 +239,11 @@ vk::PipelineStageFlags ImageUsageToPipelineStage(imageUsage::bits Usage)
         assert(false);
         return vk::PipelineStageFlags{ };
     }    
+}
+vk::PipelineStageFlags ImageLayoutToPipelineStage(imageLayout Layout)
+{
+    imageUsage::bits Usage = ImageLayoutToImageUsage(Layout);
+    return ImageUsageToPipelineStage(Usage);
 }
 
 

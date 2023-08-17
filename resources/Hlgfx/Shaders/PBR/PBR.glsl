@@ -196,7 +196,7 @@ void main()
             FinalSpecular += LightIntensity * NdotL * GetBRDFSpecularGGX(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.AlphaRoughness, MaterialInfo.SpecularWeight, VdotH, NdotL, NdotV, NdotH);
 
             // float Visibility = texture(ShadowMap, vec3(Input.DepthMapUV.xy, (Input.DepthMapUV.z - 0.0005)/Input.DepthMapUV.w));
-            float bias = max(0.05 * (1.0 - dot(Normal, LightDirection)), 0.005);  
+            float bias = max(0.001 * (1.0 - dot(Normal, -LightDirection)), 0.0001);  
             vec3 ProjCoords = Input.DepthMapUV.xyz / Input.DepthMapUV.w;
             ProjCoords.xy = ProjCoords.xy * 0.5 + 0.5;
             float ClosestDepth = texture(ShadowMap, ProjCoords.xy).x;

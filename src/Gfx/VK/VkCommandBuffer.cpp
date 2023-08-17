@@ -254,6 +254,32 @@ void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo 
         BufferToImageCopyInfo
     );
 }
+void commandBuffer::TransferLayout(framebufferHandle FramebufferHandle, u32 Index, imageLayout OldLayout, imageLayout NewLayout)
+{
+    framebuffer *Framebuffer = context::Get()->GetFramebuffer(FramebufferHandle);
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
+    GET_API_DATA(VKFramebuffer, vkFramebufferData, (Framebuffer));
+
+
+    vk::ImageMemoryBarrier Barrier;
+    if(Index = uniformGroup::DepthAttachment) 
+    {
+        Barrier = GetImageMemoryBarrier(*VKFramebuffer->DepthStencilImage, OldLayout, NewLayout);
+    }
+    else
+    {
+        Barrier = GetImageMemoryBarrier(*VKFramebuffer->ColorImages[Index], OldLayout, NewLayout);
+    }
+    
+    VkCommandBufferData->Handle.pipelineBarrier(
+        ImageLayoutToPipelineStage(OldLayout),
+        ImageLayoutToPipelineStage(NewLayout),
+        {},
+        {},
+        {},
+        Barrier
+    );
+}
 
 void commandBuffer::TransferLayout(const image &Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout)
 {

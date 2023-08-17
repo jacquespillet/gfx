@@ -189,7 +189,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->ShadowsRenderer = std::make_shared<hlgfx::renderer>();
     Singleton->ShadowsRenderer->RenderTarget = Singleton->ShadowsFramebuffer;
     Singleton->ShadowsRenderer->OverrideMaterial = std::make_shared<hlgfx::customMaterial>("ShadowMaterial", Singleton->PipelineHandleOffscreen);    
-    Singleton->ShadowCam = std::make_shared<camera>(-20, 20, -20, 20, 0.1, 100);
+    Singleton->ShadowCam = std::make_shared<camera>(-10, 10, -10, 10, 0.1, 100);
 
     return Singleton;
 }
@@ -616,6 +616,12 @@ void context::Render(std::shared_ptr<camera> Camera)
 {
     Camera->Controls->OnUpdate();
     
+    std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();    
+    
+    //Problem :
+    //if there are no lights, the depth buffer will be in layout undefined because nothing renders on it
+    //we have to transition it from undefined to shader read
+
     //Render shadow maps
     if(Scene->SceneBufferData.LightCount.x>0)
     {
@@ -629,10 +635,13 @@ void context::Render(std::shared_ptr<camera> Camera)
         ShadowCam->RecalculateMatrices();
         Scene->Lights[0]->Data.LightSpaceMatrix = ShadowCam->Data.ViewProjectionMatrix;
         Scene->UpdateLight(0);
-        ShadowsRenderer->Render(Scene, ShadowCam); 
+        ShadowsRenderer->Render(Scene, ShadowCam);
+    }
+    else
+    {
+        CommandBuffer->TransferLayout(this->ShadowsFramebuffer, gfx::uniformGroup::DepthAttachment, gfx::imageLayout::Undefined, gfx::imageLayout::DepthStencilReadOnlyOptimal);
     }
     
-    std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();    
 
     CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
     CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);

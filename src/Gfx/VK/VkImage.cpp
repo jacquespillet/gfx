@@ -346,6 +346,24 @@ vk::ImageMemoryBarrier GetImageMemoryBarrier(const image &Texture, imageUsage::b
     return Barrier;
 }
 
+vk::ImageMemoryBarrier GetImageMemoryBarrier(const image &Texture, imageLayout OldLayout, imageLayout NewLayout)
+{
+    GET_API_DATA(VkImageData, vkImageData, (&Texture));
+
+    auto SubResourceRange = GetDefaultImageSubresourceRange(Texture);
+    vk::ImageMemoryBarrier Barrier;
+    Barrier.setSrcAccessMask(ImageLayoutToAccessFlags(OldLayout))
+           .setDstAccessMask(ImageLayoutToAccessFlags(NewLayout))
+           .setOldLayout(ImageLayoutToNative(OldLayout))
+           .setNewLayout(ImageLayoutToNative(NewLayout))
+           .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+           .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+           .setImage(VkImageData->Handle)
+           .setSubresourceRange(SubResourceRange);
+
+    return Barrier;
+}
+
 
 void vkImageData::InitViews(const image &Image, const vk::Image &VkImage, format Format, vk::ImageViewType ViewType)
 {

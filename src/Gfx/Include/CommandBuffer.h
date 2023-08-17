@@ -56,6 +56,7 @@ struct commandBuffer
     void CopyImageToImage(const imageInfo &Source, const imageInfo &Destination);
     void CopyBuffer(const bufferInfo &Source, const bufferInfo &Destination, size_t ByteSize);
     void TransferLayout(const image &Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout);
+    void TransferLayout(framebufferHandle Framebuffer, u32 Index, imageLayout OldLayout, imageLayout NewLayout);
     
 
     void EndPass();
