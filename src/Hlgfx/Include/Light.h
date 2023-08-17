@@ -25,7 +25,8 @@ struct light : public object3D
         v4f ColorAndIntensity;
         v4f SizeAndType;
         v4f Position;
-        v4f Direction;        
+        v4f Direction;    
+        m4x4 LightSpaceMatrix;    
     } Data;
 };
 

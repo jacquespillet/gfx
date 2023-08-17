@@ -277,6 +277,7 @@ std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
 
     Result->UUID = UUID;
 
+
     FileStream.read((char*)&Result->Transform.Matrices, sizeof(transform::matrices));
     FileStream.read((char*)&Result->Transform.LocalValues, sizeof(transform::localValues));
 

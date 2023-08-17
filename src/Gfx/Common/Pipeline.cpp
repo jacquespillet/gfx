@@ -413,6 +413,29 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
         {
             PipelineCreation.Rasterization.CullMode = cullMode::Back;
         }
+        else if(Name== "front")
+        {
+            PipelineCreation.Rasterization.CullMode = cullMode::Front;
+        }
+        else
+        {
+            assert(false);
+        }
+    }
+
+    json FrontFace = PipelineJSON["frontFace"];
+    if(FrontFace.is_string())
+    {
+        std::string Name;
+        FrontFace.get_to(Name);
+        if(Name== "clockwise")
+        {
+            PipelineCreation.Rasterization.FrontFace = frontFace::Clockwise;
+        }
+        else if(Name== "counterClockwise")
+        {
+            PipelineCreation.Rasterization.FrontFace = frontFace::CounterClockwise;
+        }
         else
         {
             assert(false);

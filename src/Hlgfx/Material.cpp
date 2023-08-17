@@ -336,8 +336,13 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
         FileStream.read((char*)&UUIDSize, sizeof(u32));
         std::string UUID; UUID.resize(UUIDSize);
         FileStream.read(UUID.data(), UUID.size());
+        
+        std::shared_ptr<texture> Texture;
+        if(UUID == "BLUE_TEXTURE") Texture = defaultTextures::BlueTexture;
+        else if(UUID == "WHITE_TEXTURE") Texture = defaultTextures::WhiteTexture;
+        else if(UUID == "BLACK_TEXTURE") Texture = defaultTextures::BlackTexture;
+        else Texture = context::Get()->Project.Textures[UUID];
 
-        std::shared_ptr<texture> Texture = context::Get()->Project.Textures[UUID];
         Result->SetBaseColorTexture(Texture); 
     }
     else
@@ -354,7 +359,12 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
         std::string UUID; UUID.resize(UUIDSize);
         FileStream.read(UUID.data(), UUID.size());
 
-        std::shared_ptr<texture> Texture = context::Get()->Project.Textures[UUID];
+        std::shared_ptr<texture> Texture;
+        if(UUID == "BLUE_TEXTURE") Texture = defaultTextures::BlueTexture;
+        else if(UUID == "WHITE_TEXTURE") Texture = defaultTextures::WhiteTexture;
+        else if(UUID == "BLACK_TEXTURE") Texture = defaultTextures::BlackTexture;
+        else Texture = context::Get()->Project.Textures[UUID];
+        
         Result->SetMetallicRoughnessTexture(Texture); 
     }
     else
@@ -371,7 +381,12 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
         std::string UUID; UUID.resize(UUIDSize);
         FileStream.read(UUID.data(), UUID.size());
 
-        std::shared_ptr<texture> Texture = context::Get()->Project.Textures[UUID];
+        std::shared_ptr<texture> Texture;
+        if(UUID == "BLUE_TEXTURE") Texture = defaultTextures::BlueTexture;
+        else if(UUID == "WHITE_TEXTURE") Texture = defaultTextures::WhiteTexture;
+        else if(UUID == "BLACK_TEXTURE") Texture = defaultTextures::BlackTexture;
+        else Texture = context::Get()->Project.Textures[UUID];
+        
         Result->SetOcclusionTexture(Texture); 
     }
     else
@@ -388,7 +403,12 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
         std::string UUID; UUID.resize(UUIDSize);
         FileStream.read(UUID.data(), UUID.size());
 
-        std::shared_ptr<texture> Texture = context::Get()->Project.Textures[UUID];
+        std::shared_ptr<texture> Texture;
+        if(UUID == "BLUE_TEXTURE") Texture = defaultTextures::BlueTexture;
+        else if(UUID == "WHITE_TEXTURE") Texture = defaultTextures::WhiteTexture;
+        else if(UUID == "BLACK_TEXTURE") Texture = defaultTextures::BlackTexture;
+        else Texture = context::Get()->Project.Textures[UUID];
+        
         Result->SetNormalTexture(Texture); 
     }
     else
@@ -405,7 +425,12 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
         std::string UUID; UUID.resize(UUIDSize);
         FileStream.read(UUID.data(), UUID.size());
 
-        std::shared_ptr<texture> Texture = context::Get()->Project.Textures[UUID];
+        std::shared_ptr<texture> Texture;
+        if(UUID == "BLUE_TEXTURE") Texture = defaultTextures::BlueTexture;
+        else if(UUID == "WHITE_TEXTURE") Texture = defaultTextures::WhiteTexture;
+        else if(UUID == "BLACK_TEXTURE") Texture = defaultTextures::BlackTexture;
+        else Texture = context::Get()->Project.Textures[UUID];
+        
         Result->SetEmissiveTexture(Texture); 
     }
     else

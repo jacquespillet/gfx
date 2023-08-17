@@ -44,7 +44,7 @@ struct commandBuffer
     void BindComputePipeline(pipelineHandle Pipeline);
     void BindVertexBuffer(vertexBufferHandle Buffer);
     void BindIndexBuffer(bufferHandle Buffer, u32 Offset, indexType IndexType);
-    void SetViewport(f32 X, f32 Y, f32 Width, f32 Height);
+    void SetViewport(f32 X, f32 Y, f32 Width, f32 Height, b8 InvertViewport=true);
     void SetScissor(s32 X, s32 Y, u32 Width, u32 Height);
     void DrawArrays(u32 Start, u32 Count, u32 InstanceCount=1);
     void DrawIndexed(u32 Start, u32 Count, u32 InstanceCount=1);

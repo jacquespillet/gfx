@@ -139,11 +139,19 @@ void commandBuffer::BindVertexBuffer(vertexBufferHandle BufferHandle)
     }
 }
 
-void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height)
+void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height, b8 InvertViewport)
 {
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
-    vk::Viewport Viewport(X, Height, Width, -Height, 0, 1);
-    CommandBuffer.setViewport(0, Viewport);
+    if(InvertViewport)
+    {
+        vk::Viewport Viewport(X, Height, Width, -Height, 0, 1);
+        CommandBuffer.setViewport(0, Viewport);
+    }
+    else
+    {
+        vk::Viewport Viewport(X, Y, Width, Height, 0, 1);
+        CommandBuffer.setViewport(0, Viewport);
+    }
 }
 
 void commandBuffer::SetScissor(s32 OffsetX, s32 OffsetY, u32 Width, u32 Height)

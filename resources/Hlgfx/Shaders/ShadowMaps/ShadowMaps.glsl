@@ -17,6 +17,9 @@ DECLARE_UNIFORM_BUFFER(CameraDescriptorSetBinding, CameraBinding, Camera)
     mat4 ViewProjectionMatrix;    
 
     vec4 CameraPosition;
+    
+    vec4 LeftRightBottomTop;
+    vec4 BackFront;
 };
 
 

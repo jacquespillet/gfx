@@ -106,6 +106,7 @@ struct context
     std::shared_ptr<indexedGeometryBuffers> Cylinder;
 
     //Shadow maps
+    std::shared_ptr<camera> ShadowCam;
     std::shared_ptr<hlgfx::renderer> ShadowsRenderer;
 	gfx::framebufferHandle ShadowsFramebuffer;
 	gfx::pipelineHandle PipelineHandleOffscreen;

@@ -11,6 +11,7 @@ struct PSInput
     vec3 T;
     vec3 B;
     vec3 N;
+    vec4 DepthMapUV;
 };
 
 DECLARE_UNIFORM_BUFFER(CameraDescriptorSetBinding, CameraBinding, Camera)
@@ -25,6 +26,10 @@ DECLARE_UNIFORM_BUFFER(CameraDescriptorSetBinding, CameraBinding, Camera)
     mat4 ViewProjectionMatrix;    
 
     vec4 CameraPosition;
+
+    
+    vec4 LeftRightBottomTop;
+    vec4 BackFront;
 };
 
 struct lightData
@@ -33,6 +38,7 @@ struct lightData
     vec4 SizeAndType;
     vec4 Position;
     vec4 Direction;
+    mat4 LightSpaceMatrix;
 };
 
 DECLARE_UNIFORM_BUFFER(SceneDescriptorSetBinding, SceneBinding, Scene)
@@ -80,6 +86,7 @@ DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, MetallicRoughnessTextureBi
 DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, OcclusionTextureBinding, OcclusionTexture);
 DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, EmissiveTextureBinding, EmissionTexture);
 
+// DECLARE_UNIFORM_TEXTURE_SHADOW(SceneDescriptorSetBinding, ShadowMapsBindingStart, ShadowMap);
 DECLARE_UNIFORM_TEXTURE(SceneDescriptorSetBinding, ShadowMapsBindingStart, ShadowMap);
 
 /////////////////////////////////
@@ -107,6 +114,10 @@ void main()
 	Output.B = FragBitangent;
 	Output.N = Output.FragNormal;
 
+	Output.DepthMapUV = Lights[0].LightSpaceMatrix * vec4(Output.FragPosition, 1);
+    // Output.DepthMapUV /= Output.DepthMapUV.w;
+	// Output.DepthMapUV.xyz = Output.DepthMapUV.xyz * 0.5 + 0.5;
+    
     gl_Position = OutPosition;
 }
 
@@ -156,6 +167,7 @@ void main()
     vec3 FinalDiffuse = vec3(0.0,0.0,0.0);
     vec3 FinalEmissive = vec3(0.0,0.0,0.0);
 
+    float Visibility = 1.0f;
     //Lighting
     for(int i=0; i<LightCount.x; i++)
     {
@@ -173,7 +185,7 @@ void main()
         }
         else if(Lights[i].SizeAndType.w == DirectionalLight)
         {
-            vec3 LightDirection = normalize(Lights[i].Direction.xyz);
+            vec3 LightDirection = -normalize(Lights[i].Direction.xyz);
             vec3 LightIntensity = Lights[i].ColorAndIntensity.w * Lights[i].ColorAndIntensity.xyz;
 
             vec3 H = normalize(-LightDirection + View);
@@ -182,9 +194,18 @@ void main()
             float NdotH = ClampedDot(Normal, H);
             FinalDiffuse += LightIntensity * NdotL *  GetBRDFLambertian(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.CDiff, MaterialInfo.SpecularWeight, VdotH);
             FinalSpecular += LightIntensity * NdotL * GetBRDFSpecularGGX(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.AlphaRoughness, MaterialInfo.SpecularWeight, VdotH, NdotL, NdotV, NdotH);
+
+            // float Visibility = texture(ShadowMap, vec3(Input.DepthMapUV.xy, (Input.DepthMapUV.z - 0.0005)/Input.DepthMapUV.w));
+            float bias = max(0.05 * (1.0 - dot(Normal, LightDirection)), 0.005);  
+            vec3 ProjCoords = Input.DepthMapUV.xyz / Input.DepthMapUV.w;
+            ProjCoords.xy = ProjCoords.xy * 0.5 + 0.5;
+            float ClosestDepth = texture(ShadowMap, ProjCoords.xy).x;
+            float CurrentDepth = ProjCoords.z;
+            Visibility = CurrentDepth - bias > ClosestDepth ? 0.5 : 1.0;
         }
     }
 
+    
 
     //AO
     float AmbientOcclusion = 1.0;
@@ -201,14 +222,13 @@ void main()
 
     vec3 FinalColor = vec3(0,0,0);
     FinalColor = FinalEmissive + FinalDiffuse + FinalSpecular;
+    FinalColor *= Visibility;
 
     if(BaseColor.a < Material.AlphaCutoff)
         discard;
     
 
     OutputColor = vec4(Tonemap(FinalColor, 1), BaseColor.a);
-
-    OutputColor = SampleTexture(ShadowMap, DefaultSampler, Input.FragUV);
 }
 
 #endif

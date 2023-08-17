@@ -67,25 +67,76 @@ std::shared_ptr<indexedGeometryBuffers> CreateGeometryFromBuffers(void *VertexBu
     return Result;   
 }
 
+void CalculateTangents(std::vector<vertex>& Vertices, std::vector<u32> Indices) {
+    std::vector<glm::vec4> Tangent1(Vertices.size(), glm::vec4(0));
+    std::vector<glm::vec4> Tangent2(Vertices.size(), glm::vec4(0));
+    for(uint64_t i=0; i<Indices.size()-3; i+=3) {
+        glm::vec3 v1 = Vertices[Indices[i]].PositionUvX;
+        glm::vec3 v2 = Vertices[Indices[i + 1]].PositionUvX;
+        glm::vec3 v3 = Vertices[Indices[i + 2]].PositionUvX;
+
+        glm::vec2 w1 = v2f(Vertices[Indices[i]].PositionUvX.w,Vertices[Indices[i]].NormalUvY.w);
+        glm::vec2 w2 = v2f(Vertices[Indices[i+1]].PositionUvX.w,Vertices[Indices[i+1]].NormalUvY.w);
+        glm::vec2 w3 = v2f(Vertices[Indices[i+2]].PositionUvX.w,Vertices[Indices[i+2]].NormalUvY.w);
+
+        double x1 = v2.x - v1.x;
+        double x2 = v3.x - v1.x;
+        double y1 = v2.y - v1.y;
+        double y2 = v3.y - v1.y;
+        double z1 = v2.z - v1.z;
+        double z2 = v3.z - v1.z;
+
+        double s1 = w2.x - w1.x;
+        double s2 = w3.x - w1.x;
+        double t1 = w2.y - w1.y;
+        double t2 = w3.y - w1.y;
+
+        double r = 1.0F / (s1 * t2 - s2 * t1);
+        glm::vec4 sdir((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r, (t2 * z1 - t1 * z2) * r, 0);
+        glm::vec4 tdir((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r, (s1 * z2 - s2 * z1) * r, 0);
+
+        Tangent1[Indices[i]] += sdir;
+        Tangent1[Indices[i + 1]] += sdir;
+        Tangent1[Indices[i + 2]] += sdir;
+        
+        Tangent2[Indices[i]] += tdir;
+        Tangent2[Indices[i + 1]] += tdir;
+        Tangent2[Indices[i + 2]] += tdir;
+    }
+    for(uint64_t i=0; i<Vertices.size(); i++) { 
+		glm::vec3 n = Vertices[i].NormalUvY;
+		glm::vec3 t = glm::vec3(Tangent1[i]);
+
+		Vertices[i].Tangent = glm::vec4(glm::normalize((t - n * glm::dot(n, t))), 1);
+		Vertices[i].Tangent.w = (glm::dot(glm::cross(n, t), glm::vec3(Tangent2[i])) < 0.0F) ? -1.0F : 1.0F;
+	}
+}
 
 std::shared_ptr<indexedGeometryBuffers>  GetQuadGeometry()
 {
     gfx::context *Context = gfx::context::Get();
     std::shared_ptr<indexedGeometryBuffers> Result = std::make_shared<indexedGeometryBuffers>();
 
-    vertex Vertices[] =
+    std::vector<vertex> Vertices =
     {
         {v4f(-1.0f, -1.0f, 0.0f, 0.0f), v4f(0.0f, 0.0f, 1.0f, 0.0f)},
         {v4f(-1.0f,  1.0f, 0.0f, 0.0f), v4f(0.0f, 0.0f, 1.0f, 1.0f)},
         {v4f( 1.0f,  1.0f, 0.0f, 1.0f), v4f(0.0f, 0.0f, 1.0f, 1.0f)},
         {v4f( 1.0f, -1.0f, 0.0f, 1.0f), v4f(0.0f, 0.0f, 1.0f, 0.0f)},
     };
+    std::vector<uint32_t> Indices = 
+    {  
+        0, 2, 1,
+        0, 3, 2
+    };
+
+    CalculateTangents(Vertices, Indices);
     
     gfx::vertexStreamData VertexStream1 = {};
     VertexStream1
-        .SetSize(sizeof(Vertices))
+        .SetSize(Vertices.size() * sizeof(vertex))
         .SetStride(sizeof(vertex))
-        .SetData(&Vertices)
+        .SetData(Vertices.data())
         .SetStreamIndex(0)
         .AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 0})
         .AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 1});
@@ -94,18 +145,11 @@ std::shared_ptr<indexedGeometryBuffers>  GetQuadGeometry()
     Result->VertexBuffer = Context->CreateVertexBuffer(VertexBufferCreateInfo);
 
 
-    uint32_t Indices[] = 
-    {  
-        0, 2, 1,
-        0, 3, 2
-    };
-    Result->IndexBuffer = Context->CreateBuffer(sizeof(Indices), gfx::bufferUsage::IndexBuffer, gfx::memoryUsage::GpuOnly);
-    Context->CopyDataToBuffer(Result->IndexBuffer, &Indices, sizeof(Indices), 0);
+    Result->IndexBuffer = Context->CreateBuffer(Indices.size() * sizeof(u32), gfx::bufferUsage::IndexBuffer, gfx::memoryUsage::GpuOnly);
+    Context->CopyDataToBuffer(Result->IndexBuffer, Indices.data(), Indices.size() * sizeof(u32), 0);
     
-    Result->VertexData.resize(sizeof(Vertices));
-    memcpy(Result->VertexData.data(), &Vertices, sizeof(Vertices));
-    Result->IndexData.resize(sizeof(Indices));
-    memcpy(Result->IndexData.data(), &Indices, sizeof(Indices));
+    Result->VertexData = Vertices;
+    Result->IndexData = Indices;
 
     Result->Count = 6;
     Result->Start=0;
@@ -120,7 +164,7 @@ std::shared_ptr<indexedGeometryBuffers>  GetCubeGeometry()
     gfx::context *Context = gfx::context::Get();
     std::shared_ptr<indexedGeometryBuffers> Result = std::make_shared<indexedGeometryBuffers>();
 
-    vertex Vertices[] =
+    std::vector<vertex> Vertices =
     {
         {v4f(-0.5, -0.5, -0.5, 0), v4f(0, 0, -1, 1)},
         {v4f(-0.5, 0.5, -0.5, 0), v4f(0, 0, -1, 0)},
@@ -153,20 +197,8 @@ std::shared_ptr<indexedGeometryBuffers>  GetCubeGeometry()
         {v4f(0.5, -0.5,  0.5, 1), v4f(0, -1, 0, 1)},
     };
     
-    gfx::vertexStreamData VertexStream1 = {};
-    VertexStream1
-        .SetSize(sizeof(Vertices))
-        .SetStride(sizeof(vertex))
-        .SetData(&Vertices)
-        .SetStreamIndex(0)
-        .AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 0})
-        .AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 1});
-    gfx::vertexBufferCreateInfo VertexBufferCreateInfo = {};
-    VertexBufferCreateInfo.Init().AddVertexStream(VertexStream1);
-    Result->VertexBuffer = Context->CreateVertexBuffer(VertexBufferCreateInfo);
 
-
-    uint32_t Indices[] = 
+    std::vector<uint32_t> Indices = 
     {  
         0,  1,  2,  3,  0,  2,
         4,  5,  6,  7,  4,  6,
@@ -175,13 +207,25 @@ std::shared_ptr<indexedGeometryBuffers>  GetCubeGeometry()
         16, 17, 18, 19, 16, 18,
         20, 21, 22, 23, 20, 22,
     };
-    Result->IndexBuffer = Context->CreateBuffer(sizeof(Indices), gfx::bufferUsage::IndexBuffer, gfx::memoryUsage::GpuOnly);
-    Context->CopyDataToBuffer(Result->IndexBuffer, &Indices, sizeof(Indices), 0);
+    CalculateTangents(Vertices, Indices);
+
+    gfx::vertexStreamData VertexStream1 = {};
+    VertexStream1
+        .SetSize(Vertices.size() * sizeof(vertex))
+        .SetStride(sizeof(vertex))
+        .SetData(Vertices.data())
+        .SetStreamIndex(0)
+        .AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 0})
+        .AddAttribute({sizeof(float), 4, gfx::vertexAttributeType::Float, false, gfx::attributeSemantic::POSITION, 0, 1});
+    gfx::vertexBufferCreateInfo VertexBufferCreateInfo = {};
+    VertexBufferCreateInfo.Init().AddVertexStream(VertexStream1);
+    Result->VertexBuffer = Context->CreateVertexBuffer(VertexBufferCreateInfo);
+
+    Result->IndexBuffer = Context->CreateBuffer(Indices.size() * sizeof(u32), gfx::bufferUsage::IndexBuffer, gfx::memoryUsage::GpuOnly);
+    Context->CopyDataToBuffer(Result->IndexBuffer, Indices.data(), Indices.size() * sizeof(u32), 0);
     
-    Result->VertexData.resize(sizeof(Vertices));
-    memcpy(Result->VertexData.data(), &Vertices, sizeof(Vertices));
-    Result->IndexData.resize(sizeof(Indices));
-    memcpy(Result->IndexData.data(), &Indices, sizeof(Indices));
+    Result->VertexData = Vertices;
+    Result->IndexData = Indices;
 
     Result->Count = 36;
     Result->Start=0;
@@ -230,7 +274,8 @@ std::shared_ptr<indexedGeometryBuffers>  GetSphereGeometry()
             }
         }
     }
-    
+    CalculateTangents(Vertices, Indices);
+
     gfx::vertexStreamData VertexStream1 = {};
     VertexStream1
         .SetSize(Vertices.size() * sizeof(vertex))
@@ -292,13 +337,15 @@ std::shared_ptr<indexedGeometryBuffers>  GetConeGeometry()
             v4f(glm::vec3(0, 0, -1), 0)
         });
         
+        //Circular base
         Indices.push_back(i);
         Indices.push_back(0);
         Indices.push_back(i+1);
         
+        //Base to tip
         Indices.push_back(i);
         Indices.push_back(1);
-        Indices.push_back(i-1);
+        Indices.push_back(i+1);
     }
     
     Indices.push_back(NumSlices);
@@ -308,6 +355,7 @@ std::shared_ptr<indexedGeometryBuffers>  GetConeGeometry()
     Indices.push_back(NumSlices);
     Indices.push_back(2);    
     Indices.push_back(1);
+    CalculateTangents(Vertices, Indices);
     
     gfx::vertexStreamData VertexStream1 = {};
     VertexStream1
@@ -381,6 +429,7 @@ std::shared_ptr<indexedGeometryBuffers>  GetCapsuleGeometry()
             }
         }        
     }    
+    CalculateTangents(Vertices, Indices);
     
     gfx::vertexStreamData VertexStream1 = {};
     VertexStream1
@@ -494,6 +543,7 @@ std::shared_ptr<indexedGeometryBuffers>  GetCylinderGeometry()
     Indices.push_back(NumSlices + 2);
     Indices.push_back(NumSlices * 2 + 1);
     //_____________________________________________________      
+    CalculateTangents(Vertices, Indices);
     
     gfx::vertexStreamData VertexStream1 = {};
     VertexStream1

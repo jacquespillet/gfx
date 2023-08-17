@@ -3,6 +3,7 @@
 #include "Include/CameraController.h"
 #include "Include/Material.h"
 #include "Include/Util.h"
+#include "Include/Bindings.h"
 #include "Include/Geometry.h"
 #include "Include/Renderer.h"
 #include "Include/GUI.h"
@@ -12,6 +13,7 @@
 #include <iostream>
 #include <filesystem>
 #include <queue>
+#include <glm/ext.hpp>
 
 namespace hlgfx
 {
@@ -138,16 +140,19 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     };    
 
     defaultTextures::BlackTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
+    defaultTextures::BlackTexture->UUID = "BLACK_TEXTURE";
 
     Color = {0,0,255,255};
     for (sz i = 0; i < TexWidth * TexHeight; i++)
         ColorData[i] = Color;
     defaultTextures::BlueTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
+    defaultTextures::BlueTexture->UUID = "BLUE_TEXTURE";
     
     Color = {255,255,255,255};
     for (sz i = 0; i < TexWidth * TexHeight; i++)
         ColorData[i] = Color;
     defaultTextures::WhiteTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
+    defaultTextures::WhiteTexture->UUID = "WHITE_TEXTURE";
 
     Singleton->NoMaterial = std::make_shared<pbrMaterial>("NO_MATERIAL");
     Singleton->NoMaterial->UUID = "NO_MATERIAL";
@@ -168,8 +173,8 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->Capsule = GetCapsuleGeometry();
     Singleton->Capsule->UUID = "DEFAULT_CAPSULE";
 
-    Singleton->Cylinder = GetCylinderGeometry();
-    Singleton->Cylinder->UUID = "DEFAULT_CYLINDER";
+    // Singleton->Cylinder = GetCylinderGeometry();
+    // Singleton->Cylinder->UUID = "DEFAULT_CYLINDER";
 
 
     //Shadow maps renderer
@@ -184,7 +189,8 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->ShadowsRenderer = std::make_shared<hlgfx::renderer>();
     Singleton->ShadowsRenderer->RenderTarget = Singleton->ShadowsFramebuffer;
     Singleton->ShadowsRenderer->OverrideMaterial = std::make_shared<hlgfx::customMaterial>("ShadowMaterial", Singleton->PipelineHandleOffscreen);    
-    
+    Singleton->ShadowCam = std::make_shared<camera>(-20, 20, -20, 20, 0.1, 100);
+
     return Singleton;
 }
 
@@ -610,7 +616,21 @@ void context::Render(std::shared_ptr<camera> Camera)
 {
     Camera->Controls->OnUpdate();
     
-    ShadowsRenderer->Render(Scene, Camera);
+    //Render shadow maps
+    if(Scene->SceneBufferData.LightCount.x>0)
+    {
+        m4x4 LocalToWorldMatrix = Scene->Lights[0]->Transform.Matrices.LocalToWorld;
+        v3f CamPos = glm::column(LocalToWorldMatrix, 2) * 10.0f;
+        LocalToWorldMatrix[3][0] = CamPos.x;
+        LocalToWorldMatrix[3][1] = CamPos.y;
+        LocalToWorldMatrix[3][2] = CamPos.z;
+        //LocalToWorldMatrix[2] *= -1;
+        ShadowCam->Transform.Matrices.WorldToLocal = glm::inverse(LocalToWorldMatrix);
+        ShadowCam->RecalculateMatrices();
+        Scene->Lights[0]->Data.LightSpaceMatrix = ShadowCam->Data.ViewProjectionMatrix;
+        Scene->UpdateLight(0);
+        ShadowsRenderer->Render(Scene, ShadowCam); 
+    }
     
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();    
 
