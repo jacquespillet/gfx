@@ -20,6 +20,7 @@ enum class commandType
     EndPass,
     CopyBuffer,
     Dispatch,
+    CopyFramebufferToImage,
     DrawImgui
 };
 
@@ -83,6 +84,16 @@ struct command
             u32 Binding;
             GLuint Image;
         } BindUniformImage;
+        
+        struct copyImageToImage
+        {
+            GLuint SourceTexture;
+            GLuint DestTexture;
+            GLenum SourceTarget;
+            GLenum DestTarget;
+            u32 Width, Height;
+            u32 SourceLayer, DestLayer;
+        } CopyImageToImage;
         
         struct viewportState
         {

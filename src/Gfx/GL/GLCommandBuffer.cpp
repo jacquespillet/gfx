@@ -35,6 +35,26 @@ void ExecuteEndPass(const command &Command)
 }
 
 
+void ExecuteCopyImageToImage(const command &Command)
+{
+    glCopyImageSubData( 	
+        Command.CopyImageToImage.SourceTexture,
+        Command.CopyImageToImage.SourceTarget,
+        Command.CopyImageToImage.SourceLayer,
+        0,
+        0,
+        0,
+        Command.CopyImageToImage.DestTexture,
+        Command.CopyImageToImage.DestTarget,
+        Command.CopyImageToImage.DestLayer,
+        0,
+        0,
+        0,
+        Command.CopyImageToImage.Width,
+        Command.CopyImageToImage.Height,
+        1);
+}
+
 void ExecuteSetViewport(const command &Command)
 {
     glViewport((GLint)Command.Viewport.StartX, (GLint)Command.Viewport.StartY, (GLsizei)Command.Viewport.Width, (GLsizei)Command.Viewport.Height);
@@ -42,7 +62,7 @@ void ExecuteSetViewport(const command &Command)
 
 void ExecuteSetScissor(const command &Command)
 {
-    glScissor(Command.Scissor.StartX, Command.Scissor.StartY, Command.Scissor.Width, Command.Scissor.Height);
+    // glScissor(Command.Scissor.StartX, Command.Scissor.StartY, Command.Scissor.Width, Command.Scissor.Height);
 }
 
 void ExecuteBeginPass(const command &Command)
@@ -285,7 +305,7 @@ void commandBuffer::BindIndexBuffer(bufferHandle Buffer, u32 Offset, indexType I
     GLCommandBuffer->IndexBufferOffset = Offset;
 }
 
-void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height)
+void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height, b8 Reversed)
 {
     GET_GL_COMMANDS
     command Command;
@@ -359,6 +379,34 @@ void glCommandBuffer::DrawImgui()
     Command.CommandFunction = (commandFunction)&ExecuteDrawImgui;
     Commands.push_back(Command);
 }
+
+void commandBuffer::CopyFramebufferToImage(const framebufferInfo &Source, const imageInfo &Destination)
+{
+    GET_GL_COMMANDS
+
+    GET_API_DATA(GLFramebuffer, glFramebufferData, Source.Resource);
+    GET_API_DATA(DestImage, glImage, Destination.Resource);
+    
+    GLuint SourceHandle;
+    if(Source.Depth) SourceHandle = GLFramebuffer->DepthTexture;
+    else SourceHandle = GLFramebuffer->ColorTextures[Source.Color];
+    GLuint DestHandle = DestImage->Handle;
+
+    command Command;
+    Command.Type = commandType::CopyFramebufferToImage;
+    Command.CommandFunction = (commandFunction)&ExecuteCopyImageToImage;
+    Command.CopyImageToImage.SourceTexture = SourceHandle;
+    Command.CopyImageToImage.DestTexture = DestHandle;
+    Command.CopyImageToImage.SourceTarget = GL_TEXTURE_2D;
+    Command.CopyImageToImage.DestTarget = GL_TEXTURE_2D_ARRAY;
+    Command.CopyImageToImage.Width = Destination.Resource->Extent.Width;
+    Command.CopyImageToImage.Height = Destination.Resource->Extent.Height;
+    Command.CopyImageToImage.SourceLayer = 0;
+    Command.CopyImageToImage.DestLayer = Destination.Layer;
+    GLCommandBuffer->Commands.push_back(Command);
+}
+
+void commandBuffer::TransferLayout(imageHandle Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout){}
 
 void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Binding)
 {

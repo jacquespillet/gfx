@@ -41,6 +41,33 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+void image::InitAsArray(u32 Width, u32 Height, u32 Depth, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage, u32 SampleCount)
+{
+    this->Extent.Width = Width;
+    this->Extent.Height = Height;
+    this->Format = Format;
+    this->ChannelCount = ChannelCountFromFormat(Format);
+    this->Data.resize(Width * Height * FormatSize(Format));
+    // this->Type = FormatToType(Format);
+    this->MipLevelCount = 1;
+
+
+    this->ApiData = std::make_shared<glImage>();
+    GET_API_DATA(GLImage, glImage, this);
+    glGenTextures(1, &GLImage->Handle);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, GLImage->Handle);
+
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, FormatToNativeInternal(Format), Width, Height, Depth, 0, FormatToNative(Format), FormatToType(Format), nullptr);
+
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+}
+
 
 void image::InitAsCubemap(const imageData &Left, const imageData &Right, const imageData &Top, const imageData &Bottom, const imageData &Back, const imageData &Front, const imageCreateInfo &CreateInfo)
 {

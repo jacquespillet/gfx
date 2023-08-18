@@ -198,7 +198,11 @@ void main()
             // float Visibility = texture(ShadowMap, vec3(Input.DepthMapUV.xy, (Input.DepthMapUV.z - 0.0005)/Input.DepthMapUV.w));
             float bias = max(0.001 * (1.0 - dot(Normal, -LightDirection)), 0.0001);  
             vec3 ProjCoords = Input.DepthMapUV.xyz / Input.DepthMapUV.w;
+#if GRAPHICS_API == VK
             ProjCoords.xy = ProjCoords.xy * 0.5 + 0.5;
+#else
+            ProjCoords.xyz = ProjCoords.xyz * 0.5 + 0.5;
+#endif
             float ClosestDepth = texture(ShadowMap, vec3(ProjCoords.xy, 0)).x;
             float CurrentDepth = ProjCoords.z;
             Visibility = CurrentDepth - bias > ClosestDepth ? 0.5 : 1.0;

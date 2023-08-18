@@ -197,6 +197,20 @@ imageHandle context::CreateImage(const imageData &ImageData, const imageCreateIn
     return ImageHandle;
 }
 
+imageHandle context::CreateImageArray(u32 Width, u32 Height, u32 Depth, format Format)
+{
+    imageHandle ImageHandle = ResourceManager.Images.ObtainResource();
+    if(ImageHandle == InvalidHandle)
+    {
+        return ImageHandle;
+    }
+    image *Image = GetImage(ImageHandle);
+    *Image = image();
+    Image->InitAsArray(Width, Height, Depth, Format, imageUsage::SHADER_READ, memoryUsage::GpuOnly);
+    return ImageHandle;
+}
+
+
 
 imageHandle context::CreateImageCubemap(const imageData &Left, const imageData &Right, const imageData &Top, const imageData &Bottom, const imageData &Back, const imageData &Front, const imageCreateInfo& CreateInfo)
 {

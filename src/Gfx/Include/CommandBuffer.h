@@ -16,6 +16,7 @@ struct bufferInfo
 struct image;
 struct imageInfo
 {
+    imageInfo() = default;
     image* Resource;
     imageUsage::bits Usage = imageUsage::UNKNOWN;
     u32 MipLevel = 0;
@@ -26,7 +27,8 @@ struct imageInfo
 struct framebuffer;
 struct framebufferInfo
 {
-    framebuffer* Resource;
+    framebufferInfo() = default;
+    framebuffer* Resource = nullptr;
     imageUsage::bits Usage = imageUsage::UNKNOWN;
     b8 Depth=false;
     u32 Color = 0;
