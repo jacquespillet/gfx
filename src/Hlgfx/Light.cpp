@@ -1,4 +1,7 @@
 #include "Include/Light.h"
+#include "Include/Material.h"
+#include "Include/Context.h"
+#include "Gfx/Include/Context.h"
 #include <glm/ext.hpp>
 
 namespace hlgfx
@@ -13,6 +16,16 @@ light::light(std::string Name) : object3D(Name)
     this->Data.Position[0] = Pos.x; this->Data.Position[1] = Pos.y; this->Data.Position[2] = Pos.z;  
     v3f Dir = glm::column(this->Transform.Matrices.LocalToWorld, 2);
     this->Data.Direction[0] = Dir.x; this->Data.Direction[1] = Dir.y; this->Data.Direction[2] = Dir.z;
+
+
+	gfx::framebufferCreateInfo FramebufferCreateInfo = {};
+    FramebufferCreateInfo.SetSize(1024, 1024)
+                            .AddColorFormat(gfx::format::R8G8B8A8_UNORM)
+                            .SetDepthFormat(gfx::format::D16_UNORM)
+                            .SetClearColor(1, 0, 0, 0);
+    this->ShadowsFramebuffer = gfx::context::Get()->CreateFramebuffer(FramebufferCreateInfo);
+    this->PipelineHandleOffscreen = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/ShadowMaps/ShadowMaps.json", this->ShadowsFramebuffer);
+    this->Material = std::make_shared<customMaterial>("ShadowMaterial", this->PipelineHandleOffscreen);    
 }
 
 void light::OnUpdate()

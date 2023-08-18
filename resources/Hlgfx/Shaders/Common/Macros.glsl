@@ -20,6 +20,12 @@ CUSTOM_DEFINES
 #endif
 
 #if GRAPHICS_API==VK
+#define DECLARE_UNIFORM_TEXTURE_ARRAY(Set, Binding, Name) layout(set = Set, binding = Binding) uniform sampler2DArray Name
+#elif GRAPHICS_API==GL
+#define DECLARE_UNIFORM_TEXTURE_ARRAY(Set, Binding, Name) layout(binding = Binding) uniform sampler2DArray Name;
+#endif
+
+#if GRAPHICS_API==VK
 #define DECLARE_UNIFORM_TEXTURE_SHADOW(Set, Binding, Name) layout(set = Set, binding = Binding) uniform sampler2DShadow Name
 #elif GRAPHICS_API==GL
 #define DECLARE_UNIFORM_TEXTURE_SHADOW(Set, Binding, Name) layout(binding = Binding) uniform sampler2DShadow Name;

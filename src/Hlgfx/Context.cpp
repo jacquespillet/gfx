@@ -173,23 +173,15 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->Capsule = GetCapsuleGeometry();
     Singleton->Capsule->UUID = "DEFAULT_CAPSULE";
 
-    // Singleton->Cylinder = GetCylinderGeometry();
-    // Singleton->Cylinder->UUID = "DEFAULT_CYLINDER";
+    //TODO: 
+    //Create a texture2DArray that will store all the shadow maps.
+    //we will copy to it after rendering them and will sample from it in the shaders.
 
-
-    //Shadow maps renderer
-	gfx::framebufferCreateInfo FramebufferCreateInfo = {};
-    FramebufferCreateInfo.SetSize(1024, 1024)
-                            .AddColorFormat(gfx::format::R8G8B8A8_UNORM)
-                            .SetDepthFormat(gfx::format::D24_UNORM_S8_UINT)
-                            .SetClearColor(1, 0, 0, 0);
-    Singleton->ShadowsFramebuffer = gfx::context::Get()->CreateFramebuffer(FramebufferCreateInfo);
-    Singleton->PipelineHandleOffscreen = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/ShadowMaps/ShadowMaps.json", Singleton->ShadowsFramebuffer);
+    //Only one for directinoal shadows
+    Singleton->ShadowMaps = Singleton->GfxContext->CreateImageArray(1024, 1024, scene::MaxLights, gfx::format::D16_UNORM);
+    Singleton->ShadowCam = std::make_shared<camera>(-10, 10, -10, 10, 0.1, 100);    
     
     Singleton->ShadowsRenderer = std::make_shared<hlgfx::renderer>();
-    Singleton->ShadowsRenderer->RenderTarget = Singleton->ShadowsFramebuffer;
-    Singleton->ShadowsRenderer->OverrideMaterial = std::make_shared<hlgfx::customMaterial>("ShadowMaterial", Singleton->PipelineHandleOffscreen);    
-    Singleton->ShadowCam = std::make_shared<camera>(-10, 10, -10, 10, 0.1, 100);
 
     return Singleton;
 }
@@ -625,6 +617,9 @@ void context::Render(std::shared_ptr<camera> Camera)
     //Render shadow maps
     if(Scene->SceneBufferData.LightCount.x>0)
     {
+        this->ShadowsRenderer->OverrideMaterial = Scene->Lights[0]->Material;
+        this->ShadowsRenderer->RenderTarget = Scene->Lights[0]->ShadowsFramebuffer;
+
         m4x4 LocalToWorldMatrix = Scene->Lights[0]->Transform.Matrices.LocalToWorld;
         v3f CamPos = glm::column(LocalToWorldMatrix, 2) * 10.0f;
         LocalToWorldMatrix[3][0] = CamPos.x;
@@ -636,10 +631,17 @@ void context::Render(std::shared_ptr<camera> Camera)
         Scene->Lights[0]->Data.LightSpaceMatrix = ShadowCam->Data.ViewProjectionMatrix;
         Scene->UpdateLight(0);
         ShadowsRenderer->Render(Scene, ShadowCam);
+
+        //Copy the framebuffer to the texture layer
+        CommandBuffer->CopyFramebufferToImage(
+            gfx::framebufferInfo {gfx::context::Get()->GetFramebuffer(Scene->Lights[0]->ShadowsFramebuffer), gfx::imageUsage::UNKNOWN, true, 0 },
+            gfx::imageInfo {gfx::context::Get()->GetImage(this->ShadowMaps), gfx::imageUsage::UNKNOWN, 0, 0, 1}
+        );
+        CommandBuffer->TransferLayout(ShadowMaps, gfx::imageUsage::TRANSFER_DESTINATION, gfx::imageUsage::SHADER_READ);
     }
     else
     {
-        CommandBuffer->TransferLayout(this->ShadowsFramebuffer, gfx::uniformGroup::DepthAttachment, gfx::imageLayout::Undefined, gfx::imageLayout::DepthStencilReadOnlyOptimal);
+        CommandBuffer->TransferLayout(ShadowMaps, gfx::imageUsage::UNKNOWN, gfx::imageUsage::SHADER_READ);
     }
     
 

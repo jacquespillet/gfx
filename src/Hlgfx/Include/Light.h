@@ -1,9 +1,12 @@
 #pragma once
 #include "Object3D.h"
 #include <fstream>
+#include "Gfx/Include/Framebuffer.h"
 
 namespace hlgfx
 {
+struct material;
+
 struct light : public object3D
 {
     light(std::string Name);
@@ -28,6 +31,10 @@ struct light : public object3D
         v4f Direction;    
         m4x4 LightSpaceMatrix;    
     } Data;
+
+    gfx::framebufferHandle ShadowsFramebuffer;
+	gfx::pipelineHandle PipelineHandleOffscreen;
+	std::shared_ptr<material> Material;
 };
 
 }

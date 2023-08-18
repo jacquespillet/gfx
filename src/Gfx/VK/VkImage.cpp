@@ -267,7 +267,42 @@ image::image(vk::Image VkImage, u32 Width, u32 Height, format Format)
 
 
 
+void image::InitAsArray(u32 Width, u32 Height, u32 Depth, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage, u32 SampleCount)
+{
+    ApiData = std::make_shared<vkImageData>();
+    GET_API_DATA(VkImageData, vkImageData, this);
+    
+    this->MipLevelCount = 1;
+    this->Format = Format;
+    this->Extent.Width = Width;
+    this->Extent.Height = Height;
+    this->LayerCount = 1;
+    this->Data.resize(Width * Height  * Depth * FormatSize(Format));
+    this->Type = type::BYTE;
+    
+    if(ImageUsage == imageUsage::COLOR_ATTACHMENT || ImageUsage == imageUsage::DEPTH_STENCIL_ATTACHMENT) ImageUsage |= imageUsage::SHADER_READ;
+    ImageUsage |= imageUsage::TRANSFER_DESTINATION;
+    vk::ImageCreateInfo ImageCreateInfo;
+    ImageCreateInfo.setImageType(vk::ImageType::e2D)
+                    .setFormat(FormatToNative(Format))
+                    .setExtent(vk::Extent3D(Width, Height, 1))
+                    .setSamples(SampleCountToNative(SampleCount))
+                    .setMipLevels(MipLevelCount)
+                    .setArrayLayers(LayerCount)
+                    .setTiling(vk::ImageTiling::eOptimal)
+                    .setUsage((vk::ImageUsageFlags)ImageUsage)
+                    .setSharingMode(vk::SharingMode::eExclusive)
+                    .setInitialLayout(vk::ImageLayout::eUndefined);
+        
+    // if(Options & imageOptions::CUBEMAP)
+    // {
+    //     ImageCreateInfo.setFlags(vk::ImageCreateFlagBits::eCubeCompatible);
+    // }                       
 
+    VkImageData->Allocation = gfx::AllocateImage(ImageCreateInfo, MemoryUsage, &VkImageData->Handle);
+    VkImageData->InitViews(*this, VkImageData->Handle,  Format, vk::ImageViewType::e2DArray);
+    VkImageData->InitSamplerDefault();    
+}
 
 void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage, u32 SampleCount)
 {
@@ -282,7 +317,7 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
     this->Data.resize(Width * Height * FormatSize(Format));
     this->Type = type::BYTE;
     
-    if(ImageUsage == imageUsage::COLOR_ATTACHMENT || ImageUsage == imageUsage::DEPTH_STENCIL_ATTACHMENT) ImageUsage |= imageUsage::SHADER_READ;
+    if(ImageUsage == imageUsage::COLOR_ATTACHMENT || ImageUsage == imageUsage::DEPTH_STENCIL_ATTACHMENT) ImageUsage |= imageUsage::SHADER_READ | imageUsage::TRANSFER_SOURCE;
 
     vk::ImageCreateInfo ImageCreateInfo;
     ImageCreateInfo.setImageType(vk::ImageType::e2D)
@@ -373,7 +408,7 @@ void vkImageData::InitViews(const image &Image, const vk::Image &VkImage, format
     this->Handle = VkImage;
     
     auto SubresourceRange = GetDefaultImageSubresourceRange(Image);
-
+    
     //Create image view
     vk::ImageViewCreateInfo ImageViewCreateInfo;
     ImageViewCreateInfo.setImage(this->Handle)

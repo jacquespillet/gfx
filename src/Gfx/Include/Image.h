@@ -56,6 +56,7 @@ struct image
     std::shared_ptr<void> ApiData;
     image() = default;
     void Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage, u32 SampleCount=1);
+    void InitAsArray(u32 Width, u32 Height, u32 Depth, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage, u32 SampleCount=1);
     void Init(const imageData &Image, const imageCreateInfo &CreateInfo);
     void InitAsCubemap(const imageData &Left, const imageData &Right, const imageData &Top, const imageData &Bottom, const imageData &Back, const imageData &Front, const imageCreateInfo &CreateInfo);
         

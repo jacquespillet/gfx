@@ -87,7 +87,7 @@ DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, OcclusionTextureBinding, O
 DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, EmissiveTextureBinding, EmissionTexture);
 
 // DECLARE_UNIFORM_TEXTURE_SHADOW(SceneDescriptorSetBinding, ShadowMapsBindingStart, ShadowMap);
-DECLARE_UNIFORM_TEXTURE(SceneDescriptorSetBinding, ShadowMapsBindingStart, ShadowMap);
+DECLARE_UNIFORM_TEXTURE_ARRAY(SceneDescriptorSetBinding, ShadowMapsBindingStart, ShadowMap);
 
 /////////////////////////////////
 //////////VERTEX/////////////////
@@ -199,7 +199,7 @@ void main()
             float bias = max(0.001 * (1.0 - dot(Normal, -LightDirection)), 0.0001);  
             vec3 ProjCoords = Input.DepthMapUV.xyz / Input.DepthMapUV.w;
             ProjCoords.xy = ProjCoords.xy * 0.5 + 0.5;
-            float ClosestDepth = texture(ShadowMap, ProjCoords.xy).x;
+            float ClosestDepth = texture(ShadowMap, vec3(ProjCoords.xy, 0)).x;
             float CurrentDepth = ProjCoords.z;
             Visibility = CurrentDepth - bias > ClosestDepth ? 0.5 : 1.0;
         }

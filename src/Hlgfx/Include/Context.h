@@ -108,9 +108,8 @@ struct context
     //Shadow maps
     std::shared_ptr<camera> ShadowCam;
     std::shared_ptr<hlgfx::renderer> ShadowsRenderer;
-	gfx::framebufferHandle ShadowsFramebuffer;
-	gfx::pipelineHandle PipelineHandleOffscreen;
-
+	
+    gfx::imageHandle ShadowMaps;
 
     //Inputs
     b8 MouseClicked=false;

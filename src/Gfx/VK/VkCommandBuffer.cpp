@@ -205,6 +205,77 @@ void commandBuffer::CopyBuffer(const bufferInfo &Source, const bufferInfo &Desti
     VkCommandBufferData->Handle.copyBuffer(SourceHandle, DestHandle, BufferCopyInfo);
 }
 
+void commandBuffer::CopyFramebufferToImage(const framebufferInfo &Source, const imageInfo &Destination)
+{
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
+    GET_API_DATA(VKImageDest, vkImageData, Destination.Resource);
+    GET_API_DATA(VKFramebuffer, vkFramebufferData, Source.Resource);
+    
+    image *Image;
+    if(Source.Depth) Image = VKFramebuffer->DepthStencilImage.get();
+    else Image = VKFramebuffer->ColorImages[Source.Color].get();
+    GET_API_DATA(VKImageSrc, vkImageData, Image);
+
+    if(Destination.Usage != imageUsage::TRANSFER_DESTINATION)
+    {
+        auto DestinationRange = GetDefaultImageSubresourceRange(*Destination.Resource);
+        vk::ImageMemoryBarrier ToTransferDestBarrier;
+        ToTransferDestBarrier.setSrcAccessMask(ImageUsageToAccessFlags(Destination.Usage))
+                             .setDstAccessMask(vk::AccessFlagBits::eTransferWrite)
+                             .setOldLayout(ImageUsageToImageLayout(Destination.Usage))
+                             .setNewLayout(vk::ImageLayout::eTransferDstOptimal)
+                             .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                             .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                             .setImage(VKImageDest->Handle)
+                             .setSubresourceRange(DestinationRange);
+
+        VkCommandBufferData->Handle.pipelineBarrier(
+            ImageUsageToPipelineStage(Destination.Usage),
+            vk::PipelineStageFlagBits::eTransfer,
+            {},
+            {},
+            {},
+            ToTransferDestBarrier
+        );
+    }
+
+    if(Source.Usage != imageUsage::TRANSFER_SOURCE)
+    {
+        auto SourceRange = GetDefaultImageSubresourceRange(*Image);
+        vk::ImageMemoryBarrier ToTransferSrcBarrier;
+        ToTransferSrcBarrier.setSrcAccessMask(ImageUsageToAccessFlags(Source.Usage))
+                             .setDstAccessMask(vk::AccessFlagBits::eTransferRead)
+                             .setOldLayout(ImageUsageToImageLayout(Source.Usage))
+                             .setNewLayout(vk::ImageLayout::eTransferSrcOptimal)
+                             .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                             .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                             .setImage(VKImageSrc->Handle)
+                             .setSubresourceRange(SourceRange);
+
+        VkCommandBufferData->Handle.pipelineBarrier(
+            ImageUsageToPipelineStage(Source.Usage),
+            vk::PipelineStageFlagBits::eTransfer,
+            {},
+            {},
+            {},
+            ToTransferSrcBarrier
+        );
+    }
+
+
+    auto SourceLayers = GetDefaultImageSubresourceLayers(*Destination.Resource, Destination.MipLevel, Destination.Layer, Destination.Layercount);
+    auto DestLayers = GetDefaultImageSubresourceLayers(*Image, 0, 0, 1);
+    vk::ImageCopy ImageCopyInfo;
+    ImageCopyInfo.setSrcSubresource(SourceLayers)
+                 .setDstSubresource(DestLayers)
+                 .setExtent(vk::Extent3D(Image->Extent.Width, Image->Extent.Height, 1))
+                 .setSrcOffset(vk::Offset3D(0,0,0))
+                 .setDstOffset(vk::Offset3D(0,0,0));
+    VkCommandBufferData->Handle.copyImage(VKImageSrc->Handle, vk::ImageLayout::eTransferSrcOptimal, VKImageDest->Handle, vk::ImageLayout::eTransferDstOptimal, 1, &ImageCopyInfo);
+
+    
+}
+
 void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo &Destination)
 {
     GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
@@ -213,7 +284,6 @@ void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo 
 
     if(Destination.Usage != imageUsage::TRANSFER_DESTINATION)
     {
-
         auto DestinationRange = GetDefaultImageSubresourceRange(*Destination.Resource);
         vk::ImageMemoryBarrier ToTransferDestBarrier;
         ToTransferDestBarrier.setSrcAccessMask(ImageUsageToAccessFlags(Destination.Usage))
@@ -279,6 +349,11 @@ void commandBuffer::TransferLayout(framebufferHandle FramebufferHandle, u32 Inde
         {},
         Barrier
     );
+}
+void commandBuffer::TransferLayout(imageHandle Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout)
+{
+    image *Image = context::Get()->GetImage(Texture);
+    TransferLayout(*Image, OldLayout, NewLayout);
 }
 
 void commandBuffer::TransferLayout(const image &Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout)

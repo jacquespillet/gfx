@@ -23,6 +23,15 @@ struct imageInfo
     u32 Layercount = 1;
 };
 
+struct framebuffer;
+struct framebufferInfo
+{
+    framebuffer* Resource;
+    imageUsage::bits Usage = imageUsage::UNKNOWN;
+    b8 Depth=false;
+    u32 Color = 0;
+};
+
 struct clearColorValues 
 {
     f32 R, G, B, A;
@@ -54,8 +63,10 @@ struct commandBuffer
     
     void CopyBufferToImage(const bufferInfo &Source, const imageInfo &Destination);
     void CopyImageToImage(const imageInfo &Source, const imageInfo &Destination);
+    void CopyFramebufferToImage(const framebufferInfo &Source, const imageInfo &Destination);
     void CopyBuffer(const bufferInfo &Source, const bufferInfo &Destination, size_t ByteSize);
     void TransferLayout(const image &Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout);
+    void TransferLayout(imageHandle Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout);
     void TransferLayout(framebufferHandle Framebuffer, u32 Index, imageLayout OldLayout, imageLayout NewLayout);
     
 

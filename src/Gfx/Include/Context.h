@@ -81,6 +81,7 @@ struct context
     imageHandle CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo);
     imageHandle CreateImageCubemap(const imageData &Left, const imageData &Right, const imageData &Top, const imageData &Bottom, const imageData &Back, const imageData &Front, const imageCreateInfo& CreateInfo);
     imageHandle CreateImage(u32 Width, u32 Height, format Format, u8 *Pixels);
+    imageHandle CreateImageArray(u32 Width, u32 Height, u32 Depth, format Format);
 
     pipelineHandle CreatePipelineFromFile(const char *FileName, framebufferHandle Framebuffer = InvalidHandle); 
     pipelineHandle CreatePipeline(const pipelineCreation &PipelineCreation);
