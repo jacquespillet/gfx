@@ -18,7 +18,7 @@
 #include "imgui_impl_dx11.h"
 
 
-#define GET_GL_COMMANDS std::shared_ptr<d3d11CommandBuffer> GLCommandBuffer = std::static_pointer_cast<d3d11CommandBuffer>(this->ApiData);
+#define GET_D11_COMMANDS std::shared_ptr<d3d11CommandBuffer> GLCommandBuffer = std::static_pointer_cast<d3d11CommandBuffer>(this->ApiData);
 namespace gfx
 {
 
@@ -157,6 +157,30 @@ void ExecuteDrawIndexed(const command &Command, d3d11CommandBuffer &CommandBuffe
     D11Data->DeviceContext->DrawIndexed(Command.DrawIndexed.Count, Command.DrawIndexed.Offset, 0);
 }
 
+void ExecuteCopyFramebufferToImage(const command &Command, d3d11CommandBuffer &CommandBuffer)
+{
+    GET_CONTEXT(D11Data, context::Get());
+    UINT SrcSubresourceIndex = D3D11CalcSubresource(0, 0, 1);
+    UINT DestSubresourceIndex = D3D11CalcSubresource(0, Command.CopyFramebufferToImage.DestLayer, 1);
+    // Specify the source box (entire texture)
+    
+    ID3D11Resource* SrcResource = nullptr;
+    Command.CopyFramebufferToImage.SourceTexture->QueryInterface(__uuidof(ID3D11Resource), reinterpret_cast<void**>(&SrcResource));
+
+    ID3D11Resource* DestResource = nullptr;
+    Command.CopyFramebufferToImage.DestTexture->QueryInterface(__uuidof(ID3D11Resource), reinterpret_cast<void**>(&DestResource));
+
+
+    D11Data->DeviceContext->CopySubresourceRegion(DestResource, 
+                                                  DestSubresourceIndex, 0, 0, 0, 
+                                                  SrcResource, 
+                                                  SrcSubresourceIndex, 
+                                                  nullptr);
+}
+
+void commandBuffer::TransferLayout(imageHandle Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout){}
+
+
 void ExecuteDrawTriangles(const command &Command, d3d11CommandBuffer &CommandBuffer)
 {
     GET_CONTEXT(D11Data, context::Get());
@@ -211,7 +235,7 @@ void ExecuteDispatchCompute(const command &Command, d3d11CommandBuffer &CommandB
 
 void commandBuffer::Begin()
 {
-    GET_GL_COMMANDS
+    GET_D11_COMMANDS
     assert(!GLCommandBuffer->IsRecording);
     
     GLCommandBuffer->Commands.clear();
@@ -220,7 +244,7 @@ void commandBuffer::Begin()
 
 void commandBuffer::BeginPass(framebufferHandle Framebuffer, clearColorValues ClearColor, clearDepthStencilValues DepthStencil)
 {
-    GET_GL_COMMANDS
+    GET_D11_COMMANDS
     command Command;
     Command.Type = commandType::BeginPass;
     Command.BeginPass.FramebufferHandle = Framebuffer;
@@ -237,7 +261,7 @@ void commandBuffer::BeginPass(framebufferHandle Framebuffer, clearColorValues Cl
 
 void commandBuffer::EndPass()
 {
-    GET_GL_COMMANDS
+    GET_D11_COMMANDS
     command Command;
     Command.Type = commandType::EndPass;
     Command.CommandFunction = (commandFunction)&ExecuteEndPass;
@@ -246,7 +270,7 @@ void commandBuffer::EndPass()
 
 void commandBuffer::BindGraphicsPipeline(pipelineHandle Pipeline)
 {
-    GET_GL_COMMANDS
+    GET_D11_COMMANDS
     command Command;
     Command.Type = commandType::BindPipeline;
     Command.BindGraphicsPipeline.Pipeline = Pipeline;
@@ -256,7 +280,7 @@ void commandBuffer::BindGraphicsPipeline(pipelineHandle Pipeline)
 
 void commandBuffer::BindComputePipeline(pipelineHandle Pipeline)
 {
-    GET_GL_COMMANDS
+    GET_D11_COMMANDS
     command Command;
     Command.Type = commandType::BindPipeline;
     Command.BindGraphicsPipeline.Pipeline = Pipeline;
@@ -267,7 +291,7 @@ void commandBuffer::BindComputePipeline(pipelineHandle Pipeline)
 
 void commandBuffer::Dispatch(u32 NumGroupX, u32 NumGroupY, u32 NumGroupZ)
 {
-    GET_GL_COMMANDS
+    GET_D11_COMMANDS
     command Command;
     Command.Type = commandType::Dispatch;
     Command.DispatchCompute.NumGroupX = NumGroupX;
@@ -279,7 +303,7 @@ void commandBuffer::Dispatch(u32 NumGroupX, u32 NumGroupY, u32 NumGroupZ)
 
 void commandBuffer::BindVertexBuffer(vertexBufferHandle Buffer)
 {
-    GET_GL_COMMANDS
+    GET_D11_COMMANDS
     command Command;
     Command.Type = commandType::BindVertexBuffer;
     Command.BindVertexBuffer.VertexBufferHandle = Buffer;
@@ -289,7 +313,7 @@ void commandBuffer::BindVertexBuffer(vertexBufferHandle Buffer)
 
 void commandBuffer::BindIndexBuffer(bufferHandle Buffer, u32 Offset, indexType IndexType)
 {
-    GET_GL_COMMANDS
+    GET_D11_COMMANDS
     command Command;
     Command.Type = commandType::BindIndexBuffer;
     Command.BindIndexBuffer.IndexBufferHandle = Buffer;
@@ -302,9 +326,9 @@ void commandBuffer::BindIndexBuffer(bufferHandle Buffer, u32 Offset, indexType I
     GLCommandBuffer->IndexBufferOffset = Offset;
 }
 
-void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height)
+void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height, b8 Reversed)
 {
-    GET_GL_COMMANDS
+    GET_D11_COMMANDS
     command Command;
     Command.Type = commandType::SetViewport;
     Command.Viewport.StartX = X;
@@ -318,7 +342,7 @@ void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height)
 void commandBuffer::SetScissor(s32 X, s32 Y, u32 Width, u32 Height)
 {
 
-    GET_GL_COMMANDS
+    GET_D11_COMMANDS
     command Command;
     Command.Type = commandType::SetScissor;
     Command.Scissor.StartX = X;
@@ -332,7 +356,7 @@ void commandBuffer::SetScissor(s32 X, s32 Y, u32 Width, u32 Height)
 
 void commandBuffer::DrawArrays(u32 Start, u32 Count, u32 InstanceCount)
 {
-    GET_GL_COMMANDS
+    GET_D11_COMMANDS
     command Command;
     Command.Type = commandType::DrawTriangles;
     Command.DrawTriangles.Start = Start;
@@ -344,7 +368,7 @@ void commandBuffer::DrawArrays(u32 Start, u32 Count, u32 InstanceCount)
 
 void commandBuffer::DrawIndexed(u32 Start, u32 Count, u32 InstanceCount)
 {
-    GET_GL_COMMANDS
+    GET_D11_COMMANDS
     command Command;
     Command.Type = commandType::DrawIndexed;
     Command.DrawIndexed.Count = Count;
@@ -357,10 +381,27 @@ void commandBuffer::DrawIndexed(u32 Start, u32 Count, u32 InstanceCount)
     GLCommandBuffer->IndexType = indexType::Uint16;
     GLCommandBuffer->IndexBufferOffset=0;
 }
+
+void commandBuffer::CopyFramebufferToImage(const framebufferInfo &Source, const imageInfo &Destination)
+{
+    GET_D11_COMMANDS
+    GET_API_DATA(D11Framebuffer, d3d11FramebufferData, Source.Resource);
+    GET_API_DATA(D11Image, d3d11Image, Destination.Resource);
+
+    command Command;
+    Command.Type = commandType::CopyFramebufferToImage;
+    Command.CopyFramebufferToImage.Width = Source.Resource->Width;
+    Command.CopyFramebufferToImage.Height = Source.Resource->Height;
+    Command.CopyFramebufferToImage.DestLayer = Destination.Layer;
+    Command.CopyFramebufferToImage.SourceTexture = Source.Depth ? D11Framebuffer->DepthBuffer.Get() : D11Framebuffer->ColorHandles[Source.Color].Get();
+    Command.CopyFramebufferToImage.DestTexture = D11Image->Handle.Get();
+    Command.CommandFunction = (commandFunction)&ExecuteCopyFramebufferToImage;
+    GLCommandBuffer->Commands.push_back(Command);
+}
     
 void commandBuffer::End()
 {
-    GET_GL_COMMANDS
+    GET_D11_COMMANDS
     GLCommandBuffer->IsRecording=false;
     for (size_t i = 0; i < GLCommandBuffer->Commands.size(); i++)
     {
@@ -379,7 +420,7 @@ void d3d11CommandBuffer::DrawImgui()
 
 void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Binding)
 {
-    GET_GL_COMMANDS
+    GET_D11_COMMANDS
 
     
     for(sz i=0; i< Group->Uniforms.size(); i++)

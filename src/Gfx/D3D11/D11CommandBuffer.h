@@ -10,6 +10,7 @@ enum class commandType
 {
     DrawTriangles,
     DrawIndexed,
+    CopyFramebufferToImage,
     BindPipeline,
     BindVertexBuffer,
     BindIndexBuffer,
@@ -105,6 +106,14 @@ struct command
             u32 Width;
             u32 Height;
         } Scissor;
+        
+        struct copyFramebufferToImage
+        {
+            u32 Width, Height;
+            u32 DestLayer;
+            ID3D11Texture2D *SourceTexture;
+            ID3D11Texture2D *DestTexture;
+        } CopyFramebufferToImage;
 
         struct drawImgui
         {

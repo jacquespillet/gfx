@@ -123,6 +123,41 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
     }
 }
 
+
+void image::InitAsArray(u32 Width, u32 Height, u32 Depth, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage, u32 SampleCount)
+{
+    std::shared_ptr<d3d11Data> D11Data = std::static_pointer_cast<d3d11Data>(context::Get()->ApiContextData);
+
+    this->Extent.Width = Width;
+    this->Extent.Height = Height;
+    this->LayerCount = Depth;
+    this->Format = Format;
+    this->MipLevelCount = 1;
+    this->ChannelCount = ChannelCountFromFormat(Format);
+    this->Type = type::BYTE;
+    this->Data.resize(Width * Height * Depth * FormatSize(Format));
+
+
+    ApiData = std::make_shared<d3d11Image>();
+    std::shared_ptr<d3d11Image> D11Image = std::static_pointer_cast<d3d11Image>(ApiData);
+
+   //TODO
+    D3D11_TEXTURE2D_DESC TextureDesc = {};
+    TextureDesc.Width              = Width;  // in xdata.h
+    TextureDesc.Height             = Height; // in xdata.h
+    TextureDesc.MipLevels          = 1;
+    TextureDesc.ArraySize          = Depth;
+    TextureDesc.Format             = FormatToNative(Format);
+    if(Format == format::D16_UNORM) TextureDesc.Format = DXGI_FORMAT_R16_UNORM;
+    TextureDesc.SampleDesc.Count   = 1;
+    TextureDesc.Usage              = D3D11_USAGE_DEFAULT;
+    TextureDesc.BindFlags          = D3D11_BIND_SHADER_RESOURCE;
+
+    D11Data->Device->CreateTexture2D(&TextureDesc, nullptr, D11Image->Handle.GetAddressOf());
+    D11Data->Device->CreateShaderResourceView(D11Image->Handle.Get(), nullptr, D11Image->View.GetAddressOf());        
+
+}
+
 ImTextureID image::GetImGuiID()
 {
     GET_API_DATA(D11Image, d3d11Image, this);
