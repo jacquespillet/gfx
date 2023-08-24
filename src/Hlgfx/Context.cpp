@@ -637,6 +637,7 @@ void context::Render(std::shared_ptr<camera> Camera)
             gfx::framebufferInfo {gfx::context::Get()->GetFramebuffer(Scene->Lights[0]->ShadowsFramebuffer), gfx::imageUsage::UNKNOWN, true, 0 },
             gfx::imageInfo {gfx::context::Get()->GetImage(this->ShadowMaps), gfx::imageUsage::UNKNOWN, 0, 0, 1}
         );
+        //TODO: Automatically handle layout transitions.
         CommandBuffer->TransferLayout(ShadowMaps, gfx::imageUsage::TRANSFER_DESTINATION, gfx::imageUsage::SHADER_READ);
     }
     else

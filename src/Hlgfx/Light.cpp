@@ -22,7 +22,7 @@ light::light(std::string Name) : object3D(Name)
     FramebufferCreateInfo.SetSize(1024, 1024)
                             .AddColorFormat(gfx::format::R8G8B8A8_UNORM)
                             .SetDepthFormat(gfx::format::D16_UNORM)
-                            .SetClearColor(1, 0, 0, 0);
+                            .SetClearColor(0, 0, 0, 0);
     this->ShadowsFramebuffer = gfx::context::Get()->CreateFramebuffer(FramebufferCreateInfo);
     this->PipelineHandleOffscreen = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/ShadowMaps/ShadowMaps.json", this->ShadowsFramebuffer);
     this->Material = std::make_shared<customMaterial>("ShadowMaterial", this->PipelineHandleOffscreen);    

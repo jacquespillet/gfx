@@ -117,14 +117,35 @@ void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo 
 }
 void commandBuffer::CopyFramebufferToImage(const framebufferInfo &Source, const imageInfo &Destination)
 {
-    GET_API_DATA(D12CommandBUfferData, d3d12CommandBufferData, this);
+    GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
     GET_API_DATA(D12ImageDest, d3d12ImageData, Destination.Resource);
     GET_API_DATA(D12Framebuffer, d3d12FramebufferData, Source.Resource);
     
+    //TODO: That's a hack ! will only work if we copy the depth buffer.
+    //Needs to work with any colour render targets too.
+    //Also assume that the dest was in pixel shader resource state before which might not be true.
+    CD3DX12_RESOURCE_BARRIER Barrier = CD3DX12_RESOURCE_BARRIER::Transition(D12Framebuffer->DepthStencilBuffer.Get(),
+        D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_COPY_SOURCE);
+    D12CommandBufferData->CommandList->ResourceBarrier(1, &Barrier);
+
+    Barrier = CD3DX12_RESOURCE_BARRIER::Transition(D12ImageDest->Handle.Get(),
+        D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST);
+    D12CommandBufferData->CommandList->ResourceBarrier(1, &Barrier);
+
     // Copy data using CopyTextureRegion
     D3D12_TEXTURE_COPY_LOCATION srcLocation = { D12Framebuffer->DepthStencilBuffer.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, 0 };
     D3D12_TEXTURE_COPY_LOCATION destLocation = { D12ImageDest->Handle.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, Destination.Layer };
-    D12CommandBUfferData->CommandList->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
+    D12CommandBufferData->CommandList->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
+    
+    Barrier = CD3DX12_RESOURCE_BARRIER::Transition(D12Framebuffer->DepthStencilBuffer.Get(),
+        D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    D12CommandBufferData->CommandList->ResourceBarrier(1, &Barrier);
+
+    Barrier = CD3DX12_RESOURCE_BARRIER::Transition(D12ImageDest->Handle.Get(),
+        D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    D12CommandBufferData->CommandList->ResourceBarrier(1, &Barrier);
+
+
 }
 void commandBuffer::TransferLayout(imageHandle Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout)
 {
@@ -135,11 +156,13 @@ void commandBuffer::TransferLayout(imageHandle Texture, imageUsage::bits OldLayo
 void commandBuffer::TransferLayout(const image &Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout)
 {
     GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
-
     std::shared_ptr<d3d12ImageData> D12ImageData = std::static_pointer_cast<d3d12ImageData>(Texture.ApiData);
-    CD3DX12_RESOURCE_BARRIER barrier1 = CD3DX12_RESOURCE_BARRIER::Transition(D12ImageData->Handle.Get(),
-        ImageUsageToResourceState(OldLayout), ImageUsageToResourceState(NewLayout));
-    D12CommandBufferData->CommandList->ResourceBarrier(1, &barrier1);
+    if(D12ImageData->ResourceState != ImageUsageToResourceState(NewLayout))
+    {
+        CD3DX12_RESOURCE_BARRIER Barrier = CD3DX12_RESOURCE_BARRIER::Transition(D12ImageData->Handle.Get(),
+            D12ImageData->ResourceState, ImageUsageToResourceState(NewLayout));
+        D12CommandBufferData->CommandList->ResourceBarrier(1, &Barrier);
+    }
 }
 
 void commandBuffer::BeginPass(framebufferHandle FramebufferHandle, clearColorValues ClearColor, clearDepthStencilValues DepthStencil)
