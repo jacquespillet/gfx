@@ -659,6 +659,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     return Handle;
 }
 
+
 imageHandle context::CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo)
 {
     imageHandle ImageHandle = ResourceManager.Images.ObtainResource();
@@ -669,6 +670,19 @@ imageHandle context::CreateImage(const imageData &ImageData, const imageCreateIn
     image *Image = GetImage(ImageHandle);
     *Image = image();
     Image->Init(ImageData, CreateInfo);
+    return ImageHandle;
+}
+
+imageHandle context::CreateImageArray(u32 Width, u32 Height, u32 Depth, format Format)
+{
+    imageHandle ImageHandle = ResourceManager.Images.ObtainResource();
+    if(ImageHandle == InvalidHandle)
+    {
+        return ImageHandle;
+    }
+    image *Image = GetImage(ImageHandle);
+    *Image = image();
+    Image->InitAsArray(Width, Height, Depth, Format, imageUsage::SHADER_READ, memoryUsage::GpuOnly);
     return ImageHandle;
 }
 

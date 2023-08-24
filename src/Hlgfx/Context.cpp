@@ -142,7 +142,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     defaultTextures::BlackTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
     defaultTextures::BlackTexture->UUID = "BLACK_TEXTURE";
 
-    Color = {0,0,255,255};
+    Color = {127,127,255,255};
     for (sz i = 0; i < TexWidth * TexHeight; i++)
         ColorData[i] = Color;
     defaultTextures::BlueTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);

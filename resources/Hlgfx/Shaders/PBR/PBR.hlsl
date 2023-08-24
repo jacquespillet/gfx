@@ -11,6 +11,7 @@ struct PSInput
     vec3 T : POSITION2;
     vec3 B : POSITION3;
     vec3 N : POSITION4;
+    vec4 DepthMapUV : POSITION5;
 };
 
 cbuffer Camera : register(b0)
@@ -33,12 +34,13 @@ struct lightData
     vec4 ColorAndIntensity;
     vec4 SizeAndType;
     vec4 Position;
-    vec4 Direction;    
+    vec4 Direction;
+    mat4 LightSpaceMatrix;
 };
 cbuffer Scene : register(b2)
 {
     vec4 LightCount;
-    lightData Lights[32];      
+    lightData Lights[3];
 };
 
 cbuffer Model : register(b1)
@@ -79,6 +81,7 @@ Texture2D MetallicRoughnessTexture : register(t5);
 Texture2D OcclusionTexture : register(t6);
 Texture2D NormalTexture : register(t7);
 Texture2D EmissionTexture : register(t8);
+Texture2DArray ShadowMap : register(t10);
 SamplerState DefaultSampler : register(s0);
 
 #include "resources/Hlgfx/Shaders/PBR/Util.glsl"
@@ -105,6 +108,8 @@ PSInput VSMain(vec4 PositionUvX : POSITION0, vec4 NormalUvY : POSITION1, vec4 Ta
 	Output.N = Output.FragNormal;
 
     Output.Position = OutPosition;
+    Output.DepthMapUV = mul(Lights[0].LightSpaceMatrix, vec4(Output.FragPosition, 1));
+
     return Output;
 }
 
@@ -141,6 +146,7 @@ vec4 PSMain(PSInput Input) : SV_TARGET
     vec3 FinalDiffuse = vec3(0.0,0.0,0.0);
     vec3 FinalEmissive = vec3(0.0,0.0,0.0);
 
+    float Visibility = 1.0f;
     //Lighting
     for(int i=0; i<LightCount.x; i++)
     {
@@ -158,7 +164,7 @@ vec4 PSMain(PSInput Input) : SV_TARGET
         }
         else if(Lights[i].SizeAndType.w == DirectionalLight)
         {
-            vec3 LightDirection = normalize(Lights[i].Direction.xyz);
+            vec3 LightDirection = -normalize(Lights[i].Direction.xyz);
             vec3 LightIntensity = Lights[i].ColorAndIntensity.w * Lights[i].ColorAndIntensity.xyz;
 
             vec3 H = normalize(-LightDirection + View);
@@ -167,8 +173,17 @@ vec4 PSMain(PSInput Input) : SV_TARGET
             float NdotH = ClampedDot(Normal, H);
             FinalDiffuse += LightIntensity * NdotL *  GetBRDFLambertian(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.CDiff, MaterialInfo.SpecularWeight, VdotH);
             FinalSpecular += LightIntensity * NdotL * GetBRDFSpecularGGX(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.AlphaRoughness, MaterialInfo.SpecularWeight, VdotH, NdotL, NdotV, NdotH);
+            
+            // float Visibility = texture(ShadowMap, vec3(Input.DepthMapUV.xy, (Input.DepthMapUV.z - 0.0005)/Input.DepthMapUV.w));
+            float bias = max(0.001 * (1.0 - dot(Normal, -LightDirection)), 0.0001);  
+            vec3 ProjCoords = Input.DepthMapUV.xyz / Input.DepthMapUV.w;
+            ProjCoords.xy = ProjCoords.xy * 0.5 + 0.5;
+            ProjCoords.y *= -1;
+            float ClosestDepth = SampleTexture(ShadowMap, DefaultSampler, vec3(ProjCoords.xy, 0)).x;
+            float CurrentDepth = ProjCoords.z;
+            Visibility = CurrentDepth - bias > ClosestDepth ? 0.5 : 1.0;
         }
-    }
+    }       
 
     //AO
     float AmbientOcclusion = 1.0;
@@ -185,12 +200,12 @@ vec4 PSMain(PSInput Input) : SV_TARGET
 
     vec3 FinalColor = vec3(0,0,0);
     FinalColor = FinalEmissive + FinalDiffuse + FinalSpecular;
+    FinalColor *= Visibility;
 
     if(BaseColor.a < Material.AlphaCutoff)
         discard;
     
 
     OutputColor = vec4(Tonemap(FinalColor, 1), BaseColor.a);
-    
     return OutputColor;
 }

@@ -418,6 +418,52 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
     }
 }
 
+void image::InitAsArray(u32 Width, u32 Height, u32 Depth, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage, u32 SampleCount)
+{
+    std::shared_ptr<d3d12Data> D12Data = std::static_pointer_cast<d3d12Data>(context::Get()->ApiContextData);
+
+    this->Extent.Width = Width;
+    this->Extent.Height = Height;
+    this->LayerCount = Depth;
+    this->Format = Format;
+    this->MipLevelCount = 1;
+    this->ChannelCount = ChannelCountFromFormat(Format);
+    this->Type = type::BYTE;
+
+    this->Data.resize(Width * Height * Depth * FormatSize(Format));
+
+    context *D12Context = context::Get();
+
+    ApiData = std::make_shared<d3d12ImageData>();
+    std::shared_ptr<d3d12ImageData> D12Image = std::static_pointer_cast<d3d12ImageData>(ApiData);
+        
+    D12Image->ResourceState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
+    CD3DX12_RESOURCE_DESC TextureDesc = CD3DX12_RESOURCE_DESC::Tex2D(FormatToNative(Format), Width, Height, Depth, MipLevelCount);
+    D12Data->Device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE,
+        &TextureDesc, D12Image->ResourceState, nullptr,
+        IID_PPV_ARGS(&D12Image->Handle));
+
+    D12Image->OffsetInHeap = D12Data->CurrentHeapOffset;
+
+
+    // Create the shader resource view (SRV)
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = FormatToNative(Format);
+    //If depth buffer, use R instead of D
+    if(Format == format::D16_UNORM) srvDesc.Format = DXGI_FORMAT_R16_UNORM;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+    srvDesc.Texture2DArray.MipLevels = MipLevelCount;
+    srvDesc.Texture2DArray.MostDetailedMip = 0;
+    srvDesc.Texture2DArray.ArraySize = Depth;
+    srvDesc.Texture2DArray.FirstArraySlice = 0;
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    D12Data->Device->CreateShaderResourceView(D12Image->Handle.Get(), &srvDesc, D12Data->GetCPUDescriptorAt(D12Image->OffsetInHeap));    
+    
+    // Allocate descriptors by incrementing the handles
+    D12Data->CurrentHeapOffset++;
+}
+
 ImTextureID image::GetImGuiID()
 {
     GET_CONTEXT(D12Context, context::Get());

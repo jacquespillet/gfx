@@ -115,6 +115,22 @@ void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo 
         nullptr );
     
 }
+void commandBuffer::CopyFramebufferToImage(const framebufferInfo &Source, const imageInfo &Destination)
+{
+    GET_API_DATA(D12CommandBUfferData, d3d12CommandBufferData, this);
+    GET_API_DATA(D12ImageDest, d3d12ImageData, Destination.Resource);
+    GET_API_DATA(D12Framebuffer, d3d12FramebufferData, Source.Resource);
+    
+    // Copy data using CopyTextureRegion
+    D3D12_TEXTURE_COPY_LOCATION srcLocation = { D12Framebuffer->DepthStencilBuffer.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, 0 };
+    D3D12_TEXTURE_COPY_LOCATION destLocation = { D12ImageDest->Handle.Get(), D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, Destination.Layer };
+    D12CommandBUfferData->CommandList->CopyTextureRegion(&destLocation, 0, 0, 0, &srcLocation, nullptr);
+}
+void commandBuffer::TransferLayout(imageHandle Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout)
+{
+    image *Image = context::Get()->GetImage(Texture);
+    TransferLayout(*Image, OldLayout, NewLayout);
+}
 
 void commandBuffer::TransferLayout(const image &Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout)
 {
@@ -264,7 +280,7 @@ void commandBuffer::BindVertexBuffer(vertexBufferHandle BufferHandle)
     }
 }
 
-void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height)
+void commandBuffer::SetViewport(f32 X, f32 Y, f32 Width, f32 Height, b8 Reverse)
 {
     GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
     CD3DX12_VIEWPORT Viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, (float)Width, (float)Height);
