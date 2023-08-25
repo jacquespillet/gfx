@@ -313,6 +313,7 @@ std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
         else Mesh->Material = context::Get()->Project.Materials[MaterialUUID];
 
         Mesh->UniformData.ModelMatrix = Mesh->Transform.Matrices.LocalToWorld;
+        Mesh->UniformData.NormalMatrix = Mesh->Transform.Matrices.LocalToWorldNormal;
         gfx::context::Get()->CopyDataToBuffer(Mesh->UniformBuffer, &Mesh->UniformData, sizeof(mesh::uniformData), 0);
         Mesh->Uniforms->Update();
     }
