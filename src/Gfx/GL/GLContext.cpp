@@ -197,7 +197,7 @@ imageHandle context::CreateImage(const imageData &ImageData, const imageCreateIn
     return ImageHandle;
 }
 
-imageHandle context::CreateImageArray(u32 Width, u32 Height, u32 Depth, format Format)
+imageHandle context::CreateImageArray(u32 Width, u32 Height, u32 Depth, format Format, imageUsage::bits Usage)
 {
     imageHandle ImageHandle = ResourceManager.Images.ObtainResource();
     if(ImageHandle == InvalidHandle)

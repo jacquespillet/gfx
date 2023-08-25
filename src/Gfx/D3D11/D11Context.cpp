@@ -136,7 +136,7 @@ imageHandle context::CreateImage(const imageData &ImageData, const imageCreateIn
     return ImageHandle;
 }
 
-imageHandle context::CreateImageArray(u32 Width, u32 Height, u32 Depth, format Format)
+imageHandle context::CreateImageArray(u32 Width, u32 Height, u32 Depth, format Format, imageUsage::bits Usage)
 {
     imageHandle ImageHandle = ResourceManager.Images.ObtainResource();
     if(ImageHandle == InvalidHandle)
@@ -145,7 +145,7 @@ imageHandle context::CreateImageArray(u32 Width, u32 Height, u32 Depth, format F
     }
     image *Image = GetImage(ImageHandle);
     *Image = image();
-    Image->InitAsArray(Width, Height, Depth, Format, imageUsage::SHADER_READ, memoryUsage::GpuOnly);
+    Image->InitAsArray(Width, Height, Depth, Format, Usage, memoryUsage::GpuOnly);
     return ImageHandle;
 }
 
