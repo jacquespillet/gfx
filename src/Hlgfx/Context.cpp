@@ -111,7 +111,6 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->Pipelines[PBRPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/PBR/PBR.json");
     Singleton->Pipelines[ShadowsPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/ShadowMaps/ShadowMaps.json");
 
-    
     struct rgba {uint8_t r, g, b, a;};
     u32 TexWidth = 64;
     u32 TexHeight = 64;
@@ -158,6 +157,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->NoMaterial = std::make_shared<pbrMaterial>("NO_MATERIAL");
     Singleton->NoMaterial->UUID = "NO_MATERIAL";
     
+
     //Initialize default 3d objects WITHOUT materials. materials are created when these objects are instanciated.
     Singleton->Quad = GetQuadGeometry();
     Singleton->Quad->UUID = "DEFAULT_QUAD";
@@ -173,7 +173,6 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
 
     Singleton->Capsule = GetCapsuleGeometry();
     Singleton->Capsule->UUID = "DEFAULT_CAPSULE";
-
     //We need a way of knowing that the main render pass depends on the shadows render pass
     //so that it can transition all the resources it needs to shader read]
 
@@ -700,6 +699,8 @@ void context::OnMouseWheelChanged(f64 OffsetX, f64 OffsetY)
 void context::Cleanup()
 {
     GfxContext->WaitIdle();
+    
+    ShadowCam = nullptr;
 
     //Clean project
     this->Project.Geometries.clear();
@@ -709,24 +710,21 @@ void context::Cleanup()
     this->Project.Scenes.clear();
     this->Scene = nullptr;
 
+    GfxContext->QueueDestroyImage(ShadowMaps);
+
     Quad->Destroy();
     Cube->Destroy();
     Sphere->Destroy();
     Cone->Destroy();
     Capsule->Destroy();
-    Cylinder->Destroy();    
 
     this->Quad = nullptr;
     
-
-    
     NoMaterial = nullptr;
 
-    GfxContext->QueueDestroyImage(defaultTextures::BlackTexture->Handle);
-    GfxContext->QueueDestroyImage(defaultTextures::WhiteTexture->Handle);
-    GfxContext->QueueDestroyImage(defaultTextures::BlueTexture->Handle);
-    
-    GfxContext->ProcessDeletionQueue();
+    GfxContext->DestroyImage(defaultTextures::BlackTexture->Handle);
+    GfxContext->DestroyImage(defaultTextures::WhiteTexture->Handle);
+    GfxContext->DestroyImage(defaultTextures::BlueTexture->Handle);
 
     for(auto &Pipeline : this->AllPipelines)
     {
@@ -736,6 +734,7 @@ void context::Cleanup()
     {
         GfxContext->DestroyPipeline(Pipeline.second);
     }
+    GfxContext->ProcessDeletionQueue();
 
     Imgui->Cleanup();
     GfxContext->DestroySwapchain();
@@ -836,8 +835,6 @@ void context::LoadProjectFromFile(const char *FileName)
         Project.Scenes[Scene->UUID] = Scene;  
         if(i==0) this->Scene = Scene;
     }
-#if 0
-#endif
 }
 
 void context::SaveProjectToFile(const char *FileName)

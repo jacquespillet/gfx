@@ -290,5 +290,10 @@ void scene::Serialize(std::ofstream &FileStream)
     }
 }
 
+scene::~scene()
+{
+    printf("Destroying Scene\n");
+    gfx::context::Get()->QueueDestroyBuffer(this->SceneBuffer);
+}
 
 }
