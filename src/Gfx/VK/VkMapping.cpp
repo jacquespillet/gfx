@@ -47,7 +47,7 @@ vk::ImageAspectFlags ImageFormatToImageAspect(format Format)
 
 
 
-vk::ImageLayout ImageUsageToImageLayout(imageUsage::bits Usage)
+vk::ImageLayout ImageUsageToImageLayoutNative(imageUsage::bits Usage)
 {
     switch (Usage)
     {
@@ -75,34 +75,32 @@ vk::ImageLayout ImageUsageToImageLayout(imageUsage::bits Usage)
     }    
 }
 
-imageUsage::bits ImageLayoutToImageUsage(imageLayout Layout)
+imageLayout ImageUsageToImageLayout(imageUsage::bits Usage)
 {
-    switch (Layout)
+    switch (Usage)
     {
-    case imageLayout::Undefined:
-        return imageUsage::UNKNOWN;
-    case imageLayout::TransferSrcOptimal:
-        return imageUsage::TRANSFER_SOURCE;
-    case imageLayout::TransferDstOptimal:
-        return imageUsage::TRANSFER_DESTINATION;
-    case imageLayout::ShaderReadOnlyOptimal:
-        return imageUsage::SHADER_READ;
-    case imageLayout::General:
-        return imageUsage::STORAGE;
-    case imageLayout::ColorAttachmentOptimal:
-        return imageUsage::COLOR_ATTACHMENT;
-    case imageLayout::DepthStencilAttachmentOptimal:
-        return imageUsage::DEPTH_STENCIL_ATTACHMENT;
-    case imageLayout::AttachmentOptimalKHR:
-        return imageUsage::INPUT_ATTACHMENT;
-    case imageLayout::DepthStencilReadOnlyOptimal:
-        return imageUsage::SHADER_READ;
-    case imageLayout::ShadingRateOptimalNV :
-        return imageUsage::FRAGNENT_SHADING_RATE_ATTACHMENT;
+    case imageUsage::UNKNOWN:
+        return imageLayout::Undefined;
+    case imageUsage::TRANSFER_SOURCE:
+        return imageLayout::TransferSrcOptimal;
+    case imageUsage::TRANSFER_DESTINATION:
+        return imageLayout::TransferDstOptimal;
+    case imageUsage::SHADER_READ:
+        return imageLayout::ShaderReadOnlyOptimal;
+    case imageUsage::STORAGE:
+        return imageLayout::General;
+    case imageUsage::COLOR_ATTACHMENT:
+        return imageLayout::ColorAttachmentOptimal;
+    case imageUsage::DEPTH_STENCIL_ATTACHMENT:
+        return imageLayout::DepthStencilAttachmentOptimal;
+    case imageUsage::INPUT_ATTACHMENT:
+        return imageLayout::AttachmentOptimalKHR;
+    case imageUsage::FRAGNENT_SHADING_RATE_ATTACHMENT:
+        return imageLayout::ShadingRateOptimalNV;
     default:
         assert(false);
-        return imageUsage::UNKNOWN;
-    }    
+        return imageLayout::Undefined;
+    }   
 }
 
 
@@ -240,11 +238,36 @@ vk::PipelineStageFlags ImageUsageToPipelineStage(imageUsage::bits Usage)
         return vk::PipelineStageFlags{ };
     }    
 }
+
 vk::PipelineStageFlags ImageLayoutToPipelineStage(imageLayout Layout)
 {
-    imageUsage::bits Usage = ImageLayoutToImageUsage(Layout);
-    return ImageUsageToPipelineStage(Usage);
+    switch (Layout)
+    {
+    case imageLayout::Undefined:
+        return vk::PipelineStageFlagBits::eTopOfPipe;
+    case imageLayout::TransferSrcOptimal:
+        return vk::PipelineStageFlagBits::eTransfer;
+    case imageLayout::TransferDstOptimal:
+        return vk::PipelineStageFlagBits::eTransfer;
+    case imageLayout::ShaderReadOnlyOptimal:
+    case imageLayout::DepthStencilReadOnlyOptimal:
+        return vk::PipelineStageFlagBits::eFragmentShader; 
+    case imageLayout::General :
+        return vk::PipelineStageFlagBits::eFragmentShader; 
+    case imageLayout::ColorAttachmentOptimal:
+        return vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    case imageLayout::DepthStencilAttachmentOptimal:
+    case imageLayout::DepthAttachmentOptimal:
+    case imageLayout::StencilAttachmentOptimal:
+        return vk::PipelineStageFlagBits::eEarlyFragmentTests; 
+    case imageLayout::ShadingRateOptimalNV:
+        return vk::PipelineStageFlagBits::eFragmentShadingRateAttachmentKHR;
+    default:
+        assert(false);
+        return vk::PipelineStageFlags{ };
+    }      
 }
+
 
 
 vk::ShaderStageFlagBits ShaderStageToNative(shaderStageFlags::bits Stage)
@@ -283,6 +306,7 @@ vk::ImageLayout ImageLayoutToNative(imageLayout ImageLayout )
 {
     return ImageLayoutTable[(uint32_t)ImageLayout];
 }
+
 
 imageLayout ImageLayoutFromNative(const vk::ImageLayout &VkImageLayout)
 {

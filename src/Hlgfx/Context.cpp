@@ -107,6 +107,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
 
     Singleton->Imgui = gfx::imgui::Initialize(Singleton->GfxContext, Singleton->Window, Singleton->SwapchainPass);
     Singleton->GUI = std::make_shared<contextGUI>(Singleton.get());
+
     Singleton->Pipelines[PBRPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/PBR/PBR.json");
     Singleton->Pipelines[ShadowsPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/ShadowMaps/ShadowMaps.json");
 
@@ -173,15 +174,17 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->Capsule = GetCapsuleGeometry();
     Singleton->Capsule->UUID = "DEFAULT_CAPSULE";
 
-    //TODO: 
-    //Create a texture2DArray that will store all the shadow maps.
-    //we will copy to it after rendering them and will sample from it in the shaders.
+    //We need a way of knowing that the main render pass depends on the shadows render pass
+    //so that it can transition all the resources it needs to shader read]
+
 
     //Only one for directinoal shadows
-    Singleton->ShadowMaps = Singleton->GfxContext->CreateImageArray(1024, 1024, scene::MaxLights, gfx::format::D16_UNORM);
+    Singleton->ShadowMaps = Singleton->GfxContext->CreateImageArray(1024, 1024, scene::MaxLights, gfx::format::D16_UNORM, gfx::imageUsage::SHADER_READ);
     Singleton->ShadowCam = std::make_shared<camera>(-10, 10, -10, 10, 0.1, 100);    
     
-    Singleton->ShadowsRenderer = std::make_shared<hlgfx::renderer>();
+    Singleton->ShadowsRenderer = std::make_shared<hlgfx::shadowsRenderer>();
+    Singleton->MainRenderer = std::make_shared<hlgfx::mainRenderer>();
+
 
     return Singleton;
 }
@@ -610,9 +613,6 @@ void context::Render(std::shared_ptr<camera> Camera)
     
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();    
     
-    //Problem :
-    //if there are no lights, the depth buffer will be in layout undefined because nothing renders on it
-    //we have to transition it from undefined to shader read
 
     //Render shadow maps
     if(Scene->SceneBufferData.LightCount.x>0)
@@ -625,11 +625,12 @@ void context::Render(std::shared_ptr<camera> Camera)
         LocalToWorldMatrix[3][0] = CamPos.x;
         LocalToWorldMatrix[3][1] = CamPos.y;
         LocalToWorldMatrix[3][2] = CamPos.z;
-        //LocalToWorldMatrix[2] *= -1;
         ShadowCam->Transform.Matrices.WorldToLocal = glm::inverse(LocalToWorldMatrix);
         ShadowCam->RecalculateMatrices();
         Scene->Lights[0]->Data.LightSpaceMatrix = ShadowCam->Data.ViewProjectionMatrix;
         Scene->UpdateLight(0);
+
+        //Shadow pass
         ShadowsRenderer->Render(Scene, ShadowCam);
 
         //Copy the framebuffer to the texture layer
@@ -637,37 +638,10 @@ void context::Render(std::shared_ptr<camera> Camera)
             gfx::framebufferInfo {gfx::context::Get()->GetFramebuffer(Scene->Lights[0]->ShadowsFramebuffer), gfx::imageUsage::UNKNOWN, true, 0 },
             gfx::imageInfo {gfx::context::Get()->GetImage(this->ShadowMaps), gfx::imageUsage::UNKNOWN, 0, 0, 1}
         );
-        //TODO: Automatically handle layout transitions.
-        CommandBuffer->TransferLayout(ShadowMaps, gfx::imageUsage::TRANSFER_DESTINATION, gfx::imageUsage::SHADER_READ);
-    }
-    else
-    {
-        CommandBuffer->TransferLayout(ShadowMaps, gfx::imageUsage::UNKNOWN, gfx::imageUsage::SHADER_READ);
     }
     
-
-    CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
-    CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);
-    CommandBuffer->SetScissor(0, 0, Width, Height);
-
-    Imgui->StartFrame();
-    this->CtrlPressed = ImGui::GetIO().KeyCtrl;
-
-    this->GUI->StartFrame();
-
-    this->GUI->DrawGUI();
-
-    this->Scene->OnBeforeRender(Camera);
-    this->Scene->OnRender(Camera);
-    this->Scene->OnAfterRender(Camera);
-    
-    ImGui::GetIO().KeyCtrl = this->CtrlPressed;
-    
-    Imgui->EndFrame(CommandBuffer);
-    CommandBuffer->EndPass();
-
-			
-
+    MainRenderer->RenderTarget = GfxContext->GetSwapchainFramebuffer();
+    MainRenderer->Render(Scene, Camera);
 }
 
 void context::Update()

@@ -89,7 +89,7 @@ void virtualFrameProvider::EndFrame()
     vk::ImageMemoryBarrier PresentImageTransferDstToPresent;
     PresentImageTransferDstToPresent.setSrcAccessMask(ImageUsageToAccessFlags(LastPresentImageUsage))
                                     .setDstAccessMask(vk::AccessFlagBits::eMemoryRead)
-                                    .setOldLayout(ImageUsageToImageLayout(LastPresentImageUsage))
+                                    .setOldLayout(ImageUsageToImageLayoutNative(LastPresentImageUsage))
                                     .setNewLayout(vk::ImageLayout::ePresentSrcKHR)
                                     .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
                                     .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)

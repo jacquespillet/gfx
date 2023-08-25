@@ -80,6 +80,13 @@ void commandBuffer::BeginPass(framebufferHandle FramebufferHandle, clearColorVal
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
     CommandBuffer.beginRenderPass(RenderPassBegin, vk::SubpassContents::eInline);
     
+    for (size_t i = 0; i < VkFramebufferData->ColorImagesCount; i++)
+    {
+        GET_API_DATA(VkImage, vkImageData, VkFramebufferData->ColorImages[i]);
+        VkImage->CurrentLayout = RenderPass->Output.ColorFinalLayouts[i];
+    }
+    GET_API_DATA(VkImage, vkImageData, VkFramebufferData->DepthStencilImage);
+    VkImage->CurrentLayout = RenderPass->Output.DepthStencilFinalLayout; 
 }
 
 void commandBuffer::BindGraphicsPipeline(pipelineHandle PipelineHandle)
@@ -176,6 +183,7 @@ void commandBuffer::DrawIndexed(u32 Start, u32 Count, u32 InstanceCount)
 
 void commandBuffer::EndPass()
 {
+
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
     CommandBuffer.endRenderPass();
 }
@@ -211,18 +219,21 @@ void commandBuffer::CopyFramebufferToImage(const framebufferInfo &Source, const 
     GET_API_DATA(VKImageDest, vkImageData, Destination.Resource);
     GET_API_DATA(VKFramebuffer, vkFramebufferData, Source.Resource);
     
-    image *Image;
-    if(Source.Depth) Image = VKFramebuffer->DepthStencilImage.get();
-    else Image = VKFramebuffer->ColorImages[Source.Color].get();
-    GET_API_DATA(VKImageSrc, vkImageData, Image);
+    image *SrcImage;
+    if(Source.Depth) SrcImage = VKFramebuffer->DepthStencilImage.get();
+    else SrcImage = VKFramebuffer->ColorImages[Source.Color].get();
+    GET_API_DATA(VKImageSrc, vkImageData, SrcImage);
 
-    if(Destination.Usage != imageUsage::TRANSFER_DESTINATION)
+    imageLayout SrcInitialUsage = VKImageSrc->CurrentLayout;
+    imageLayout DstInitialUsage = VKImageDest->CurrentLayout;
+
+    if(VKImageDest->CurrentLayout != imageLayout::TransferDstOptimal)
     {
         auto DestinationRange = GetDefaultImageSubresourceRange(*Destination.Resource);
         vk::ImageMemoryBarrier ToTransferDestBarrier;
-        ToTransferDestBarrier.setSrcAccessMask(ImageUsageToAccessFlags(Destination.Usage))
+        ToTransferDestBarrier.setSrcAccessMask(ImageLayoutToAccessFlags(VKImageDest->CurrentLayout))
                              .setDstAccessMask(vk::AccessFlagBits::eTransferWrite)
-                             .setOldLayout(ImageUsageToImageLayout(Destination.Usage))
+                             .setOldLayout(ImageLayoutToNative(VKImageDest->CurrentLayout))
                              .setNewLayout(vk::ImageLayout::eTransferDstOptimal)
                              .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
                              .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
@@ -230,7 +241,7 @@ void commandBuffer::CopyFramebufferToImage(const framebufferInfo &Source, const 
                              .setSubresourceRange(DestinationRange);
 
         VkCommandBufferData->Handle.pipelineBarrier(
-            ImageUsageToPipelineStage(Destination.Usage),
+            ImageLayoutToPipelineStage(VKImageDest->CurrentLayout),
             vk::PipelineStageFlagBits::eTransfer,
             {},
             {},
@@ -239,13 +250,13 @@ void commandBuffer::CopyFramebufferToImage(const framebufferInfo &Source, const 
         );
     }
 
-    if(Source.Usage != imageUsage::TRANSFER_SOURCE)
+    if(VKImageSrc->CurrentLayout != imageLayout::TransferSrcOptimal)
     {
-        auto SourceRange = GetDefaultImageSubresourceRange(*Image);
+        auto SourceRange = GetDefaultImageSubresourceRange(*SrcImage);
         vk::ImageMemoryBarrier ToTransferSrcBarrier;
-        ToTransferSrcBarrier.setSrcAccessMask(ImageUsageToAccessFlags(Source.Usage))
+        ToTransferSrcBarrier.setSrcAccessMask(ImageLayoutToAccessFlags(VKImageSrc->CurrentLayout))
                              .setDstAccessMask(vk::AccessFlagBits::eTransferRead)
-                             .setOldLayout(ImageUsageToImageLayout(Source.Usage))
+                             .setOldLayout(ImageLayoutToNative(VKImageSrc->CurrentLayout))
                              .setNewLayout(vk::ImageLayout::eTransferSrcOptimal)
                              .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
                              .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
@@ -253,7 +264,7 @@ void commandBuffer::CopyFramebufferToImage(const framebufferInfo &Source, const 
                              .setSubresourceRange(SourceRange);
 
         VkCommandBufferData->Handle.pipelineBarrier(
-            ImageUsageToPipelineStage(Source.Usage),
+            ImageLayoutToPipelineStage(VKImageSrc->CurrentLayout),
             vk::PipelineStageFlagBits::eTransfer,
             {},
             {},
@@ -264,17 +275,18 @@ void commandBuffer::CopyFramebufferToImage(const framebufferInfo &Source, const 
 
 
     auto SourceLayers = GetDefaultImageSubresourceLayers(*Destination.Resource, Destination.MipLevel, Destination.Layer, Destination.Layercount);
-    auto DestLayers = GetDefaultImageSubresourceLayers(*Image, 0, 0, 1);
+    auto DestLayers = GetDefaultImageSubresourceLayers(*SrcImage, 0, 0, 1);
     vk::ImageCopy ImageCopyInfo;
     ImageCopyInfo.setSrcSubresource(SourceLayers)
                  .setDstSubresource(DestLayers)
-                 .setExtent(vk::Extent3D(Image->Extent.Width, Image->Extent.Height, 1))
+                 .setExtent(vk::Extent3D(SrcImage->Extent.Width, SrcImage->Extent.Height, 1))
                  .setSrcOffset(vk::Offset3D(0,0,0))
                  .setDstOffset(vk::Offset3D(0,0,0));
     VkCommandBufferData->Handle.copyImage(VKImageSrc->Handle, vk::ImageLayout::eTransferSrcOptimal, VKImageDest->Handle, vk::ImageLayout::eTransferDstOptimal, 1, &ImageCopyInfo);
 
-    
-}
+    TransferLayout(*Destination.Resource, imageLayout::TransferDstOptimal, DstInitialUsage);
+    TransferLayout(*SrcImage, imageLayout::TransferSrcOptimal, SrcInitialUsage);
+}  
 
 void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo &Destination)
 {
@@ -288,7 +300,7 @@ void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo 
         vk::ImageMemoryBarrier ToTransferDestBarrier;
         ToTransferDestBarrier.setSrcAccessMask(ImageUsageToAccessFlags(Destination.Usage))
                              .setDstAccessMask(vk::AccessFlagBits::eTransferWrite)
-                             .setOldLayout(ImageUsageToImageLayout(Destination.Usage))
+                             .setOldLayout(ImageUsageToImageLayoutNative(Destination.Usage))
                              .setNewLayout(vk::ImageLayout::eTransferDstOptimal)
                              .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
                              .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
@@ -324,23 +336,19 @@ void commandBuffer::CopyBufferToImage(const bufferInfo &Source, const imageInfo 
         BufferToImageCopyInfo
     );
 }
-void commandBuffer::TransferLayout(framebufferHandle FramebufferHandle, u32 Index, imageLayout OldLayout, imageLayout NewLayout)
+
+void commandBuffer::TransferLayout(imageHandle Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout)
 {
-    framebuffer *Framebuffer = context::Get()->GetFramebuffer(FramebufferHandle);
+    image *Image = context::Get()->GetImage(Texture);
+    TransferLayout(*Image, OldLayout, NewLayout);
+}
+
+void commandBuffer::TransferLayout(const image &Texture, imageLayout OldLayout, imageLayout NewLayout)
+{
     GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
-    GET_API_DATA(VKFramebuffer, vkFramebufferData, (Framebuffer));
+    GET_API_DATA(VKImage, vkImageData, (&Texture));
 
-
-    vk::ImageMemoryBarrier Barrier;
-    if(Index = uniformGroup::DepthAttachment) 
-    {
-        Barrier = GetImageMemoryBarrier(*VKFramebuffer->DepthStencilImage, OldLayout, NewLayout);
-    }
-    else
-    {
-        Barrier = GetImageMemoryBarrier(*VKFramebuffer->ColorImages[Index], OldLayout, NewLayout);
-    }
-    
+    auto Barrier = GetImageMemoryBarrier(Texture, OldLayout, NewLayout);
     VkCommandBufferData->Handle.pipelineBarrier(
         ImageLayoutToPipelineStage(OldLayout),
         ImageLayoutToPipelineStage(NewLayout),
@@ -348,12 +356,8 @@ void commandBuffer::TransferLayout(framebufferHandle FramebufferHandle, u32 Inde
         {},
         {},
         Barrier
-    );
-}
-void commandBuffer::TransferLayout(imageHandle Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout)
-{
-    image *Image = context::Get()->GetImage(Texture);
-    TransferLayout(*Image, OldLayout, NewLayout);
+    );    
+    VKImage->CurrentLayout = NewLayout;    
 }
 
 void commandBuffer::TransferLayout(const image &Texture, imageUsage::bits OldLayout, imageUsage::bits NewLayout)
@@ -370,6 +374,7 @@ void commandBuffer::TransferLayout(const image &Texture, imageUsage::bits OldLay
         {},
         Barrier
     );    
+    VKImage->CurrentLayout =  ImageUsageToImageLayout(NewLayout);
 }
 
 
@@ -377,7 +382,7 @@ void commandBuffer::TransferLayout(const image &Texture, imageUsage::bits OldLay
 
 
 void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Binding)
-{
+{   
     GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
     pipeline *Pipeline = context::Get()->GetPipeline(VkCommandBufferData->BoundPipeline);
     GET_API_DATA(VkPipeline, vkPipelineData, Pipeline);

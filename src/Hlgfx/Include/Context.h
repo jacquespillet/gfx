@@ -16,7 +16,8 @@
 
 namespace hlgfx
 {
-struct renderer;
+struct shadowsRenderer;
+struct mainRenderer;
 struct scene;  
 struct mesh;  
 struct contextGUI;  
@@ -107,7 +108,8 @@ struct context
 
     //Shadow maps
     std::shared_ptr<camera> ShadowCam;
-    std::shared_ptr<hlgfx::renderer> ShadowsRenderer;
+    std::shared_ptr<hlgfx::shadowsRenderer> ShadowsRenderer;
+    std::shared_ptr<hlgfx::mainRenderer> MainRenderer;
 	
     gfx::imageHandle ShadowMaps;
 

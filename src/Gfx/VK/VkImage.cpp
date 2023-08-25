@@ -107,6 +107,7 @@ void vkImageData::Init(const image &Image, imageUsage::value ImageUsage, memoryU
     // }                       
 
     Allocation = gfx::AllocateImage(ImageCreateInfo, MemoryUsage, &Handle);
+    this->CurrentLayout = imageLayout::Undefined;
 }
 
 void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
@@ -154,6 +155,8 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     {
         GenerateMipmaps(VKImage->Handle, this->Extent.Width, this->Extent.Height, MipLevelCount, std::static_pointer_cast<vkCommandBufferData>(VkData->ImmediateCommandBuffer->ApiData)->Handle);
     }
+
+    
 
     VkData->StageBuffer.Flush();
     VkData->ImmediateCommandBuffer->End();
@@ -263,6 +266,7 @@ image::image(vk::Image VkImage, u32 Width, u32 Height, format Format)
 
     ImageData->Allocation = {};
     ImageData->InitViews(*this, VkImage, Format);
+    ImageData->CurrentLayout = imageLayout::Undefined;
 }
 
 
@@ -280,8 +284,9 @@ void image::InitAsArray(u32 Width, u32 Height, u32 Depth, format Format, imageUs
     this->Data.resize(Width * Height  * Depth * FormatSize(Format));
     this->Type = type::BYTE;
     
-    if(ImageUsage == imageUsage::COLOR_ATTACHMENT || ImageUsage == imageUsage::DEPTH_STENCIL_ATTACHMENT) ImageUsage |= imageUsage::SHADER_READ;
-    ImageUsage |= imageUsage::TRANSFER_DESTINATION;
+    imageUsage::value CreateUsage = ImageUsage;
+    if(ImageUsage == imageUsage::COLOR_ATTACHMENT || ImageUsage == imageUsage::DEPTH_STENCIL_ATTACHMENT) CreateUsage |= imageUsage::SHADER_READ;
+    CreateUsage |= imageUsage::TRANSFER_DESTINATION;
     vk::ImageCreateInfo ImageCreateInfo;
     ImageCreateInfo.setImageType(vk::ImageType::e2D)
                     .setFormat(FormatToNative(Format))
@@ -290,7 +295,7 @@ void image::InitAsArray(u32 Width, u32 Height, u32 Depth, format Format, imageUs
                     .setMipLevels(MipLevelCount)
                     .setArrayLayers(LayerCount)
                     .setTiling(vk::ImageTiling::eOptimal)
-                    .setUsage((vk::ImageUsageFlags)ImageUsage)
+                    .setUsage((vk::ImageUsageFlags)CreateUsage)
                     .setSharingMode(vk::SharingMode::eExclusive)
                     .setInitialLayout(vk::ImageLayout::eUndefined);
         
@@ -301,7 +306,15 @@ void image::InitAsArray(u32 Width, u32 Height, u32 Depth, format Format, imageUs
 
     VkImageData->Allocation = gfx::AllocateImage(ImageCreateInfo, MemoryUsage, &VkImageData->Handle);
     VkImageData->InitViews(*this, VkImageData->Handle,  Format, vk::ImageViewType::e2DArray);
-    VkImageData->InitSamplerDefault();    
+    VkImageData->InitSamplerDefault(); 
+    VkImageData->CurrentLayout = imageLayout::Undefined;   
+
+    commandBuffer *CommandBuffer = gfx::context::Get()->GetImmediateCommandBuffer();
+    CommandBuffer->Begin();
+    CommandBuffer->TransferLayout(*this, VkImageData->CurrentLayout, ImageUsageToImageLayout((imageUsage::bits)ImageUsage));
+    CommandBuffer->End();
+    context::Get()->SubmitCommandBufferImmediate(CommandBuffer);
+    
 }
 
 void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage, u32 SampleCount)
@@ -339,6 +352,7 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
     VkImageData->Allocation = gfx::AllocateImage(ImageCreateInfo, MemoryUsage, &VkImageData->Handle);
     VkImageData->InitViews(*this, VkImageData->Handle,  Format);
     VkImageData->InitSamplerDefault();
+    VkImageData->CurrentLayout = imageLayout::Undefined;
 }
 
 vk::ImageSubresourceRange GetDefaultImageSubresourceRange(const image &Image)
@@ -371,8 +385,8 @@ vk::ImageMemoryBarrier GetImageMemoryBarrier(const image &Texture, imageUsage::b
     vk::ImageMemoryBarrier Barrier;
     Barrier.setSrcAccessMask(ImageUsageToAccessFlags(OldLayout))
            .setDstAccessMask(ImageUsageToAccessFlags(NewLayout))
-           .setOldLayout(ImageUsageToImageLayout(OldLayout))
-           .setNewLayout(ImageUsageToImageLayout(NewLayout))
+           .setOldLayout(ImageUsageToImageLayoutNative(OldLayout))
+           .setNewLayout(ImageUsageToImageLayoutNative(NewLayout))
            .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
            .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
            .setImage(VkImageData->Handle)

@@ -233,7 +233,6 @@ void main()
     
 
     OutputColor = vec4(Tonemap(FinalColor, 1), BaseColor.a);
-    OutputColor = vec4(Normal, 1);
 }
 
 #endif
