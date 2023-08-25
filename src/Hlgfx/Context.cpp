@@ -708,6 +708,11 @@ void context::Cleanup()
     this->Project.Objects.clear();
     this->Project.Textures.clear();
     this->Project.Scenes.clear();
+    for (size_t i = 0; i < this->Scene->SceneBufferData.LightCount.x; i++)
+    {
+        this->Scene->Lights[i] = nullptr;
+    }
+    
     this->Scene = nullptr;
 
     GfxContext->QueueDestroyImage(ShadowMaps);

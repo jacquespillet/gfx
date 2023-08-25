@@ -10,6 +10,7 @@ struct material;
 struct light : public object3D
 {
     light(std::string Name);
+    ~light();
     virtual void OnUpdate() override;
     virtual void DrawCustomGUI() override;
     virtual void Serialize(std::ofstream &FileStream) override;

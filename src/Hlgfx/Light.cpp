@@ -65,4 +65,12 @@ void light::Serialize(std::ofstream &FileStream)
         this->Children[i]->Serialize(FileStream);
     }
 }
+
+light::~light()
+{
+    printf("Destroying Light\n");
+    gfx::context::Get()->DestroyPipeline(this->PipelineHandleOffscreen);
+    gfx::context::Get()->DestroyFramebuffer(this->ShadowsFramebuffer);
+    this->Material = nullptr;
+}
 }

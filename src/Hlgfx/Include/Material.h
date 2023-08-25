@@ -57,6 +57,7 @@ struct customMaterial : public material
 {
     customMaterial(std::string Name, gfx::pipelineHandle Pipeline);
     
+    ~customMaterial();
     virtual void DrawGUI() override;
     virtual void SetCullMode(gfx::cullMode Mode) override;
     virtual void Serialize(const std::string &FileName) override;

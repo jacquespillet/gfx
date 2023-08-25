@@ -33,6 +33,11 @@ std::shared_ptr<material> customMaterial::Clone() {
     std::shared_ptr<customMaterial> Result = std::make_shared<customMaterial>(this->Name + "_Duplicated", this->PipelineHandle);
     return Result;    
 }
+customMaterial::~customMaterial()
+{
+    printf("Destroying Material \n");
+    gfx::context::Get()->QueueDestroyBuffer(this->UniformBuffer);
+}
 
 pbrMaterial::pbrMaterial(std::string Name) : material(Name)
 {
