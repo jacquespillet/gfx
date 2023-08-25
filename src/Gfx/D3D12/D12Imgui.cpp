@@ -16,6 +16,8 @@
 
 #include <ImGuizmo.h>
 
+#include <iostream>
+
 namespace gfx
 {
 std::shared_ptr<imgui> imgui::Singleton = {};
@@ -38,7 +40,7 @@ std::shared_ptr<imgui> imgui::Initialize(std::shared_ptr<context> Context, std::
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
     // Setup Dear ImGui style
@@ -52,20 +54,7 @@ std::shared_ptr<imgui> imgui::Initialize(std::shared_ptr<context> Context, std::
         D12Context->GetCPUDescriptorAt(D12Context->CurrentHeapOffset),
         D12Context->GetGPUDescriptorAt(D12Context->CurrentHeapOffset));
     D12Context->CurrentHeapOffset += 2;
-    // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-    // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-    // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-    // - Read 'docs/FONTS.txt' for more instructions and details.
-    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-    //io.Fonts->AddFontDefault();
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
-    //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-    //IM_ASSERT(font != NULL);
+
 
     // Our state
     bool show_demo_window = true;
@@ -97,8 +86,25 @@ void imgui::EndFrame(std::shared_ptr<commandBuffer> CommandBuffer)
 void imgui::OnClick(app::mouseButton Button, b8 Clicked)
 {
     ImGuiIO& io = ImGui::GetIO();
-    io.MouseDown[0] = Clicked;
-    // io.mouse
+    if(Button == app::mouseButton::LEFT)
+        io.MouseDown[0] = Clicked;
+    if(Button == app::mouseButton::RIGHT)
+        io.MouseDown[1] = Clicked;
+    if(Button == app::mouseButton::MIDDLE)
+        io.MouseDown[2] = Clicked;
+}
+
+void imgui::OnKeyChanged(app::keyCode Button, b8 KeyDown)
+{
+    ImGuiIO& io = ImGui::GetIO();
+    io.KeysDown[(sz)Button] = KeyDown;
+    
+    io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
+    io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
+    io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
+
+    if(KeyDown)
+        io.AddInputCharacter((int)Button);
 }
 
 void imgui::Cleanup(){

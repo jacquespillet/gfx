@@ -28,6 +28,7 @@ struct imgui
     void StartFrame();
     void EndFrame(std::shared_ptr<commandBuffer> CommandBuffer);
     void OnClick(app::mouseButton Button, b8 Clicked);
+    void OnKeyChanged(app::keyCode Button, b8 KeyDown);
 
     void Cleanup();
 };

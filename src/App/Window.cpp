@@ -70,7 +70,7 @@ window::window(const windowCreateOptions &WindowCreateOptions)
     });
     glfwSetKeyCallback(this->Handle, [](GLFWwindow *handle, int key, int scancode, int action, int mods){
         auto &Window = *(window*)glfwGetWindowUserPointer(handle);
-        if(Window.OnKeyChanged) Window.OnKeyChanged(Window, (keyCode)key, action==GLFW_PRESS);
+        if(Window.OnKeyChanged) Window.OnKeyChanged(Window, (keyCode)key, (action==GLFW_PRESS));
     });
     glfwSetMouseButtonCallback(this->Handle, [](GLFWwindow *handle, int button, int action, int mods){
         auto &Window = *(window*)glfwGetWindowUserPointer(handle);

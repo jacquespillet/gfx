@@ -41,6 +41,7 @@ struct context
     void OnMouseClicked(app::mouseButton Button, bool Clicked);
     void OnMousePositionChanged(f64 NewPosX, f64 NewPosY);
     void OnMouseWheelChanged(f64 OffsetX, f64 OffsetY);
+    void OnKeyChanged(app::keyCode KeyCode, b8 KeyDown);
     void Cleanup();
 
     void Render(std::shared_ptr<camera> Camera);
@@ -54,6 +55,8 @@ struct context
     b8 ShouldClose();
 
     ~context();
+
+    u32 Frame = 0;
 
     u32 Width, Height;
     std::shared_ptr<app::window> Window;

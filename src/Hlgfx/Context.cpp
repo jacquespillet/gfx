@@ -54,6 +54,11 @@ void OnMouseWheelChangedWindow(app::window &Window, f64 OffsetX, f64 OffsetY)
     context::Get()->OnMouseWheelChanged(OffsetX, OffsetY);
 }
 
+void OnKeyChangedWindow(app::window &Window, app::keyCode KeyCode, b8 KeyDown)
+{
+    context::Get()->OnKeyChanged(KeyCode, KeyDown);
+}
+
 std::shared_ptr<context> context::Singleton = {};
 
 b8 context::ShouldClose()
@@ -90,6 +95,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->Window->OnMouseChanged = OnClickedWindow;
     Singleton->Window->OnMousePositionChanged = OnMousePositionChangedWindow;
     Singleton->Window->OnMouseWheelChanged = OnMouseWheelChangedWindow;
+    Singleton->Window->OnKeyChanged = OnKeyChangedWindow;
 
     Singleton->Width = Singleton->Window->Width;
     Singleton->Height = Singleton->Window->Height;
@@ -336,7 +342,8 @@ void context::StartFrame()
     GfxContext->StartFrame();	
     
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();
-    CommandBuffer->Begin();    
+    CommandBuffer->Begin();
+
 }
 
 std::string context::GetUUID()
@@ -608,6 +615,9 @@ void context::NewProject()
 
 void context::Render(std::shared_ptr<camera> Camera)
 {
+    Frame++;
+
+
     Camera->Controls->OnUpdate();
     
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();    
@@ -695,6 +705,10 @@ void context::OnMouseWheelChanged(f64 OffsetX, f64 OffsetY)
     this->MouseWheelY = OffsetY;
 }
 
+void context::OnKeyChanged(app::keyCode KeyCode, b8 KeyDown)
+{
+    Imgui->OnKeyChanged(KeyCode, KeyDown);
+}
 
 void context::Cleanup()
 {
