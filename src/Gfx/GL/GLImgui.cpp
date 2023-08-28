@@ -64,9 +64,8 @@ void imgui::EndFrame(std::shared_ptr<commandBuffer> CommandBuffer)
     GLCommandBuffer->DrawImgui();
 }
 
-void imgui::OnClick(app::mouseButton Button, b8 Clicked)
-{
-}
+void imgui::OnClick(app::mouseButton Button, b8 Clicked){}
+void imgui::OnKeyChanged(app::keyCode Button, b8 KeyDown){}
 
 void imgui::Cleanup()
 {
