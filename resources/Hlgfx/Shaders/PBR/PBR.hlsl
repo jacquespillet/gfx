@@ -11,7 +11,7 @@ struct PSInput
     vec3 T : POSITION2;
     vec3 B : POSITION3;
     vec3 N : POSITION4;
-    vec4 DepthMapUV : POSITION5;
+    vec4 DepthMapUV[MaxLights] : POSITION5;
 };
 
 cbuffer Camera : register(b0)
@@ -40,7 +40,7 @@ struct lightData
 cbuffer Scene : register(b2)
 {
     vec4 LightCount;
-    lightData Lights[3];
+    lightData Lights[MaxLights];
 };
 
 cbuffer Model : register(b1)
@@ -108,7 +108,12 @@ PSInput VSMain(vec4 PositionUvX : POSITION0, vec4 NormalUvY : POSITION1, vec4 Ta
 	Output.N = Output.FragNormal;
 
     Output.Position = OutPosition;
-    Output.DepthMapUV = mul(Lights[0].LightSpaceMatrix, vec4(Output.FragPosition, 1));
+    
+    [unroll]
+    for(int i=0; i<MaxLights; i++)
+    {
+        Output.DepthMapUV[i] = mul(Lights[i].LightSpaceMatrix, vec4(Output.FragPosition, 1));
+    }
 
     return Output;
 }
@@ -176,12 +181,12 @@ vec4 PSMain(PSInput Input) : SV_TARGET
             
             // float Visibility = texture(ShadowMap, vec3(Input.DepthMapUV.xy, (Input.DepthMapUV.z - 0.0005)/Input.DepthMapUV.w));
             float bias = max(0.001 * (1.0 - dot(Normal, -LightDirection)), 0.0001);  
-            vec3 ProjCoords = Input.DepthMapUV.xyz / Input.DepthMapUV.w;
+            vec3 ProjCoords = Input.DepthMapUV[i].xyz / Input.DepthMapUV[i].w;
             ProjCoords.xy = ProjCoords.xy * 0.5 + 0.5;
             ProjCoords.y *= -1;
-            float ClosestDepth = SampleTexture(ShadowMap, DefaultSampler, vec3(ProjCoords.xy, 0)).x;
+            float ClosestDepth = SampleTexture(ShadowMap, DefaultSampler, vec3(ProjCoords.xy, i)).x;
             float CurrentDepth = ProjCoords.z;
-            Visibility = CurrentDepth - bias > ClosestDepth ? 0.5 : 1.0;
+            Visibility *= CurrentDepth - bias > ClosestDepth ? 0.5 : 1.0;
         }
     }       
 

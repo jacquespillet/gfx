@@ -34,7 +34,7 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
             nullptr
         };
         HRESULT hr = D3DCompileFromFile(ConstCharToLPCWSTR(PipelineCreation.Shaders.Stages[0].FileName), defines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", 0, 0, &VSBlob, nullptr);
-        if (FAILED(hr))
+        if (FAILED(hr) || VSBlob == nullptr)
         {
             if (pErrorBlob)
             {
