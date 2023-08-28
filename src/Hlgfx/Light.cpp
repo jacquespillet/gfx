@@ -26,6 +26,8 @@ light::light(std::string Name) : object3D(Name)
     this->ShadowsFramebuffer = gfx::context::Get()->CreateFramebuffer(FramebufferCreateInfo);
     this->PipelineHandleOffscreen = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/ShadowMaps/ShadowMaps.json", this->ShadowsFramebuffer);
     this->Material = std::make_shared<customMaterial>("ShadowMaterial", this->PipelineHandleOffscreen);    
+
+    this->ShadowCam = std::make_shared<camera>(-10, 10, -10, 10, 0.1, 100);    
 }
 
 void light::OnUpdate()
@@ -72,5 +74,6 @@ light::~light()
     gfx::context::Get()->DestroyPipeline(this->PipelineHandleOffscreen);
     gfx::context::Get()->DestroyFramebuffer(this->ShadowsFramebuffer);
     this->Material = nullptr;
+    this->ShadowCam = nullptr;
 }
 }

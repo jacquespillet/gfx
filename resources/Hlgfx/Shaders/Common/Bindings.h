@@ -23,3 +23,5 @@
 #define AreaLight 2
 
 #define ShadowMapsBindingStart 10
+
+#define MaxLights 16

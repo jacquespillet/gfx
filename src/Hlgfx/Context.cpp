@@ -184,8 +184,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
 
 
     //Only one for directinoal shadows
-    Singleton->ShadowMaps = Singleton->GfxContext->CreateImageArray(1024, 1024, scene::MaxLights, gfx::format::D16_UNORM, gfx::imageUsage::SHADER_READ);
-    Singleton->ShadowCam = std::make_shared<camera>(-10, 10, -10, 10, 0.1, 100);    
+    Singleton->ShadowMaps = Singleton->GfxContext->CreateImageArray(1024, 1024, MaxLights, gfx::format::D16_UNORM, gfx::imageUsage::SHADER_READ);
     
     Singleton->ShadowsRenderer = std::make_shared<hlgfx::shadowsRenderer>();
     Singleton->MainRenderer = std::make_shared<hlgfx::mainRenderer>();
@@ -624,28 +623,28 @@ void context::Render(std::shared_ptr<camera> Camera)
     
 
     //Render shadow maps
-    if(Scene->SceneBufferData.LightCount.x>0)
+    for(u32 i=0; i<Scene->SceneBufferData.LightCount.x; i++)
     {
-        this->ShadowsRenderer->OverrideMaterial = Scene->Lights[0]->Material;
-        this->ShadowsRenderer->RenderTarget = Scene->Lights[0]->ShadowsFramebuffer;
+        this->ShadowsRenderer->OverrideMaterial = Scene->Lights[i]->Material;
+        this->ShadowsRenderer->RenderTarget = Scene->Lights[i]->ShadowsFramebuffer;
 
-        m4x4 LocalToWorldMatrix = Scene->Lights[0]->Transform.Matrices.LocalToWorld;
+        m4x4 LocalToWorldMatrix = Scene->Lights[i]->Transform.Matrices.LocalToWorld;
         v3f CamPos = glm::column(LocalToWorldMatrix, 2) * 10.0f;
         LocalToWorldMatrix[3][0] = CamPos.x;
         LocalToWorldMatrix[3][1] = CamPos.y;
         LocalToWorldMatrix[3][2] = CamPos.z;
-        ShadowCam->Transform.Matrices.WorldToLocal = glm::inverse(LocalToWorldMatrix);
-        ShadowCam->RecalculateMatrices();
-        Scene->Lights[0]->Data.LightSpaceMatrix = ShadowCam->Data.ViewProjectionMatrix;
-        Scene->UpdateLight(0);
+        Scene->Lights[i]->ShadowCam->Transform.Matrices.WorldToLocal = glm::inverse(LocalToWorldMatrix);
+        Scene->Lights[i]->ShadowCam->RecalculateMatrices();
+        Scene->Lights[i]->Data.LightSpaceMatrix = Scene->Lights[i]->ShadowCam->Data.ViewProjectionMatrix;
+        Scene->UpdateLight(i);
 
         //Shadow pass
-        ShadowsRenderer->Render(Scene, ShadowCam);
+        ShadowsRenderer->Render(Scene, Scene->Lights[i]->ShadowCam);
 
         //Copy the framebuffer to the texture layer
         CommandBuffer->CopyFramebufferToImage(
-            gfx::framebufferInfo {gfx::context::Get()->GetFramebuffer(Scene->Lights[0]->ShadowsFramebuffer), gfx::imageUsage::UNKNOWN, true, 0 },
-            gfx::imageInfo {gfx::context::Get()->GetImage(this->ShadowMaps), gfx::imageUsage::UNKNOWN, 0, 0, 1}
+            gfx::framebufferInfo {gfx::context::Get()->GetFramebuffer(Scene->Lights[i]->ShadowsFramebuffer), gfx::imageUsage::UNKNOWN, true, 0 },
+            gfx::imageInfo {gfx::context::Get()->GetImage(this->ShadowMaps), gfx::imageUsage::UNKNOWN, 0, i, 1}
         );
     }
     
@@ -714,7 +713,6 @@ void context::Cleanup()
 {
     GfxContext->WaitIdle();
     
-    ShadowCam = nullptr;
 
     //Clean project
     this->Project.Geometries.clear();

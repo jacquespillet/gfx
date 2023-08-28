@@ -36,6 +36,8 @@ struct light : public object3D
     gfx::framebufferHandle ShadowsFramebuffer;
 	gfx::pipelineHandle PipelineHandleOffscreen;
 	std::shared_ptr<material> Material;
+
+    std::shared_ptr<camera> ShadowCam;
 };
 
 }

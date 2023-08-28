@@ -11,7 +11,7 @@ struct PSInput
     vec3 T;
     vec3 B;
     vec3 N;
-    vec4 DepthMapUV;
+    vec4 DepthMapUV[MaxLights];
 };
 
 DECLARE_UNIFORM_BUFFER(CameraDescriptorSetBinding, CameraBinding, Camera)
@@ -44,7 +44,7 @@ struct lightData
 DECLARE_UNIFORM_BUFFER(SceneDescriptorSetBinding, SceneBinding, Scene)
 {
     vec4 LightCount;
-    lightData Lights[3];    
+    lightData Lights[MaxLights];    
 };
 
 DECLARE_UNIFORM_BUFFER(ModelDescriptorSetBinding, ModelBinding, Model)
@@ -114,9 +114,10 @@ void main()
 	Output.B = FragBitangent;
 	Output.N = Output.FragNormal;
 
-	Output.DepthMapUV = Lights[0].LightSpaceMatrix * vec4(Output.FragPosition, 1);
-    // Output.DepthMapUV /= Output.DepthMapUV.w;
-	// Output.DepthMapUV.xyz = Output.DepthMapUV.xyz * 0.5 + 0.5;
+    for(int i=0; i<LightCount.x; i++)
+    {
+        Output.DepthMapUV[i] = Lights[i].LightSpaceMatrix * vec4(Output.FragPosition, 1);
+    }
     
     gl_Position = OutPosition;
 }
@@ -195,17 +196,17 @@ void main()
             FinalDiffuse += LightIntensity * NdotL *  GetBRDFLambertian(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.CDiff, MaterialInfo.SpecularWeight, VdotH);
             FinalSpecular += LightIntensity * NdotL * GetBRDFSpecularGGX(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.AlphaRoughness, MaterialInfo.SpecularWeight, VdotH, NdotL, NdotV, NdotH);
 
-            // float Visibility = texture(ShadowMap, vec3(Input.DepthMapUV.xy, (Input.DepthMapUV.z - 0.0005)/Input.DepthMapUV.w));
+
             float bias = max(0.001 * (1.0 - dot(Normal, -LightDirection)), 0.0001);  
-            vec3 ProjCoords = Input.DepthMapUV.xyz / Input.DepthMapUV.w;
+            vec3 ProjCoords = Input.DepthMapUV[i].xyz / Input.DepthMapUV[i].w;
 #if GRAPHICS_API == VK
             ProjCoords.xy = ProjCoords.xy * 0.5 + 0.5;
 #else
             ProjCoords.xyz = ProjCoords.xyz * 0.5 + 0.5;
 #endif
-            float ClosestDepth = texture(ShadowMap, vec3(ProjCoords.xy, 0)).x;
+            float ClosestDepth = texture(ShadowMap, vec3(ProjCoords.xy, i)).x;
             float CurrentDepth = ProjCoords.z;
-            Visibility = CurrentDepth - bias > ClosestDepth ? 0.5 : 1.0;
+            Visibility *= CurrentDepth - bias > ClosestDepth ? 0.5 : 1.0;
         }
     }
 

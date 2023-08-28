@@ -274,8 +274,8 @@ void commandBuffer::CopyFramebufferToImage(const framebufferInfo &Source, const 
     }
 
 
-    auto SourceLayers = GetDefaultImageSubresourceLayers(*Destination.Resource, Destination.MipLevel, Destination.Layer, Destination.Layercount);
-    auto DestLayers = GetDefaultImageSubresourceLayers(*SrcImage, 0, 0, 1);
+    auto DestLayers = GetDefaultImageSubresourceLayers(*Destination.Resource, Destination.MipLevel, Destination.Layer, Destination.Layercount);
+    auto SourceLayers = GetDefaultImageSubresourceLayers(*SrcImage, 0, 0, 1);
     vk::ImageCopy ImageCopyInfo;
     ImageCopyInfo.setSrcSubresource(SourceLayers)
                  .setDstSubresource(DestLayers)

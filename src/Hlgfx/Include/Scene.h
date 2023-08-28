@@ -3,6 +3,7 @@
 #include "Camera.h"
 #include "Mesh.h"
 #include "Light.h"
+#include "Bindings.h"
 #include "Gfx/Include/Uniform.h"
 #include <stack>
 namespace hlgfx
@@ -26,7 +27,6 @@ struct scene : public object3D
     
     virtual std::shared_ptr<object3D> Clone(b8 CloneUUID) override;
 
-    static const u32 MaxLights = 32;
     struct sceneBuffer
     {
         v4f LightCount;

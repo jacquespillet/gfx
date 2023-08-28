@@ -216,9 +216,9 @@ void ClearObject(std::shared_ptr<object3D> Object)
     {
         std::shared_ptr<scene> Scene = context::Get()->Scene;
         std::shared_ptr<light> *Lights = Scene->Lights; 
-        auto it = std::find(Lights, Lights + scene::MaxLights, Light);
+        auto it = std::find(Lights, Lights + MaxLights, Light);
         sz Inx = std::distance(Lights, it);
-        if (it != Lights + scene::MaxLights) {
+        if (it != Lights + MaxLights) {
             memcpy(&Scene->SceneBufferData.Lights[Inx], &Scene->SceneBufferData.Lights[Inx+1], (Scene->SceneBufferData.LightCount.x - Inx-1) * sizeof(light::lightData));
             memcpy(&Scene->Lights[Inx], &Scene->Lights[Inx+1], (Scene->SceneBufferData.LightCount.x - Inx-1) * sizeof(std::shared_ptr<light>));
         }        

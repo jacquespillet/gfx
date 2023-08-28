@@ -280,7 +280,7 @@ void image::InitAsArray(u32 Width, u32 Height, u32 Depth, format Format, imageUs
     this->Format = Format;
     this->Extent.Width = Width;
     this->Extent.Height = Height;
-    this->LayerCount = 1;
+    this->LayerCount = Depth;
     this->Data.resize(Width * Height  * Depth * FormatSize(Format));
     this->Type = type::BYTE;
     
