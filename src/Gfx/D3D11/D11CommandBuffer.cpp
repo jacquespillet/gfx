@@ -61,7 +61,6 @@ void ExecuteBeginPass(const command &Command, d3d11CommandBuffer &CommandBuffer)
     framebuffer *Framebuffer = context::Get()->GetFramebuffer(Command.BeginPass.FramebufferHandle);
     GET_API_DATA(D11Framebuffer, d3d11FramebufferData, Framebuffer)
     
-    //TODO
     FLOAT BackgroundColor[4] = { Command.BeginPass.ClearColor[0],Command.BeginPass.ClearColor[1],Command.BeginPass.ClearColor[2],Command.BeginPass.ClearColor[3] };
     ID3D11RenderTargetView *RTV = {D11Framebuffer->ColorViews[0].Get()};
     D11Data->DeviceContext->OMSetRenderTargets(D11Framebuffer->RenderTargetCount, D11Framebuffer->ColorViews[0].GetAddressOf(), D11Framebuffer->DepthBufferView.Get());

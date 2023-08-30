@@ -272,8 +272,10 @@ std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
         Result = std::make_shared<scene>(Name);
     else if(Object3DType == (u32)(object3DType::Object3d))
         Result = std::make_shared<object3D>(Name);
-    else if(Object3DType == (u32)(object3DType::Light))
-        Result = std::make_shared<light>(Name);
+    else if(Object3DType == (u32)(object3DType::Light_Directional))
+        Result = std::make_shared<light>(Name, light::lightType::Directional);
+    else if(Object3DType == (u32)(object3DType::Light_Point))
+        Result = std::make_shared<light>(Name, light::lightType::Point);
 
     Result->UUID = UUID;
 
@@ -317,7 +319,7 @@ std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
         gfx::context::Get()->CopyDataToBuffer(Mesh->UniformBuffer, &Mesh->UniformData, sizeof(mesh::uniformData), 0);
         Mesh->Uniforms->Update();
     }
-    else if(Object3DType == (u32)(object3DType::Light))
+    else if(Object3DType == (u32)(object3DType::Light_Directional) || Object3DType == (u32)(object3DType::Light_Point))
     {
         std::shared_ptr<light> Light = std::static_pointer_cast<light>(Result);
         FileStream.read((char*)&Light->Data, sizeof(light::lightData));

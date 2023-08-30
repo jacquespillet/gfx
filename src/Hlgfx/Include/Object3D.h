@@ -16,7 +16,8 @@ enum class object3DType
     Object3d,
     Mesh,
     Scene,
-    Light,
+    Light_Directional,
+    Light_Point,
 };
 
 struct object3D

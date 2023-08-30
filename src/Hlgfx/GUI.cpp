@@ -78,9 +78,8 @@ void contextGUI::AddObjectMenu()
         if(ImGui::MenuItem("Point"))
         {
             Add = true;
-            ObjectToAdd = std::make_shared<light>("Point Light");
+            ObjectToAdd = std::make_shared<light>("Point Light", light::lightType::Point);
             std::shared_ptr<light> Light = std::static_pointer_cast<light>(ObjectToAdd);
-            Light->Data.SizeAndType.w = (f32)light::lightType::Point;
             if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
                 ParentObject = this->Context->Scene->SceneGUI->NodeClicked;
             else
@@ -88,7 +87,13 @@ void contextGUI::AddObjectMenu()
         }
         if(ImGui::MenuItem("Directional"))
         {
-
+            Add = true;
+            ObjectToAdd = std::make_shared<light>("Directional Light", light::lightType::Directional);
+            std::shared_ptr<light> Light = std::static_pointer_cast<light>(ObjectToAdd);
+            if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
+                ParentObject = this->Context->Scene->SceneGUI->NodeClicked;
+            else
+                ParentObject = this->Context->Scene;            
         }
         if(ImGui::MenuItem("Area"))
         {

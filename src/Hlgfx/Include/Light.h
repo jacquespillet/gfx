@@ -9,13 +9,6 @@ struct material;
 
 struct light : public object3D
 {
-    light(std::string Name);
-    ~light();
-    virtual void OnUpdate() override;
-    virtual void DrawCustomGUI() override;
-    virtual void Serialize(std::ofstream &FileStream) override;
-    
-    u32 IndexInScene = 0;
     enum lightType
     {
         Point,
@@ -23,6 +16,14 @@ struct light : public object3D
         Spot,
         Area
     };
+    
+    light(std::string Name, lightType Type);
+    ~light();
+    virtual void OnUpdate() override;
+    virtual void DrawCustomGUI() override;
+    virtual void Serialize(std::ofstream &FileStream) override;
+    
+    u32 IndexInScene = 0;
 
     struct lightData
     {

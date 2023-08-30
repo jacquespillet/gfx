@@ -31,7 +31,6 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     this->ApiData = std::make_shared<d3d11Image>();
     GET_API_DATA(D11Image, d3d11Image, this);
 
-    //TODO
     D3D11_TEXTURE2D_DESC TextureDesc = {};
     TextureDesc.Width              = ImageData.Width;  // in xdata.h
     TextureDesc.Height             = ImageData.Height; // in xdata.h
@@ -141,7 +140,6 @@ void image::InitAsArray(u32 Width, u32 Height, u32 Depth, format Format, imageUs
     ApiData = std::make_shared<d3d11Image>();
     std::shared_ptr<d3d11Image> D11Image = std::static_pointer_cast<d3d11Image>(ApiData);
 
-   //TODO
     D3D11_TEXTURE2D_DESC TextureDesc = {};
     TextureDesc.Width              = Width;  // in xdata.h
     TextureDesc.Height             = Height; // in xdata.h

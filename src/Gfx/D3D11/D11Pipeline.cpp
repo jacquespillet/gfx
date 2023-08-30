@@ -79,8 +79,6 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
         }
         D11Data->Device->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr, PixelShader.GetAddressOf());
 
-        //TODO
-        
         //Rasterizer
         D3D11_RASTERIZER_DESC1 rasterizerDesc = {};
         rasterizerDesc.FillMode = FillModeToNative(PipelineCreation.Rasterization.Fill);

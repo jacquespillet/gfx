@@ -22,7 +22,6 @@ void buffer::Init(size_t ByteSize, sz Stride, bufferUsage::value Usage, memoryUs
     this->Stride = Stride;
     this->MemoryUsage = MemoryUsage;
     
-    //TODO : Structured buffer
     
     D3D11_USAGE UsageNative = D3D11_USAGE_DEFAULT;
     u32 BindFlags = 0;
