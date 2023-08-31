@@ -1047,6 +1047,8 @@ void light::DrawCustomGUI()
         Changed |= ImGui::ColorEdit3("Color", glm::value_ptr(this->Data.ColorAndIntensity));
         Changed |= ImGui::SliderFloat("Intensity", &this->Data.ColorAndIntensity.w, 0, 100);
 
+        ImGui::SliderFloat3("Shadow Map Viewport", glm::value_ptr(this->ShadowMapViewport), 1, 200);
+        ImGui::SliderFloat("Shadow Map Distance", &this->ShadowMapDistance, 1, 200);
         if(Changed)
         {
             context::Get()->Scene->UpdateLight(this->IndexInScene);

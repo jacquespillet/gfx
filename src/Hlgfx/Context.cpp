@@ -628,14 +628,7 @@ void context::Render(std::shared_ptr<camera> Camera)
         this->ShadowsRenderer->OverrideMaterial = Scene->Lights[i]->Material;
         this->ShadowsRenderer->RenderTarget = Scene->Lights[i]->ShadowsFramebuffer;
 
-        m4x4 LocalToWorldMatrix = Scene->Lights[i]->Transform.Matrices.LocalToWorld;
-        v3f CamPos = glm::column(LocalToWorldMatrix, 2) * 10.0f;
-        LocalToWorldMatrix[3][0] = CamPos.x;
-        LocalToWorldMatrix[3][1] = CamPos.y;
-        LocalToWorldMatrix[3][2] = CamPos.z;
-        Scene->Lights[i]->ShadowCam->Transform.Matrices.WorldToLocal = glm::inverse(LocalToWorldMatrix);
-        Scene->Lights[i]->ShadowCam->RecalculateMatrices();
-        Scene->Lights[i]->Data.LightSpaceMatrix = Scene->Lights[i]->ShadowCam->Data.ViewProjectionMatrix;
+        Scene->Lights[i]->CalculateMatrices(Camera);
         Scene->UpdateLight(i);
 
         //Shadow pass

@@ -22,8 +22,18 @@ struct light : public object3D
     virtual void OnUpdate() override;
     virtual void DrawCustomGUI() override;
     virtual void Serialize(std::ofstream &FileStream) override;
+    void CalculateMatrices(std::shared_ptr<camera> Camera);
+    void UpdateViewBox(std::shared_ptr<camera> Camera);
+    v4f CalculateLightSpaceFrustumCorner(v3f StartPoint, v3f Direction, f32 Width);
+
+    v3f ShadowMapViewport = v3f(30, 30, 100);
+    f32 ShadowMapDistance = 10.0f;
     
+    const f32 ShadowDistance = 20;
     u32 IndexInScene = 0;
+
+    v3f BoxMin, BoxMax;
+    f32 FarWidth, FarHeight, NearWidth, NearHeight;
 
     struct lightData
     {

@@ -197,16 +197,31 @@ void main()
             FinalSpecular += LightIntensity * NdotL * GetBRDFSpecularGGX(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.AlphaRoughness, MaterialInfo.SpecularWeight, VdotH, NdotL, NdotV, NdotH);
 
 
-            float bias = max(0.001 * (1.0 - dot(Normal, -LightDirection)), 0.0001);  
+            float Bias = max(0.001 * (1.0 - dot(Normal, -LightDirection)), 0.0001);  
             vec3 ProjCoords = Input.DepthMapUV[i].xyz / Input.DepthMapUV[i].w;
 #if GRAPHICS_API == VK
             ProjCoords.xy = ProjCoords.xy * 0.5 + 0.5;
 #else
             ProjCoords.xyz = ProjCoords.xyz * 0.5 + 0.5;
 #endif
-            float ClosestDepth = texture(ShadowMap, vec3(ProjCoords.xy, i)).x;
             float CurrentDepth = ProjCoords.z;
-            Visibility *= CurrentDepth - bias > ClosestDepth ? 0.5 : 1.0;
+
+            float TexelSize = 1.0 / LightCount.z;
+            float CurrentVisibility = 0;
+            for(int x = -1; x <= 1; ++x)
+            {
+                for(int y = -1; y <= 1; ++y)
+                {
+                    vec2 Coord = ProjCoords.xy + vec2(x, y) * TexelSize;
+                    float PCFDepth = SampleTexture(ShadowMap, PointWrapSampler, vec3(Coord.x, Coord.y, i)).x;        
+                    CurrentVisibility += CurrentDepth - Bias > PCFDepth ? 0.5 : 1.0;
+                    if(ProjCoords.z > 1.0)
+                        CurrentVisibility = 1.0;
+                }    
+            }
+            CurrentVisibility /= 9.0;
+            
+            Visibility *= CurrentVisibility;
         }
     }
 

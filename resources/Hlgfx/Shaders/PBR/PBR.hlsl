@@ -83,6 +83,7 @@ Texture2D NormalTexture : register(t7);
 Texture2D EmissionTexture : register(t8);
 Texture2DArray ShadowMap : register(t10);
 SamplerState DefaultSampler : register(s0);
+SamplerState PointWrapSampler : register(s1);
 
 #include "resources/Hlgfx/Shaders/PBR/Util.glsl"
 #include "resources/Hlgfx/Shaders/PBR/Material.glsl"
@@ -109,7 +110,6 @@ PSInput VSMain(vec4 PositionUvX : POSITION0, vec4 NormalUvY : POSITION1, vec4 Ta
 
     Output.Position = OutPosition;
     
-    [unroll]
     for(int i=0; i<MaxLights; i++)
     {
         Output.DepthMapUV[i] = mul(Lights[i].LightSpaceMatrix, vec4(Output.FragPosition, 1));
@@ -180,15 +180,30 @@ vec4 PSMain(PSInput Input) : SV_TARGET
             FinalSpecular += LightIntensity * NdotL * GetBRDFSpecularGGX(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.AlphaRoughness, MaterialInfo.SpecularWeight, VdotH, NdotL, NdotV, NdotH);
             
             // float Visibility = texture(ShadowMap, vec3(Input.DepthMapUV.xy, (Input.DepthMapUV.z - 0.0005)/Input.DepthMapUV.w));
-            float bias = max(0.001 * (1.0 - dot(Normal, -LightDirection)), 0.0001);  
+            float Bias = max(0.001 * (1.0 - dot(Normal, -LightDirection)), 0.0001);  
             vec3 ProjCoords = Input.DepthMapUV[i].xyz / Input.DepthMapUV[i].w;
             ProjCoords.xy = ProjCoords.xy * 0.5 + 0.5;
-            ProjCoords.y *= -1;
-            float ClosestDepth = SampleTexture(ShadowMap, DefaultSampler, vec3(ProjCoords.xy, i)).x;
+            ProjCoords.y = 1 - ProjCoords.y;
             float CurrentDepth = ProjCoords.z;
-            Visibility *= CurrentDepth - bias > ClosestDepth ? 0.5 : 1.0;
+
+            vec2 TexelSize = 1.0 / LightCount.z;
+            float CurrentVisibility = 0;
+            for(int x = -1; x <= 1; ++x)
+            {
+                for(int y = -1; y <= 1; ++y)
+                {
+                    vec2 Coord = ProjCoords.xy + vec2(x, y) * TexelSize;
+                    float PCFDepth = SampleTexture(ShadowMap, PointWrapSampler, vec3(Coord.x, Coord.y, i)).x;        
+                    CurrentVisibility += CurrentDepth - Bias > PCFDepth ? 0.5 : 1.0;
+                    if(ProjCoords.z > 1.0)
+                        CurrentVisibility = 1.0;
+                }    
+            }
+            CurrentVisibility /= 9.0;
+            
+            Visibility *= CurrentVisibility;
         }
-    }       
+    }
 
     //AO
     float AmbientOcclusion = 1.0;

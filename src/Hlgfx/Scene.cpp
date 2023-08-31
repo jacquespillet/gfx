@@ -32,6 +32,7 @@ scene::scene(std::string Name) : object3D(Name)
     this->SceneGUI = std::make_shared<sceneGUI>(this);
     this->SceneBufferData.LightCount.x = 0;
     this->SceneBufferData.LightCount.y = MaxLights;
+    this->SceneBufferData.LightCount.z = 1024;
     this->SceneBuffer = gfx::context::Get()->CreateBuffer(sizeof(sceneBuffer), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu, sizeof(sceneBuffer));
     
     this->Uniforms = std::make_shared<gfx::uniformGroup>();

@@ -93,32 +93,6 @@ void camera::SetLocalScale(v3f LocalScale)
     this->Controls->Recalculate();
 }
 
-m4x4 GetOrtho(f32 Left, f32 Right, f32 Bottom, f32 Top, f32 Near, f32 Far)
-{
-    m4x4 Ortho;
-    
-    Ortho[0][0] = 2.0f / (Right - Left);
-    Ortho[0][1] = 0.0f;
-    Ortho[0][2] = 0.0f;
-    Ortho[0][3] = 0.0f;
-
-    Ortho[1][0] =0.0f;
-    Ortho[1][1] =2.0f / (Top - Bottom);
-    Ortho[1][2] =0.0f;
-    Ortho[1][3] =0.0f;
-
-    Ortho[2][0] =0.0f;
-    Ortho[2][1] =0.0f;
-    Ortho[2][2] =1.0f / (Near - Far);
-    Ortho[2][3] =0.0f;
-
-    Ortho[3][0] =-(Right + Left) / (Right - Left);
-    Ortho[3][1] =-(Bottom + Top) / (Top - Bottom);
-    Ortho[3][2] = Near / (Near - Far);
-    Ortho[3][3] =1.0f;
-    return Ortho;
-}
-
 
 void camera::RecalculateMatrices()
 {

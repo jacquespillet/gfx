@@ -237,18 +237,23 @@ void d3d12PipelineData::Create(const pipelineCreation &PipelineCreation)
         //         this->UsedRootParams[this->RootParams[i].Descriptor.ShaderRegister]=true;
         //     }
         // }
-
-        const CD3DX12_STATIC_SAMPLER_DESC pointWrap( 0, // shaderRegister    
+        CD3DX12_STATIC_SAMPLER_DESC Samplers[2];
+        Samplers[0] = CD3DX12_STATIC_SAMPLER_DESC( 0, // shaderRegister    
                                             D3D12_FILTER_MIN_MAG_MIP_POINT, // filter    
                                             D3D12_TEXTURE_ADDRESS_MODE_WRAP, // addressU    
                                             D3D12_TEXTURE_ADDRESS_MODE_WRAP, // addressV    
                                             D3D12_TEXTURE_ADDRESS_MODE_WRAP); // addressW  
+        Samplers[1] = CD3DX12_STATIC_SAMPLER_DESC( 1, // shaderRegister    
+                                            D3D12_FILTER_MIN_MAG_MIP_POINT, // filter    
+                                            D3D12_TEXTURE_ADDRESS_MODE_CLAMP, // addressU    
+                                            D3D12_TEXTURE_ADDRESS_MODE_CLAMP, // addressV    
+                                            D3D12_TEXTURE_ADDRESS_MODE_CLAMP); // addressW  
 
         D3D12_ROOT_SIGNATURE_DESC rootSigDesc;
         rootSigDesc.NumParameters = (u32)this->RootParams.size();
         rootSigDesc.pParameters = this->RootParams.data();
-        rootSigDesc.NumStaticSamplers = 1;
-        rootSigDesc.pStaticSamplers = &pointWrap;
+        rootSigDesc.NumStaticSamplers = 2;
+        rootSigDesc.pStaticSamplers = &Samplers[0];
         rootSigDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
         // create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
