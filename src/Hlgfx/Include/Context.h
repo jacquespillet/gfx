@@ -1,7 +1,7 @@
 #pragma once
 #include "App/Window.h"
 #include "Gfx/Include/Context.h"
-#include "Gfx/Include/Imgui.h"
+#include "Gfx/Include/ImguiHelper.h"
 #include "Types.h"
 #include "Camera.h"
 #include "Material.h"

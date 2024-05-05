@@ -2,7 +2,7 @@
 #include "VkImage.h"
 #include "../Include/Context.h"
 #include "../Include/Memory.h"
-#include "../Include/Imgui.h"
+#include "../Include/ImguiHelper.h"
 #include "VkContext.h"
 #include "VkCommon.h"
 #include "VkMemoryAllocation.h"

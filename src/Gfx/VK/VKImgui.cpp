@@ -1,4 +1,4 @@
-#include "../Include/Imgui.h"
+#include "../Include/ImguiHelper.h"
 #include "../Include/Types.h"
 #include "../Include/Context.h"
 #include "../Include/CommandBuffer.h"
@@ -63,32 +63,11 @@ std::shared_ptr<imgui> imgui::Initialize(std::shared_ptr<context> Context, std::
     init_info.MinImageCount = VKContext->PresentImageCount;
     init_info.ImageCount = VKContext->PresentImageCount;
     init_info.CheckVkResultFn = VK_NULL_HANDLE;
-    ImGui_ImplVulkan_Init(&init_info, VKRenderPass->NativeHandle);
+    init_info.RenderPass = VKRenderPass->NativeHandle;
+    ImGui_ImplVulkan_Init(&init_info);
     
-    {
-        // Use any command queue
-        VkCommandPool command_pool = VKContext->CommandPool;
-        VkCommandBuffer command_buffer = std::static_pointer_cast<vkCommandBufferData>(Context->GetImmediateCommandBuffer()->ApiData)->Handle;
-
-        vkResetCommandPool(VKContext->Device, command_pool, 0);
-        VkCommandBufferBeginInfo begin_info = {};
-        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        vkBeginCommandBuffer(command_buffer, &begin_info);
-
-        ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
-
-        VkSubmitInfo end_info = {};
-        end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        end_info.commandBufferCount = 1;
-        end_info.pCommandBuffers = &command_buffer;
-        vkEndCommandBuffer(command_buffer);
-        vkQueueSubmit(VKContext->DeviceQueue, 1, &end_info, VK_NULL_HANDLE);
-
-        vkDeviceWaitIdle(VKContext->Device);
-        ImGui_ImplVulkan_DestroyFontUploadObjects();
-    }
-
+    ImGui_ImplVulkan_CreateFontsTexture();
+    
 
     return Singleton;
 }

@@ -6,7 +6,7 @@
 #include "Include/Pipeline.h"
 #include "Include/Context.h"
 #include "Include/CommandBuffer.h"
-#include "Include/Imgui.h"
+#include "Include/ImguiHelper.h"
 #include "Include/Swapchain.h"
 #include "Include/Buffer.h"
 #include "Include/Image.h"

@@ -7,14 +7,16 @@
 #include "Loaders/Assimp.h"
 #include <nfd.h>
 #include <glm/ext.hpp>
+#include <imgui.h>
 
 namespace hlgfx
 {
 
 contextGUI::contextGUI(context *Context) : Context(Context) {}
+
 void contextGUI::StartFrame()
 {
-    IsInteractingGUI = (ImGui::IsAnyItemHovered() || ImGui::IsAnyItemActive() || ImGui::IsAnyItemFocused() || ImGui::IsAnyWindowHovered() || ImGuizmo::IsUsingAny());
+    IsInteractingGUI = (ImGui::IsAnyItemHovered() || ImGui::IsAnyItemActive() || ImGui::IsAnyItemFocused()  || ImGuizmo::IsUsingAny());
 }
 
 
@@ -248,7 +250,7 @@ void contextGUI::DrawAssetsWindow()
             
             if(this->SelectedObject3D)
             {
-                if(ImGui::IsKeyPressed(291)) //F2
+                if(ImGui::IsKeyPressed(ImGuiKey_F2)) //F2
                 {
                     this->IsRenaming=true;
                 }
@@ -258,11 +260,11 @@ void contextGUI::DrawAssetsWindow()
                 {
                     this->Context->Scene->AddObject(this->SelectedObject3D->Clone(false));
                 }
-                if(ImGui::Button("Duplicate") || (context::Get()->CtrlPressed && ImGui::IsKeyPressed(68)))
+                if(ImGui::Button("Duplicate") || (context::Get()->CtrlPressed && ImGui::IsKeyPressed(ImGuiKey_D)))
                 {
                     Context->AddObjectToProject(this->SelectedObject3D->Clone(false));
                 }
-                if(ImGui::Button("Delete") || ImGui::IsKeyPressed(261))
+                if(ImGui::Button("Delete") || ImGui::IsKeyPressed(ImGuiKey_Delete))
                 {
                     Context->RemoveObjectFromProject(this->SelectedObject3D);
                     this->SelectedObject3D=nullptr;
@@ -335,17 +337,17 @@ void contextGUI::DrawAssetsWindow()
 
             if(this->SelectedMaterial)
             {
-                if(ImGui::IsKeyPressed(291)) //F2
+                if(ImGui::IsKeyPressed(ImGuiKey_F2)) //F2
                 {
                     this->IsRenaming=true;
                 }
 
                 ImGui::BeginChild("Material");
-                if(ImGui::Button("Duplicate") || (context::Get()->CtrlPressed && ImGui::IsKeyPressed(68)))
+                if(ImGui::Button("Duplicate") || (context::Get()->CtrlPressed && ImGui::IsKeyPressed(ImGuiKey_D)))
                 {
                     Context->AddMaterialToProject(this->SelectedMaterial->Clone());
                 }
-                if(ImGui::Button("Delete") || ImGui::IsKeyPressed(261))
+                if(ImGui::Button("Delete") || ImGui::IsKeyPressed(ImGuiKey_Delete))
                 {
                     Context->RemoveMaterialFromProject(this->SelectedMaterial);
                     this->SelectedMaterial = nullptr;
@@ -426,7 +428,7 @@ void contextGUI::DrawAssetsWindow()
             ImGui::Separator();
             if(this->SelectedTexture!=nullptr)
             {
-                if(ImGui::IsKeyPressed(291)) //F2
+                if(ImGui::IsKeyPressed(ImGuiKey_F2)) //F2
                 {
                     this->IsRenaming=true;
                 }
@@ -438,12 +440,12 @@ void contextGUI::DrawAssetsWindow()
                 ImGui::Text("Mip Levels : %u", Image->MipLevelCount);
                 ImGui::Text("Format : %s", gfx::FormatToString(Image->Format));
 
-                if(ImGui::Button("Delete") || ImGui::IsKeyPressed(261))
+                if(ImGui::Button("Delete") || ImGui::IsKeyPressed(ImGuiKey_Delete))
                 {
                     Context->RemoveTextureFromProject(this->SelectedTexture);
                     this->SelectedTexture=nullptr;
                 }
-                if(ImGui::Button("Duplicate") || (context::Get()->CtrlPressed && ImGui::IsKeyPressed(68)))
+                if(ImGui::Button("Duplicate") || (context::Get()->CtrlPressed && ImGui::IsKeyPressed(ImGuiKey_D)))
                 {
                     Context->AddTextureToProject(this->SelectedTexture->Clone());
                 }
@@ -496,7 +498,7 @@ void contextGUI::DrawAssetsWindow()
             ImGui::Separator();
             if(SelectedIndexedGeometryBuffers!=nullptr)
             {
-                if(ImGui::IsKeyPressed(291)) //F2
+                if(ImGui::IsKeyPressed(ImGuiKey_F2)) //F2
                 {
                     this->IsRenaming=true;
                 }
@@ -555,7 +557,7 @@ void contextGUI::DrawAssetsWindow()
             if(this->SelectedScene != nullptr)
             {
                 
-                if(ImGui::IsKeyPressed(291)) //F2
+                if(ImGui::IsKeyPressed(ImGuiKey_F2)) //F2
                 {
                     this->IsRenaming=true;
                 }
@@ -564,13 +566,13 @@ void contextGUI::DrawAssetsWindow()
                 {
                     Context->Scene = this->SelectedScene;
                 }
-                if(ImGui::Button("Duplicate") || (context::Get()->CtrlPressed && ImGui::IsKeyPressed(68)))
+                if(ImGui::Button("Duplicate") || (context::Get()->CtrlPressed && ImGui::IsKeyPressed(ImGuiKey_D)))
                 {
                     std::shared_ptr<scene> Duplicate = std::static_pointer_cast<scene>(this->Context->Scene->Clone(false));
                     Context->AddSceneToProject(Duplicate);
                     Context->Scene = this->SelectedScene;
                 }
-                if(ImGui::Button("Delete") || ImGui::IsKeyPressed(261))
+                if(ImGui::Button("Delete") || ImGui::IsKeyPressed(ImGuiKey_Delete))
                 {
                     if(Context->Project.Scenes.size() > 1)
                     {
@@ -724,11 +726,11 @@ void contextGUI::DrawGUI()
 
     if(Context->CtrlPressed)
     {
-        if(ImGui::IsKeyPressed(83))
+        if(ImGui::IsKeyPressed(ImGuiKey_S))
             SaveProject();
-        else if(ImGui::IsKeyPressed(78))
+        else if(ImGui::IsKeyPressed(ImGuiKey_N))
             NewProject();
-        else if(ImGui::IsKeyPressed(79))
+        else if(ImGui::IsKeyPressed(ImGuiKey_O))
             OpenProject();
     }
 }
@@ -788,7 +790,7 @@ void sceneGUI::DrawGUI()
 
 void sceneGUI::DrawNodeChildren(hlgfx::object3D *Object)
 {
-    if(ImGui::IsKeyPressed(291))
+    if(ImGui::IsKeyPressed(ImGuiKey_F2))
     {
         this->IsRenaming=true;
     }
@@ -936,14 +938,14 @@ void object3D::DrawMaterial(){}
 void object3D::DrawCustomGUI(){}
 void object3D::DrawGUI()
 {
-    if(ImGui::IsKeyPressed(261))
+    if(ImGui::IsKeyPressed(ImGuiKey_Delete))
     {
         context::Get()->Scene->DeleteObject(context::Get()->Scene->SceneGUI->NodeClicked);
         context::Get()->Scene->SceneGUI->NodeClicked=nullptr;
         return;
     }
 
-    if(context::Get()->CtrlPressed && ImGui::IsKeyPressed(68))
+    if(context::Get()->CtrlPressed && ImGui::IsKeyPressed(ImGuiKey_D))
     {
         std::shared_ptr<object3D> Clone = this->Clone(false);
         transform::DoCompute=false;

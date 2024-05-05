@@ -226,7 +226,7 @@ void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geomet
                 std::vector<uint8_t> Quarter;
                 Quarter.resize(IndicesAccessor.count);
                 memcpy(Quarter.data(), baseAddress, (IndicesAccessor.count) * IndicesStride);
-                for(size_t i=0; i<IndicesAccessor.count; i++)
+                for(size_t i=0; i<IndicesAccessor.count; i+=3)
                 {
                     Geometry->Buffers->IndexData[i] = Quarter[i];
                 }

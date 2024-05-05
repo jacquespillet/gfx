@@ -37,81 +37,80 @@ set(BUILD_ALL 0)
 ################
 
 # Imgui
-set(IMGUI_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui)
-set(IMGUI_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_demo.cpp
-                 ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_glfw.cpp
-                 ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui.cpp
-                 ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_draw.cpp
-                 ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_widgets.cpp
-                 ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/ImGuizmo.cpp
-                 )
+set(IMGUI_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends ${CMAKE_CURRENT_SOURCE_DIR}/vendor/ImGuizmo/)
+set(IMGUI_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/imgui_demo.cpp
+                 ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_glfw.cpp
+                 ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/imgui.cpp
+                 ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/imgui_draw.cpp
+                 ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/imgui_widgets.cpp
+                 ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/imgui_tables.cpp
+                 ${CMAKE_CURRENT_SOURCE_DIR}/vendor/ImGuizmo/ImGuizmo.cpp
+)
 if(${GFX_API} EQUAL ${GFX_API_D3D12})
-set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_dx12.cpp)
-set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_win32.cpp)
+set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_dx12.cpp)
+set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_win32.cpp)
 elseif(${GFX_API} EQUAL ${GFX_API_GL})
-set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_opengl3.cpp)
+set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_opengl3.cpp)
 elseif(${GFX_API} EQUAL ${GFX_API_VK})
-set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_vulkan.cpp)
+set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_vulkan.cpp)
 elseif(${GFX_API} EQUAL ${GFX_API_D3D11})
-set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_win32.cpp)
-set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/dearimgui/imgui_impl_dx11.cpp)
+set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_win32.cpp)
+set(IMGUI_SOURCE ${IMGUI_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui/backends/imgui_impl_dx11.cpp)
 endif()
 
 include_directories(${IMGUI_INC_DIR})
 
 # GLM
-set(GLM_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glm)
+set(GLM_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/glm)
 include_directories(${GLM_INC_DIR})
 
 # # stb
-set(STB_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/stb)
+set(STB_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/stb)
 include_directories(${STB_INC_DIR})
 
 # # uuid
-set(UUID_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/uuid_v4)
+set(UUID_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/uuid_v4)
 include_directories(${UUID_INC_DIR})
 
 # # tinygltf
-set(TINYGLTF_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/tinygltf)
+set(TINYGLTF_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tinygltf)
 include_directories(${TINYGLTF_INC_DIR})
 
-
 # Glfw
-set(GLFW_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/build/install/include)
-set(GLFW_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw/build/install/lib)
-include_directories(${GLFW_INC_DIR})
-link_directories(${GLFW_LIB_DIR})
+set(GLFW_INSTALL FALSE)
+add_subdirectory(vendor/glfw)
+include_directories(vendor/glfw/include)
+
 
 # FileDialog
-set(FILEDIALOG_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/fileDialog/include)
-set(FILEDIALOG_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ext/fileDialog/src/nfd_common.c)
-set(FILEDIALOG_SOURCE ${FILEDIALOG_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/ext/fileDialog/src/nfd_win.cpp)
+set(FILEDIALOG_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/fileDialog/src/include)
+set(FILEDIALOG_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/vendor/fileDialog/src/nfd_common.c)
+set(FILEDIALOG_SOURCE ${FILEDIALOG_SOURCE} ${CMAKE_CURRENT_SOURCE_DIR}/vendor/fileDialog/src/nfd_win.cpp)
 include_directories(${FILEDIALOG_INC_DIR})
 link_directories(${FILEDIALOG_LIB_DIR})
 
 # JSON
-set(JSON_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/json)
+set(JSON_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/json)
 include_directories(${JSON_INC_DIR})
 
 
-# # Glew
-set(GLEW_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/include)
-set(GLEW_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/lib/Release/x64)
-set(GLEW_DLL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glew/bin/Release/x64)
-include_directories(${GLEW_INC_DIR})
-link_directories(${GLEW_LIB_DIR})
+# # Glad
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vendor/glad/cmake" glad_cmake)
+glad_add_library(glad_gl_core_33 STATIC API gl:core=3.3)
+include_directories("${CMAKE_CURRENT_BINARY_DIR}/gladsources/glad_gl_core_33/include")
+set(GLAD_SOURCE ${CMAKE_CURRENT_BINARY_DIR}/gladsources/glad_gl_core_33/src/gl.c)
+
 
 # ASSIMP
-set(ASSIMP_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/assimp/include)
-set(ASSIMP_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/assimp/lib)
-set(ASSIMP_DLL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/assimp/bin)
-include_directories(${ASSIMP_INC_DIR})
-link_directories(${ASSIMP_LIB_DIR})
+set(ASSIMP_INSTALL_PDB OFF)
+add_subdirectory(vendor/assimp)
+include_directories("${CMAKE_CURRENT_BINARY_DIR}/vendor/assimp/include")
+include_directories(vendor/assimp/include)
 
 
 # tlsf
-set(TLSF_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/tlsf)
-set(TLSF_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ext/tlsf/tlsf.c)
+set(TLSF_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tlsf)
+set(TLSF_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tlsf/tlsf.c)
 include_directories(${TLSF_INC_DIR})
 
 
