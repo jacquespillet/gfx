@@ -3,6 +3,8 @@
 #include "../Include/Shader.h"
 #include "../Include/Context.h"
 #include "VkContext.h"
+#include "VkCommon.h"
+
 
 #include <vulkan/vulkan.hpp>
 

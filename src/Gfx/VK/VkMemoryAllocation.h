@@ -1,10 +1,11 @@
 #pragma once
 
-#include <vk_mem_alloc.h>
+#include "VkContext.h"
 #include <vulkan/vulkan.hpp>
 
 #include "../Include/Types.h"
 #include "VkMapping.h"
+#include "VkVmaUsage.h"
 
 namespace gfx
 {

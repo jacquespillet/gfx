@@ -611,7 +611,7 @@ static GLenum BlendFactorTable[] =
     GL_ONE_MINUS_CONSTANT_COLOR,//OneMinusConstantColor,
     GL_CONSTANT_ALPHA,//ConstantAlpha,
     GL_ONE_MINUS_CONSTANT_ALPHA,//OneMinusConstantAlpha,
-    GL_SRC_ALPHA_SATURATE_EXT,//SrcAlphaSaturate,
+    GL_SRC_ALPHA_SATURATE,//SrcAlphaSaturate,
     GL_SRC1_COLOR,//Src1Color,
     GL_ONE_MINUS_SRC1_COLOR,//OneMinusSrc1Color,
     GL_SRC1_ALPHA,//Src1Alpha,

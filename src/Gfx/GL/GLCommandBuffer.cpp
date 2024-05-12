@@ -12,7 +12,7 @@
 #include "GLCommon.h"
 #include "GLFramebuffer.h"
 #include "GLContext.h"
-#include <GL/glew.h>
+#include <glad/gl.h>
 
 
 #include "imgui_impl_glfw.h"

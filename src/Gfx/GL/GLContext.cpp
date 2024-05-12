@@ -20,7 +20,7 @@
 #include "GLImage.h"
 #include "GLFramebuffer.h"
 
-#include <GL/glew.h>
+#include <glad/gl.h>
 
 #include <iostream>
 
@@ -74,7 +74,7 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
 {
     if(Singleton==nullptr){
         Singleton = std::make_shared<context>();
-    }
+    }liz
 
     Singleton->ResourceManager.Init();
     Singleton->ApiContextData = std::make_shared<glData>();
@@ -82,18 +82,19 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
     
     Singleton->Window = &Window;
     
-    bool Error = glewInit() != GLEW_OK;
-    if(Error)
-    {
-        fprintf(stderr, "Failed to initialize OpenGL Loader!\n");
-        assert(false);
-    }
+    int version = gladLoadGL(glfwGetProcAddress);
+    if (version == 0) {
+        printf("Failed to initialize OpenGL context\n");
+        exit(0);
+    }    
 
     GLData->CommandBuffer = std::make_shared<commandBuffer>();
     GLData->CommandBuffer->Initialize();
 
     if(InitializeInfo.EnableMultisampling)
         glEnable(GL_MULTISAMPLE);
+
+    
 
     return Singleton;
 }

@@ -1,7 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.hpp>
 #include "VkCommon.h"
-#include <vk_mem_alloc.h>
+#include "VkContext.h"
 
 namespace gfx
 {

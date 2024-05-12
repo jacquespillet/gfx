@@ -31,3 +31,27 @@
 [submodule "vendor/tlsf"]
 	path = vendor/tlsf
 	url = https://github.com/mattconte/tlsf.git
+[submodule "vendor/uuid_v4"]
+	path = vendor/uuid_v4
+	url = https://github.com/crashoz/uuid_v4.git
+[submodule "vendor/vma"]
+	path = vendor/vma
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+[submodule "vendor/glslang"]
+	path = vendor/glslang
+	url = https://github.com/KhronosGroup/glslang.git
+[submodule "vendor/spirv_tools"]
+	path = vendor/spirv_tools
+	url = https://github.com/KhronosGroup/SPIRV-Tools.git
+[submodule "vendor/spirv_header"]
+	path = vendor/spirv_header
+	url = https://github.com/KhronosGroup/SPIRV-Headers.git
+[submodule "vendor/spirv_reflect"]
+	path = vendor/spirv_reflect
+	url = https://github.com/KhronosGroup/SPIRV-Reflect.git
+[submodule "vendor/d3d12"]
+	path = vendor/d3d12
+	url = https://github.com/microsoft/DirectX-Headers.git
+[submodule "vendor/dxc"]
+	path = vendor/dxc
+	url = https://github.com/microsoft/DirectXShaderCompiler.git

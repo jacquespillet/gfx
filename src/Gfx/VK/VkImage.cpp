@@ -6,6 +6,7 @@
 #include "VkContext.h"
 #include "VkCommon.h"
 #include "VkMemoryAllocation.h"
+#include "VkCommandBuffer.h"
 
 #include <algorithm>
 

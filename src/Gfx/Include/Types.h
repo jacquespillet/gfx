@@ -5,7 +5,7 @@
 #if GFX_API==GFX_VK
 #include <vulkan/vulkan.hpp>
 #elif GFX_API==GFX_GL
-#include <GL/glew.h>
+#include <glad/gl.h>
 #elif GFX_API==GFX_D3D12
 #include <d3d12.h>
 #elif GFX_API==GFX_D3D11

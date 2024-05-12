@@ -6,6 +6,7 @@ using namespace Microsoft::WRL;
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include "D12VirtualFrames.h"
+#include <dxcapi.h>
 
 namespace gfx
 {

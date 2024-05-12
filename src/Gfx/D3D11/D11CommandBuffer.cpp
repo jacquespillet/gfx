@@ -13,7 +13,7 @@
 #include "D11Context.h"
 #include "D11Mapping.h"
 
-#include <GL/glew.h>
+#include <glad/gl.h>
 
 #include "imgui_impl_dx11.h"
 

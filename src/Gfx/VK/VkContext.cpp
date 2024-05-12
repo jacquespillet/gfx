@@ -1,5 +1,7 @@
 #if GFX_API == GFX_VK
 
+#include "VkContext.h"
+
 #include <vulkan/vulkan.hpp>
 #include <optional>
 #include <iostream>
@@ -22,7 +24,6 @@
 #include "VkMapping.h"
 #include "VkImage.h"
 #include "VkCommandBuffer.h"
-#include "VkContext.h"
 #include "VkSwapchain.h"
 #include "VkBuffer.h"
 #include "VkShader.h"
@@ -34,6 +35,7 @@
 #include "VkPipeline.h"
 #include "VkResourceManager.h"
 #include "VkFramebuffer.h"
+#include "vkVirtualFrames.h"
 
 
 namespace gfx
@@ -479,7 +481,8 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
     // VkData->DescriptorCache.Init();
     
     //Initialize virtual frames
-    VkData->VirtualFrames.Init(InitializeInfo.VirtualFrameCount, InitializeInfo.MaxStageBufferSize);
+    VkData->VirtualFrames = std::make_shared<virtualFrameProvider>();
+    VkData->VirtualFrames->Init(InitializeInfo.VirtualFrameCount, InitializeInfo.MaxStageBufferSize);
     InitializeInfo.InfoCallback("Initialization Finished");    
 
 
@@ -638,19 +641,19 @@ stageBuffer context::CreateStageBuffer(sz Size)
 void context::StartFrame()
 {
     GET_CONTEXT(VkData, this);
-    VkData->VirtualFrames.StartFrame();
+    VkData->VirtualFrames->StartFrame();
 }
 
 void context::EndFrame()
 {
     GET_CONTEXT(VkData, this);
-    VkData->VirtualFrames.EndFrame();
+    VkData->VirtualFrames->EndFrame();
 }
 
 void context::Present()
 {
     GET_CONTEXT(VkData, this);
-    VkData->VirtualFrames.Present();
+    VkData->VirtualFrames->Present();
 }
 
 commandBuffer *context::GetImmediateCommandBuffer()
@@ -662,7 +665,7 @@ commandBuffer *context::GetImmediateCommandBuffer()
 std::shared_ptr<commandBuffer> context::GetCurrentFrameCommandBuffer()
 {
     GET_CONTEXT(VkData, this);
-    return VkData->VirtualFrames.GetCurrentFrame().Commands;
+    return VkData->VirtualFrames->GetCurrentFrame().Commands;
 }
 
 stageBuffer *context::GetStageBuffer()
@@ -1270,7 +1273,7 @@ void context::Cleanup()
 
     DeallocateMemory((void*)SwapchainOutput.Name);
     VkData->StageBuffer.Destroy();
-    VkData->VirtualFrames.Destroy();  
+    VkData->VirtualFrames->Destroy();  
     
 
     ResourceManager.Destroy();

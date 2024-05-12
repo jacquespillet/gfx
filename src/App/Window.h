@@ -7,7 +7,7 @@
 #include <vector>
 
 #if GFX_API == GFX_GL
-#include <GL/glew.h>
+#include <glad/gl.h>
 #endif
 
 #if GFX_API == GFX_VK

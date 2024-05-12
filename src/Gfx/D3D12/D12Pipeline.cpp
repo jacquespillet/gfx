@@ -15,7 +15,7 @@ using namespace Microsoft::WRL;
 #include <d3dx12.h>
 #include <DirectXMath.h>
 #include <d3dcompiler.h>
-#include <dxc/dxcapi.h>
+#include <dxcapi.h>
 #include <d3d12shader.h> // Contains functions and structures useful in accessing shader information.
 
 

@@ -36,7 +36,6 @@ layout(location = 0) out vec4 outputColor;
 struct uniformData
 {
     vec4 _Color0;
-    vec4 _Color1;
 };
 DECLARE_UNIFORM_BUFFER(0, 0, UniformData)
 {

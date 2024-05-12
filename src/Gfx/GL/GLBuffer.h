@@ -1,7 +1,7 @@
 #pragma once
 #include "../Include/Buffer.h"
 
-#include <GL/glew.h>
+#include <glad/gl.h>
 namespace gfx
 {
 

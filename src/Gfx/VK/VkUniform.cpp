@@ -6,6 +6,7 @@
 #include "VkContext.h"
 #include "vkImage.h"
 #include "vkFramebuffer.h"
+#include "VkBuffer.h"
 
 namespace gfx
 {

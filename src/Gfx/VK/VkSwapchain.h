@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "VkMapping.h"
-
+#include "VkCommon.h"
 namespace gfx
 {
 struct image;

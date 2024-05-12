@@ -2,18 +2,17 @@ cmake_minimum_required(VERSION 2.9)
 project(gl)
 set(PROJECT_BRIEF "gl")
 
-# set(CMAKE_BUILD_TYPE RELEASE)
-set(LINK_FLAGS "")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILE_FLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LINK_FLAGS}")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
 set(CMAKE_CXX_STANDARD 17)
+add_compile_options(/wd4251)
 
 add_compile_definitions(_GLFW_WIN32 GLFW_EXPOSE_NATIVE_WIN32 VK_USE_PLATFORM_WIN32_KHR NOMINMAX GLM_ENABLE_EXPERIMENTAL )
 set(GFX_API_GL 0)
 set(GFX_API_VK 1)
 set(GFX_API_D3D12 2)
 set(GFX_API_D3D11 3)
-set(GFX_API ${GFX_API_VK})
+set(GFX_API ${GFX_API_D3D11})
 
 add_definitions(-DGFX_GL=${GFX_API_GL})
 add_definitions(-DGFX_VK=${GFX_API_VK})
@@ -25,7 +24,7 @@ if(${GFX_API} EQUAL ${GFX_API_VK} OR ${GFX_API} EQUAL ${GFX_API_D3D12} OR ${GFX_
 add_compile_definitions(GLM_FORCE_DEPTH_ZERO_TO_ONE)
 endif()
 
-set(BUILD_ALL 0)
+set(BUILD_ALL 1)
 
 
 ################################################
@@ -77,7 +76,9 @@ set(TINYGLTF_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tinygltf)
 include_directories(${TINYGLTF_INC_DIR})
 
 # Glfw
-set(GLFW_INSTALL FALSE)
+set(USE_MSVC_RUNTIME_LIBRARY_DLL  ON)
+set(BUILD_SHARED_LIBS  ON) 
+set(GLFW_INSTALL ON)
 add_subdirectory(vendor/glfw)
 include_directories(vendor/glfw/include)
 
@@ -103,6 +104,7 @@ set(GLAD_SOURCE ${CMAKE_CURRENT_BINARY_DIR}/gladsources/glad_gl_core_33/src/gl.c
 
 # ASSIMP
 set(ASSIMP_INSTALL_PDB OFF)
+set(USE_STATIC_CRT ON)
 add_subdirectory(vendor/assimp)
 include_directories("${CMAKE_CURRENT_BINARY_DIR}/vendor/assimp/include")
 include_directories(vendor/assimp/include)
@@ -117,35 +119,45 @@ include_directories(${TLSF_INC_DIR})
 # Vulkan
 
 if(${GFX_API} EQUAL ${GFX_API_VK})
+
+        # Vma
+        include_directories(${CMAKE_CURRENT_SOURCE_DIR}/vendor/vma/include)
+        
+        # # Spirv tools
+        # set(SPIRV_TOOLS_BUILD_STATIC ON)
+        # add_subdirectory(vendor/spirv_tools)
+        
+        # # Spirv headers
+        set(SPIRV_HEADERS_ENABLE_INSTALL ON)
+        add_subdirectory(vendor/spirv_header)
+        
+        # glslang
+        # set(ENABLE_OPT ON)
+        # set(GLSLANG_ENABLE_INSTALL ON)
+        # set(ENABLE_GLSLANG_BINARIES ON)
+        set(BUILD_SHARED_LIBS  OFF) 
+        add_subdirectory(vendor/glslang)
+        
+        # spirv_reflect
+        set(SPIRVREFLECT_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/spirv_reflect)
+        set(SPIRVREFLECT_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/vendor/spirv_reflect/spirv_reflect.c)
+        include_directories(${SPIRVREFLECT_INC_DIR})
+
+
         set(VULKAN_LIB_DIR $ENV{VULKAN_SDK}/Lib)
         set(VULKAN_INC_DIR $ENV{VULKAN_SDK}/Include)
         set(VULKAN_BIN_DIR $ENV{VULKAN_SDK}/Bin)
         include_directories(${VULKAN_INC_DIR})
-        link_directories(${VULKAN_LIB_DIR})
-        # Vma
-        set(VMA_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/vma/include)
-        set(VMA_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/vma/lib)
-        include_directories(${VMA_INC_DIR})
-        link_directories(${VMA_LIB_DIR})
-
-        # glslang
-        set(GLSLANG_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang/include)
-        set(GLSLANG_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/glslang/lib)
-        include_directories(${GLSLANG_INC_DIR})
-        link_directories(${GLSLANG_LIB_DIR})
-
-        # spirv_reflect
-        set(SPIRVREFLECT_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/spirv-reflect)
-        set(SPIRVREFLECT_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ext/spirv-reflect/spirv_reflect.c)
-        include_directories(${SPIRVREFLECT_INC_DIR})
+        link_directories(${VULKAN_LIB_DIR})        
 endif()
 
 if(${GFX_API} EQUAL ${GFX_API_D3D12})
-        set(D3DX_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/d3dx)
+        set(D3DX_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/d3d12/include/directx)
         include_directories(${D3DX_INC_DIR})
-        set(DXC_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dxc/include)
-        set(DXC_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dxc/lib)
-        set(DXC_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/dxc/bin)
+        
+        set(DXC_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/dxc/inc)
+        set(DXC_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/dxc/lib/x64)
+        set(DXC_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vendor/dxc/bin/x64)
         include_directories(${DXC_INC_DIR})
         link_directories(${DXC_LIB_DIR})
 endif()
@@ -169,6 +181,7 @@ set(extCode
 )
 
 set(vkCode
+        src/Gfx/VK/VkVmaUsage.cpp
         src/Gfx/VK/VkContext.cpp
         src/Gfx/VK/VkCommandBuffer.cpp
         src/Gfx/VK/VkBuffer.cpp
@@ -223,6 +236,7 @@ set(glCode
         src/Gfx/GL/GLCommandBuffer.cpp
         src/Gfx/GL/GLUniform.cpp
         src/Gfx/GL/GLImgui.cpp
+        ${GLAD_SOURCE}
 )
         
 set(commonCode
@@ -294,22 +308,35 @@ set (sourceCode ${sourceCode}
 ################################################
 ##########      Libs              ##############
 ################################################
-set(commonLibs glfw3 assimp-vc141-mt.lib)
+set(commonLibs glfw assimp user32 gdi32)
 
 if(${GFX_API} EQUAL ${GFX_API_VK})
-        set(gfxApiLibs ${gfxApiLibs} vulkan-1)
-        set(gfxApiLibs ${gfxApiLibs} debug VulkanMemoryAllocatord optimized VulkanMemoryAllocator)
-        set(gfxApiLibs
-                ${gfxApiLibs}  
-                debug ${GLSLANG_LIB_DIR}/OSDependentd.lib optimized ${GLSLANG_LIB_DIR}/OSDependent.lib
-                debug ${GLSLANG_LIB_DIR}/SPIRVd.lib optimized ${GLSLANG_LIB_DIR}/SPIRV.lib
-                debug ${GLSLANG_LIB_DIR}/glslangd.lib optimized ${GLSLANG_LIB_DIR}/glslang.lib
-                debug ${GLSLANG_LIB_DIR}/MachineIndependentd.lib optimized ${GLSLANG_LIB_DIR}/MachineIndependent.lib
-                debug ${GLSLANG_LIB_DIR}/SPVRemapperd.lib optimized ${GLSLANG_LIB_DIR}/SPVRemapper.lib
-                debug ${GLSLANG_LIB_DIR}/GenericCodeGend.lib optimized ${GLSLANG_LIB_DIR}/GenericCodeGen.lib
-                debug ${GLSLANG_LIB_DIR}/glslang-default-resource-limitsd.lib optimized ${GLSLANG_LIB_DIR}/glslang-default-resource-limits.lib
-                debug ${GLSLANG_LIB_DIR}/HLSLd.lib optimized ${GLSLANG_LIB_DIR}/HLSL.lib
-                debug ${GLSLANG_LIB_DIR}/OGLCompilerd.lib optimized ${GLSLANG_LIB_DIR}/OGLCompiler.lib
+        set(gfxApiLibs vulkan-1 SPIRV-Headers SPIRV-Tools)
+
+        set(gfxApiLibsDebug ${gfxApiLibs})
+        set(gfxApiLibsDebug
+                ${gfxApiLibsDebug}  
+                OSDependentd
+                SPIRVd
+                glslangd
+                MachineIndependentd
+                SPVRemapperd
+                GenericCodeGend
+                HLSLd
+                OGLCompilerd
+        )
+        
+        set(gfxApiLibsRelease ${gfxApiLibs})
+        set(gfxApiLibsRelease
+                ${gfxApiLibsRelease}  
+                OSDependent
+                SPIRV
+                glslang
+                MachineIndependent
+                SPVRemapper
+                GenericCodeGen
+                HLSL
+                OGLCompiler
         )
 endif()
 
@@ -318,17 +345,23 @@ if(${GFX_API} EQUAL ${GFX_API_D3D12})
         set(gfxApiLibs ${gfxApiLibs} DXGI.lib)
         set(gfxApiLibs ${gfxApiLibs} D3DCompiler.lib)
         set(gfxApiLibs ${gfxApiLibs} dxcompiler.lib)
+        
+        set(gfxApiLibsDebug ${gfxApiLibs})
+        set(gfxApiLibsRelease ${gfxApiLibs})
+
         install(FILES ${DXC_BIN_DIR}/dxil.dll DESTINATION bin)
 endif()
 
 if(${GFX_API} EQUAL ${GFX_API_D3D11})
         set(gfxApiLibs ${gfxApiLibs} d3d11.lib)
-endif()
-
-if(${GFX_API} EQUAL ${GFX_API_GL})
-        set(gfxApiLibs ${gfxApiLibs} glew32)
+        set(gfxApiLibsRelease ${gfxApiLibs})
+        set(gfxApiLibsDebug ${gfxApiLibs})
+        endif()
+        
+        if(${GFX_API} EQUAL ${GFX_API_GL})
         set(gfxApiLibs ${gfxApiLibs} opengl32)
-        install(FILES ${GLEW_DLL_DIR}/glew32.dll DESTINATION bin)
+        set(gfxApiLibsRelease ${gfxApiLibs})
+        set(gfxApiLibsDebug ${gfxApiLibs})
 endif()
 
 
@@ -338,7 +371,9 @@ if(${BUILD_ALL} EQUAL 1)
         set(targetName HelloTriangle_${GFX_API_STR})
         set(mainCode ${sourceCode} src/Main_HelloTriangle.cpp)
         add_executable(${targetName} ${mainCode})
-        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
+        target_link_libraries(${targetName} ${commonLibs})
+        Message(gfxApiLibsDebug)
+        target_link_libraries(${targetName} debug ${gfxApiLibsDebug} optimized ${gfxApiLibsRelease})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
         
         # HelloTriangleIndexed
@@ -418,15 +453,15 @@ if(${BUILD_ALL} EQUAL 1)
         target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
 else()
-        set(targetName Main)
+        set(targetName Main_${GFX_API_STR})
         set(mainCode ${sourceCode} src/Main_HelloHLGFX.cpp)
         add_executable(${targetName} ${mainCode})
-        target_link_libraries(${targetName} ${commonLibs} ${gfxApiLibs})
+        target_link_libraries(${targetName} ${commonLibs})
+        target_link_libraries(${targetName} debug ${gfxApiLibsDebug} optimized ${gfxApiLibsRelease})
+
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
 endif()
 
-
-install(FILES ${ASSIMP_DLL_DIR}/assimp-vc141-mt.dll DESTINATION bin)
 
 # Install
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources/

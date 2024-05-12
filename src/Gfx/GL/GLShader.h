@@ -1,7 +1,7 @@
 #pragma once
 #include "../Include/Types.h"
 
-#include "GL/glew.h"
+#include "glad/gl.h"
 #include <memory>
 namespace gfx
 {

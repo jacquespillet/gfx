@@ -1,4 +1,4 @@
-#include "../Include/Imgui.h"
+#include "../Include/ImguiHelper.h"
 #include "../Include/Types.h"
 #include "../Include/Context.h"
 #include "../Include/CommandBuffer.h"
@@ -63,7 +63,7 @@ std::shared_ptr<imgui> imgui::Initialize(std::shared_ptr<context> Context, std::
     io.KeyMap[ImGuiKey_Space] = GLFW_KEY_SPACE;
     io.KeyMap[ImGuiKey_Enter] = GLFW_KEY_ENTER;
     io.KeyMap[ImGuiKey_Escape] = GLFW_KEY_ESCAPE;
-    io.KeyMap[ImGuiKey_KeyPadEnter] = GLFW_KEY_KP_ENTER;
+    io.KeyMap[ImGuiKey_KeypadEnter] = GLFW_KEY_KP_ENTER;
     io.KeyMap[ImGuiKey_A] = GLFW_KEY_A;
     io.KeyMap[ImGuiKey_C] = GLFW_KEY_C;
     io.KeyMap[ImGuiKey_V] = GLFW_KEY_V;

@@ -1,19 +1,22 @@
 #pragma once
+
+
 #include "../Include/Types.h"
 #include "../Include/CommandBuffer.h"
 #include "../Include/Image.h"
 #include "../Include/Buffer.h"
-#include "vkVirtualFrames.h"
 #include "VkMapping.h"
 
+
 #include <vulkan/vulkan.hpp>
-#include <vk_mem_alloc.h>
 #include <unordered_map>
 #include <string>
 
+#include "VkMemoryAllocation.h"
+#include "VkVmaUsage.h"
 namespace gfx
 {
-
+class virtualFrameProvider;
 
 struct vkData
 {
@@ -52,7 +55,7 @@ struct vkData
 
     vk::Extent2D SurfaceExtent;
 
-    virtualFrameProvider VirtualFrames;
+    std::shared_ptr<virtualFrameProvider> VirtualFrames;
 
     //Multisampling
     b8 MultisamplingEnabled=false;

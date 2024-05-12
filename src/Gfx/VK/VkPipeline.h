@@ -1,5 +1,6 @@
 #pragma once
 #include "VkContext.h"
+#include "VkCommon.h"
 namespace gfx
 {
 

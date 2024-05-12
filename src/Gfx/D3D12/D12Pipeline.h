@@ -5,7 +5,7 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl.h>
-#include <dxc/dxcapi.h>
+#include <dxcapi.h>
 
 #include <vector>
 #include <unordered_map>

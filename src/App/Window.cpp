@@ -111,7 +111,6 @@ void window::CheckErrors() const
         if(err==GL_OUT_OF_MEMORY) printf("GL_OUT_OF_MEMORY\n");
         if(err==GL_INVALID_FRAMEBUFFER_OPERATION) printf("GL_INVALID_FRAMEBUFFER_OPERATION\n");
         if(err==GL_CONTEXT_LOST) printf("GL_CONTEXT_LOST\n");
-        if(err==GL_TABLE_TOO_LARGE) printf("GL_TABLE_TOO_LARGE1\n");
     }
 #endif
 }

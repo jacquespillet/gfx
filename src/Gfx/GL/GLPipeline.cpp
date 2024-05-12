@@ -1,5 +1,5 @@
 #include "GLPipeline.h"
-#include <GL/glew.h>
+#include <glad/gl.h>
 #include "GLMapping.h"
 #include "../Include/Pipeline.h"
 #include "../Include/Memory.h"

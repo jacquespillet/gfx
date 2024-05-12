@@ -638,6 +638,22 @@ void contextGUI::DrawMainMenuBar()
 {
     if (ImGui::BeginMainMenuBar())
     {
+        if(GFX_API==GFX_VK)
+        {
+            ImGui::Text("Mini Engine (Vulkan)");
+        }
+        else if(GFX_API==GFX_GL)
+        {
+            ImGui::Text("Mini Engine (OpenGL)");
+        }
+        else if(GFX_API==GFX_D3D11)
+        {
+            ImGui::Text("Mini Engine (Direct3D 11)");
+        }
+        else if(GFX_API==GFX_D3D12)
+        {
+            ImGui::Text("Mini Engine (Direct3D 12)");
+    }
         if (ImGui::BeginMenu("File"))
         {
             if(ImGui::MenuItem("New Scene"))

@@ -13,7 +13,7 @@
 #define TINYGLTF_NO_INCLUDE_STB_IMAGE
 #define TINYGLTF_NO_INCLUDE_STB_IMAGE_WRITE
 #define TINYGLTF_NO_INCLUDE_STB_IMAGE_RESIZE
-#include <tinygltf/tiny_gltf.h>
+#include <tiny_gltf.h>
 
 #include "../Include/Geometry.h"
 #include "../Include/Material.h"

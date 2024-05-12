@@ -32,8 +32,8 @@ using namespace Microsoft::WRL;
 #include <DirectXMath.h>
 #include <d3dcompiler.h>
 
-#include <dxc/dxcapi.h>
 #include <d3d12shader.h> // Contains functions and structures useful in accessing shader information.
+#include <dxcapi.h>
 
 // #include <dxc/DxilContainer/DxilContainer.h>
 // #include <dxc/DxilContainer/DxilContainerUtil.h>
