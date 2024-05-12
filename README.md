@@ -18,7 +18,7 @@ It also features a "high level" api that is implemented on top of the low level 
 
 This high level api is used to create a simple 3d engine as an example.
 
-It's not a finished product, there are still some things to add to the libraries, but most of the system is working.
+It's not a finished product, there are still some bugs to fixes and things to add to the libraries, but most of the system is working.
 
 
 # build instructions
