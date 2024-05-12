@@ -86,7 +86,7 @@ pbrMaterial::pbrMaterial(std::string Name, materialFlags::bits Flags) : material
 {
     gfx::context *Context = gfx::context::Get();
 
-    this->BaseColorTexture = defaultTextures::BlackTexture;
+    this->BaseColorTexture = defaultTextures::WhiteTexture;
     this->NormalTexture = defaultTextures::BlueTexture;
     this->EmissiveTexture = defaultTextures::BlackTexture;
     this->OcclusionTexture = defaultTextures::WhiteTexture;

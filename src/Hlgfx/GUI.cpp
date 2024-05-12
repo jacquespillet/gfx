@@ -761,8 +761,6 @@ sceneGUI::sceneGUI(scene *Scene) : Scene(Scene) {}
 
 void sceneGUI::DrawGUI()
 {
-    ImGui::ShowDemoWindow();
-
     u32 WindowWidth = context::Get()->Width;
     u32 WindowHeight = context::Get()->Height;
 

@@ -30,7 +30,7 @@ void mainRenderer::Render(std::shared_ptr<scene> Scene, std::shared_ptr<camera> 
     gfx::framebuffer *Framebuffer = gfx::context::Get()->GetFramebuffer(this->RenderTarget);
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = gfx::context::Get()->GetCurrentFrameCommandBuffer();    
 
-    CommandBuffer->BeginPass(this->RenderTarget, {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
+    CommandBuffer->BeginPass(this->RenderTarget, {0.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0});
     CommandBuffer->SetViewport(0.0f, 0.0f, (float)Framebuffer->Width, (float)Framebuffer->Height);
     CommandBuffer->SetScissor(0, 0, Framebuffer->Width, Framebuffer->Height);
 

@@ -182,9 +182,10 @@ void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geomet
             Geometry->Buffers->VertexData.resize(PositionAccessor.count);
             for (size_t k = 0; k < PositionAccessor.count; k++)
             {
-                v3f Position, Normal;
-                v4f Tangent;
-                v2f UV;
+                v3f Position(0);
+                v3f Normal(0);
+                v4f Tangent(0);
+                v2f UV(0);
 
                 {
                     const uint8_t *address = PositionBufferAddress + PositionBufferView.byteOffset + PositionAccessor.byteOffset + (k * PositionStride);
@@ -348,6 +349,20 @@ void LoadInstances(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geome
     }
 }
 
+std::string ExtractFileName(const std::string& Path) {
+    // Find the position of the last directory separator
+    size_t LastSlashPos = Path.find_last_of("/\\");
+    
+    // Extract the file name
+    if (LastSlashPos != std::string::npos) {
+        return Path.substr(LastSlashPos + 1);
+    } else {
+        // No directory separator found, return the entire Path
+        return Path;
+    }
+}
+
+
 void LoadTextures(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<texture>> &Images)
 {
     for (size_t i = 0; i < GLTFModel.textures.size(); i++)
@@ -357,7 +372,7 @@ void LoadTextures(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<textur
         std::string TexName = GLTFTex.name;
         if(strcmp(GLTFTex.name.c_str(), "") == 0)
         {
-            TexName = GLTFImage.uri;
+            TexName = ExtractFileName(GLTFImage.uri);
         }
         
         assert(GLTFImage.component==4);

@@ -16,6 +16,9 @@ It also features a "high level" api that is implemented on top of the low level 
 
 This high level api is used to create a simple 3d engine as an example.
 
+It's not a finished product, there are still some things to add to the libraries, but most of the system is working.
+
+
 # build instructions
 
 ## Requirements : 
@@ -54,14 +57,14 @@ This is a very simple example usage of the Gfx api, to create a simple app that 
 We first initialize the graphics context and the swapchain : 
 
 ```cpp
-    // Initialize the graphics API
-    gfx::context::initializeInfo ContextInitialize;
-    ContextInitialize.Extensions = Window->GetRequiredExtensions();
-    ContextInitialize.ErrorCallback = ErrorCallback;
-    ContextInitialize.InfoCallback = InfoCallback;
-    ContextInitialize.Debug = true;
-    GfxContext = gfx::context::Initialize(ContextInitialize, *Window);
-    Swapchain = GfxContext->CreateSwapchain(Width, Height);
+// Initialize the graphics API
+gfx::context::initializeInfo ContextInitialize;
+ContextInitialize.Extensions = Window->GetRequiredExtensions();
+ContextInitialize.ErrorCallback = ErrorCallback;
+ContextInitialize.InfoCallback = InfoCallback;
+ContextInitialize.Debug = true;
+GfxContext = gfx::context::Initialize(ContextInitialize, *Window);
+Swapchain = GfxContext->CreateSwapchain(Width, Height);
 ```
 
 We then create the texture for the triangle : 
@@ -123,7 +126,17 @@ Uniforms->Reset()
         .AddTexture(4, TextureHandle1);
 ```
 
-With all that, we can create a rendering pipeline, and bind this uniform group to that rendering pipeline : 
+With all that, we can create a rendering pipeline, and bind this uniform group to that rendering pipeline.
+We describe pipelines with json files that contain all the needed informations for creating one : 
+* Shader Code
+
+* Vertex Streams
+
+* Depth Functions
+
+* Blend Functions
+
+* Triangle culling
 
 ```cpp
 PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle/Triangle.json");
@@ -159,22 +172,60 @@ GfxContext->Present();
 ```
 
 And here's the result : 
-![HelloTriangle]()
+![HelloTriangle](https://github.com/jacquespillet/gfx/blob/master/resources/Gallery/HelloTriangle.PNG?raw=true)
 
-## Features
+## Examples
+
+* [Simple Graphics Pipeline](https://github.com/jacquespillet/gfx/blob/master/src/Main_HelloTriangle.cpp)
+
+* [Compute Pipeline](https://github.com/jacquespillet/gfx/blob/master/src/Main_HelloTriangle_Compute.cpp)
+
+* [Instanced Rendering](https://github.com/jacquespillet/gfx/blob/master/src/Main_HelloTriangle_Instanced.cpp)
+
+* [Multi Sampling Anti Aliasing](https://github.com/jacquespillet/gfx/blob/master/src/Main_HelloTriangle_MultiSampling.cpp)
+
+* [Offscreen Render Targets](https://github.com/jacquespillet/gfx/blob/master/src/Main_HelloTriangle_OffscreenRenderTarget.cpp)
+
+* [Dearimgui Support](https://github.com/jacquespillet/gfx/blob/master/src/Main_HelloImgui.cpp)
+
+* [Cubemap Textures](https://github.com/jacquespillet/gfx/blob/master/src/Main_HelloCubeMap.cpp)
+
 
 
 # High level api features
 
-## Base Abstractions
+The Hlgfx library contains abstractions classes for creating 3d apps : 
 
-## Example Code
+* [Camera](https://github.com/jacquespillet/gfx/blob/master/src/Hlgfx/Camera.cpp) and [Camera Controller](https://github.com/jacquespillet/gfx/blob/master/src/Hlgfx/CameraController.cpp) for user interaction
 
-## Features
+* [Material system](https://github.com/jacquespillet/gfx/blob/master/src/Hlgfx/Material.cpp)
 
+* [Lights](https://github.com/jacquespillet/gfx/blob/master/src/Hlgfx/Light.cpp)
+
+* [Scene graph](https://github.com/jacquespillet/gfx/blob/master/src/Hlgfx/Light.cpp)
+
+* [Transform](https://github.com/jacquespillet/gfx/blob/master/src/Hlgfx/Transform.cpp)
+
+* [Renderer](https://github.com/jacquespillet/gfx/blob/master/src/Hlgfx/Renderer.cpp)
+
+* [Object3D](https://github.com/jacquespillet/gfx/blob/master/src/Hlgfx/Object3D.cpp)
+
+* [Geometry](https://github.com/jacquespillet/gfx/blob/master/src/Hlgfx/Geometry.cpp)
+
+* [Mesh](https://github.com/jacquespillet/gfx/blob/master/src/Hlgfx/Mesh.cpp)
 
 
 # Mini engine
+
+The mini engine contained in Main_HelloHLGFX shows how to use the Hlgfx library to create a simple 3d app.
+
+This engine allows to author 3d scenes by importing glTF or any file supported by assimp.
+
+It has a scene graph that allows to parent objects together to create complex 3d object hierarchies.
+
+It also has a PBR material authoring system.
+
+It also contains an asset management system that allows to import and instantiate assets into the scene. 
 
 
 # Screenshots
