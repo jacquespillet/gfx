@@ -156,6 +156,9 @@ GfxContext->EndFrame();
 GfxContext->Present();
 ```
 
+And Here's the result : 
+![HelloTriangle]()
+
 ## Features
 
 
