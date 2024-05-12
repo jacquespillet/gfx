@@ -52,6 +52,3 @@
 [submodule "vendor/d3d12"]
 	path = vendor/d3d12
 	url = https://github.com/microsoft/DirectX-Headers.git
-[submodule "vendor/dxc"]
-	path = vendor/dxc
-	url = https://github.com/microsoft/DirectXShaderCompiler.git
