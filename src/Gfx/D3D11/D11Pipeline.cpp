@@ -11,7 +11,26 @@
 
 namespace gfx
 {
+#
+D3D11_BLEND_DESC CreateDefaultBlendDesc() {
+    D3D11_BLEND_DESC BlendDesc = {};
 
+    BlendDesc.AlphaToCoverageEnable = FALSE;
+    BlendDesc.IndependentBlendEnable = FALSE;
+
+    for (UINT i = 0; i < 8; ++i) {
+        BlendDesc.RenderTarget[i].BlendEnable = FALSE;
+        BlendDesc.RenderTarget[i].SrcBlend = D3D11_BLEND_ONE;
+        BlendDesc.RenderTarget[i].DestBlend = D3D11_BLEND_ZERO;
+        BlendDesc.RenderTarget[i].BlendOp = D3D11_BLEND_OP_ADD;
+        BlendDesc.RenderTarget[i].SrcBlendAlpha = D3D11_BLEND_ONE;
+        BlendDesc.RenderTarget[i].DestBlendAlpha = D3D11_BLEND_ZERO;
+        BlendDesc.RenderTarget[i].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+        BlendDesc.RenderTarget[i].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+    }
+
+    return BlendDesc;
+}
 
 void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
 {
@@ -103,7 +122,7 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
         D11Data->Device->CreateDepthStencilState(&depthStencilDesc, DepthStencilState.GetAddressOf());
 
         //Blend state
-        D3D11_BLEND_DESC BlendStateDesc = {};
+        D3D11_BLEND_DESC BlendStateDesc = CreateDefaultBlendDesc();
         for(sz i=0; i<PipelineCreation.BlendState.ActiveStates; i++)
         {
             BlendStateDesc.RenderTarget[i].SrcBlend = BlendFactorToNative(PipelineCreation.BlendState.BlendStates[i].SourceColor);

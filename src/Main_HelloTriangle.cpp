@@ -34,6 +34,7 @@ struct application
 	struct uniformData
 	{
 		gfx::v4f Color0;
+		gfx::v4f Color1;
 	};
 	uniformData UniformData1;
 
@@ -59,6 +60,7 @@ struct application
 		UniformData1 = 
 		{
 			gfx::v4f(1,0,0,1),
+			gfx::v4f(0,0,0,1)
 		};
 		
 		gfx::memory::Get()->Init();
@@ -83,7 +85,7 @@ struct application
 		Window = std::make_shared<app::window>(WindowCreateOptions);
 		Window->OnResize = OnResizeWindow;
 
-		// Initialize the graphics API
+		// e the graphics API
 		gfx::context::initializeInfo ContextInitialize;
 		ContextInitialize.Extensions = Window->GetRequiredExtensions();
 		ContextInitialize.ErrorCallback = ErrorCallback;
@@ -91,6 +93,7 @@ struct application
 		ContextInitialize.Debug = true;
 		GfxContext = gfx::context::Initialize(ContextInitialize, *Window);
 		Swapchain = GfxContext->CreateSwapchain(Width, Height);
+#if 1
 
 		gfx::imageData ImageData = gfx::ImageFromFile("resources/Textures/Debug.jpg");
 		gfx::imageCreateInfo ImageCreateInfo = 
@@ -106,6 +109,7 @@ struct application
 		TextureHandle1 = GfxContext->CreateImage(ImageData, ImageCreateInfo);
 		gfx::image *Texture1 = GfxContext->GetImage(TextureHandle1);
 
+		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle/Triangle.json");
 		
 		float vertices[] =
 		{
@@ -126,31 +130,30 @@ struct application
 							  .AddVertexStream(VertexStream1);
 		VertexBufferHandle = GfxContext->CreateVertexBuffer(VertexBufferCreateInfo);
 
+		SwapchainPass = GfxContext->GetDefaultRenderPass();
 
 		UniformBufferHandle1 = GfxContext->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
 		gfx::buffer *UniformBuffer1 = GfxContext->GetBuffer(UniformBufferHandle1);
 		UniformBuffer1->CopyData((uint8_t*)&UniformData1, sizeof(uniformData), 0);
-		
-		
+		//That's the content of a descriptor set
 		Uniforms = std::make_shared<gfx::uniformGroup>();
 		Uniforms->Reset()
 				.AddUniformBuffer(0, UniformBufferHandle1)
 				.AddTexture(4, TextureHandle1);
 		
-
 		//Tell the context that we'll be using this uniforms with this pipeline at binding 0
 		//It's possible to bind a uniform group to multiple pipelines.
-		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/Triangle/Triangle.json");
 		GfxContext->BindUniformsToPipeline(Uniforms, PipelineHandleSwapchain, 0);
 		Uniforms->Update();
-		
-		SwapchainPass = GfxContext->GetDefaultRenderPass();
+#endif
 	}
 	
 	void Cleanup()
 	{
 		GfxContext->WaitIdle();
+#if 1
 		DestroyProgramSpecific();
+#endif
 		GfxContext->DestroySwapchain();
 		GfxContext->Cleanup();
 
@@ -172,6 +175,7 @@ struct application
 
 	void Run()
 	{
+#if 1
 		float t = 0;
 		while(!Window->ShouldClose())
 		{
@@ -207,6 +211,7 @@ struct application
 			// Present the rendered frame
 			GfxContext->Present();
 		}
+#endif
 	}
 
 	void OnResize(uint32_t NewWidth, uint32_t NewHeight)

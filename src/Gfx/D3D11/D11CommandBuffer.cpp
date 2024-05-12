@@ -68,7 +68,8 @@ void ExecuteBeginPass(const command &Command, d3d11CommandBuffer &CommandBuffer)
     {
         D11Data->DeviceContext->ClearRenderTargetView(D11Framebuffer->ColorViews[i].Get(), BackgroundColor);
     }
-    D11Data->DeviceContext->ClearDepthStencilView(D11Framebuffer->DepthBufferView.Get(), D3D11_CLEAR_DEPTH, Command.BeginPass.ClearDepth, Command.BeginPass.ClearStencil);
+    
+    D11Data->DeviceContext->ClearDepthStencilView(D11Framebuffer->DepthBufferView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, Command.BeginPass.ClearDepth, Command.BeginPass.ClearStencil);
 }
 
 void ExecuteBindUniformBuffer(const command &Command, d3d11CommandBuffer &CommandBuffer)

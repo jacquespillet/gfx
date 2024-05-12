@@ -19,7 +19,9 @@ This high level api is used to create a simple 3d engine as an example.
 # build instructions
 
 ## Requirements : 
+
     Visual Studio (Tested only on Visual Studio 2019)
+
     Latest [dxc](https://github.com/microsoft/DirectXShaderCompiler/releases) release copied into the vendor/dxc folder
 
 ## Commands : 
@@ -37,9 +39,9 @@ cmake ../
 cd ..
 Build.bat
 
-First build may take a while because it's going to build all the dependencies with the project.
 
 ```
+First build may take a while because it's going to build all the dependencies with the project.
 
 
 # Low level api features 
@@ -156,7 +158,7 @@ GfxContext->EndFrame();
 GfxContext->Present();
 ```
 
-And Here's the result : 
+And here's the result : 
 ![HelloTriangle]()
 
 ## Features
