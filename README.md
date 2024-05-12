@@ -1,3 +1,5 @@
+![Image](https://github.com/jacquespillet/gfx/blob/master/resources/Gallery/MiniEngine_Banner.PNG?raw=true)
+
 # GFX
 
 This is a simple graphics library for creating 3D apps.
@@ -230,5 +232,10 @@ It also contains an asset management system that allows to import and instantiat
 
 # Screenshots
 
+![Image](https://github.com/jacquespillet/gfx/blob/master/resources/Gallery/MiniEngine_0.PNG?raw=true)
 
-# Scene assets
+![Image](https://github.com/jacquespillet/gfx/blob/master/resources/Gallery/MiniEngine_1.PNG?raw=true)
+
+![Image](https://github.com/jacquespillet/gfx/blob/master/resources/Gallery/MiniEngine_2.PNG?raw=true)
+
+![Image](https://github.com/jacquespillet/gfx/blob/master/resources/Gallery/MiniEngine_3.PNG?raw=true)
