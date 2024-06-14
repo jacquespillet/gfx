@@ -72,6 +72,8 @@ struct vertexBufferCreateInfo
     vertexStreamData VertexStreams[commonConstants::MaxVertexStreams];
     u32 NumVertexStreams=0;
 
+    // TODO: Add a shaderDeviceAddress flag here (for now it automatically does when rtx is enabled, but that might not be efficient)
+
     vertexBufferCreateInfo &Init();
     vertexBufferCreateInfo &Reset();
     vertexBufferCreateInfo &AddVertexStream(vertexStreamData StreamData);

@@ -1,0 +1,34 @@
+{
+	"name" : "main",
+	"pipelines" : [
+		{
+			"name" : "TriangleRTX",
+			"shaders" : [
+				{
+					"language": "GLSL",
+					"stage" : "rgen",
+					"shader" : "raygen.rgen.glsl",
+					"group" : 0
+				},
+				{
+					"language": "GLSL",
+					"stage" : "rmiss",
+					"shader" : "miss.rmiss.glsl",
+					"group" : 1
+				},
+				{
+					"language": "GLSL",
+					"stage" : "rchit",
+					"shader" : "closestHit.rchit.glsl",
+					"group" : 2
+				},
+				{
+					"language": "GLSL",
+					"stage" : "rahit",
+					"shader" : "anyHit.rahit.glsl",
+					"group" : 2
+				}
+			]
+		}
+	]
+}

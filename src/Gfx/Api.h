@@ -12,3 +12,4 @@
 #include "Include/Image.h"
 #include "Include/Framebuffer.h"
 #include "Include/VertexInput.h"
+#include "Include/AccelerationStructure.h"

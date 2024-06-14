@@ -48,6 +48,12 @@ struct vkPipelineData
 
     u32 NumActiveLayouts = 0;
 
+    bufferHandle SBT;
+    VkStridedDeviceAddressRegionKHR RayGenSBTAddress = {};
+    VkStridedDeviceAddressRegionKHR MissSBTAddress = {};
+    VkStridedDeviceAddressRegionKHR IsectSBTAddress = {};
+    VkStridedDeviceAddressRegionKHR CallableSBTAddress = {};
+
     void Create(const pipelineCreation &PipelineCreation);
 
     void DestroyVkResources();

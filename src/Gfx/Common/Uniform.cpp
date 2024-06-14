@@ -40,6 +40,28 @@ uniformGroup &uniformGroup::AddTexture(u32 Binding, imageHandle Resource)
     return *this;
 }
 
+uniformGroup &uniformGroup::AddStorageImage(u32 Binding, imageHandle Resource)
+{
+    this->Uniforms.push_back({
+        uniformType::StorageImage,
+        Binding,
+        Resource,
+        0
+    });
+    return *this;
+}
+
+uniformGroup &uniformGroup::AddAccelerationStructure(u32 Binding, accelerationStructureHandle Resource)
+{
+    this->Uniforms.push_back({
+        uniformType::AccelerationStructure,
+        Binding,
+        Resource,
+        0
+    });
+    return *this;
+}
+
 uniformGroup &uniformGroup::AddFramebufferRenderTarget(u32 Binding, framebufferHandle Resource, u32 ResourceIndex)
 {
     this->Uniforms.push_back({
@@ -63,6 +85,10 @@ image *uniformGroup::GetTexture(u32 Index)
 framebuffer *uniformGroup::GetFramebuffer(u32 Index)
 {
     return context::Get()->GetFramebuffer(Uniforms[Index].ResourceHandle);
+}
+accelerationStructure *uniformGroup::GetAccelerationStructure(u32 Index)
+{
+    return context::Get()->GetAccelerationStructure(Uniforms[Index].ResourceHandle);
 }
 
 void uniformGroup::UpdateBuffer(u32 Index, void *Data, u32 Size, u32 Offset)

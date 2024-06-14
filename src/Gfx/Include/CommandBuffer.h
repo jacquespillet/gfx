@@ -61,6 +61,11 @@ struct commandBuffer
     void DrawIndexed(u32 Start, u32 Count, u32 InstanceCount=1);
     void Dispatch(u32 NumGroupX, u32 NumGroupY, u32 NumGroupZ);
 
+#if GFX_API == GFX_VK || GFX_API == GFX_D3D12
+    void BindRayTracingPipeline(pipelineHandle Pipeline);
+    void RayTrace(u32 Width, u32 Height, u32 Depth, u32 RayGenIndex, u32 HitIndex, u32 MissIndex);    
+#endif
+
     void BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Binding);
     
     void CopyBufferToImage(const bufferInfo &Source, const imageInfo &Destination);

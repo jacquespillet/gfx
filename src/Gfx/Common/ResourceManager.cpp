@@ -5,6 +5,7 @@
 #include "../Include/Shader.h"
 #include "../Include/RenderPass.h"
 #include "../Include/Framebuffer.h"
+#include "../Include/AccelerationStructure.h"
 
 namespace gfx
 {
@@ -13,11 +14,13 @@ void resourceManager::Init()
     Buffers.Init(2048, sizeof(buffer));
 	Images.Init(2048, sizeof(image));
 	Pipelines.Init(2048, sizeof(pipeline));
-	Shaders.Init(2048, sizeof(shader));
-	RenderPasses.Init(2048, sizeof(renderPass));
-	Framebuffers.Init(2048, sizeof(framebuffer));
+	Shaders.Init(128, sizeof(shader));
+	RenderPasses.Init(128, sizeof(renderPass));
+	Framebuffers.Init(128, sizeof(framebuffer));
 	VertexBuffers.Init(2048, sizeof(vertexBuffer));
-
+#if GFX_API == GFX_VK || GFX_API == GFX_D3D12
+	AccelerationStructures.Init(512, sizeof(accelerationStructure));
+#endif
 	InitApiSpecific();
 }
 
@@ -37,6 +40,10 @@ void resourceManager::Destroy()
 	Framebuffers.Destroy();
 	printf("Destroying VertexBuffers\n");
 	VertexBuffers.Destroy();
+#if GFX_API == GFX_VK || GFX_API == GFX_D3D12
+	printf("Destroying Acceleration Structures\n");
+	AccelerationStructures.Destroy();
+#endif
 
 	DestroyApiSpecific();
 }

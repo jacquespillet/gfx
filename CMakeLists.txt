@@ -24,7 +24,7 @@ if(${GFX_API} EQUAL ${GFX_API_VK} OR ${GFX_API} EQUAL ${GFX_API_D3D12} OR ${GFX_
 add_compile_definitions(GLM_FORCE_DEPTH_ZERO_TO_ONE)
 endif()
 
-set(BUILD_ALL 1)
+set(BUILD_ALL 0)
 
 
 ################################################
@@ -194,6 +194,7 @@ set(vkCode
         src/Gfx/VK/VkVirtualFrames.cpp
         src/Gfx/VK/VkUniform.cpp
         src/Gfx/VK/VkImgui.cpp
+        src/Gfx/VK/VkAccelerationStructure.cpp
 )
 
 set(d3d12Code
@@ -464,7 +465,7 @@ if(${BUILD_ALL} EQUAL 1)
         install(TARGETS ${targetName} RUNTIME DESTINATION bin)
 else()
         set(targetName Main_${GFX_API_STR})
-        set(mainCode ${sourceCode} src/Main_HelloHLGFX.cpp)
+        set(mainCode ${sourceCode} src/Main_HelloRayTracing.cpp)
         add_executable(${targetName} ${mainCode})
         target_link_libraries(${targetName} ${commonLibs})
         target_link_libraries(${targetName} debug ${gfxApiLibsDebug} optimized ${gfxApiLibsRelease})

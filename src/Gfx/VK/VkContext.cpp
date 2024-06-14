@@ -20,6 +20,7 @@
 #include "../Include/RenderPass.h"
 #include "../Include/Framebuffer.h"
 #include "../Include/Memory.h"
+#include "../Include/AccelerationStructure.h"
 #include "../Common/Util.h"
 #include "VkMapping.h"
 #include "VkImage.h"
@@ -36,7 +37,7 @@
 #include "VkResourceManager.h"
 #include "VkFramebuffer.h"
 #include "vkVirtualFrames.h"
-
+#include "VkAccelerationStructure.h"
 
 namespace gfx
 {
@@ -395,6 +396,69 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
 
 
     vk::DeviceCreateInfo DeviceCreateInfo = {};
+
+    vk::PhysicalDeviceFeatures EnabledFeatures;
+    if(InitializeInfo.EnableRTX)
+    {
+
+        DeviceExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+        DeviceExtensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+        DeviceExtensions.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+        DeviceExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+        DeviceExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+        DeviceExtensions.push_back(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
+        DeviceExtensions.push_back(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
+        DeviceExtensions.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+
+        EnabledFeatures.samplerAnisotropy=VK_TRUE;
+        EnabledFeatures.shaderInt64 = VK_TRUE;   
+
+        VkData->EnabledRayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+        VkData->EnabledRayQueryFeatures.rayQuery=VK_TRUE;
+
+        VkData->EnabledBufferDeviceAddresFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+        VkData->EnabledBufferDeviceAddresFeatures.bufferDeviceAddress=VK_TRUE;
+        VkData->EnabledBufferDeviceAddresFeatures.pNext = &VkData->EnabledRayQueryFeatures;
+
+        VkData->EnabledRayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+        VkData->EnabledRayTracingPipelineFeatures.rayTracingPipeline=VK_TRUE;
+        VkData->EnabledRayTracingPipelineFeatures.pNext = &VkData->EnabledBufferDeviceAddresFeatures;
+
+        VkData->EnabledAccelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+        VkData->EnabledAccelerationStructureFeatures.accelerationStructure=  VK_TRUE;
+        VkData->EnabledAccelerationStructureFeatures.pNext = &VkData->EnabledRayTracingPipelineFeatures;
+
+        VkData->EnabledDescriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+        VkData->EnabledDescriptorIndexingFeatures.runtimeDescriptorArray=VK_TRUE;
+        VkData->EnabledDescriptorIndexingFeatures.pNext = &VkData->EnabledAccelerationStructureFeatures;
+
+
+        VkData->DevicePNextChain = &VkData->EnabledDescriptorIndexingFeatures;
+
+
+        vk::PhysicalDeviceProperties2 DeviceProperties2;
+        DeviceProperties2.pNext = &VkData->RayTracingPipelineProperties;
+        VkData->PhysicalDevice.getProperties2(&DeviceProperties2);
+        
+
+        vk::PhysicalDeviceFeatures2 DeviceFeatures2 {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
+        DeviceFeatures2.pNext = &VkData->AccelerationStructureFeatures;
+        VkData->PhysicalDevice.getFeatures2(&DeviceFeatures2);
+
+        Singleton->RTXEnabled = true;
+    }
+
+    VkPhysicalDeviceFeatures2 PhysicalDeviceFeatures2{};
+    if(VkData->DevicePNextChain)
+    {
+        PhysicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        PhysicalDeviceFeatures2.features = EnabledFeatures;
+        PhysicalDeviceFeatures2.pNext = VkData->DevicePNextChain;
+        DeviceCreateInfo.setPEnabledFeatures(nullptr);
+        DeviceCreateInfo.setPNext((void*)&PhysicalDeviceFeatures2);
+    }    
+
+
     DeviceCreateInfo.setQueueCreateInfos(DeviceQueueCreateInfo)
                     .setPEnabledExtensionNames(DeviceExtensions)
                     //.setPNext(&DescriptorIndexingFeatures)
@@ -424,6 +488,9 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
     AllocatorInfo.physicalDevice = VkData->PhysicalDevice;
     AllocatorInfo.device = VkData->Device;
     AllocatorInfo.instance = VkData->Instance;
+    if(InitializeInfo.EnableRTX)
+        AllocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+
     vmaCreateAllocator(&AllocatorInfo, &VkData->Allocator);
     InitializeInfo.InfoCallback("Created VMA");
 
@@ -485,6 +552,19 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
     VkData->VirtualFrames->Init(InitializeInfo.VirtualFrameCount, InitializeInfo.MaxStageBufferSize);
     InitializeInfo.InfoCallback("Initialization Finished");    
 
+    if(InitializeInfo.EnableRTX)
+    {
+        VkData->_vkCreateRayTracingPipelinesKHR = (PFN_vkCreateRayTracingPipelinesKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkCreateRayTracingPipelinesKHR") ;       
+        VkData->_vkGetBufferDeviceAddressKHR = (PFN_vkGetBufferDeviceAddressKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkGetBufferDeviceAddressKHR") ;       
+        VkData->_vkGetAccelerationStructureBuildSizesKHR = (PFN_vkGetAccelerationStructureBuildSizesKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkGetAccelerationStructureBuildSizesKHR") ;       
+        VkData->_vkCreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkCreateAccelerationStructureKHR") ;       
+        VkData->_vkGetAccelerationStructureDeviceAddressKHR = (PFN_vkGetAccelerationStructureDeviceAddressKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkGetAccelerationStructureDeviceAddressKHR") ;       
+        VkData->_vkBuildAccelerationStructuresKHR = (PFN_vkBuildAccelerationStructuresKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkBuildAccelerationStructuresKHR") ;       
+        VkData->_vkCmdBuildAccelerationStructuresKHR = (PFN_vkCmdBuildAccelerationStructuresKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkCmdBuildAccelerationStructuresKHR") ;       
+        VkData->_vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkGetRayTracingShaderGroupHandlesKHR") ;       
+        VkData->_vkCmdTraceRaysKHR = (PFN_vkCmdTraceRaysKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkCmdTraceRaysKHR") ;       
+    }
+
 
     return Singleton;
 }
@@ -533,7 +613,13 @@ bufferHandle CreateVertexBufferStream(void *Values, sz Count, sz Stride, const s
 
     auto VertexAllocation = StageBuffer->Submit((uint8_t*)Values, (u32)Count);
 
-    Buffer->Init(VertexAllocation.Size, 1, gfx::bufferUsage::VertexBuffer, gfx::memoryUsage::GpuOnly);
+    gfx::bufferUsage::Bits BufferUsage = gfx::bufferUsage::VertexBuffer;
+    if(Context->RTXEnabled)
+    {
+        BufferUsage = (gfx::bufferUsage::Bits)((u32)bufferUsage::VertexBuffer | (u32)bufferUsage::ShaderDeviceAddress | (u32)bufferUsage::AccelerationStructureBuildInputReadonly);
+    }
+
+    Buffer->Init(VertexAllocation.Size, 1, BufferUsage, gfx::memoryUsage::GpuOnly);
   
     CommandBuffer->CopyBuffer(
         gfx::bufferInfo {StageBuffer->GetBuffer(), VertexAllocation.Offset},
@@ -602,6 +688,19 @@ imageHandle context::CreateImage(const imageData &ImageData, const imageCreateIn
     image *Image = GetImage(ImageHandle);
     *Image = image();
     Image->Init(ImageData, CreateInfo);
+    return ImageHandle;
+}
+
+imageHandle context::CreateImage(u32 Width, u32 Height, format Format, imageUsage::bits ImageUsage, memoryUsage MemoryUsage, u8 *Pixels)
+{
+    imageHandle ImageHandle = ResourceManager.Images.ObtainResource();
+    if(ImageHandle == InvalidHandle)
+    {
+        return ImageHandle;
+    }
+    image *Image = GetImage(ImageHandle);
+    *Image = image();
+    Image->Init(Width, Height, Format, ImageUsage, MemoryUsage);
     return ImageHandle;
 }
 
@@ -946,7 +1045,8 @@ pipelineHandle context::RecreatePipeline(const pipelineCreation &PipelineCreatio
     shader *ShaderState = GetShader(VkPipelineData->ShaderState);
     GET_API_DATA(VkShaderData, vkShaderData, ShaderState);
     VkShaderData->Create(PipelineCreation.Shaders);
-    ShaderState->GraphicsPipeline = VkShaderData->GraphicsPipeline;
+    ShaderState->ComputePipeline = VkShaderData->ComputePipeline;
+    ShaderState->RTXPipeline = VkShaderData->RTXPipeline;
     ShaderState->ActiveShaders = VkShaderData->CompiledShaders;
     ShaderState->Name = PipelineCreation.Shaders.Name;
 
@@ -973,11 +1073,13 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     {
         return VkPipelineData->ShaderState;
     }
+
     shader *ShaderState = this->GetShader(VkPipelineData->ShaderState);
     ShaderState->ApiData = std::make_shared<vkShaderData>();
     GET_API_DATA(VkShaderData, vkShaderData, ShaderState);
     VkShaderData->Create(PipelineCreation.Shaders);
-    ShaderState->GraphicsPipeline = VkShaderData->GraphicsPipeline;
+    ShaderState->ComputePipeline = VkShaderData->ComputePipeline;
+    ShaderState->RTXPipeline = VkShaderData->RTXPipeline;
     ShaderState->ActiveShaders = VkShaderData->CompiledShaders;
     ShaderState->Name = PipelineCreation.Shaders.Name;
 
@@ -1129,6 +1231,40 @@ void context::CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz
         SubmitCommandBufferImmediate(CommandBuffer);
         StageBuffer->Reset();     
     }
+}
+
+accelerationStructureHandle context::CreateBLAccelerationStructure(uint32_t NumVertices, uint32_t Stride, gfx::format Format, bufferHandle VertexBufferHandle, gfx::indexType IndexType, uint32_t NumTriangles, bufferHandle IndexBufferHandle, uint32_t PositionOffset)
+{
+    accelerationStructureHandle Handle = ResourceManager.AccelerationStructures.ObtainResource();
+    if(Handle == InvalidHandle)
+    {
+        return Handle;
+    }
+    accelerationStructure *AS = GetAccelerationStructure(Handle);
+    AS->ApiData = std::make_shared<vkAccelerationStructureData>();
+    GET_API_DATA(VkASData, vkAccelerationStructureData, AS);
+    *VkASData = vkAccelerationStructureData(); 
+  
+    VkASData->InitBLAS(NumVertices, Stride, Format, VertexBufferHandle, IndexType, NumTriangles, IndexBufferHandle, PositionOffset);
+
+    return Handle;
+}
+
+accelerationStructureHandle context::CreateTLAccelerationStructure(std::vector<glm::mat4> &Transforms, std::vector<accelerationStructureHandle> &AccelerationStructures, std::vector<int> Instances)
+{
+    accelerationStructureHandle Handle = ResourceManager.AccelerationStructures.ObtainResource();
+    if(Handle == InvalidHandle)
+    {
+        return Handle;
+    }
+    accelerationStructure *AS = GetAccelerationStructure(Handle);
+    AS->ApiData = std::make_shared<vkAccelerationStructureData>();
+    GET_API_DATA(VkASData, vkAccelerationStructureData, AS);
+    *VkASData = vkAccelerationStructureData(); 
+  
+    VkASData->InitTLAS(Transforms, AccelerationStructures, Instances);
+
+    return Handle;
 }
 
 void context::DestroyPipeline(pipelineHandle PipelineHandle)
@@ -1298,6 +1434,16 @@ void context::Cleanup()
     VkData->Device.destroy();
     VkData->Instance.destroySurfaceKHR(VkData->Surface);
     VkData->Instance.destroy();
+}
+
+u64 vkData::GetBufferDeviceAddress(bufferHandle BufferHandle)
+{
+    buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
+    GET_API_DATA(VkBuffer, vkBufferData, Buffer);
+
+    vk::BufferDeviceAddressInfoKHR BufferDeviceAddressInfo;
+    BufferDeviceAddressInfo.buffer = VkBuffer->Handle;
+    return this->_vkGetBufferDeviceAddressKHR(this->Device, (VkBufferDeviceAddressInfoKHR*)&BufferDeviceAddressInfo);    
 }
 
 

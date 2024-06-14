@@ -36,6 +36,7 @@ typedef uint32_t renderPassHandle;
 typedef uint32_t framebufferHandle;
 typedef uint32_t vertexBufferHandle;
 typedef uint32_t shaderStateHandle;
+typedef uint32_t accelerationStructureHandle;
 
 typedef glm::vec2 v2f;
 typedef glm::vec3 v3f;

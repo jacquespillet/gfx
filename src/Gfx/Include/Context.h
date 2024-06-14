@@ -25,6 +25,7 @@ struct pipeline;
 struct stageBuffer;
 struct framebufferCreateInfo;
 struct shader;
+struct accelerationStructure;
 
 inline void DefaultCallback(const std::string&) {}
 
@@ -51,6 +52,10 @@ struct context
         u64 MaxStageBufferSize = 64 * 1024 * 1024;
 
         b8 Debug=true;    
+
+#if GFX_API == GFX_VK || GFX_API == GFX_D3D12
+        b8 EnableRTX=false;    
+#endif
     };
 
     static std::shared_ptr<context> Singleton;
@@ -80,7 +85,7 @@ struct context
     bufferHandle CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsage MemoryUsage, sz Stride = 0);
     imageHandle CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo);
     imageHandle CreateImageCubemap(const imageData &Left, const imageData &Right, const imageData &Top, const imageData &Bottom, const imageData &Back, const imageData &Front, const imageCreateInfo& CreateInfo);
-    imageHandle CreateImage(u32 Width, u32 Height, format Format, u8 *Pixels);
+    imageHandle CreateImage(u32 Width, u32 Height, format Format, imageUsage::bits ImageUsage, memoryUsage MemoryUsage, u8 *Pixels);
     imageHandle CreateImageArray(u32 Width, u32 Height, u32 Depth, format Format, imageUsage::bits Usage);
 
     pipelineHandle CreatePipelineFromFile(const char *FileName, framebufferHandle Framebuffer = InvalidHandle); 
@@ -99,6 +104,13 @@ struct context
     void BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pipelineHandle PipelineHandle, u32 Binding, b8 Force = false);
 
     void CopyDataToBuffer(bufferHandle BufferHandle, void *Ptr, sz Size, sz Offset);
+
+    bool RTXEnabled=false;
+#if GFX_API == GFX_VK || GFX_API == GFX_D3D12
+    accelerationStructureHandle CreateBLAccelerationStructure(uint32_t NumVertices, uint32_t Stride, gfx::format Format, bufferHandle VertexBufferHandle, gfx::indexType IndexType = gfx::indexType::Uint16, uint32_t NumTriangles = 0, bufferHandle IndexBufferHandle = InvalidHandle, uint32_t PositionOffset=0);
+    accelerationStructureHandle CreateTLAccelerationStructure(std::vector<glm::mat4> &Transforms, std::vector<accelerationStructureHandle> &AccelerationStructures, std::vector<int> Instances);
+    // void CreateAccelerationStructure()
+#endif
 
 
     void DestroyCommandBuffer(commandBuffer* Handle);
@@ -136,6 +148,7 @@ struct context
     shader *GetShader(shaderStateHandle Handle);
     renderPass *GetRenderPass(renderPassHandle Handle);
     framebuffer *GetFramebuffer(framebufferHandle Handle);
+    accelerationStructure *GetAccelerationStructure(accelerationStructureHandle Handle);
 
 
     void Cleanup();
@@ -153,5 +166,6 @@ struct context
     std::shared_ptr<swapchain> Swapchain;
     
     u32 MultiSampleCount=1;
+
 };
 }

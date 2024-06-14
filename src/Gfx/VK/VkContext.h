@@ -14,6 +14,17 @@
 
 #include "VkMemoryAllocation.h"
 #include "VkVmaUsage.h"
+
+#define VK_CALL(f)\
+{\
+    VkResult Res = (f); \
+    if(Res != VK_SUCCESS) \
+    { \
+        assert(0); \
+    } \
+} \
+
+
 namespace gfx
 {
 class virtualFrameProvider;
@@ -59,6 +70,28 @@ struct vkData
 
     //Multisampling
     b8 MultisamplingEnabled=false;
+
+    u64 GetBufferDeviceAddress(bufferHandle Buffer);
+
+    // RTX
+    vk::PhysicalDeviceRayTracingPipelinePropertiesKHR RayTracingPipelineProperties;
+    vk::PhysicalDeviceAccelerationStructureFeaturesKHR AccelerationStructureFeatures;
+    void *DevicePNextChain=nullptr;
+    VkPhysicalDeviceRayQueryFeaturesKHR EnabledRayQueryFeatures{};
+	VkPhysicalDeviceDescriptorIndexingFeaturesEXT EnabledDescriptorIndexingFeatures{};
+	VkPhysicalDeviceBufferDeviceAddressFeatures EnabledBufferDeviceAddresFeatures{};
+	VkPhysicalDeviceRayTracingPipelineFeaturesKHR EnabledRayTracingPipelineFeatures{};
+	VkPhysicalDeviceAccelerationStructureFeaturesKHR EnabledAccelerationStructureFeatures{};
+    
+    PFN_vkCreateRayTracingPipelinesKHR _vkCreateRayTracingPipelinesKHR;
+    PFN_vkGetBufferDeviceAddressKHR _vkGetBufferDeviceAddressKHR;
+    PFN_vkGetAccelerationStructureBuildSizesKHR _vkGetAccelerationStructureBuildSizesKHR;
+    PFN_vkCreateAccelerationStructureKHR _vkCreateAccelerationStructureKHR;
+    PFN_vkGetAccelerationStructureDeviceAddressKHR _vkGetAccelerationStructureDeviceAddressKHR;
+    PFN_vkBuildAccelerationStructuresKHR _vkBuildAccelerationStructuresKHR;
+    PFN_vkCmdBuildAccelerationStructuresKHR _vkCmdBuildAccelerationStructuresKHR;
+    PFN_vkGetRayTracingShaderGroupHandlesKHR _vkGetRayTracingShaderGroupHandlesKHR;
+    PFN_vkCmdTraceRaysKHR _vkCmdTraceRaysKHR;
 };
 
 stageBuffer CreateVkStageBuffer(sz Size);

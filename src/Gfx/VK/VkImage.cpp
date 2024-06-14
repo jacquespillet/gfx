@@ -332,7 +332,8 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
     this->Type = type::BYTE;
     
     if(ImageUsage == imageUsage::COLOR_ATTACHMENT || ImageUsage == imageUsage::DEPTH_STENCIL_ATTACHMENT) ImageUsage |= imageUsage::SHADER_READ | imageUsage::TRANSFER_SOURCE;
-
+    
+    
     vk::ImageCreateInfo ImageCreateInfo;
     ImageCreateInfo.setImageType(vk::ImageType::e2D)
                     .setFormat(FormatToNative(Format))
@@ -348,12 +349,24 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
     // if(Options & imageOptions::CUBEMAP)
     // {
     //     ImageCreateInfo.setFlags(vk::ImageCreateFlagBits::eCubeCompatible);
-    // }                       
+    // }              
+
+    
+         
 
     VkImageData->Allocation = gfx::AllocateImage(ImageCreateInfo, MemoryUsage, &VkImageData->Handle);
     VkImageData->InitViews(*this, VkImageData->Handle,  Format);
     VkImageData->InitSamplerDefault();
     VkImageData->CurrentLayout = imageLayout::Undefined;
+
+    if(ImageUsage == imageUsage::STORAGE)
+    {
+        commandBuffer *CommandBuffer = gfx::context::Get()->GetImmediateCommandBuffer();
+        CommandBuffer->Begin();
+        CommandBuffer->TransferLayout(*this, VkImageData->CurrentLayout, ImageUsageToImageLayout((imageUsage::bits)ImageUsage));
+        CommandBuffer->End();
+        context::Get()->SubmitCommandBufferImmediate(CommandBuffer);
+    }
 }
 
 vk::ImageSubresourceRange GetDefaultImageSubresourceRange(const image &Image)

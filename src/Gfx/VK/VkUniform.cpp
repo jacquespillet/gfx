@@ -1,12 +1,14 @@
 #include "../Include/Uniform.h"
 #include "../Include/Context.h"
 #include "../Include/Framebuffer.h"
+#include "../Include/AccelerationStructure.h"
 #include "VkUniform.h"
 #include "VkCommon.h"
 #include "VkContext.h"
 #include "vkImage.h"
 #include "vkFramebuffer.h"
 #include "VkBuffer.h"
+#include "VkAccelerationStructure.h"
 
 namespace gfx
 {
@@ -30,6 +32,7 @@ uniformGroup & uniformGroup::Update()
         std::vector<vk::WriteDescriptorSet> DescriptorWrites;
         std::vector<vk::DescriptorBufferInfo> DescriptorBuffers;
         std::vector<vk::DescriptorImageInfo> DescriptorImages;
+        std::vector<vk::WriteDescriptorSetAccelerationStructureKHR> DescriptorAccelerationStructures;
         DescriptorWrites.reserve(Uniforms.size());
         DescriptorBuffers.reserve(Uniforms.size());
         DescriptorImages.reserve(Uniforms.size());
@@ -63,7 +66,16 @@ uniformGroup & uniformGroup::Update()
                 DescriptorWrite.setDescriptorType(vk::DescriptorType::eStorageBuffer)
                                    .setPBufferInfo(&DescriptorBuffers[DescriptorBuffers.size()-1]);
             }
-            else if(Uniforms[i].Type == uniformType::Texture2d)
+            if(Uniforms[i].Type == uniformType::StorageImage)
+            {
+                image* Image = GetTexture(i);
+                GET_API_DATA(VkImage, vkImageData, Image);
+
+                DescriptorImages.push_back(vk::DescriptorImageInfo(VkImage->Sampler, VkImage->DefaultImageViews.NativeView, vk::ImageLayout::eGeneral));
+                DescriptorWrite.setDescriptorType(vk::DescriptorType::eStorageImage)
+                                   .setPImageInfo(&DescriptorImages[DescriptorImages.size()-1]);
+            }
+            else if(Uniforms[i].Type == uniformType::Texture2d) 
             {
                 image* Image = GetTexture(i);
                 GET_API_DATA(VKImage, vkImageData, Image);
@@ -71,7 +83,20 @@ uniformGroup & uniformGroup::Update()
 
                 DescriptorImages.push_back(vk::DescriptorImageInfo(VKImage->Sampler, VKImage->DefaultImageViews.NativeView, vk::ImageLayout::eShaderReadOnlyOptimal));
                 DescriptorWrite.setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-                                   .setPImageInfo(&DescriptorImages[DescriptorImages.size()-1]);
+                                   .setPImageInfo(&DescriptorImages[DescriptorImages.size()-1]);    
+            }
+            else if(Uniforms[i].Type == uniformType::AccelerationStructure)
+            {
+                accelerationStructure* AccelerationStructure = GetAccelerationStructure(i);
+                GET_API_DATA(VkAccelerationStructure, vkAccelerationStructureData, AccelerationStructure);
+                    // vk::DescriptorImageInfo DescriptorImageInfo(Texture->GetSampler(), Texture->GetNativeView(imageView::NATIVE), vk::ImageLayout::eShaderReadOnlyOptimal);
+
+                DescriptorAccelerationStructures.emplace_back();
+                vk::WriteDescriptorSetAccelerationStructureKHR &AccelerationStructureInfo = DescriptorAccelerationStructures.back();
+                AccelerationStructureInfo.setAccelerationStructureCount(1).setPAccelerationStructures(&VkAccelerationStructure->AccelerationStructure);
+
+                DescriptorWrite.setDescriptorType(vk::DescriptorType::eAccelerationStructureKHR)
+                               .setPNext(&AccelerationStructureInfo);
             }
             else if(Uniforms[i].Type == uniformType::FramebufferRenderTarget)
             {

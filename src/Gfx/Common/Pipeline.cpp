@@ -53,12 +53,13 @@ shaderStateCreation &shaderStateCreation::SetName(const char * Name)
     return *this;
 }
 
-shaderStateCreation &shaderStateCreation::AddStage(const char *Code, const char *FileName, u32 CodeSize, shaderStageFlags::bits Stage)
+shaderStateCreation &shaderStateCreation::AddStage(const char *Code, const char *FileName, u32 CodeSize, shaderStageFlags::bits Stage, int Group)
 {
     Stages[StagesCount].FileName = FileName;   
     Stages[StagesCount].Code = Code;   
     Stages[StagesCount].CodeSize = CodeSize;   
     Stages[StagesCount].Stage = Stage;
+    Stages[StagesCount].Group = Group;
     ++StagesCount;
     return *this;   
 }
@@ -242,12 +243,15 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
             CustomDefines += "#define GL " + std::to_string(GFX_GL) + "\n";
             CustomDefines += "#define D3D11 " + std::to_string(GFX_D3D11) + "\n";
             CustomDefines += "#define D3D12 " + std::to_string(GFX_D3D12) + "\n";
+            
             if(Name == "vertex")
                 CustomDefines += "#define VERTEX\n";
             if(Name == "fragment")
                 CustomDefines += "#define FRAGMENT\n";
             if(Name == "compute")
                 CustomDefines += "#define COMPUTE\n";
+
+            
             if(GFX_API == GFX_VK)
             {
                 CustomDefines += "#define GRAPHICS_API VK\n";
@@ -279,9 +283,38 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
                 PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::Compute);
                 PipelineCreation.IsCompute=true;
             }
+            else if(Name == "rgen")
+            {
+                s32 Group;
+                ShaderStage["group"].get_to(Group);
+                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::RaygenKHR, Group);
+                PipelineCreation.IsRTX=true;
+            }
+            else if(Name == "rmiss")
+            {
+                s32 Group;
+                ShaderStage["group"].get_to(Group);
+                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::MissKHR, Group);
+                PipelineCreation.IsRTX=true;
+            }
+            else if(Name == "rahit")
+            {
+                s32 Group;
+                ShaderStage["group"].get_to(Group);
+                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::AnyHitKHR, Group);
+                PipelineCreation.IsRTX=true;
+            }
+            else if(Name == "rchit")
+            {
+                s32 Group;
+                ShaderStage["group"].get_to(Group);
+                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::ClosestHitKHR, Group);
+                PipelineCreation.IsRTX=true;
+            }
         }
     }
     if(PipelineCreation.IsCompute) return;
+    if(PipelineCreation.IsRTX) return;
     
     //TODO: Refactor that
     json VertexStreams = PipelineJSON["vertex_streams"];
@@ -498,14 +531,17 @@ pipelineHandle context::CreatePipelineFromFile(const char *FileName, framebuffer
     }
     for(u32 i=0; i<PipelineCreations.size(); i++)
     {
-        if(FramebufferHandle == InvalidHandle)
+        if(!PipelineCreations[i].IsCompute && !PipelineCreations[i].IsRTX)
         {
-            PipelineCreations[i].RenderPassHandle = context::Get()->SwapchainRenderPass;
-        }
-        else
-        {
-            framebuffer *Framebuffer = context::Get()->GetFramebuffer(FramebufferHandle);
-            PipelineCreations[i].RenderPassHandle = Framebuffer->RenderPass;
+            if(FramebufferHandle == InvalidHandle)
+            {
+                PipelineCreations[i].RenderPassHandle = context::Get()->SwapchainRenderPass;
+            }
+            else
+            {
+                framebuffer *Framebuffer = context::Get()->GetFramebuffer(FramebufferHandle);
+                PipelineCreations[i].RenderPassHandle = Framebuffer->RenderPass;
+            }
         }
         pipelineHandle pipeline = this->CreatePipeline(PipelineCreations[i]);
         

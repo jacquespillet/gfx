@@ -10,6 +10,7 @@ enum uniformType
 {
     UniformBuffer,
     StorageBuffer,
+    StorageImage,
     Texture2d,
     Float,
     Int,
@@ -23,6 +24,7 @@ enum uniformType
     Vec3ui,
     Vec4ui,
     FramebufferRenderTarget,
+    AccelerationStructure,
 };
 
 struct uniform
@@ -36,6 +38,7 @@ struct uniform
 struct buffer;
 struct image;
 struct framebuffer;
+struct accelerationStructure;
 
 struct uniformGroup
 {
@@ -49,6 +52,8 @@ struct uniformGroup
     uniformGroup &AddUniformBuffer(u32 Binding, bufferHandle Resource);
     uniformGroup &AddStorageBuffer(u32 Binding, bufferHandle Resource);
     uniformGroup &AddTexture(u32 Binding, imageHandle Resource);
+    uniformGroup &AddStorageImage(u32 Binding, imageHandle Resource);
+    uniformGroup &AddAccelerationStructure(u32 Binding, accelerationStructureHandle Resource);
     uniformGroup &AddFramebufferRenderTarget(u32 Binding, framebufferHandle Resource, u32 TargetIndex);
 
     uniformGroup &Update();
@@ -56,6 +61,7 @@ struct uniformGroup
     buffer *GetBuffer(u32 Index);
     image *GetTexture(u32 Index);
     framebuffer *GetFramebuffer(u32 Index);
+    accelerationStructure *GetAccelerationStructure(u32 Index);
 
     void UpdateBuffer(u32 Index, void *Data, u32 Size, u32 Offset);
 

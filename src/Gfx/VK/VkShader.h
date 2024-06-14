@@ -57,7 +57,10 @@ struct vkShaderData
     spirvParseResult SpirvParseResults;
 
     u32 CompiledShaders=0;
-    b8 GraphicsPipeline = false;
+    b8 ComputePipeline = false;
+    b8 RTXPipeline = false;
+
+    std::vector<VkRayTracingShaderGroupCreateInfoKHR> ShaderGroups;
     void Create(const shaderStateCreation &Creation);
 };
 

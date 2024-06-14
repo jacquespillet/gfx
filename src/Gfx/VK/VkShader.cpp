@@ -10,14 +10,21 @@ void vkShaderData::Create(const shaderStateCreation &Creation)
     GET_CONTEXT(VkData, context::Get());
 
     this->SpirvParseResults= {};
-    this->GraphicsPipeline=true;
+    this->ComputePipeline=false;
+    this->RTXPipeline=false;
+    
     CompiledShaders=0;
     for(CompiledShaders = 0; CompiledShaders < Creation.StagesCount; CompiledShaders++)
     {
         const shaderStage &ShaderStage = Creation.Stages[CompiledShaders];
         if(ShaderStage.Stage == shaderStageFlags::Compute)
         {
-            this->GraphicsPipeline=false;
+            this->ComputePipeline=true;
+        }
+
+        if(ShaderStage.Stage == shaderStageFlags::RaygenKHR || ShaderStage.Stage == shaderStageFlags::MissKHR || ShaderStage.Stage == shaderStageFlags::ClosestHitKHR || ShaderStage.Stage == shaderStageFlags::AnyHitKHR)
+        {
+            this->RTXPipeline=true;
         }
 
         vk::ShaderModuleCreateInfo ShaderCreateInfo;
@@ -219,6 +226,8 @@ void ParseSpirv(void* ByteCode, sz ByteCodeSize, spirvParseResult &Results)
             Binding.Type = vk::DescriptorType::eCombinedImageSampler;
         else if(DescriptorBinding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE)
             Binding.Type = vk::DescriptorType::eStorageImage;
+        else if(DescriptorBinding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR)
+            Binding.Type = vk::DescriptorType::eAccelerationStructureKHR;
         
 		AddBindingIfUnique(SetLayout, Binding);
 

@@ -124,6 +124,9 @@ struct resourceManager
     resourcePool Shaders;
     resourcePool RenderPasses;
     resourcePool Framebuffers;
+#if GFX_API == GFX_VK || GFX_API == GFX_D3D12
+    resourcePool AccelerationStructures;
+#endif
 
     std::shared_ptr<void> ApiData;
 };

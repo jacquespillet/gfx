@@ -391,6 +391,42 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
 }
 
 
+void commandBuffer::BindRayTracingPipeline(pipelineHandle PipelineHandle)
+{
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
+
+    pipeline *Pipeline = context::Get()->GetPipeline(PipelineHandle);
+    GET_API_DATA(VkPipeline, vkPipelineData, Pipeline);
+
+    vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
+    CommandBuffer.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, VkPipeline->NativeHandle);
+
+    VkCommandBufferData->BoundPipeline = PipelineHandle;
+}
+
+void commandBuffer::RayTrace(u32 Width, u32 Height, u32 Depth, u32 RayGenIndex, u32 HitIndex, u32 MissIndex)
+{
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
+
+    pipeline *Pipeline = context::Get()->GetPipeline(VkCommandBufferData->BoundPipeline);
+    GET_API_DATA(VkPipeline, vkPipelineData, Pipeline);
+
+    vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
+
+    VkStridedDeviceAddressRegionKHR Callable = {};
+    GET_CONTEXT(VkContext, context::Get());
+    VkContext->_vkCmdTraceRaysKHR(
+        (VkCommandBuffer)CommandBuffer,
+        &VkPipeline->RayGenSBTAddress,
+        &VkPipeline->MissSBTAddress, 
+        &VkPipeline->IsectSBTAddress,
+        &Callable,
+        Width, Height, Depth
+    );
+}   
+
+
+
 
 }
 

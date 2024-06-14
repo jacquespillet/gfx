@@ -1,5 +1,6 @@
 #include "../Include/Context.h"
 #include "../Include/Shader.h"
+#include "../Include/AccelerationStructure.h"
 
 namespace gfx
 {
@@ -38,6 +39,11 @@ framebuffer *context::GetFramebuffer(framebufferHandle Handle)
 {
     return (framebuffer*) this->ResourceManager.Framebuffers.GetResource(Handle);
 }   
+
+accelerationStructure *context::GetAccelerationStructure(accelerationStructureHandle Handle)
+{
+    return (accelerationStructure*) this->ResourceManager.AccelerationStructures.GetResource(Handle);
+}
 
 void context::QueueDestroyBuffer(bufferHandle Buffer)
 {

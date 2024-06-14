@@ -1,5 +1,3 @@
-#define VK 0
-#define GL 1
 CUSTOM_DEFINES
 
 
