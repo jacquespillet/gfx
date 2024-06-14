@@ -53,13 +53,12 @@ shaderStateCreation &shaderStateCreation::SetName(const char * Name)
     return *this;
 }
 
-shaderStateCreation &shaderStateCreation::AddStage(const char *Code, const char *FileName, u32 CodeSize, shaderStageFlags::bits Stage, int Group)
+shaderStateCreation &shaderStateCreation::AddStage(const char *Code, const char *FileName, u32 CodeSize, shaderStageFlags::bits Stage)
 {
     Stages[StagesCount].FileName = FileName;   
     Stages[StagesCount].Code = Code;   
     Stages[StagesCount].CodeSize = CodeSize;   
     Stages[StagesCount].Stage = Stage;
-    Stages[StagesCount].Group = Group;
     ++StagesCount;
     return *this;   
 }
@@ -285,31 +284,52 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
             }
             else if(Name == "rgen")
             {
-                s32 Group;
-                ShaderStage["group"].get_to(Group);
-                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::RaygenKHR, Group);
+                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::RaygenKHR);
                 PipelineCreation.IsRTX=true;
             }
             else if(Name == "rmiss")
             {
-                s32 Group;
-                ShaderStage["group"].get_to(Group);
-                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::MissKHR, Group);
+                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::MissKHR);
                 PipelineCreation.IsRTX=true;
             }
             else if(Name == "rahit")
             {
-                s32 Group;
-                ShaderStage["group"].get_to(Group);
-                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::AnyHitKHR, Group);
+                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::AnyHitKHR);
                 PipelineCreation.IsRTX=true;
             }
             else if(Name == "rchit")
             {
-                s32 Group;
-                ShaderStage["group"].get_to(Group);
-                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::ClosestHitKHR, Group);
+                PipelineCreation.Shaders.AddStage(CodeCStr, FileNameCStr, (u32)strlen(CodeCStr), shaderStageFlags::bits::ClosestHitKHR);
                 PipelineCreation.IsRTX=true;
+            }
+        }
+
+        if(PipelineCreation.IsRTX)
+        {
+            json HitGroups = PipelineJSON["hitGroups"];
+            if(HitGroups.is_array())
+            {
+                PipelineCreation.HitGroups.resize(HitGroups.size());
+                for(sz i=0; i<HitGroups.size(); i++)
+                {
+                    json HitGroup = HitGroups[i];
+                    std::string Name;
+                    HitGroup["name"].get_to(Name);
+
+                    json HitGroupShaders = HitGroup["shaders"];
+                    if(!HitGroupShaders["rahit"].is_null())
+                    {
+                        HitGroupShaders["rahit"].get_to(PipelineCreation.HitGroups[i].AnyHitInx);
+                    }
+                    if(!HitGroupShaders["rchit"].is_null())
+                    {
+                        HitGroupShaders["rchit"].get_to(PipelineCreation.HitGroups[i].ClosestHitInx);
+                    }
+                    if(!HitGroupShaders["risect"].is_null())
+                    {
+                        HitGroupShaders["risect"].get_to(PipelineCreation.HitGroups[i].IsectInx);
+                    }
+                }
             }
         }
     }
@@ -489,6 +509,7 @@ pipelineHandle context::CreatePipelineFromFile(const char *FileName, framebuffer
     std::vector<pipelineCreation> PipelineCreations;
 
     json Name = Data["name"];
+    
     std::string NameString;
     if(Name.is_string())
     {

@@ -20,7 +20,7 @@ void main()
     vec3 Radiance = vec3(0,0,0);
     // uint  flags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
     uint  flags = gl_RayFlagsOpaqueEXT;
-    traceRayEXT(topLevelAS, flags, 0xff, 0, 0, 0, Origin.xyz, 0.001, Direction.xyz, 10000.0, 0);					    
+    traceRayEXT(topLevelAS, flags, 0xff, 1, 2, 0, Origin.xyz, 0.001, Direction.xyz, 10000.0, 0);					    
     Radiance = hitValue;
     // Radiance = vec3(inUV,0/);
 

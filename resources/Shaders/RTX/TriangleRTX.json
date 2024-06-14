@@ -7,27 +7,49 @@
 				{
 					"language": "GLSL",
 					"stage" : "rgen",
-					"shader" : "raygen.rgen.glsl",
-					"group" : 0
+					"shader" : "raygen.rgen.glsl"
 				},
 				{
 					"language": "GLSL",
 					"stage" : "rmiss",
-					"shader" : "miss.rmiss.glsl",
-					"group" : 1
+					"shader" : "miss.rmiss.glsl"
 				},
 				{
 					"language": "GLSL",
 					"stage" : "rchit",
-					"shader" : "closestHit.rchit.glsl",
-					"group" : 2
+					"shader" : "closestHit.rchit.glsl"
+				},
+				{
+					"language": "GLSL",
+					"stage" : "rchit",
+					"shader" : "closestHitRed.rchit.glsl"
 				},
 				{
 					"language": "GLSL",
 					"stage" : "rahit",
-					"shader" : "anyHit.rahit.glsl",
-					"group" : 2
+					"shader" : "anyHit.rahit.glsl"
+				},
+				{
+					"language": "GLSL",
+					"stage" : "rmiss",
+					"shader" : "missRed.rmiss.glsl"
 				}
+			],
+			"hitGroups" : [ 
+				{
+					"name" : "Group0",
+					"shaders" : {
+						"rchit" : 2,
+						"rahit" : 4
+					}
+				},
+				{
+					"name" : "Group1",
+					"shaders" : {
+						"rchit" : 3,
+						"rahit" : 4
+					}
+				}				
 			]
 		}
 	]

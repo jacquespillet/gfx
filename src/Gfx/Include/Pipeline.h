@@ -109,7 +109,6 @@ struct shaderStage
     const char *FileName = nullptr;
     const char *Code = nullptr;
     u32 CodeSize = 0;
-    s32 Group= -1;
     shaderStageFlags::bits Stage = shaderStageFlags::All;
 };
 
@@ -121,7 +120,7 @@ struct shaderStateCreation
     u32 SpvInput=0;
     shaderStateCreation &Reset();
     shaderStateCreation &SetName(const char *);
-    shaderStateCreation &AddStage(const char *Code, const char *FileName, u32 CodeSize, shaderStageFlags::bits Stage, int Group=-1);
+    shaderStateCreation &AddStage(const char *Code, const char *FileName, u32 CodeSize, shaderStageFlags::bits Stage);
     shaderStateCreation &AddStage(const char *FileName, shaderStageFlags::bits Stage);
 };
 
@@ -180,6 +179,13 @@ struct rasterizationCreation
     fillMode Fill = fillMode::Solid;
 };
 
+struct hitGroup
+{
+    int AnyHitInx=-1;
+    int ClosestHitInx=-1;
+    int IsectInx=-1;
+};
+
 struct pipelineCreation
 {
     vertexInputCreation VertexInput;
@@ -188,6 +194,8 @@ struct pipelineCreation
     shaderStateCreation Shaders;
     blendStateCreation BlendState;
     rasterizationCreation Rasterization;
+
+    std::vector<hitGroup> HitGroups;
 
     b8 IsCompute = false;
     b8 IsRTX=false;

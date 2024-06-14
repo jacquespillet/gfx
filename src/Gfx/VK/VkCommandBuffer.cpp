@@ -417,12 +417,25 @@ void commandBuffer::RayTrace(u32 Width, u32 Height, u32 Depth, u32 RayGenIndex, 
     GET_CONTEXT(VkContext, context::Get());
     VkContext->_vkCmdTraceRaysKHR(
         (VkCommandBuffer)CommandBuffer,
-        &VkPipeline->RayGenSBTAddress,
-        &VkPipeline->MissSBTAddress, 
-        &VkPipeline->IsectSBTAddress,
+        &VkPipeline->RayGenSBTAddress, //Start address for the raygen
+        &VkPipeline->MissSBTAddress,  //Start address for the set of miss sahders
+        &VkPipeline->IsectSBTAddress, //Start address for the set of hit groups
         &Callable,
         Width, Height, Depth
     );
+
+    // The sbt will basically contain : 
+    // The raygen
+    // Hitgroup0
+    // Hitgroup1
+    // Hitgroup2
+    // Miss0
+    // Miss1
+
+    // Then in traceRaysKHR, we pass the start of raygen, the start of HitGroup, and the start of miss
+
+    // THen in traceRayExt(), we set an offset and a miss shader.
+
 }   
 
 

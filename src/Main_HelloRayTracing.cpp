@@ -10,6 +10,7 @@
 #include <iostream>
 #include "Gfx/Api.h"  
 #include "App/App.h"
+#include <glm/gtc/matrix_transform.hpp>
 
 
 void WindowErrorCallback(const std::string &errorMessage)
@@ -147,9 +148,15 @@ struct application
 		BLAS = GfxContext->CreateBLAccelerationStructure(3, 3 * sizeof(float), gfx::format::R32G32B32_SFLOAT, VertexBuffer->VertexStreams[0].Buffer);
 		
 		// // Create TLAS
-		std::vector<glm::mat4> Transforms = {glm::mat4(1)};
+		
+		std::vector<glm::mat4> Transforms = {
+			glm::mat4(1),
+			glm::translate(glm::mat4(1.0f), glm::vec3(-0.5f, 0.0f, 0.0f)),
+			glm::translate(glm::mat4(1.0f), glm::vec3( 0.5f, 0.0f, 0.0f)),
+			};
 		std::vector<gfx::accelerationStructureHandle> AccelerationStructures = {BLAS};
-		std::vector<int> Instances = {0};
+		std::vector<int> Instances = {0, 0, 0}; 
+
 		TLAS = GfxContext->CreateTLAccelerationStructure(Transforms, AccelerationStructures, Instances);
 		
 		PipelineHandleRTX = GfxContext->CreatePipelineFromFile("resources/Shaders/RTX/TriangleRTX.json");

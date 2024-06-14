@@ -319,12 +319,11 @@ void vkPipelineData::Create(const pipelineCreation &PipelineCreation)
     }
     else if(ShaderStateData->RTXPipeline)
     {
+#if 0
         // For each group
         int RayGenGroup=-1;
         int MissGroup=-1;
         int IsectGroup=-1;
-#if 1
-
         // Gathers all the shaders of the same group in a same vector
         std::unordered_map<int, std::vector<int>> GroupMapping = {};
         for(int i=0; i<PipelineCreation.Shaders.StagesCount; i++)
@@ -460,74 +459,135 @@ void vkPipelineData::Create(const pipelineCreation &PipelineCreation)
         }
 
 #else
-        // Create the shader groups
+        // create Hit Groups
+        VkRayTracingShaderGroupCreateInfoKHR RayGenGroup;
+        std::vector<VkRayTracingShaderGroupCreateInfoKHR> HitGroups;
+        std::vector<VkRayTracingShaderGroupCreateInfoKHR> MissGroups;
+
+        int RayGenIndex = -1;
+        std::vector<int> MissIndices;
+        for(int i=0; i<PipelineCreation.Shaders.StagesCount; i++)
+        {
+
+            if(PipelineCreation.Shaders.Stages[i].Stage == shaderStageFlags::RaygenKHR)
+            {
+                RayGenGroup = {VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR};
+                RayGenGroup.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+                RayGenGroup.closestHitShader = VK_SHADER_UNUSED_KHR;
+                RayGenGroup.anyHitShader = VK_SHADER_UNUSED_KHR;
+                RayGenGroup.intersectionShader = VK_SHADER_UNUSED_KHR;   
+                RayGenGroup.generalShader = i;
+                RayGenIndex = i;
+            }
+            
+            if(PipelineCreation.Shaders.Stages[i].Stage == shaderStageFlags::MissKHR)
+            {
+                VkRayTracingShaderGroupCreateInfoKHR MissGroup = {VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR};
+                MissGroup.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+                MissGroup.closestHitShader = VK_SHADER_UNUSED_KHR;
+                MissGroup.anyHitShader = VK_SHADER_UNUSED_KHR;
+                MissGroup.intersectionShader = VK_SHADER_UNUSED_KHR;   
+                MissGroup.generalShader = i;
+                MissGroups.push_back(MissGroup);
+                MissIndices.push_back(i);
+            }
+        }
+        for(int i=0; i<PipelineCreation.HitGroups.size(); i++)
+        {
+            VkRayTracingShaderGroupCreateInfoKHR HitGroup = {VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR};
+            HitGroup.type = PipelineCreation.HitGroups[i].IsectInx >= 0 ? VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR : VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
+            HitGroup.closestHitShader = PipelineCreation.HitGroups[i].ClosestHitInx >=0 ? PipelineCreation.HitGroups[i].ClosestHitInx : VK_SHADER_UNUSED_KHR;
+            HitGroup.anyHitShader = PipelineCreation.HitGroups[i].AnyHitInx >=0 ? PipelineCreation.HitGroups[i].AnyHitInx : VK_SHADER_UNUSED_KHR;
+            HitGroup.intersectionShader = PipelineCreation.HitGroups[i].IsectInx >=0 ? PipelineCreation.HitGroups[i].IsectInx : VK_SHADER_UNUSED_KHR;
+            HitGroup.generalShader = VK_SHADER_UNUSED_KHR;
+            HitGroups.push_back(HitGroup);   
+        }
+
+        u32 TotalGroupCount = 1 + HitGroups.size() + MissGroups.size();
+        VkShaderData->ShaderGroups.reserve(TotalGroupCount);
+        VkShaderData->ShaderGroups.push_back(RayGenGroup);
+        for(s32 i=0; i<HitGroups.size(); i++)
+        {
+            VkShaderData->ShaderGroups.push_back(HitGroups[i]); 
+        }
+        for(s32 i=0; i<MissGroups.size(); i++)
+        {
+            VkShaderData->ShaderGroups.push_back(MissGroups[i]); 
+        }
+
+        VkRayTracingPipelineCreateInfoKHR RayTracingPipelineCreateInfo = {VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR};
+        RayTracingPipelineCreateInfo.stageCount= PipelineCreation.Shaders.StagesCount;
+        RayTracingPipelineCreateInfo.pStages = (VkPipelineShaderStageCreateInfo*)VkShaderData->ShaderStageCreateInfo;
+        RayTracingPipelineCreateInfo.groupCount = TotalGroupCount;
+        RayTracingPipelineCreateInfo.pGroups = VkShaderData->ShaderGroups.data();
+        RayTracingPipelineCreateInfo.maxPipelineRayRecursionDepth=2;
+        RayTracingPipelineCreateInfo.layout = PipelineLayout;
+        VK_CALL(VkData->_vkCreateRayTracingPipelinesKHR((VkDevice)VkData->Device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &RayTracingPipelineCreateInfo, nullptr, (VkPipeline*)&this->NativeHandle));
+        this->BindPoint = vk::PipelineBindPoint::eRayTracingKHR;
+
+
+        u32 TotalShaders = PipelineCreation.Shaders.StagesCount;
+        u32 HandleSize = VkData->RayTracingPipelineProperties.shaderGroupHandleSize;
+        u32 HandleSizeAligned = AlignedSize(HandleSize, VkData->RayTracingPipelineProperties.shaderGroupHandleAlignment);
+
+        // Get the shader group handles
+        u32 DataSize = TotalGroupCount * HandleSize;
+        std::vector<uint8_t> ShaderHandleStorage(DataSize);
+        VK_CALL(VkData->_vkGetRayTracingShaderGroupHandlesKHR((VkDevice)VkData->Device, (VkPipeline)this->NativeHandle, 0, TotalGroupCount, DataSize, ShaderHandleStorage.data()));
+
+        u64 RayGenSize = AlignedSize(HandleSizeAligned, VkData->RayTracingPipelineProperties.shaderGroupBaseAlignment);
+        u64 MissSize = AlignedSize(HandleSizeAligned * MissGroups.size(), VkData->RayTracingPipelineProperties.shaderGroupBaseAlignment);
+        u64 IsectSize = AlignedSize(HandleSizeAligned * HitGroups.size(), VkData->RayTracingPipelineProperties.shaderGroupBaseAlignment);
+        u64 CallableSize = 0;
+
+        u64 SBTSize = RayGenSize + MissSize + IsectSize + CallableSize;
         
-        // Raygen
-        {
-            VkRayTracingShaderGroupCreateInfoKHR ShaderGroup {VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR};
-            ShaderGroup.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-            ShaderGroup.generalShader = 0;
-            ShaderGroup.closestHitShader = VK_SHADER_UNUSED_KHR;
-            ShaderGroup.anyHitShader = VK_SHADER_UNUSED_KHR;
-            ShaderGroup.intersectionShader = VK_SHADER_UNUSED_KHR;
-            VkShaderData->ShaderGroups.push_back(ShaderGroup);
-        }
+        SBT = Context->CreateBuffer(SBTSize, bufferUsage::ShaderBindingTable | bufferUsage::TransferSource | bufferUsage::ShaderDeviceAddress, memoryUsage::CpuToGpu);
+                    
+        u64 BaseAddress = VkData->GetBufferDeviceAddress(SBT);
+
+        auto GetHandle = [&](int i) { return ShaderHandleStorage.data() + i * HandleSize; };
         
-        // Miss
-        {
-            VkRayTracingShaderGroupCreateInfoKHR ShaderGroup {VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR};
-            ShaderGroup.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-            ShaderGroup.generalShader = 1;
-            ShaderGroup.closestHitShader = VK_SHADER_UNUSED_KHR;
-            ShaderGroup.anyHitShader = VK_SHADER_UNUSED_KHR;
-            ShaderGroup.intersectionShader = VK_SHADER_UNUSED_KHR;
-            VkShaderData->ShaderGroups.push_back(ShaderGroup);
-        }
+        int CurrentInx=0;
+        u64 Offset = 0;
+
+        // Ray gen at the start of the SBT
+        RayGenSBTAddress.deviceAddress = BaseAddress;
+        RayGenSBTAddress.stride = RayGenSize;
+        RayGenSBTAddress.size = RayGenSBTAddress.stride; // THat's because there can only be 1 raygen shader.
+        BaseAddress += RayGenSBTAddress.size;
+        Context->CopyDataToBuffer(SBT, GetHandle(CurrentInx), HandleSize, Offset);
+        CurrentInx++;
+        Offset += RayGenSBTAddress.size;
         
-        // Hit
-        {
-            VkRayTracingShaderGroupCreateInfoKHR ShaderGroup {VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR};
-            ShaderGroup.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
-            ShaderGroup.generalShader = VK_SHADER_UNUSED_KHR;
-            ShaderGroup.closestHitShader = 2;
-            ShaderGroup.intersectionShader = VK_SHADER_UNUSED_KHR;
-            ShaderGroup.anyHitShader = 3;
-            VkShaderData->ShaderGroups.push_back(ShaderGroup);        
-        }
+        
+        IsectSBTAddress.deviceAddress = BaseAddress;
+        IsectSBTAddress.stride = HandleSizeAligned;
+        IsectSBTAddress.size = IsectSize;
+        BaseAddress += IsectSBTAddress.size;
+        Context->CopyDataToBuffer(SBT, GetHandle(CurrentInx), IsectSize, Offset);
+        CurrentInx += HitGroups.size();
+        Offset += IsectSBTAddress.size;
+        
+        
+        MissSBTAddress.deviceAddress = BaseAddress;
+        MissSBTAddress.stride = HandleSizeAligned;
+        MissSBTAddress.size = MissSize;
+        BaseAddress += MissSBTAddress.size;
+        Context->CopyDataToBuffer(SBT, GetHandle(CurrentInx), MissSize, Offset);
+        CurrentInx += MissGroups.size();
+        Offset += MissSBTAddress.size;
+        
 
-        RayGenGroup = 0;
-        MissGroup = 1;
-        IsectGroup = 2;
 
-        if(RayGenGroup != -1 && IsectGroup != -1 && MissGroup != -1)
-        {
-            VkRayTracingPipelineCreateInfoKHR RayTracingPipelineCreateInfo = {VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR};
-            RayTracingPipelineCreateInfo.stageCount= PipelineCreation.Shaders.StagesCount;
-            RayTracingPipelineCreateInfo.pStages = (VkPipelineShaderStageCreateInfo*)VkShaderData->ShaderStageCreateInfo;
-            RayTracingPipelineCreateInfo.groupCount = static_cast<uint32_t>(VkShaderData->ShaderGroups.size());
-            RayTracingPipelineCreateInfo.pGroups = VkShaderData->ShaderGroups.data();
-            RayTracingPipelineCreateInfo.maxPipelineRayRecursionDepth=2;
-            RayTracingPipelineCreateInfo.layout = PipelineLayout;
-            VK_CALL(VkData->_vkCreateRayTracingPipelinesKHR((VkDevice)VkData->Device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &RayTracingPipelineCreateInfo, nullptr, (VkPipeline*)&this->NativeHandle));
-            this->BindPoint = vk::PipelineBindPoint::eRayTracingKHR;
+        // TODO
+        CallableSBTAddress.deviceAddress = 0;
+        CallableSBTAddress.stride = 0;
+        CallableSBTAddress.size = 0;
 
-            const uint32_t HandleSize = VkData->RayTracingPipelineProperties.shaderGroupHandleSize;
-            const uint32_t HandleSizeAligned = AlignedSize(VkData->RayTracingPipelineProperties.shaderGroupHandleSize, VkData->RayTracingPipelineProperties.shaderGroupHandleAlignment);
-            const uint32_t GroupCount = static_cast<uint32_t>(VkShaderData->ShaderGroups.size());
-            const uint32_t SBTSize = GroupCount * HandleSizeAligned;       
+        // Build SBT
 
-            std::vector<uint8_t> ShaderHandleStorage(SBTSize);
-            VK_CALL(VkData->_vkGetRayTracingShaderGroupHandlesKHR((VkDevice)VkData->Device, (VkPipeline)this->NativeHandle, 0, GroupCount, SBTSize, ShaderHandleStorage.data()));
-
-            ShaderBindingTables.Raygen.Create(1, ShaderHandleStorage.data(), HandleSize);
-            ShaderBindingTables.Miss.Create(1, ShaderHandleStorage.data() + HandleSizeAligned, HandleSize);
-            ShaderBindingTables.Hit.Create(1, ShaderHandleStorage.data() + HandleSizeAligned*2, HandleSize);
-
-            // memcpy(ShaderBindingTables.Raygen.VulkanObjects.Mapped, ShaderHandleStorage.data(), HandleSize);
-            // memcpy(ShaderBindingTables.Miss.VulkanObjects.Mapped, ShaderHandleStorage.data() + HandleSizeAligned, HandleSize);
-            // memcpy(ShaderBindingTables.Hit.VulkanObjects.Mapped, ShaderHandleStorage.data() + HandleSizeAligned*3, HandleSize);           
-        }
-       
+        
 #endif
        
     }
