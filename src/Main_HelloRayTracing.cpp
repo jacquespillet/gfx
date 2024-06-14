@@ -112,39 +112,13 @@ struct application
 								.AddVertexStream(VertexStream1);
 			QuadVertexBufferHandle = GfxContext->CreateVertexBuffer(VertexBufferCreateInfo);
 		}		
-
+ 
 		SwapchainPass = GfxContext->GetDefaultRenderPass();
 
+		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/RTX/Quad.json");
+		
 		// RTX
 
-		// Create BLAS
-		gfx::vertexBuffer *VertexBuffer = GfxContext->GetVertexBuffer(TriangleVertexBufferHandle);
-		// Arguments are : (Number of vertices), (Stride), (Format of the vertex position), (Buffer Handle of the vertex buffer).
-		// Optional arguments for indexed geometry : (IndexType), (Num Triangles), (Index Buffer Handle), (Offset of the position in the vertex struct)
-		BLAS = GfxContext->CreateBLAccelerationStructure(3, 7 * sizeof(float), gfx::format::R32G32B32_SFLOAT, VertexBuffer->VertexStreams[0].Buffer);
-		
-		// Create TLAS
-		std::vector<glm::mat4> Transforms = {glm::mat4(1)};
-		std::vector<gfx::accelerationStructureHandle> AccelerationStructures = {BLAS};
-		std::vector<int> Instances = {0};
-		TLAS = GfxContext->CreateTLAccelerationStructure(Transforms, AccelerationStructures, Instances);
-		
-		PipelineHandleRTX = GfxContext->CreatePipelineFromFile("resources/Shaders/RTX/TriangleRTX.json");
-
-
-		OutputImage = GfxContext->CreateImage(Width, Height, gfx::format::R8G8B8A8_UNORM, gfx::imageUsage::STORAGE, gfx::memoryUsage::GpuOnly, nullptr);		
-
-		UniformsRTX = std::make_shared<gfx::uniformGroup>();
-		UniformsRTX->Reset()
-				.AddAccelerationStructure(0, TLAS)
-				.AddStorageImage(1, OutputImage); 
-		 
-		//Tell the context that we'll be using this uniformsRTX with this pipeline at binding 0
-		//It's possible to bind a uniform group to multiple pipelines.
-		GfxContext->BindUniformsToPipeline(UniformsRTX, PipelineHandleRTX, 0);
-		UniformsRTX->Update();		
-
-		PipelineHandleSwapchain = GfxContext->CreatePipelineFromFile("resources/Shaders/RTX/Quad.json");
 
 		{
 			float TriangleVertices[] =
@@ -166,14 +140,39 @@ struct application
 			TriangleVertexBufferHandle = GfxContext->CreateVertexBuffer(VertexBufferCreateInfo);
 		}		
 
+		// Create BLAS
+		gfx::vertexBuffer *VertexBuffer = GfxContext->GetVertexBuffer(TriangleVertexBufferHandle);
+		// Arguments are : (Number of vertices), (Stride), (Format of the vertex position), (Buffer Handle of the vertex buffer).
+		// Optional arguments for indexed geometry : (IndexType), (Num Triangles), (Index Buffer Handle), (Offset of the position in the vertex struct)
+		BLAS = GfxContext->CreateBLAccelerationStructure(3, 3 * sizeof(float), gfx::format::R32G32B32_SFLOAT, VertexBuffer->VertexStreams[0].Buffer);
+		
+		// // Create TLAS
+		std::vector<glm::mat4> Transforms = {glm::mat4(1)};
+		std::vector<gfx::accelerationStructureHandle> AccelerationStructures = {BLAS};
+		std::vector<int> Instances = {0};
+		TLAS = GfxContext->CreateTLAccelerationStructure(Transforms, AccelerationStructures, Instances);
+		
+		PipelineHandleRTX = GfxContext->CreatePipelineFromFile("resources/Shaders/RTX/TriangleRTX.json");
+
+
+		OutputImage = GfxContext->CreateImage(Width, Height, gfx::format::R8G8B8A8_UNORM, gfx::imageUsage::STORAGE, gfx::memoryUsage::GpuOnly, nullptr);		
+
+		UniformsRTX = std::make_shared<gfx::uniformGroup>();
+		UniformsRTX->Reset()
+				.AddAccelerationStructure(0, TLAS)
+				.AddStorageImage(1, OutputImage); 
+		 
+		//Tell the context that we'll be using this uniformsRTX with this pipeline at binding 0
+		//It's possible to bind a uniform group to multiple pipelines.
+		GfxContext->BindUniformsToPipeline(UniformsRTX, PipelineHandleRTX, 0);
+		UniformsRTX->Update();		
+
 
 		//That's the content of a descriptor set
 		QuadUniforms = std::make_shared<gfx::uniformGroup>();
 		QuadUniforms->Reset()
 				.AddStorageImage(0, OutputImage);
 		
-		//Tell the context that we'll be using this uniforms with this pipeline at binding 0
-		//It's possible to bind a uniform group to multiple pipelines.
 		GfxContext->BindUniformsToPipeline(QuadUniforms, PipelineHandleSwapchain, 0);
 		QuadUniforms->Update();
 		
@@ -197,7 +196,11 @@ struct application
 	{
 		GfxContext->DestroyPipeline(PipelineHandleSwapchain);
 		GfxContext->DestroyVertexBuffer(QuadVertexBufferHandle);
-		GfxContext->DestroyVertexBuffer(QuadVertexBufferHandle);
+		GfxContext->DestroyVertexBuffer(TriangleVertexBufferHandle);
+		
+		GfxContext->DestroyAccelerationStructure(BLAS);
+		GfxContext->DestroyAccelerationStructure(TLAS);
+		GfxContext->DestroyPipeline(PipelineHandleRTX);
 		GfxContext->DestroyImage(OutputImage);
 
 	}
@@ -222,8 +225,6 @@ struct application
 			CommandBuffer->BindUniformGroup(UniformsRTX, 0);
 
 			CommandBuffer->RayTrace(Width, Height, 1, 0, 1, 2);
-			
-			gfx::image *Image = GfxContext->GetImage(OutputImage);
 
 			CommandBuffer->BeginPass(GfxContext->GetSwapchainFramebuffer(), {0.5f, 0.0f, 0.8f, 1.0f}, {1.0f, 0});
 			CommandBuffer->SetViewport(0.0f, 0.0f, (float)Width, (float)Height);

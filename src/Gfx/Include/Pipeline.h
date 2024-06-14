@@ -219,6 +219,8 @@ struct pipeline
     framebufferHandle Framebuffer;
 
     std::shared_ptr<void> ApiData;
+    b8 IsRTX=false;
+
 };
 
 

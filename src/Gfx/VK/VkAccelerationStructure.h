@@ -18,6 +18,8 @@ struct vkAccelerationStructureData
     bufferHandle InstancesBuffer;
     bufferHandle TransformMatricesBuffer;
 
+    bool IsTLAS = false;
+
     void CreateAS(vk::AccelerationStructureBuildSizesInfoKHR Size, vk::AccelerationStructureTypeKHR Type);
     void DestroyAS();
         

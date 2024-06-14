@@ -92,6 +92,7 @@ struct vkData
     PFN_vkCmdBuildAccelerationStructuresKHR _vkCmdBuildAccelerationStructuresKHR;
     PFN_vkGetRayTracingShaderGroupHandlesKHR _vkGetRayTracingShaderGroupHandlesKHR;
     PFN_vkCmdTraceRaysKHR _vkCmdTraceRaysKHR;
+    PFN_vkDestroyAccelerationStructureKHR _vkDestroyAccelerationStructureKHR;
 };
 
 stageBuffer CreateVkStageBuffer(sz Size);

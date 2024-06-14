@@ -35,6 +35,8 @@ void vkAccelerationStructureData::CreateAS(vk::AccelerationStructureBuildSizesIn
 
 void vkAccelerationStructureData::InitBLAS(uint32_t NumVertices, uint32_t Stride, gfx::format Format, bufferHandle VertexBufferHandle, gfx::indexType IndexType, uint32_t NumTriangles, bufferHandle IndexBufferHandle, uint32_t PositionOffset)
 {
+    IsTLAS = false;
+    
     gfx::context *Context = context::Get();
     GET_CONTEXT(VkContext, Context);
 
@@ -135,6 +137,7 @@ void vkAccelerationStructureData::InitBLAS(uint32_t NumVertices, uint32_t Stride
 
 void vkAccelerationStructureData::InitTLAS(std::vector<glm::mat4> &Transforms, std::vector<accelerationStructureHandle> &AccelerationStructures, std::vector<int> Instances)
 {
+    IsTLAS = true;
     gfx::context *Context = context::Get();
     GET_CONTEXT(VkContext, Context);
 

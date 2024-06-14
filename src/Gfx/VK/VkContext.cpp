@@ -563,6 +563,7 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
         VkData->_vkCmdBuildAccelerationStructuresKHR = (PFN_vkCmdBuildAccelerationStructuresKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkCmdBuildAccelerationStructuresKHR") ;       
         VkData->_vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkGetRayTracingShaderGroupHandlesKHR") ;       
         VkData->_vkCmdTraceRaysKHR = (PFN_vkCmdTraceRaysKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkCmdTraceRaysKHR") ;       
+        VkData->_vkDestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkDestroyAccelerationStructureKHR") ;       
     }
 
 
@@ -1058,6 +1059,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 {
     GET_CONTEXT(VkData, this);
 
+    
     pipelineHandle Handle = ResourceManager.Pipelines.ObtainResource();
     if(Handle == InvalidHandle)
     {
@@ -1066,6 +1068,8 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
     pipeline *Pipeline = GetPipeline(Handle);
     Pipeline->ApiData = std::make_shared<vkPipelineData>();
     GET_API_DATA(VkPipelineData, vkPipelineData, Pipeline);
+
+    Pipeline->IsRTX = PipelineCreation.IsRTX;
 
     //Create shader state
     VkPipelineData->ShaderState = this->ResourceManager.Shaders.ObtainResource();
@@ -1297,6 +1301,11 @@ void context::DestroyPipeline(pipelineHandle PipelineHandle)
         DeallocateMemory(VkPipelineData->DescriptorSetLayouts[i]->Bindings);
     }
 
+    if(Pipeline->IsRTX)
+    {
+        DestroyBuffer(VkPipelineData->SBT);
+    }
+
 
 }
 
@@ -1311,6 +1320,27 @@ void context::DestroyBuffer(bufferHandle BufferHandle)
     vmaDestroyBuffer(VkData->Allocator, VkBufferData->Handle, VkBufferData->Allocation);
     ResourceManager.Buffers.ReleaseResource(BufferHandle);
 }
+
+void context::DestroyAccelerationStructure(accelerationStructureHandle AccelerationStructureHandle)
+{
+    GET_CONTEXT(VkData, this);
+    accelerationStructure *AccelerationStructure = GetAccelerationStructure(AccelerationStructureHandle);
+    GET_API_DATA(VkAccelerationStructureData, vkAccelerationStructureData, AccelerationStructure);
+
+    VkData->_vkDestroyAccelerationStructureKHR((VkDevice)VkData->Device, VkAccelerationStructureData->AccelerationStructure, nullptr);
+    DestroyBuffer(VkAccelerationStructureData->BufferHandle);
+
+    if(VkAccelerationStructureData->IsTLAS)
+    {
+        DestroyBuffer(VkAccelerationStructureData->InstancesBuffer);
+        DestroyBuffer(VkAccelerationStructureData->TransformMatricesBuffer);
+    }
+    
+
+
+    ResourceManager.AccelerationStructures.ReleaseResource(AccelerationStructureHandle);
+}
+
 
 void context::DestroyVertexBuffer(bufferHandle VertexBufferHandle)
 {

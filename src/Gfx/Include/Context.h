@@ -114,6 +114,7 @@ struct context
 
 
     void DestroyCommandBuffer(commandBuffer* Handle);
+    void DestroyAccelerationStructure(accelerationStructureHandle Handle);
     void DestroySwapchain(swapchain *Swapchain);
     void DestroyPipeline(pipelineHandle Pipeline);
     void DestroyFramebuffer(framebufferHandle Framebuffer);
