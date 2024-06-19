@@ -100,7 +100,7 @@ std::shared_ptr<texture> texture::Deserialize(std::string FilePath)
     gfx::imageCreateInfo ImageCreateInfo = 
     {
         {0.0f,0.0f,0.0f,0.0f},
-        gfx::samplerFilter::Linear,
+        gfx::samplerFilter::LinearMipmapLinear,
         gfx::samplerFilter::Linear,
         gfx::samplerWrapMode::Repeat,
         gfx::samplerWrapMode::Repeat,

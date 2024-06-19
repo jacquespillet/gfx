@@ -615,13 +615,12 @@ void context::NewProject()
 void context::Render(std::shared_ptr<camera> Camera)
 {
     Frame++;
-    this->CurrentCamera = Camera;
 
+    this->CurrentCamera = Camera;
     Camera->Controls->OnUpdate();
     
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = GfxContext->GetCurrentFrameCommandBuffer();    
     
-
     //Render shadow maps
     for(u32 i=0; i<Scene->SceneBufferData.LightCount; i++)
     {
@@ -723,6 +722,8 @@ void context::Cleanup()
     }
     
     this->Scene = nullptr;
+
+    CurrentCamera = nullptr;
 
     GfxContext->QueueDestroyImage(ShadowMaps);
 

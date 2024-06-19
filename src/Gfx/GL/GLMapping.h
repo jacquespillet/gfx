@@ -25,7 +25,8 @@ GLenum FormatToType(format Format);
 GLenum TypeToNative(type Type);
 
 GLenum SamplerWrapToNative(samplerWrapMode Mode);
-GLenum SamplerFilterToNative(samplerFilter Filter);
+GLenum SamplerMinFilterToNative(samplerFilter Filter);
+GLenum SamplerMagFilterToNative(samplerFilter Filter);
 
 glStencilOperation StencilStateToNative(stencilOperationState Op);
 GLenum CompareOpToNative(compareOperation Op);

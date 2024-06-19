@@ -537,7 +537,7 @@ GLenum SamplerWrapToNative(samplerWrapMode Mode)
 }
 
 
-static GLenum SamplerFilterTable[] = 
+static GLenum SamplerMinFilterTable[] = 
 {
     GL_NEAREST,//Nearest,
     GL_LINEAR,//Linear,
@@ -546,9 +546,24 @@ static GLenum SamplerFilterTable[] =
     GL_NEAREST_MIPMAP_NEAREST,//NearestMipmapLinear,
     GL_LINEAR_MIPMAP_LINEAR,//LinearMipmapLinear
 };
-GLenum SamplerFilterToNative(samplerFilter Filter)
+GLenum SamplerMinFilterToNative(samplerFilter Filter)
 {
-    return SamplerFilterTable[(sz)Filter];
+    return SamplerMinFilterTable[(sz)Filter];
+}
+
+
+static GLenum SamplerMagFilterTable[] = 
+{
+    GL_NEAREST,//Nearest,
+    GL_LINEAR,//Linear,
+    GL_NEAREST,//NearestMipmapNearest,
+    GL_NEAREST,//LinearMipmapNearest,
+    GL_LINEAR,//NearestMipmapLinear,
+    GL_LINEAR,//LinearMipmapLinear
+};
+GLenum SamplerMagFilterToNative(samplerFilter Filter)
+{
+    return SamplerMagFilterTable[(sz)Filter];
 }
 
 static GLenum StencilOpTable[] = 

@@ -33,8 +33,8 @@ void image::Init(imageData &ImageData, const imageCreateInfo &CreateInfo)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, SamplerWrapToNative(CreateInfo.WrapS));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, SamplerWrapToNative(CreateInfo.WrapT));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, SamplerWrapToNative(CreateInfo.WrapR));
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, SamplerFilterToNative(CreateInfo.MinFilter));
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, SamplerFilterToNative(CreateInfo.MagFilter));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, SamplerMinFilterToNative(CreateInfo.MinFilter));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, SamplerMagFilterToNative(CreateInfo.MagFilter));
 
     
     if(IsDepthFormat(Format))
@@ -124,8 +124,8 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, SamplerWrapToNative(CreateInfo.WrapS));
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, SamplerWrapToNative(CreateInfo.WrapT));
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, SamplerWrapToNative(CreateInfo.WrapR));
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, SamplerFilterToNative(CreateInfo.MinFilter));
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, SamplerFilterToNative(CreateInfo.MagFilter));
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, SamplerMinFilterToNative(CreateInfo.MinFilter));
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, SamplerMagFilterToNative(CreateInfo.MagFilter));
 
     
     if(IsDepthFormat(Format))
