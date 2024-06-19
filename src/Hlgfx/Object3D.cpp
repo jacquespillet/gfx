@@ -252,6 +252,9 @@ std::shared_ptr<object3D> object3D::Deserialize(const std::string &FileName)
 
 std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
 {
+    
+    context *Context = context::Get();
+
     u32 Object3DType;
     FileStream.read((char*)&Object3DType, sizeof(u32));
 
@@ -293,26 +296,29 @@ std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
         FileStream.read(GeometryUUID.data(), GeometryUUIDSize);
         
         if(GeometryUUID == "DEFAULT_QUAD")
-            Mesh->GeometryBuffers = context::Get()->Quad;
+            Mesh->GeometryBuffers = Context->Quad;
         else if(GeometryUUID == "DEFAULT_CUBE")
-            Mesh->GeometryBuffers = context::Get()->Cube;
+            Mesh->GeometryBuffers = Context->Cube;
         else if(GeometryUUID == "DEFAULT_SPHERE")
-            Mesh->GeometryBuffers = context::Get()->Sphere;
+            Mesh->GeometryBuffers = Context->Sphere;
         else if(GeometryUUID == "DEFAULT_CONE")
-            Mesh->GeometryBuffers = context::Get()->Cone;
+            Mesh->GeometryBuffers = Context->Cone;
         else if(GeometryUUID == "DEFAULT_CAPSULE")
-            Mesh->GeometryBuffers = context::Get()->Capsule;
+            Mesh->GeometryBuffers = Context->Capsule;
         else if(GeometryUUID == "DEFAULT_CYLINDER")
-            Mesh->GeometryBuffers = context::Get()->Cylinder;
+            Mesh->GeometryBuffers = Context->Cylinder;
         else
-            Mesh->GeometryBuffers = context::Get()->Project.Geometries[GeometryUUID];
-
+            Mesh->GeometryBuffers = Context->Project.Geometries[GeometryUUID];
+        
+        
         u32 MaterialUUIDSize;
         FileStream.read((char*)&MaterialUUIDSize, sizeof(u32));
         std::string MaterialUUID; MaterialUUID.resize(MaterialUUIDSize);
         FileStream.read(MaterialUUID.data(), MaterialUUIDSize);
-        if(MaterialUUID == "NO_MATERIAL") Mesh->Material = context::Get()->NoMaterial;
-        else Mesh->Material = context::Get()->Project.Materials[MaterialUUID];
+        if(MaterialUUID == "NO_MATERIAL") Mesh->Material = Context->NoMaterial;
+        else Mesh->Material = Context->Project.Materials[MaterialUUID];
+
+        assert(Mesh->Material);
 
         Mesh->UniformData.ModelMatrix = Mesh->Transform.Matrices.LocalToWorld;
         Mesh->UniformData.NormalMatrix = Mesh->Transform.Matrices.LocalToWorldNormal;

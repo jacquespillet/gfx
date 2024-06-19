@@ -7,6 +7,10 @@
 #include <d3dx12.h>
 #include <d3dcompiler.h>
 #include <wrl.h>
+
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include <stb_image_resize2.h>
+
 using namespace Microsoft::WRL;
 
 #include <algorithm>
@@ -54,9 +58,30 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
     D12Data->CurrentHeapOffset++;
 }
 
-void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
+void ResizeImageData(imageData &ImageData, s32 TargetWidth, s32 TargetHeight)
+{
+    if(ImageData.Type == type::UNSIGNED_BYTE)
+    {
+        u8 *ResizedData = (u8*) gfx::AllocateMemory(TargetWidth * TargetHeight * 4);
+        stbir_resize_uint8_linear(ImageData.Data , ImageData.Width , ImageData.Height, 0,
+                                ResizedData, TargetWidth, TargetHeight, 0, (stbir_pixel_layout)4);
+        gfx::DeallocateMemory(ImageData.Data);
+        ImageData.Data = ResizedData;
+        ImageData.Width = TargetWidth;
+        ImageData.Height = TargetHeight;
+        ImageData.DataSize = TargetWidth * TargetHeight * 4;
+    }
+    else assert(false); //TODO
+}
+
+void image::Init(imageData &ImageData, const imageCreateInfo &CreateInfo)
 {
     std::shared_ptr<d3d12Data> D12Data = std::static_pointer_cast<d3d12Data>(context::Get()->ApiContextData);
+    
+    if(ImageData.DataSize / ImageData.Height < 256)
+    {
+        ResizeImageData(ImageData, 256, 256);
+    }
 
     Extent.Width = ImageData.Width;
     Extent.Height = ImageData.Height;
@@ -452,6 +477,7 @@ void image::InitAsArray(u32 Width, u32 Height, u32 Depth, format Format, imageUs
     srvDesc.Format = FormatToNative(Format);
     //If depth buffer, use R instead of D
     if(Format == format::D16_UNORM) srvDesc.Format = DXGI_FORMAT_R16_UNORM;
+    if(Format == format::D32_SFLOAT) srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
     srvDesc.Texture2DArray.MipLevels = MipLevelCount;
     srvDesc.Texture2DArray.MostDetailedMip = 0;

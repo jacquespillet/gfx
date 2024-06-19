@@ -74,7 +74,7 @@ std::shared_ptr<context> context::Initialize(initializeInfo &InitializeInfo, app
 {
     if(Singleton==nullptr){
         Singleton = std::make_shared<context>();
-    }liz
+    }
 
     Singleton->ResourceManager.Init();
     Singleton->ApiContextData = std::make_shared<glData>();
@@ -185,7 +185,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     return FramebufferHandle;
 }
 
-imageHandle context::CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo)
+imageHandle context::CreateImage(imageData &ImageData, const imageCreateInfo& CreateInfo)
 {
     imageHandle ImageHandle = ResourceManager.Images.ObtainResource();
     if(ImageHandle == InvalidHandle)

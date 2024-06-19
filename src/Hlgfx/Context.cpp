@@ -184,7 +184,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
 
 
     //Only one for directinoal shadows
-    Singleton->ShadowMaps = Singleton->GfxContext->CreateImageArray(1024, 1024, MaxLights, gfx::format::D16_UNORM, gfx::imageUsage::SHADER_READ);
+    Singleton->ShadowMaps = Singleton->GfxContext->CreateImageArray(ShadowMapSize, ShadowMapSize, MaxLights, ShadowMapFormat, gfx::imageUsage::SHADER_READ);
     
     Singleton->ShadowsRenderer = std::make_shared<hlgfx::shadowsRenderer>();
     Singleton->MainRenderer = std::make_shared<hlgfx::mainRenderer>();
@@ -593,7 +593,7 @@ void context::AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level)
     if(Mesh)
     {
         AddMeshToProject(Mesh);
-    }
+    } 
     for (sz i = 0; i < Object->Children.size(); i++)
     {
         AddObjectToProject(Object->Children[i], 1);
@@ -615,7 +615,7 @@ void context::NewProject()
 void context::Render(std::shared_ptr<camera> Camera)
 {
     Frame++;
-
+    this->CurrentCamera = Camera;
 
     Camera->Controls->OnUpdate();
     
@@ -623,22 +623,26 @@ void context::Render(std::shared_ptr<camera> Camera)
     
 
     //Render shadow maps
-    for(u32 i=0; i<Scene->SceneBufferData.LightCount.x; i++)
+    for(u32 i=0; i<Scene->SceneBufferData.LightCount; i++)
     {
-        this->ShadowsRenderer->OverrideMaterial = Scene->Lights[i]->Material;
-        this->ShadowsRenderer->RenderTarget = Scene->Lights[i]->ShadowsFramebuffer;
 
-        Scene->Lights[i]->CalculateMatrices(Camera);
-        Scene->UpdateLight(i);
+        if(s32(Scene->Lights[i]->Data.SizeAndType.w) == s32(light::lightType::Directional)) 
+        {        
+            this->ShadowsRenderer->OverrideMaterial = Scene->Lights[i]->Material;
+            this->ShadowsRenderer->RenderTarget = Scene->Lights[i]->ShadowsFramebuffer;
 
-        //Shadow pass
-        ShadowsRenderer->Render(Scene, Scene->Lights[i]->ShadowCam);
+            Scene->Lights[i]->CalculateMatrices(Camera);
+            Scene->UpdateLight(i);
 
-        //Copy the framebuffer to the texture layer
-        CommandBuffer->CopyFramebufferToImage(
-            gfx::framebufferInfo {gfx::context::Get()->GetFramebuffer(Scene->Lights[i]->ShadowsFramebuffer), gfx::imageUsage::UNKNOWN, true, 0 },
-            gfx::imageInfo {gfx::context::Get()->GetImage(this->ShadowMaps), gfx::imageUsage::UNKNOWN, 0, i, 1}
-        );
+            //Shadow pass
+            ShadowsRenderer->Render(Scene, Scene->Lights[i]->ShadowCam);
+
+            //Copy the framebuffer to the texture layer
+            CommandBuffer->CopyFramebufferToImage(
+                gfx::framebufferInfo {gfx::context::Get()->GetFramebuffer(Scene->Lights[i]->ShadowsFramebuffer), gfx::imageUsage::UNKNOWN, true, 0 },
+                gfx::imageInfo {gfx::context::Get()->GetImage(this->ShadowMaps), gfx::imageUsage::UNKNOWN, 0, i, 1}
+            );
+        }
     }
     
     MainRenderer->RenderTarget = GfxContext->GetSwapchainFramebuffer();
@@ -713,7 +717,7 @@ void context::Cleanup()
     this->Project.Objects.clear();
     this->Project.Textures.clear();
     this->Project.Scenes.clear();
-    for (size_t i = 0; i < this->Scene->SceneBufferData.LightCount.x; i++)
+    for (size_t i = 0; i < this->Scene->SceneBufferData.LightCount; i++)
     {
         this->Scene->Lights[i] = nullptr;
     }
@@ -824,13 +828,13 @@ void context::LoadProjectFromFile(const char *FileName)
     for (sz i = 0; i < MaterialFiles.size(); i++)
     {
         std::shared_ptr<material> Material = material::Deserialize(MaterialFiles[i]);
-        Project.Materials[Material->UUID] = Material;   
+        Project.Materials[Material->UUID] = Material;
     }
     
     for (sz i = 0; i < GeometryFiles.size(); i++)
     {
         std::shared_ptr<indexedGeometryBuffers> Geometry = indexedGeometryBuffers::Deserialize(GeometryFiles[i]);
-        Project.Geometries[Geometry->UUID] = Geometry;   
+        Project.Geometries[Geometry->UUID] = Geometry;
     }
     
     for (sz i = 0; i < ObjectFiles.size(); i++)

@@ -10,6 +10,7 @@
 
 
 #define SampleTexture(Texture, Sampler, UV) Texture.Sample(Sampler, UV)
+#define SampleShadowTextureArray(Texture, Sampler, UV, Depth) Texture.SampleCmp(Sampler, UV, Depth)
 
 #define mix(A, B, T) lerp(A, B, T)
 

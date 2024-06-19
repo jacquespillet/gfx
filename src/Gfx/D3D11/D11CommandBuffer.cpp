@@ -196,6 +196,10 @@ void ExecuteBindGraphicsPipeline(const command &Command, d3d11CommandBuffer &Com
     
     D11Data->DeviceContext->RSSetState(D11Pipeline->RasterizerState.Get());
     D11Data->DeviceContext->PSSetSamplers(0, 1, D11Pipeline->SamplerState.GetAddressOf());
+    for(int i=0; i<d3d11Pipeline::Samplers.size(); i++)
+    {
+        D11Data->DeviceContext->PSSetSamplers(1 + i, 1, d3d11Pipeline::Samplers[i].GetAddressOf());
+    }
     D11Data->DeviceContext->OMSetDepthStencilState(D11Pipeline->DepthStencilState.Get(), 0);
     D11Data->DeviceContext->IASetInputLayout(D11Pipeline->InputLayout.Get());
     D11Data->DeviceContext->VSSetShader(D11Pipeline->VertexShader.Get(), nullptr, 0);

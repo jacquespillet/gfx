@@ -83,7 +83,7 @@ struct context
     vertexBufferHandle CreateVertexBuffer(const vertexBufferCreateInfo &CreateInfo);
    
     bufferHandle CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsage MemoryUsage, sz Stride = 0);
-    imageHandle CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo);
+    imageHandle CreateImage(imageData &ImageData, const imageCreateInfo& CreateInfo);
     imageHandle CreateImageCubemap(const imageData &Left, const imageData &Right, const imageData &Top, const imageData &Bottom, const imageData &Back, const imageData &Front, const imageCreateInfo& CreateInfo);
     imageHandle CreateImage(u32 Width, u32 Height, format Format, imageUsage::bits ImageUsage, memoryUsage MemoryUsage, u8 *Pixels);
     imageHandle CreateImageArray(u32 Width, u32 Height, u32 Depth, format Format, imageUsage::bits Usage);
@@ -149,8 +149,10 @@ struct context
     shader *GetShader(shaderStateHandle Handle);
     renderPass *GetRenderPass(renderPassHandle Handle);
     framebuffer *GetFramebuffer(framebufferHandle Handle);
-    accelerationStructure *GetAccelerationStructure(accelerationStructureHandle Handle);
 
+#if GFX_API==GFX_VK || GFX_API==GFX_D3D12
+    accelerationStructure *GetAccelerationStructure(accelerationStructureHandle Handle);
+#endif
 
     void Cleanup();
     void WaitIdle();

@@ -660,7 +660,7 @@ pipelineHandle context::CreatePipeline(const pipelineCreation &PipelineCreation)
 }
 
 
-imageHandle context::CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo)
+imageHandle context::CreateImage(imageData &ImageData, const imageCreateInfo& CreateInfo)
 {
     imageHandle ImageHandle = ResourceManager.Images.ObtainResource();
     if(ImageHandle == InvalidHandle)

@@ -46,6 +46,8 @@ struct context
 
     void Render(std::shared_ptr<camera> Camera);
 
+    std::shared_ptr<camera> CurrentCamera;
+
     gfx::pipelineCreation GetPipelineCreation(materialFlags::bits Flags);
     gfx::pipelineHandle CreateOrGetPipeline(materialFlags::bits Flags);
     gfx::pipelineHandle GetPipeline(materialFlags::bits Flags);
@@ -71,6 +73,10 @@ struct context
     //Then each material instantiates another pipeline
     static const u32 PBRPipeline = 0;
     static const u32 ShadowsPipeline = 1;
+
+    static const u32 ShadowMapSize = 1024;
+    static const gfx::format ShadowMapFormat = gfx::format::D32_SFLOAT;
+
     std::unordered_map<u32, gfx::pipelineHandle> Pipelines;
 
     std::unordered_map<materialFlags::bits, gfx::pipelineHandle> AllPipelines;

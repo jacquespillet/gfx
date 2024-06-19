@@ -6,7 +6,7 @@
 namespace gfx
 {
 
-void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
+void image::Init(imageData &ImageData, const imageCreateInfo &CreateInfo)
 {
     this->Extent.Width = ImageData.Width;
     this->Extent.Height = ImageData.Height;
@@ -35,6 +35,13 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, SamplerWrapToNative(CreateInfo.WrapR));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, SamplerFilterToNative(CreateInfo.MinFilter));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, SamplerFilterToNative(CreateInfo.MagFilter));
+
+    
+    if(IsDepthFormat(Format))
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE_ARB);
+    }    
     
     if(CreateInfo.GenerateMipmaps) glGenerateMipmap(GL_TEXTURE_2D);
     
@@ -64,7 +71,13 @@ void image::InitAsArray(u32 Width, u32 Height, u32 Depth, format Format, imageUs
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
+	
+    if(IsDepthFormat(Format))
+    {
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE_ARB);
+    }
+
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
 
@@ -115,6 +128,12 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, SamplerFilterToNative(CreateInfo.MagFilter));
 
     
+    if(IsDepthFormat(Format))
+    {
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE_ARB);
+    }
+
     if(CreateInfo.GenerateMipmaps) glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }

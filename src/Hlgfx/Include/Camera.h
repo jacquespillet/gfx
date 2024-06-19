@@ -9,8 +9,8 @@ struct orbitCameraController;
 
 struct camera : public object3D
 {
-    camera(f32 FOV, f32 AspectRatio, f32 NearClip = 0.01f, f32 FarClip = 100.0f);
-    camera(f32 Left, f32 Right, f32 Bottom, f32 Top, f32 Back, f32 Front);
+    camera(f32 FOV, f32 AspectRatio, f32 NearClip = 0.01f, f32 FarClip = 100.0f, b8 ShadowCam=false);
+    camera(f32 Left, f32 Right, f32 Bottom, f32 Top, f32 Back, f32 Front, b8 ShadowCam=false);
     ~camera();
     struct cameraUniformData
     {
@@ -38,7 +38,8 @@ struct camera : public object3D
     void SetLocalPosition(v3f LocalPosition);
     void SetLocalRotation(v3f LocalRotation);
     void SetLocalScale(v3f LocalScale);
-
+    
+    b8 ShadowCam=false;
     
     std::shared_ptr<hlgfx::orbitCameraController> Controls;
     

@@ -1,6 +1,8 @@
 #if GFX_API==GFX_VK
 #include "VkShader.h"
 #include "../Include/Memory.h"
+#include <iostream>
+
 
 namespace gfx
 {
@@ -133,7 +135,14 @@ vk::ShaderModuleCreateInfo CompileShader(const char *Code, u32 CodeSize, shaderS
             printf(Shader.getInfoDebugLog());
             printf("Shader Code : \n");
             printf("______________________________________________________\n");
-            printf(Code);
+            int LineNumber = 1;
+            std::istringstream iss(Code);
+            std::string line;        
+            while (std::getline(iss, line)) {
+                std::cout << "Line " << LineNumber << ": " << line << std::endl;
+                LineNumber++;
+            }            
+            // printf(Code);
             printf("______________________________________________________\n");
         }
         assert(IsParsed);
@@ -147,7 +156,13 @@ vk::ShaderModuleCreateInfo CompileShader(const char *Code, u32 CodeSize, shaderS
             printf(Program.getInfoDebugLog());
             printf("Shader Code : \n");
             printf("______________________________________________________\n");
-            printf(Code);
+            int LineNumber = 1;
+            std::istringstream iss(Code);
+            std::string line;        
+            while (std::getline(iss, line)) {
+                std::cout << "Line " << LineNumber << ": " << line << std::endl;
+                LineNumber++;
+            }   
             printf("______________________________________________________\n");
         }
         assert(IsLinked);

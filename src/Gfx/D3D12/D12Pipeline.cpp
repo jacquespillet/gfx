@@ -244,10 +244,11 @@ void d3d12PipelineData::Create(const pipelineCreation &PipelineCreation)
                                             D3D12_TEXTURE_ADDRESS_MODE_WRAP, // addressV    
                                             D3D12_TEXTURE_ADDRESS_MODE_WRAP); // addressW  
         Samplers[1] = CD3DX12_STATIC_SAMPLER_DESC( 1, // shaderRegister    
-                                            D3D12_FILTER_MIN_MAG_MIP_POINT, // filter    
+                                            D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT, // filter    
                                             D3D12_TEXTURE_ADDRESS_MODE_CLAMP, // addressU    
                                             D3D12_TEXTURE_ADDRESS_MODE_CLAMP, // addressV    
-                                            D3D12_TEXTURE_ADDRESS_MODE_CLAMP); // addressW  
+                                            D3D12_TEXTURE_ADDRESS_MODE_CLAMP, 0.0f,
+                                            16U, D3D12_COMPARISON_FUNC_LESS_EQUAL); // addressW  
 
         D3D12_ROOT_SIGNATURE_DESC rootSigDesc;
         rootSigDesc.NumParameters = (u32)this->RootParams.size();

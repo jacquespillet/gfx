@@ -10,7 +10,7 @@
 namespace gfx
 {
 
-void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
+void image::Init(imageData &ImageData, const imageCreateInfo &CreateInfo)
 {
     GET_CONTEXT(D11Data, context::Get());
 
@@ -147,6 +147,7 @@ void image::InitAsArray(u32 Width, u32 Height, u32 Depth, format Format, imageUs
     TextureDesc.ArraySize          = Depth;
     TextureDesc.Format             = FormatToNative(Format);
     if(Format == format::D16_UNORM) TextureDesc.Format = DXGI_FORMAT_R16_UNORM;
+    if(Format == format::D32_SFLOAT) TextureDesc.Format = DXGI_FORMAT_R32_FLOAT;
     TextureDesc.SampleDesc.Count   = 1;
     TextureDesc.Usage              = D3D11_USAGE_DEFAULT;
     TextureDesc.BindFlags          = D3D11_BIND_SHADER_RESOURCE;

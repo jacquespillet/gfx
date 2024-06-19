@@ -43,7 +43,11 @@ struct lightData
 
 DECLARE_UNIFORM_BUFFER(SceneDescriptorSetBinding, SceneBinding, Scene)
 {
-    vec4 LightCount;
+
+    float LightCount;
+    float MaxLightsCount;
+    float ShadowMapSize;
+    float ShadowBias;    
     lightData Lights[MaxLights];    
 };
 
@@ -87,7 +91,7 @@ DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, OcclusionTextureBinding, O
 DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, EmissiveTextureBinding, EmissionTexture);
 
 // DECLARE_UNIFORM_TEXTURE_SHADOW(SceneDescriptorSetBinding, ShadowMapsBindingStart, ShadowMap);
-DECLARE_UNIFORM_TEXTURE_ARRAY(SceneDescriptorSetBinding, ShadowMapsBindingStart, ShadowMap);
+DECLARE_UNIFORM_TEXTURE_ARRAY_SHADOW(SceneDescriptorSetBinding, ShadowMapsBindingStart, ShadowMap);
 
 /////////////////////////////////
 //////////VERTEX/////////////////
@@ -114,9 +118,9 @@ void main()
 	Output.B = FragBitangent;
 	Output.N = Output.FragNormal;
 
-    for(int i=0; i<LightCount.x; i++)
+    for(int i=0; i<LightCount; i++)
     {
-        Output.DepthMapUV[i] = Lights[i].LightSpaceMatrix * vec4(Output.FragPosition, 1);
+        Output.DepthMapUV[i] =  Lights[i].LightSpaceMatrix * vec4(Output.FragPosition, 1);
     }
     
     gl_Position = OutPosition;
@@ -138,6 +142,16 @@ layout(location = 0) out vec4 OutputColor;
 #include "Tonemapping.glsl"
 #include "BRDF.glsl"
 
+float CalculateBias(vec3 normal, vec3 lightDir, float depth) {
+    float constantBias = 0.005;
+    float slopeFactor = 0.5f;
+
+    float angle = max(dot(normal, lightDir), 0.0);
+    float depthSlope = max(dFdx(depth), dFdy(depth));
+    float bias = constantBias + slopeFactor * depthSlope * (1.0 - angle);
+    return bias;
+}
+
 void main() 
 {
     //Color
@@ -149,6 +163,7 @@ void main()
     vec3 Normal = NormalInfo.ShadingNormal;
     vec3 Tangent = NormalInfo.Tangent;
     vec3 Bitangent = NormalInfo.Bitangent;
+
 
     float NdotV = ClampedDot(Normal, View);
     float TdotV = ClampedDot(Tangent, View);
@@ -170,7 +185,7 @@ void main()
 
     float Visibility = 1.0f;
     //Lighting
-    for(int i=0; i<LightCount.x; i++)
+    for(int i=0; i<LightCount; i++)
     {
         if(Lights[i].SizeAndType.w == PointLight)
         {
@@ -186,7 +201,7 @@ void main()
         }
         else if(Lights[i].SizeAndType.w == DirectionalLight)
         {
-            vec3 LightDirection = -normalize(Lights[i].Direction.xyz);
+            vec3 LightDirection = normalize(Lights[i].Direction.xyz);
             vec3 LightIntensity = Lights[i].ColorAndIntensity.w * Lights[i].ColorAndIntensity.xyz;
 
             vec3 H = normalize(-LightDirection + View);
@@ -196,32 +211,19 @@ void main()
             FinalDiffuse += LightIntensity * NdotL *  GetBRDFLambertian(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.CDiff, MaterialInfo.SpecularWeight, VdotH);
             FinalSpecular += LightIntensity * NdotL * GetBRDFSpecularGGX(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.AlphaRoughness, MaterialInfo.SpecularWeight, VdotH, NdotL, NdotV, NdotH);
 
-
-            float Bias = max(0.001 * (1.0 - dot(Normal, -LightDirection)), 0.0001);  
-            vec3 ProjCoords = Input.DepthMapUV[i].xyz / Input.DepthMapUV[i].w;
+            vec3 ProjCoords = Input.DepthMapUV[i].xyz / Input.DepthMapUV[i].w; // Between 0 and 1
 #if GRAPHICS_API == VK
-            ProjCoords.xy = ProjCoords.xy * 0.5 + 0.5;
+            ProjCoords.xy = ProjCoords.xy * 0.5 + 0.5; 
 #else
-            ProjCoords.xyz = ProjCoords.xyz * 0.5 + 0.5;
+            ProjCoords = ProjCoords * 0.5 + 0.5;
 #endif
-            float CurrentDepth = ProjCoords.z;
-
-            float TexelSize = 1.0 / LightCount.z;
-            float CurrentVisibility = 0;
-            for(int x = -1; x <= 1; ++x)
-            {
-                for(int y = -1; y <= 1; ++y)
-                {
-                    vec2 Coord = ProjCoords.xy + vec2(x, y) * TexelSize;
-                    float PCFDepth = SampleTexture(ShadowMap, PointWrapSampler, vec3(Coord.x, Coord.y, i)).x;        
-                    CurrentVisibility += CurrentDepth - Bias > PCFDepth ? 0.5 : 1.0;
-                    if(ProjCoords.z > 1.0)
-                        CurrentVisibility = 1.0;
-                }    
-            }
-            CurrentVisibility /= 9.0;
             
-            Visibility *= CurrentVisibility;
+            // float Bias = CalculateBias(Normal, -LightDirection, CurrentDepth);
+            float Bias = max(ShadowBias * (1.0 - dot(Normal, -LightDirection)), 0.0001);
+            if(ProjCoords.z > 1.0)
+                Visibility *= 1.0;
+            else 
+                Visibility *= SampleTexture(ShadowMap, PointWrapSampler, vec4(ProjCoords.xy, i, ProjCoords.z - Bias));
         }
     }
 

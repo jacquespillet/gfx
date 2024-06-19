@@ -40,10 +40,12 @@ framebuffer *context::GetFramebuffer(framebufferHandle Handle)
     return (framebuffer*) this->ResourceManager.Framebuffers.GetResource(Handle);
 }   
 
+#if GFX_API==GFX_VK || GFX_API==GFX_D3D12
 accelerationStructure *context::GetAccelerationStructure(accelerationStructureHandle Handle)
 {
     return (accelerationStructure*) this->ResourceManager.AccelerationStructures.GetResource(Handle);
 }
+#endif
 
 void context::QueueDestroyBuffer(bufferHandle Buffer)
 {

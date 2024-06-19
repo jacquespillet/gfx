@@ -95,7 +95,9 @@ void contextGUI::AddObjectMenu()
             if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
                 ParentObject = this->Context->Scene->SceneGUI->NodeClicked;
             else
-                ParentObject = this->Context->Scene;            
+                ParentObject = this->Context->Scene;    
+
+            
         }
         if(ImGui::MenuItem("Area"))
         {
@@ -197,6 +199,32 @@ void contextGUI::AddObjectMenu()
     {
         ParentObject->AddObject(ObjectToAdd);
     }
+}
+
+void contextGUI::DrawCameraWindow()
+{
+    ImGui::SetNextWindowSize(ImVec2(500, 500), ImGuiCond_Appearing);
+    ImGui::Begin("Camera", 0);
+    ImGuiTabBarFlags TabBarFlags = ImGuiTabBarFlags_None;
+
+    b8 Changed = false;
+    Changed |= ImGui::DragFloat("Far Clip", &this->Context->CurrentCamera->Data.FarClip, 1, 1);
+
+    if(Changed)
+    {
+        this->Context->CurrentCamera->RecalculateMatrices();
+    }
+    
+    b8 LightsChanged = false;
+    LightsChanged |= ImGui::DragFloat("Shadow Bias", &this->Context->Scene->SceneBufferData.ShadowBias, 0.001f);
+
+    if(LightsChanged)
+    {
+        this->Context->Scene->UpdateLight(0);
+    }
+    
+
+    ImGui::End();
 }
 void contextGUI::DrawAssetsWindow()
 {
@@ -728,6 +756,10 @@ void contextGUI::DrawMainMenuBar()
         {
             this->ShowAssetsWindow = !this->ShowAssetsWindow;
         }
+        if(ImGui::MenuItem("Camera"))
+        {
+            this->ShowCameraWindow = !this->ShowCameraWindow;
+        }
         ImGui::EndMainMenuBar();
     }
 }
@@ -738,6 +770,7 @@ void contextGUI::DrawGUI()
     DrawGuizmoGUI();
     DrawMainMenuBar();
     if(ShowAssetsWindow) DrawAssetsWindow();
+    if(ShowCameraWindow) DrawCameraWindow();
     this->Context->Scene->DrawGUI();
 
     if(Context->CtrlPressed)
@@ -1060,11 +1093,28 @@ void light::DrawCustomGUI()
         Changed |= ImGui::Combo("Render Mode", &LightType, "Point\0Directional\0Spot\0Area\0Rasterizer\0PathTraceCompute\0\0");
         this->Data.SizeAndType.w = (f32)LightType;
         
+        ImGui::Text("Shadow Parameters");
+
+        ImGui::Checkbox("Automatic Frustum", &this->AutomaticShadowFrustum);
+        if(this->AutomaticShadowFrustum)
+        {
+            ImGui::Checkbox("Use Camera Far Plane", &this->UseMainCameraFarPlane);
+            if(!UseMainCameraFarPlane)
+            {
+                ImGui::DragFloat("Camera Far Plane Mult", &this->ShadowDistance, 0.1f, 0.1f);
+            }
+        }
+        else
+        {
+            ImGui::DragFloat3("Frustum Size", &ShadowFrustumSize[0], 1, 1);
+        }
+        
+        ImGui::Separator();
+
         Changed |= ImGui::ColorEdit3("Color", glm::value_ptr(this->Data.ColorAndIntensity));
         Changed |= ImGui::SliderFloat("Intensity", &this->Data.ColorAndIntensity.w, 0, 100);
 
-        ImGui::SliderFloat3("Shadow Map Viewport", glm::value_ptr(this->ShadowMapViewport), 1, 200);
-        ImGui::SliderFloat("Shadow Map Distance", &this->ShadowMapDistance, 1, 200);
+            
         if(Changed)
         {
             context::Get()->Scene->UpdateLight(this->IndexInScene);

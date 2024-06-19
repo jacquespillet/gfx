@@ -51,6 +51,8 @@ uniformGroup &uniformGroup::AddStorageImage(u32 Binding, imageHandle Resource)
     return *this;
 }
 
+
+#if GFX_API==GFX_VK || GFX_API==GFX_D3D12
 uniformGroup &uniformGroup::AddAccelerationStructure(u32 Binding, accelerationStructureHandle Resource)
 {
     this->Uniforms.push_back({
@@ -61,6 +63,7 @@ uniformGroup &uniformGroup::AddAccelerationStructure(u32 Binding, accelerationSt
     });
     return *this;
 }
+#endif
 
 uniformGroup &uniformGroup::AddFramebufferRenderTarget(u32 Binding, framebufferHandle Resource, u32 ResourceIndex)
 {
@@ -86,10 +89,14 @@ framebuffer *uniformGroup::GetFramebuffer(u32 Index)
 {
     return context::Get()->GetFramebuffer(Uniforms[Index].ResourceHandle);
 }
+
+
+#if GFX_API==GFX_VK || GFX_API==GFX_D3D12
 accelerationStructure *uniformGroup::GetAccelerationStructure(u32 Index)
 {
     return context::Get()->GetAccelerationStructure(Uniforms[Index].ResourceHandle);
 }
+#endif
 
 void uniformGroup::UpdateBuffer(u32 Index, void *Data, u32 Size, u32 Offset)
 {

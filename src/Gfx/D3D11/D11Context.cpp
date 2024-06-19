@@ -123,7 +123,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
     return Swapchain;
 }
 
-imageHandle context::CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo)
+imageHandle context::CreateImage(imageData &ImageData, const imageCreateInfo& CreateInfo)
 {
     imageHandle ImageHandle = ResourceManager.Images.ObtainResource();
     if(ImageHandle == InvalidHandle)

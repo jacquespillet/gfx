@@ -77,6 +77,8 @@ void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geomet
 {
     uint32_t GIndexBase=0;
     InstanceMapping.resize(GLTFModel.meshes.size());
+
+    int NoNameCount=0;
     for(int MeshIndex=0; MeshIndex<GLTFModel.meshes.size(); MeshIndex++)
     {
         tinygltf::Mesh gltfMesh = GLTFModel.meshes[MeshIndex];
@@ -93,7 +95,14 @@ void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geomet
             Geometry = std::make_shared<geometryData>();
             Geometry->MaterialIndex = GLTFPrimitive.material;
             Geometry->Buffers = std::make_shared<indexedGeometryBuffers>();
-            Geometry->Buffers->Name = gltfMesh.name;
+            
+            std::string GeometryName = gltfMesh.name;
+            if(GeometryName == "")
+            {
+                GeometryName = "Geometry_" + std::to_string(NoNameCount++);
+            }
+            
+            Geometry->Buffers->Name = GeometryName;
             
             InstanceMapping[MeshIndex][j] = BaseIndex + j;
 
@@ -422,6 +431,8 @@ void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<mater
     
     // AScene->mMaterials[i]->Get(AI_MATKEY_TEXTURE_DIFFUSE(0), Materials[i].MaterialData.BaseColorTextureID);
     Materials.resize(GLTFModel.materials.size());
+
+    int NoNameCount=0;
     for (size_t i = 0; i < GLTFModel.materials.size(); i++)
     {
         const tinygltf::Material GLTFMaterial = GLTFModel.materials[i];
@@ -436,7 +447,13 @@ void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<mater
         
         Flags = (materialFlags::bits)(Flags |  materialFlags::PBR);
         
-        Materials[i] = std::make_shared<pbrMaterial>(GLTFMaterial.name, Flags);  
+        std::string MatName = GLTFMaterial.name;
+        if(MatName == "")
+        {
+            MatName = "Material_" + std::to_string(NoNameCount++);
+        }
+        
+        Materials[i] = std::make_shared<pbrMaterial>(MatName, Flags);  
         std::shared_ptr<pbrMaterial> PBRMat = std::static_pointer_cast<pbrMaterial>(Materials[i]);
         
         PBRMat->UniformData.BaseColorFactor = v3f(PBR.baseColorFactor[0], PBR.baseColorFactor[1], PBR.baseColorFactor[2]);
@@ -447,7 +464,7 @@ void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<mater
         PBRMat->UniformData.EmissiveFactor = 1.0f;
         PBRMat->UniformData.AlphaCutoff = GLTFMaterial.alphaCutoff;
         PBRMat->UniformData.OcclusionStrength = 1.0f;
-
+ 
         if(PBR.baseColorTexture.index > -1)
         {
             PBRMat->SetBaseColorTexture(Textures[PBR.baseColorTexture.index]);

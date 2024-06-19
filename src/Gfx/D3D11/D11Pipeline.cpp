@@ -11,7 +11,8 @@
 
 namespace gfx
 {
-#
+std::vector<ComPtr<ID3D11SamplerState>> d3d11Pipeline::Samplers = std::vector<ComPtr<ID3D11SamplerState>>();
+
 D3D11_BLEND_DESC CreateDefaultBlendDesc() {
     D3D11_BLEND_DESC BlendDesc = {};
 
@@ -52,7 +53,7 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
             { "GRAPHICS_API",   "3" }, 
             nullptr
         };
-        HRESULT hr = D3DCompileFromFile(ConstCharToLPCWSTR(PipelineCreation.Shaders.Stages[0].FileName), defines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", 0, 0, &VSBlob, nullptr);
+        HRESULT hr = D3DCompileFromFile(ConstCharToLPCWSTR(PipelineCreation.Shaders.Stages[0].FileName), defines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", 0, 0, &VSBlob, &pErrorBlob);
         if (FAILED(hr) || VSBlob == nullptr)
         {
             if (pErrorBlob)
@@ -60,8 +61,8 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
                 char *Error = (char*)pErrorBlob->GetBufferPointer();
                 OutputDebugStringA(static_cast<char*>(pErrorBlob->GetBufferPointer()));
                 pErrorBlob->Release();
-                assert(false);
             }
+            assert(false);
         }
         D11Data->Device->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr, VertexShader.GetAddressOf());
 
@@ -86,7 +87,7 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
 
         //Pixel shader
         ID3DBlob* PSBlob;
-        hr = D3DCompileFromFile(ConstCharToLPCWSTR(PipelineCreation.Shaders.Stages[0].FileName), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", 0, 0, &PSBlob, nullptr);
+        hr = D3DCompileFromFile(ConstCharToLPCWSTR(PipelineCreation.Shaders.Stages[0].FileName), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", 0, 0, &PSBlob, &pErrorBlob);
         if (FAILED(hr))
         {
             if (pErrorBlob)
@@ -113,6 +114,22 @@ void d3d11Pipeline::Create(const pipelineCreation &PipelineCreation)
         samplerDesc.AddressW       = D3D11_TEXTURE_ADDRESS_WRAP;
         samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
         D11Data->Device->CreateSamplerState(&samplerDesc, SamplerState.GetAddressOf());
+
+        if(d3d11Pipeline::Samplers.size()==0)
+        {
+            d3d11Pipeline::Samplers.resize(1);
+            D3D11_SAMPLER_DESC SamplerDesc = {};
+            SamplerDesc.Filter         = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+            SamplerDesc.AddressU       = D3D11_TEXTURE_ADDRESS_BORDER;
+            SamplerDesc.AddressV       = D3D11_TEXTURE_ADDRESS_BORDER;
+            SamplerDesc.AddressW       = D3D11_TEXTURE_ADDRESS_BORDER;
+            SamplerDesc.BorderColor[0] = 1.0f;
+            SamplerDesc.BorderColor[1] = 1.0f;
+            SamplerDesc.BorderColor[2] = 1.0f;
+            SamplerDesc.BorderColor[3] = 1.0f;
+            SamplerDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+            D11Data->Device->CreateSamplerState(&SamplerDesc, d3d11Pipeline::Samplers[0].GetAddressOf());
+        }
 
         //Depth stencil
         D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};

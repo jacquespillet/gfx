@@ -87,7 +87,7 @@ void GenerateMipmaps(vk::Image Image, u32 Width, u32 Height, u32 MipLevels, vk::
                                     1, &Barrier);
 }
 
-void vkImageData::Init(const image &Image, imageUsage::value ImageUsage, memoryUsage MemoryUsage, vk::ImageCreateFlags Flags)
+void vkImageData::Init(image &Image, imageUsage::value ImageUsage, memoryUsage MemoryUsage, vk::ImageCreateFlags Flags)
 {
     vk::ImageCreateInfo ImageCreateInfo;
     ImageCreateInfo.setImageType(vk::ImageType::e2D)
@@ -164,7 +164,7 @@ void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
     context::Get()->SubmitCommandBufferImmediate(VkData->ImmediateCommandBuffer.get());
     VkData->StageBuffer.Reset();
 
-    VKImage->InitSampler(CreateInfo, MipLevelCount);
+    VKImage->InitSampler(CreateInfo, MipLevelCount, Format);
 
 
     if(imgui::IsInitialized())
@@ -211,7 +211,7 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
         vk::ImageCreateFlagBits::eCubeCompatible
     );
     VKImage->InitViews(*this, VKImage->Handle, this->Format, vk::ImageViewType::eCube);
-    VKImage->InitSampler(CreateInfo, this->MipLevelCount);
+    VKImage->InitSampler(CreateInfo, this->MipLevelCount, Format);
     
     GET_CONTEXT(VkData, context::Get());
     
@@ -307,7 +307,7 @@ void image::InitAsArray(u32 Width, u32 Height, u32 Depth, format Format, imageUs
 
     VkImageData->Allocation = gfx::AllocateImage(ImageCreateInfo, MemoryUsage, &VkImageData->Handle);
     VkImageData->InitViews(*this, VkImageData->Handle,  Format, vk::ImageViewType::e2DArray);
-    VkImageData->InitSamplerDefault(); 
+    VkImageData->InitSamplerDefault(Format); 
     VkImageData->CurrentLayout = imageLayout::Undefined;   
 
     commandBuffer *CommandBuffer = gfx::context::Get()->GetImmediateCommandBuffer();
@@ -356,7 +356,7 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
 
     VkImageData->Allocation = gfx::AllocateImage(ImageCreateInfo, MemoryUsage, &VkImageData->Handle);
     VkImageData->InitViews(*this, VkImageData->Handle,  Format);
-    VkImageData->InitSamplerDefault();
+    VkImageData->InitSamplerDefault(Format);
     VkImageData->CurrentLayout = imageLayout::Undefined;
 
     if(ImageUsage == imageUsage::STORAGE)
@@ -473,7 +473,7 @@ void vkImageData::InitViews(const image &Image, const vk::Image &VkImage, format
     }    
 }
 
-void vkImageData::InitSampler(const imageCreateInfo &CreateInfo, u32 MipLevelCount)
+void vkImageData::InitSampler(const imageCreateInfo &CreateInfo, u32 MipLevelCount, format Format)
 {
     vk::SamplerCreateInfo SamplerCreateInfo;
     SamplerCreateInfo.setMagFilter(SamplerFilterToNative(CreateInfo.MinFilter))
@@ -486,13 +486,18 @@ void vkImageData::InitSampler(const imageCreateInfo &CreateInfo, u32 MipLevelCou
                      .setMaxLod((f32)MipLevelCount)
                      .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
     
+    if(IsDepthFormat(Format))
+    {
+        SamplerCreateInfo.setCompareEnable(true).setCompareOp(vk::CompareOp::eLess);
+    }                     
+    
     auto Vulkan = context::Get();
     GET_CONTEXT(VkData, context::Get());
 
     this->Sampler = VkData->Device.createSampler(SamplerCreateInfo);
 }
 
-void vkImageData::InitSamplerDefault()
+void vkImageData::InitSamplerDefault(format Format)
 {
     vk::SamplerCreateInfo SamplerCreateInfo;
     SamplerCreateInfo.setMagFilter(vk::Filter::eLinear)
@@ -505,6 +510,10 @@ void vkImageData::InitSamplerDefault()
                      .setMaxLod(1.0f)
                      .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
     
+    if(IsDepthFormat(Format))
+    {
+        SamplerCreateInfo.setCompareEnable(true).setCompareOp(vk::CompareOp::eLess);
+    }
     auto Vulkan = context::Get();
     GET_CONTEXT(VkData, context::Get());
 

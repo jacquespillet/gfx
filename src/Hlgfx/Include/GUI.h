@@ -24,6 +24,7 @@ struct contextGUI
     void DrawGuizmoGUI();
     void DrawMainMenuBar();
     void DrawAssetsWindow();
+    void DrawCameraWindow();
 
     void SaveProject();
     void SaveAsProject();
@@ -33,6 +34,7 @@ struct contextGUI
     context *Context;
     
     b8 ShowAssetsWindow = false;
+    b8 ShowCameraWindow = false;
     
     //Inputs
     b8 IsInteractingGUI = false;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <d3d11_1.h>
+#include <vector>
 
 #include <wrl.h>
 using namespace Microsoft::WRL;
@@ -18,6 +19,8 @@ struct d3d11Pipeline
     ComPtr<ID3D11SamplerState> SamplerState = nullptr;
     ComPtr<ID3D11DepthStencilState> DepthStencilState = nullptr;
     ComPtr<ID3D11BlendState> BlendState = nullptr;
+
+    static std::vector<ComPtr<ID3D11SamplerState>> Samplers;
 
 
     void Create(const pipelineCreation &PipelineCreation);

@@ -30,8 +30,8 @@ struct vkImageData
 
     void Init(const image &Image, imageUsage::value ImageUsage, memoryUsage MemoryUsage, vk::ImageCreateFlags Flags = (vk::ImageCreateFlags)0);
     void InitViews(const image &Image, const vk::Image &VkImage, format Format, vk::ImageViewType ViewType = vk::ImageViewType::e2D);
-    void InitSampler(const imageCreateInfo &CreateInfo, u32 MipLevelCount);
-    void InitSamplerDefault();
+    void InitSampler(const imageCreateInfo &CreateInfo, u32 MipLevelCount, format Format);
+    void InitSamplerDefault(format Format);
 };
 
 

@@ -6,7 +6,7 @@
 #include <glm/ext.hpp>
 namespace hlgfx
 {
-camera::camera(f32 FOV, f32 AspectRatio, f32 NearClip, f32 FarClip) : object3D("Camera")
+camera::camera(f32 FOV, f32 AspectRatio, f32 NearClip, f32 FarClip, b8 ShadowCam) : object3D("Camera"), ShadowCam(ShadowCam)
 {
     this->Ortho=false;
     this->Controls = std::make_shared<orbitCameraController>(this);
@@ -34,7 +34,7 @@ camera::camera(f32 FOV, f32 AspectRatio, f32 NearClip, f32 FarClip) : object3D("
     }
     this->Uniforms->Update();
 }
-camera::camera(f32 Left, f32 Right, f32 Bottom, f32 Top, f32 Back, f32 Front) : object3D("OrthoCamera")
+camera::camera(f32 Left, f32 Right, f32 Bottom, f32 Top, f32 Back, f32 Front, b8 ShadowCam) : object3D("OrthoCamera"), ShadowCam(ShadowCam)
 {
     this->Ortho=true;
     
@@ -102,7 +102,10 @@ void camera::RecalculateMatrices()
         this->Data.ProjectionMatrix = glm::perspective(glm::radians(this->Data.FOV), this->Data.AspectRatio, this->Data.NearClip, this->Data.FarClip);
     this->Data.ViewMatrix = this->Transform.Matrices.WorldToLocal;
     this->Data.ViewProjectionMatrix = this->Data.ProjectionMatrix * this->Data.ViewMatrix;
+
+
     this->Data.CameraPosition = v4f(this->Transform.GetWorldPosition(), 1);
+
     gfx::context::Get()->CopyDataToBuffer(this->UniformBuffer, &this->Data, sizeof(cameraUniformData), 0);
 }
 

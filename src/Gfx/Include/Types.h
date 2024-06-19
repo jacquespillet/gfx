@@ -218,6 +218,11 @@ enum class format : u32
     D32_SFLOAT_S8_UINT,
 };
 
+inline b8 IsDepthFormat(format Format)
+{
+    return (Format == format::D16_UNORM || Format == format::X8D24_UNORM_PACK_32 || Format == format::D32_SFLOAT || Format == format::D16_UNORM_S8_UINT || Format == format::D24_UNORM_S8_UINT|| Format == format::D32_SFLOAT_S8_UINT);
+}
+
 
 enum class type
 {

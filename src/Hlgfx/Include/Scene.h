@@ -5,6 +5,7 @@
 #include "Light.h"
 #include "Bindings.h"
 #include "Gfx/Include/Uniform.h"
+#include "Context.h"
 #include <stack>
 namespace hlgfx
 {
@@ -29,7 +30,10 @@ struct scene : public object3D
 
     struct sceneBuffer
     {
-        v4f LightCount;
+        float LightCount = 0;
+        float MaxLightsCount = MaxLights;
+        float ShadowMapSize = context::ShadowMapSize;
+        float ShadowBias = 0.006f;
         light::lightData Lights[MaxLights];
     } SceneBufferData;
     std::shared_ptr<light> Lights[MaxLights];

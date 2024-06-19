@@ -679,7 +679,7 @@ bufferHandle context::CreateBuffer(sz Size, bufferUsage::value Usage, memoryUsag
     return Handle;
 }
 
-imageHandle context::CreateImage(const imageData &ImageData, const imageCreateInfo& CreateInfo)
+imageHandle context::CreateImage(imageData &ImageData, const imageCreateInfo& CreateInfo)
 {
     imageHandle ImageHandle = ResourceManager.Images.ObtainResource();
     if(ImageHandle == InvalidHandle)
