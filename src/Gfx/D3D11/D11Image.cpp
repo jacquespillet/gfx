@@ -32,23 +32,39 @@ void image::Init(imageData &ImageData, const imageCreateInfo &CreateInfo)
     GET_API_DATA(D11Image, d3d11Image, this);
 
     D3D11_TEXTURE2D_DESC TextureDesc = {};
+    TextureDesc.ArraySize          = 1;
+    TextureDesc.BindFlags          = D3D11_BIND_SHADER_RESOURCE;
+    TextureDesc.CPUAccessFlags = 0;
+    TextureDesc.SampleDesc.Count   = 1;
+    TextureDesc.Format             = FormatToNative(ImageData.Format);
     TextureDesc.Width              = ImageData.Width;  // in xdata.h
     TextureDesc.Height             = ImageData.Height; // in xdata.h
-    TextureDesc.MipLevels          = 1;
-    TextureDesc.ArraySize          = 1;
-    TextureDesc.Format             = FormatToNative(ImageData.Format);
-    TextureDesc.SampleDesc.Count   = 1;
+    TextureDesc.MipLevels          = MipLevelCount;
     TextureDesc.Usage              = D3D11_USAGE_IMMUTABLE;
-    TextureDesc.BindFlags          = D3D11_BIND_SHADER_RESOURCE;
+    
+    if(CreateInfo.GenerateMipmaps)
+    {
+        TextureDesc.Usage              = D3D11_USAGE_DEFAULT;
+        TextureDesc.BindFlags          |= D3D11_BIND_RENDER_TARGET;
+        TextureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+    }
 
     D3D11_SUBRESOURCE_DATA TextureData = {};
     TextureData.pSysMem            = ImageData.Data;
     TextureData.SysMemPitch        = ImageData.Width * FormatSize(Format); // 4 bytes per pixel
 
-    D11Data->Device->CreateTexture2D(&TextureDesc, &TextureData, D11Image->Handle.GetAddressOf());
-    D11Data->Device->CreateShaderResourceView(D11Image->Handle.Get(), nullptr, D11Image->View.GetAddressOf());
-
-    //TODO: Mipmaps
+    if(!CreateInfo.GenerateMipmaps)
+    {
+        D11Data->Device->CreateTexture2D(&TextureDesc, &TextureData, D11Image->Handle.GetAddressOf());
+        D11Data->Device->CreateShaderResourceView(D11Image->Handle.Get(), nullptr, D11Image->View.GetAddressOf());
+    }
+    else
+    {
+        D11Data->Device->CreateTexture2D(&TextureDesc, nullptr, D11Image->Handle.GetAddressOf());
+        D11Data->Device->CreateShaderResourceView(D11Image->Handle.Get(), nullptr, D11Image->View.GetAddressOf());
+        D11Data->DeviceContext->UpdateSubresource(D11Image->Handle.Get(), 0, 0, TextureData.pSysMem, TextureData.SysMemPitch, 0);
+        D11Data->DeviceContext->GenerateMips(D11Image->View.Get());
+    }
 }
 
 void image::InitAsCubemap(const imageData &Left, const imageData &Right, const imageData &Top, const imageData &Bottom, const imageData &Back, const imageData &Front, const imageCreateInfo &CreateInfo)

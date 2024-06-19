@@ -98,10 +98,11 @@ void image::Init(imageData &ImageData, const imageCreateInfo &CreateInfo)
 
     ApiData = std::make_shared<d3d12ImageData>();
     std::shared_ptr<d3d12ImageData> D12Image = std::static_pointer_cast<d3d12ImageData>(ApiData);
-        
+    
     D12Image->ResourceState = D3D12_RESOURCE_STATE_COPY_DEST;
 
     CD3DX12_RESOURCE_DESC TextureDesc = CD3DX12_RESOURCE_DESC::Tex2D(FormatToNative(ImageData.Format), ImageData.Width, ImageData.Height, 1, MipLevelCount);
+    TextureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
     D12Data->Device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE,
         &TextureDesc, D12Image->ResourceState, nullptr,
         IID_PPV_ARGS(&D12Image->Handle));
@@ -132,7 +133,8 @@ void image::Init(imageData &ImageData, const imageCreateInfo &CreateInfo)
         imageInfo {this, imageUsage::UNKNOWN, 0, 0}
     );
 
-    if (!CreateInfo.GenerateMipmaps)
+
+    if (!CreateInfo.GenerateMipmaps || MipLevelCount == 1)
     {
         D12Data->ImmediateCommandBuffer->TransferLayout(*this, imageUsage::TRANSFER_DESTINATION, imageUsage::SHADER_READ);
 
@@ -142,227 +144,180 @@ void image::Init(imageData &ImageData, const imageCreateInfo &CreateInfo)
         D12Data->StageBuffer.Reset();
     }
     else
-    {  
-        // Create an intermediate texture with a full mip chain
-        TextureDesc.MipLevels = MipLevelCount;
-        TextureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-        ComPtr<ID3D12Resource> IntermediateTexture;
-        D12Data->Device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE,
-                                        &TextureDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
-                                        IID_PPV_ARGS(&IntermediateTexture));        
-
-
-        u32 IntermediateOffsetInHeapStart = D12Data->CurrentHeapOffset;
-        std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> IntermediateUAVs(MipLevelCount);
-        for(u32 i=0; i<MipLevelCount; i++)
-        {
-            IntermediateUAVs[i] = D12Data->GetCPUDescriptorAt(IntermediateOffsetInHeapStart + i);
-            // Describe and create the UAV for the intermediate texture
-            D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-            uavDesc.Format = IntermediateTexture->GetDesc().Format; // Use the same format as the texture
-            uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D; // Assuming the intermediate texture is 2D
-            uavDesc.Texture2D.MipSlice = i; // Use the first mip level
-            uavDesc.Texture2D.PlaneSlice = 0; // Use the first plane (for non-planar formats)
-            D12Data->Device->CreateUnorderedAccessView(IntermediateTexture.Get(), nullptr, &uavDesc, IntermediateUAVs[i]);
-        }
-                  
-        //Create Root signature for compute
-        CD3DX12_ROOT_PARAMETER1 rootParameters[3];
-
-        // Define a descriptor table parameter for the source texture
-        CD3DX12_DESCRIPTOR_RANGE1 descriptorRangeSRV;
-        descriptorRangeSRV.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // Assumes source texture is a shader resource view (SRV)
-        rootParameters[0].InitAsDescriptorTable(1, &descriptorRangeSRV);
-        CD3DX12_DESCRIPTOR_RANGE1 descriptorRangeUAV;
-        descriptorRangeUAV.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0); // Assumes intermediate texture is a unordered access view (UAV)
-        rootParameters[1].InitAsDescriptorTable(1, &descriptorRangeUAV);
-        rootParameters[2].InitAsConstants(2, 0); // Assumes 2 32-bit constants starting at register 0
-        
-        //Static sampler used to get the linearly interpolated color for the mipmaps
-        D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
-        samplerDesc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-        samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-        samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-        samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-        samplerDesc.MipLODBias = 0.0f;
-        samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-        samplerDesc.MinLOD = 0.0f;
-        samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
-        samplerDesc.MaxAnisotropy = 0;
-        samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
-        samplerDesc.ShaderRegister = 0;
-        samplerDesc.RegisterSpace = 0;
-        samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;        
-        // Create a root signature descriptor
-        CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
-        rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 1, &samplerDesc, D3D12_ROOT_SIGNATURE_FLAG_NONE);
-
-        // Serialize the root signature
-        ComPtr<ID3DBlob> signatureBlob = {nullptr};
-        ComPtr<ID3DBlob> errorBlob = {nullptr};
-        HRESULT hr = D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_1,
-                                                        &signatureBlob, &errorBlob);
-        if (FAILED(hr))
-        { 
-            if (errorBlob)
-            {
-                OutputDebugStringA(static_cast<const char*>(errorBlob->GetBufferPointer()));
-                // errorBlob->Release();
-            }
-        }
-        // Create the root signature
-        ID3D12RootSignature* rootSignature = nullptr;
-        hr = D12Data->Device->CreateRootSignature(0, signatureBlob->GetBufferPointer(),
-                                        signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
-        if (FAILED(hr))
-        {
-            assert(false);
-        }
-
-        // Release the signature blob
-        // signatureBlob->Release();        
-        //Create compute shader PSO
-        const D3D_SHADER_MACRO defines[] =
+    {   
+        const D3D_SHADER_MACRO Defines[] =
         {
             nullptr,
             nullptr
         };
         // Compile the compute shader
-        ComPtr<ID3DBlob> shaderBlob = {nullptr};
-        hr = D3DCompileFromFile(L"resources/Shaders/GenerateMipmaps.hlsl", defines, nullptr, "CSMain", "cs_5_0", 0, 0, &shaderBlob, &errorBlob);
+        ComPtr<ID3DBlob> ShaderBlob = {nullptr};
+        ComPtr<ID3DBlob> ErrorBlob = {nullptr};
+        HRESULT hr = D3DCompileFromFile(L"resources/Shaders/GenerateMipmaps.hlsl", Defines, nullptr, "GenerateMipMaps", "cs_5_0", 0, 0, &ShaderBlob, &ErrorBlob);
         if (FAILED(hr))
         {
-            if (errorBlob)
+            if (ErrorBlob)
             {
-                OutputDebugStringA(static_cast<const char*>(errorBlob->GetBufferPointer()));
-                // errorBlob->Release();
+                OutputDebugStringA(static_cast<const char*>(ErrorBlob->GetBufferPointer()));
+                // ErrorBlob->Release();
                 assert(false);
             }
         }
 
         // Create the compute shader
-        D3D12_SHADER_BYTECODE shaderBytecode = {};
-        shaderBytecode.pShaderBytecode = shaderBlob->GetBufferPointer();
-        shaderBytecode.BytecodeLength = shaderBlob->GetBufferSize();
+        D3D12_SHADER_BYTECODE ShaderBytecode = {};
+        ShaderBytecode.pShaderBytecode = ShaderBlob->GetBufferPointer();
+        ShaderBytecode.BytecodeLength = ShaderBlob->GetBufferSize();
 
-        // Describe the compute pipeline state
-        D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
-        psoDesc.pRootSignature = rootSignature; // The root signature for the compute shader
-        psoDesc.CS = shaderBytecode;
-
-        // Create the compute pipeline state object
-        ComPtr<ID3D12PipelineState> computePSO = nullptr;
-        hr = D12Data->Device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&computePSO));
-        if (FAILED(hr))
+    
+        //Union used for shader constants
+        struct DWParam
         {
-            assert(false);
-        }
-        // Release the shader blob
-        // shaderBlob->Release();
+            DWParam(FLOAT f) : Float(f) {}
+            DWParam(UINT u) : Uint(u) {}
+
+            void operator= (FLOAT f) { Float = f; }
+            void operator= (UINT u) { Uint = u; }
+
+            union
+            {
+                FLOAT Float;
+                UINT Uint;
+            };
+        };
+
+        //Calculate heap size
+        u32 RequiredHeapSize = 0;
+        RequiredHeapSize += MipLevelCount - 1;
+
+        //The compute shader expects 2 floats, the source texture and the destination texture
+        CD3DX12_DESCRIPTOR_RANGE SrvCbvRanges[2];
+        CD3DX12_ROOT_PARAMETER RootParameters[3];
+        SrvCbvRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0);
+        SrvCbvRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0);
+        RootParameters[0].InitAsConstants(2, 0);
+        RootParameters[1].InitAsDescriptorTable(1, &SrvCbvRanges[0]);
+        RootParameters[2].InitAsDescriptorTable(1, &SrvCbvRanges[1]);
+
+        //Static sampler used to get the linearly interpolated color for the mipmaps
+        D3D12_STATIC_SAMPLER_DESC SamplerDesc = {};
+        SamplerDesc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+        SamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        SamplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        SamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        SamplerDesc.MipLODBias = 0.0f;
+        SamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+        SamplerDesc.MinLOD = 0.0f;
+        SamplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+        SamplerDesc.MaxAnisotropy = 0;
+        SamplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
+        SamplerDesc.ShaderRegister = 0;
+        SamplerDesc.RegisterSpace = 0;
+        SamplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+        //Create the root signature for the mipmap compute shader from the parameters and sampler above
+        ID3DBlob *Signature;
+        CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+        rootSignatureDesc.Init(_countof(RootParameters), RootParameters, 1, &SamplerDesc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+        D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &Signature, &ErrorBlob);
+        ID3D12RootSignature *MipMapRootSignature;
+        D12Data->Device->CreateRootSignature(0, Signature->GetBufferPointer(), Signature->GetBufferSize(), IID_PPV_ARGS(&MipMapRootSignature));
+
+        //Create the descriptor heap with layout: source texture - destination texture
+        D3D12_DESCRIPTOR_HEAP_DESC HeapDesc = {};
+        HeapDesc.NumDescriptors = 2*RequiredHeapSize;
+        HeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+        HeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+        ID3D12DescriptorHeap *DescriptorHeap;
+        D12Data->Device->CreateDescriptorHeap(&HeapDesc, IID_PPV_ARGS(&DescriptorHeap));
+        UINT DescriptorSize = D12Data->Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 
 
+        //Create pipeline state object for the compute shader using the root signature.
+        D3D12_COMPUTE_PIPELINE_STATE_DESC PSODesc = {};
+        PSODesc.pRootSignature = MipMapRootSignature;
+        PSODesc.CS = ShaderBytecode;
+        ID3D12PipelineState *PSOMipMaps;
+        D12Data->Device->CreateComputePipelineState(&PSODesc, IID_PPV_ARGS(&PSOMipMaps));
+
+
+        //Prepare the shader resource view description for the source texture
+        D3D12_SHADER_RESOURCE_VIEW_DESC SrcTextureSRVDesc = {};
+        SrcTextureSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        SrcTextureSRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+
+        //Prepare the unordered access view description for the destination texture
+        D3D12_UNORDERED_ACCESS_VIEW_DESC destTextureUAVDesc = {};
+        destTextureUAVDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+
+        //Get a new empty command list in recording state
         std::shared_ptr<d3d12CommandBufferData> D12CommandBuffer = std::static_pointer_cast<d3d12CommandBufferData>(D12Data->ImmediateCommandBuffer->ApiData);
-        
-        // Transition the intermediate texture to the COPY_SOURCE state
-        // D12CommandBuffer->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(IntermediateTexture.Get(),
-        //                                     D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
 
+        ID3D12GraphicsCommandList *CommandList = D12CommandBuffer->CommandList.Get();
 
-        
-        // Copy the texture to the highest mipmap level in the intermediary
-        D12CommandBuffer->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12Image->Handle.Get(),
-                                            D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COPY_SOURCE));
-        D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
-        srcLocation.pResource = D12Image->Handle.Get();
-        srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-        srcLocation.SubresourceIndex = 0; // Highest mip level
+        //Set root signature, pso and descriptor heap
+        CommandList->SetComputeRootSignature(MipMapRootSignature);
+        CommandList->SetPipelineState(PSOMipMaps);
+        CommandList->SetDescriptorHeaps(1, &DescriptorHeap);
 
-        D3D12_TEXTURE_COPY_LOCATION dstLocation = {};
-        dstLocation.pResource = IntermediateTexture.Get();
-        dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-        dstLocation.SubresourceIndex = 0; // Highest mip level
-        D12CommandBuffer->CommandList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
+        //CPU handle for the first descriptor on the descriptor heap, used to fill the heap
+        CD3DX12_CPU_DESCRIPTOR_HANDLE CurrentCPUHandle(DescriptorHeap->GetCPUDescriptorHandleForHeapStart(), 0, DescriptorSize);
 
+        //GPU handle for the first descriptor on the descriptor heap, used to initialize the descriptor tables
+        CD3DX12_GPU_DESCRIPTOR_HANDLE CurrentGPUHandle(DescriptorHeap->GetGPUDescriptorHandleForHeapStart(), 0, DescriptorSize);
 
-        // Transition the source texture to the COPY_DEST state so we can read it in the shader
-        D12CommandBuffer->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12Image->Handle.Get(),
-            D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-        
+        //Transition from pixel shader resource to unordered access
+        CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12Image->Handle.Get(), D12Image->ResourceState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 
-        D12CommandBuffer->CommandList->SetPipelineState(computePSO.Get());
-        D12CommandBuffer->CommandList->SetComputeRootSignature(rootSignature);
-        D12CommandBuffer->CommandList->SetComputeRootDescriptorTable(0, D12Data->GetGPUDescriptorAt(D12Image->OffsetInHeap));
-        
-
-        // Dispatch the compute shader
-        struct mipSize {u32 Width; u32 Height;};
-        mipSize MipSize;
-        MipSize.Width = Extent.Width;
-        MipSize.Height = Extent.Height;
-        for (UINT mipLevel = 1; mipLevel < MipLevelCount; ++mipLevel)
+        //Loop through the mipmaps copying from the bigger mipmap to the smaller one with downsampling in a compute shader
+        for(uint32_t TopMip = 0; TopMip < MipLevelCount-1; TopMip++)
         {
-            //bind the mipmap level
-            CD3DX12_GPU_DESCRIPTOR_HANDLE IntermediateHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(D12Data->GetGPUDescriptorAt(IntermediateOffsetInHeapStart + mipLevel));
-            D12CommandBuffer->CommandList->SetComputeRootDescriptorTable(1, IntermediateHandle);
-        
-            // Calculate the dimensions of the current mip level
-            MipSize.Width = (std::max)(1u, MipSize.Width / 2);
-            MipSize.Height = (std::max)(1u, MipSize.Height / 2);
+            //Get mipmap dimensions
+            uint32_t DstWidth = std::max(ImageData.Width >> (TopMip+1), 1U);
+            uint32_t DstHeight = std::max(ImageData.Height >> (TopMip+1), 1U);
 
-            // Set the dimensions of the current mip level
-            D12CommandBuffer->CommandList->SetComputeRoot32BitConstants(2, 2, &MipSize, 0);
+            //Create shader resource view for the source texture in the descriptor heap
+            SrcTextureSRVDesc.Format = FormatToNative(ImageData.Format);
+            SrcTextureSRVDesc.Texture2D.MipLevels = 1;
+            SrcTextureSRVDesc.Texture2D.MostDetailedMip = TopMip;
+            D12Data->Device->CreateShaderResourceView(D12Image->Handle.Get(), &SrcTextureSRVDesc, CurrentCPUHandle);
+            CurrentCPUHandle.Offset(1, DescriptorSize);
 
-            // Dispatch the compute shader
-            D12CommandBuffer->CommandList->Dispatch((std::max)(1u, MipSize.Width / 8), (std::max)(1u, MipSize.Height / 8), 1);
-        }
+            //Create unordered access view for the destination texture in the descriptor heap
+            destTextureUAVDesc.Format = FormatToNative(ImageData.Format);
+            destTextureUAVDesc.Texture2D.MipSlice = TopMip+1;
+            D12Data->Device->CreateUnorderedAccessView(D12Image->Handle.Get(), nullptr, &destTextureUAVDesc, CurrentCPUHandle);
+            CurrentCPUHandle.Offset(1, DescriptorSize);
 
-        //Transition the texture to copy dest
-        D12CommandBuffer->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12Image->Handle.Get(),
-            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_COPY_DEST));
+            //Pass the destination texture pixel size to the shader as constants
+            CommandList->SetComputeRoot32BitConstant(0, DWParam(1.0f/DstWidth).Uint, 0);
+            CommandList->SetComputeRoot32BitConstant(0, DWParam(1.0f/DstHeight).Uint, 1);
             
-        //Transition the intermediate to copy source
-        D12CommandBuffer->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(IntermediateTexture.Get(),
-                                            D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COPY_SOURCE));
+            //Pass the source and destination texture views to the shader via descriptor tables
+            CommandList->SetComputeRootDescriptorTable(1, CurrentGPUHandle);
+            CurrentGPUHandle.Offset(1, DescriptorSize);
+            CommandList->SetComputeRootDescriptorTable(2, CurrentGPUHandle);
+            CurrentGPUHandle.Offset(1, DescriptorSize);
 
-        // Copy each level of the intermediary into our texture
-        for (UINT mipLevel = 1; mipLevel < MipLevelCount; ++mipLevel)
-        {
-            // Create a subresource footprint for the current mip level
-            D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
-            UINT numRows;
-            UINT64 rowSizeInBytes;
-            UINT64 totalBytes;
-            D12Data->Device->GetCopyableFootprints(&IntermediateTexture->GetDesc(), mipLevel, 1, 0, &footprint, &numRows, &rowSizeInBytes, &totalBytes);
+            //Dispatch the compute shader with one thread per 8x8 pixels
+            CommandList->Dispatch(std::max(DstWidth / 8, 1u), std::max(DstHeight / 8, 1u), 1);
 
-            // Create a copy operation from the intermediate texture to the source texture
-            D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
-            srcLocation.pResource = IntermediateTexture.Get();
-            srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-            srcLocation.SubresourceIndex = mipLevel;
-
-            D3D12_TEXTURE_COPY_LOCATION dstLocation = {};
-            dstLocation.pResource = D12Image->Handle.Get();
-            dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-            dstLocation.SubresourceIndex = mipLevel;
-
-            // Issue the copy command
-            D12CommandBuffer->CommandList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
+            //Wait for all accesses to the destination texture UAV to be finished before generating the next mipmap, as it will be the source texture for the next mipmap
+            CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(D12Image->Handle.Get()));
         }
-        // Transition the source texture to the shader resource state
-        D12CommandBuffer->CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12Image->Handle.Get(),
-                                            D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
-        
-        
 
+        //When done with the texture, transition it's state back to be a pixel shader resource
+        CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(D12Image->Handle.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+
+
+        //Close and submit the command list
         D12Data->ImmediateCommandBuffer->End();
-        context::Get()->SubmitCommandBufferImmediate(D12Data->ImmediateCommandBuffer.get());
-         
+        context::Get()->SubmitCommandBufferImmediate(D12Data->ImmediateCommandBuffer.get());    
+        
         D12Data->StageBuffer.Flush();
         D12Data->StageBuffer.Reset();
     }
-    
-    //Create the view 
 }
 
 

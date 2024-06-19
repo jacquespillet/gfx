@@ -105,7 +105,7 @@ std::shared_ptr<texture> texture::Deserialize(std::string FilePath)
         gfx::samplerWrapMode::Repeat,
         gfx::samplerWrapMode::Repeat,
         gfx::samplerWrapMode::Repeat,
-        false
+        true
     };    
     Result->Handle = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);
 

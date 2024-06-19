@@ -12,7 +12,7 @@ set(GFX_API_GL 0)
 set(GFX_API_VK 1)
 set(GFX_API_D3D12 2)
 set(GFX_API_D3D11 3)
-set(GFX_API ${GFX_API_D3D12})
+set(GFX_API ${GFX_API_D3D11})
 
 add_definitions(-DGFX_GL=${GFX_API_GL})
 add_definitions(-DGFX_VK=${GFX_API_VK})
@@ -23,6 +23,10 @@ add_definitions(-DGFX_API=${GFX_API})
 if(${GFX_API} EQUAL ${GFX_API_VK} OR ${GFX_API} EQUAL ${GFX_API_D3D12} OR ${GFX_API} EQUAL ${GFX_API_D3D11})
 add_compile_definitions(GLM_FORCE_DEPTH_ZERO_TO_ONE)
 endif()
+
+# if(${GFX_API} EQUAL ${GFX_API_D3D12} OR ${GFX_API} EQUAL ${GFX_API_D3D11})
+# add_compile_definitions(GLM_FORCE_LEFT_HANDED)
+# endif()
 
 set(BUILD_ALL 0)
 
