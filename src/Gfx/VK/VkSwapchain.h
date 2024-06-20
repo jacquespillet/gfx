@@ -12,7 +12,7 @@ struct vkSwapchainData
 
     vk::SwapchainKHR Handle;
     
-    std::shared_ptr<image> SwapchainImages[vkConstants::MaxSwapchainImages];
+    std::vector<std::shared_ptr<image>> SwapchainImages;
     imageUsage::bits SwapchainImageUsages[vkConstants::MaxSwapchainImages];
     framebufferHandle Framebuffers[vkConstants::MaxSwapchainImages];
 

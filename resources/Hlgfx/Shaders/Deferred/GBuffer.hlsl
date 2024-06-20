@@ -1,20 +1,20 @@
-#version 450
-
-#include "../Common/Macros.glsl"
-#include "../Common/Bindings.h"
+#include "resources/Hlgfx/Shaders/Common/Macros.hlsl"
+#include "resources/Hlgfx/Shaders/Common/Bindings.h"
 
 struct PSInput
 {
-    vec2 FragUV;
-    vec3 FragPosition;
-    vec3 FragNormal;
-    vec3 T;
-    vec3 B;
-    vec3 N;
-    vec4 DepthMapUV[MaxLights];
+    vec4 Position : SV_POSITION;
+    
+    vec2 FragUV : TEXCOORD;
+    vec3 FragPosition : NORMAL0;
+    vec3 FragNormal : NORMAL1;
+    vec3 T : POSITION2;
+    vec3 B : POSITION3;
+    vec3 N : POSITION4;
+    vec4 DepthMapUV[MaxLights] : POSITION5;
 };
 
-DECLARE_UNIFORM_BUFFER(CameraDescriptorSetBinding, CameraBinding, Camera)
+cbuffer Camera : register(b0)
 {
     float FOV;
     float AspectRatio;
@@ -24,13 +24,10 @@ DECLARE_UNIFORM_BUFFER(CameraDescriptorSetBinding, CameraBinding, Camera)
     mat4 ProjectionMatrix;
     mat4 ViewMatrix;
     mat4 ViewProjectionMatrix;    
-
-    vec4 CameraPosition;
-
     
-    vec4 LeftRightBottomTop;
-    vec4 BackFront;
+    vec4 CameraPosition;
 };
+
 
 struct lightData
 {
@@ -40,18 +37,16 @@ struct lightData
     vec4 Direction;
     mat4 LightSpaceMatrix;
 };
-
-DECLARE_UNIFORM_BUFFER(SceneDescriptorSetBinding, SceneBinding, Scene)
+cbuffer Scene : register(b2)
 {
-
     float LightCount;
     float MaxLightsCount;
     float ShadowMapSize;
-    float ShadowBias;    
-    lightData Lights[MaxLights];    
+    float ShadowBias;
+    lightData Lights[MaxLights];
 };
 
-DECLARE_UNIFORM_BUFFER(ModelDescriptorSetBinding, ModelBinding, Model)
+cbuffer Model : register(b1)
 {
     mat4 ModelMatrix;    
     mat4 NormalMatrix;    
@@ -79,33 +74,32 @@ struct materialData
     float UseMetallicRoughnessTexture;
     vec2 padding;
 };
-DECLARE_UNIFORM_BUFFER(MaterialDescriptorSetBinding, MaterialDataBinding, Mat)
+cbuffer Material : register(b3)
 {
-    materialData Material;
+    materialData Material; 
 };
 
-DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, BaseColorTextureBinding, BaseColorTexture);
-DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, NormalTextureBinding, NormalTexture);
-DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, MetallicRoughnessTextureBinding, MetallicRoughnessTexture);
-DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, OcclusionTextureBinding, OcclusionTexture);
-DECLARE_UNIFORM_TEXTURE(MaterialDescriptorSetBinding, EmissiveTextureBinding, EmissionTexture);
+Texture2D BaseColorTexture : register(t4);
+Texture2D MetallicRoughnessTexture : register(t5);
+Texture2D OcclusionTexture : register(t6);
+Texture2D NormalTexture : register(t7);
+Texture2D EmissionTexture : register(t8);
+Texture2DArray ShadowMap : register(t10);
 
-// DECLARE_UNIFORM_TEXTURE_SHADOW(SceneDescriptorSetBinding, ShadowMapsBindingStart, ShadowMap);
-DECLARE_UNIFORM_TEXTURE_ARRAY_SHADOW(SceneDescriptorSetBinding, ShadowMapsBindingStart, ShadowMap);
+SamplerState DefaultSampler : register(s0);
+SamplerComparisonState ShadowSampler : register(s1);
 
-/////////////////////////////////
-//////////VERTEX/////////////////
-/////////////////////////////////
-#if defined(VERTEX)
-layout(location = 0) in vec4 PositionUvX;
-layout(location = 1) in vec4 NormalUvY;
-layout(location = 2) in vec4 Tangent;
+#include "resources/Hlgfx/Shaders/PBR/Util.glsl"
+#include "resources/Hlgfx/Shaders/PBR/Material.glsl"
+#include "resources/Hlgfx/Shaders/PBR/Tonemapping.glsl"
+#include "resources/Hlgfx/Shaders/PBR/BRDF.glsl"
 
-layout (location = 0) out PSInput Output;
 
-void main() 
+PSInput VSMain(vec4 PositionUvX : POSITION0, vec4 NormalUvY : POSITION1, vec4 Tangent : POSITION2)
 {
- 	mat4 ModelViewProjection = mul(ViewProjectionMatrix , ModelMatrix);
+    PSInput Output;
+
+	mat4 ModelViewProjection = mul(ViewProjectionMatrix , ModelMatrix);
 	vec4 OutPosition = mul(ModelViewProjection, vec4(PositionUvX.xyz, 1.0));
 	Output.FragPosition = (mul(ModelMatrix, vec4(PositionUvX.xyz, 1.0))).xyz;
 	Output.FragUV = vec2(PositionUvX.w, NormalUvY.w);
@@ -113,47 +107,26 @@ void main()
 
 	Output.FragNormal = normalize((mul(NormalMatrix, vec4(NormalUvY.xyz, 0.0))).xyz);
     vec3 FragTangent = normalize((mul(NormalMatrix, vec4(Tangent.xyz, 0.0))).xyz);  
-    vec3 FragBitangent = normalize(mul(cross(Output.FragNormal, FragTangent.xyz), Tangent.w)); 
+    vec3 FragBitangent = normalize(mul(cross(Output.FragNormal, FragTangent.xyz), Tangent.w));
 	Output.T = FragTangent;
 	Output.B = FragBitangent;
 	Output.N = Output.FragNormal;
 
-    for(int i=0; i<LightCount; i++)
-    {
-        Output.DepthMapUV[i] =  Lights[i].LightSpaceMatrix * vec4(Output.FragPosition, 1);
-    }
+    Output.Position = OutPosition;
     
-    gl_Position = OutPosition;
+    for(int i=0; i<MaxLights; i++)
+    {
+        Output.DepthMapUV[i] = mul(Lights[i].LightSpaceMatrix, vec4(Output.FragPosition, 1));
+    }
+
+    return Output;
 }
 
-#endif
-
-
-/////////////////////////////////
-//////////FRAGMENT///////////////
-/////////////////////////////////
-#if defined(FRAGMENT)
-
-layout (location = 0) in PSInput Input;
-layout(location = 0) out vec4 OutputColor; 
-
-#include "../Common/Util.glsl"
-#include "../Common/Material.glsl"
-#include "../Common/Tonemapping.glsl"
-#include "../Common/BRDF.glsl"
-
-float CalculateBias(vec3 normal, vec3 lightDir, float depth) {
-    float constantBias = 0.005;
-    float slopeFactor = 0.5f;
-
-    float angle = max(dot(normal, lightDir), 0.0);
-    float depthSlope = max(dFdx(depth), dFdy(depth));
-    float bias = constantBias + slopeFactor * depthSlope * (1.0 - angle);
-    return bias;
-}
-
-void main() 
+vec4 PSMain(PSInput Input) : SV_TARGET
 {
+
+    vec4 OutputColor = vec4(0,0,0,0);
+
     //Color
     vec4 BaseColor = GetBaseColor(Input.FragUV);
 
@@ -163,7 +136,6 @@ void main()
     vec3 Normal = NormalInfo.ShadingNormal;
     vec3 Tangent = NormalInfo.Tangent;
     vec3 Bitangent = NormalInfo.Bitangent;
-
 
     float NdotV = ClampedDot(Normal, View);
     float TdotV = ClampedDot(Tangent, View);
@@ -210,24 +182,21 @@ void main()
             float NdotH = ClampedDot(Normal, H);
             FinalDiffuse += LightIntensity * NdotL *  GetBRDFLambertian(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.CDiff, MaterialInfo.SpecularWeight, VdotH);
             FinalSpecular += LightIntensity * NdotL * GetBRDFSpecularGGX(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.AlphaRoughness, MaterialInfo.SpecularWeight, VdotH, NdotL, NdotV, NdotH);
-
-            vec3 ProjCoords = Input.DepthMapUV[i].xyz / Input.DepthMapUV[i].w; // Between 0 and 1
-#if GRAPHICS_API == VK
-            ProjCoords.xy = ProjCoords.xy * 0.5 + 0.5; 
-#else
-            ProjCoords = ProjCoords * 0.5 + 0.5;
-#endif
             
+            // float Visibility = texture(ShadowMap, vec3(Input.DepthMapUV.xy, (Input.DepthMapUV.z - 0.0005)/Input.DepthMapUV.w));
+            vec3 ProjCoords = Input.DepthMapUV[i].xyz;
+            ProjCoords.xy /= Input.DepthMapUV[i].w;
+            ProjCoords.xy = ProjCoords.xy * 0.5 + 0.5;
+            ProjCoords.y = 1 - ProjCoords.y;
+
             // float Bias = CalculateBias(Normal, -LightDirection, CurrentDepth);
             float Bias = max(ShadowBias * (1.0 - dot(Normal, -LightDirection)), 0.0001);
             if(ProjCoords.z > 1.0)
                 Visibility *= 1.0;
             else 
-                Visibility *= mix(0.1, 1, SampleTexture(ShadowMap, PointWrapSampler, vec4(ProjCoords.xy, i, ProjCoords.z - Bias)));
+                Visibility *= SampleShadowTextureArray(ShadowMap, ShadowSampler, vec3(ProjCoords.xy, i), ProjCoords.z - Bias);   
         }
     }
-
-    
 
     //AO
     float AmbientOcclusion = 1.0;
@@ -251,6 +220,5 @@ void main()
     
 
     OutputColor = vec4(Tonemap(FinalColor, 1), BaseColor.a);
+    return OutputColor;
 }
-
-#endif

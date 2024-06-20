@@ -87,7 +87,7 @@ void GenerateMipmaps(vk::Image Image, u32 Width, u32 Height, u32 MipLevels, vk::
                                     1, &Barrier);
 }
 
-void vkImageData::Init(image &Image, imageUsage::value ImageUsage, memoryUsage MemoryUsage, vk::ImageCreateFlags Flags)
+void vkImageData::Init(const image &Image, imageUsage::value ImageUsage, memoryUsage MemoryUsage, vk::ImageCreateFlags Flags)
 {
     vk::ImageCreateInfo ImageCreateInfo;
     ImageCreateInfo.setImageType(vk::ImageType::e2D)
@@ -102,16 +102,12 @@ void vkImageData::Init(image &Image, imageUsage::value ImageUsage, memoryUsage M
                     .setFlags(Flags)
                     .setInitialLayout(vk::ImageLayout::eUndefined);
 
-    // if(Options & imageOptions::CUBEMAP)
-    // {
-    //     ImageCreateInfo.setFlags(vk::ImageCreateFlagBits::eCubeCompatible);
-    // }                       
 
     Allocation = gfx::AllocateImage(ImageCreateInfo, MemoryUsage, &Handle);
     this->CurrentLayout = imageLayout::Undefined;
 }
 
-void image::Init(const imageData &ImageData, const imageCreateInfo &CreateInfo)
+void image::Init(imageData &ImageData, const imageCreateInfo &CreateInfo)
 {
     Extent.Width = ImageData.Width;
     Extent.Height = ImageData.Height;

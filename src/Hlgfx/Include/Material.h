@@ -22,6 +22,7 @@ struct materialFlags
         CullModeOn           = 1 << 3,
         DepthTestEnabled     = 1 << 4,
         DepthWriteEnabled    = 1 << 5,
+        GBuffer              = 1 << 6,
     };
 };
 

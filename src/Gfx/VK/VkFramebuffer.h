@@ -7,7 +7,7 @@ struct vkFramebufferData
 {
     vk::Framebuffer Handle;
 
-    std::shared_ptr<image> *ColorImages;
+    std::vector<std::shared_ptr<image>> ColorImages;
     std::shared_ptr<image> DepthStencilImage;
 
 

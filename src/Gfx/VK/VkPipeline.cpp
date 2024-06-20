@@ -306,6 +306,7 @@ void vkPipelineData::Create(const pipelineCreation &PipelineCreation)
                     .setPDynamicStates(DynamicStates);
         PipelineCreateInfo.setPDynamicState(&DynamicState);
 
+        this->CreateInfo = PipelineCreateInfo;
         this->NativeHandle = VkData->Device.createGraphicsPipeline(VK_NULL_HANDLE, PipelineCreateInfo).value;
         this->BindPoint = vk::PipelineBindPoint::eGraphics;
     }

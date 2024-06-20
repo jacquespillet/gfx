@@ -45,6 +45,7 @@ pbrMaterial::pbrMaterial(std::string Name) : material(Name)
     Flags =  (materialFlags::bits)(materialFlags::PBR | materialFlags::BlendEnabled | materialFlags::CullModeOn | materialFlags::DepthWriteEnabled | materialFlags::DepthTestEnabled);
     this->PipelineHandle = context::Get()->CreateOrGetPipeline(Flags);
 
+
     this->BaseColorTexture = defaultTextures::BlackTexture;
     this->NormalTexture = defaultTextures::BlueTexture;
     this->EmissiveTexture = defaultTextures::BlackTexture;

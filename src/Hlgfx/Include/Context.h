@@ -18,6 +18,7 @@ namespace hlgfx
 {
 struct shadowsRenderer;
 struct mainRenderer;
+struct renderer;
 struct scene;  
 struct mesh;  
 struct contextGUI;  
@@ -48,7 +49,7 @@ struct context
 
     std::shared_ptr<camera> CurrentCamera;
 
-    gfx::pipelineCreation GetPipelineCreation(materialFlags::bits Flags);
+    gfx::pipelineCreation GetPipelineCreation(materialFlags::bits Flags, gfx::renderPassHandle = gfx::InvalidHandle);
     gfx::pipelineHandle CreateOrGetPipeline(materialFlags::bits Flags);
     gfx::pipelineHandle GetPipeline(materialFlags::bits Flags);
 
@@ -73,13 +74,14 @@ struct context
     //Then each material instantiates another pipeline
     static const u32 PBRPipeline = 0;
     static const u32 ShadowsPipeline = 1;
+    static const u32 GBufferPipeline = 2;
+    std::unordered_map<u32, gfx::pipelineHandle> Pipelines;
+    std::unordered_map<materialFlags::bits, gfx::pipelineHandle> AllPipelines;
 
+    // Shadow consts
     static const u32 ShadowMapSize = 1024;
     static const gfx::format ShadowMapFormat = gfx::format::D32_SFLOAT;
 
-    std::unordered_map<u32, gfx::pipelineHandle> Pipelines;
-
-    std::unordered_map<materialFlags::bits, gfx::pipelineHandle> AllPipelines;
     std::string GetUUID();
     struct project
     {
@@ -117,7 +119,7 @@ struct context
 
     //Shadow maps
     std::shared_ptr<hlgfx::shadowsRenderer> ShadowsRenderer;
-    std::shared_ptr<hlgfx::mainRenderer> MainRenderer;
+    std::shared_ptr<hlgfx::renderer> MainRenderer;
 	
     gfx::imageHandle ShadowMaps;
 

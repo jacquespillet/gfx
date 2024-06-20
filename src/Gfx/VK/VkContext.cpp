@@ -73,7 +73,7 @@ bool GetSupportedDepthFormat(vk::PhysicalDevice PhysicalDevice, format *DepthFor
     return false;
 }
 
-void CreateSwapchainFramebuffer(std::shared_ptr<image> *ColorImages, std::shared_ptr<image> DepthStencilImage, renderPassHandle RenderPassHandle, sz ImagesCount, vkSwapchainData *VkSwapchainData)
+void CreateSwapchainFramebuffer(std::vector<std::shared_ptr<image>> ColorImages, std::shared_ptr<image> DepthStencilImage, renderPassHandle RenderPassHandle, sz ImagesCount, vkSwapchainData *VkSwapchainData)
 {
     auto Context = context::Get();
     GET_CONTEXT(VkData, Context);
@@ -231,6 +231,7 @@ std::shared_ptr<swapchain> context::CreateSwapchain(u32 Width, u32 Height, std::
     }
 
     //Initialize texture representations of swapchain images
+    VkSwapchainData->SwapchainImages.resize(VkData->PresentImageCount);
     for(u32 i=0; i<VkData->PresentImageCount; i++)
     {
         VkSwapchainData->SwapchainImages[i] = 
@@ -334,7 +335,7 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
     
     //Get present image count
     auto SurfaceCapabilities = VkData->PhysicalDevice.getSurfaceCapabilitiesKHR(VkData->Surface);
-    VkData->PresentImageCount = std::max(SurfaceCapabilities.maxImageCount, 1u);
+    VkData->PresentImageCount = (std::max)(SurfaceCapabilities.maxImageCount, 1u);
     InitializeInfo.InfoCallback("Present image count " + std::to_string(VkData->PresentImageCount));
 
     //Get surface format
@@ -824,7 +825,7 @@ descriptorSetLayoutHandle CreateDescriptorSetLayout(const descriptorSetLayoutCre
     for(u32 i=0; i<Creation.NumBindings; i++)
     {
         const descriptorSetLayoutCreation::binding &Binding = Creation.Bindings[i];
-        MaxBinding = std::max(MaxBinding, Binding.Start);
+        MaxBinding = (std::max)(MaxBinding, Binding.Start);
     }    
     MaxBinding +=1;
 
@@ -1121,7 +1122,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
     vk::RenderPass VkRenderPass = std::static_pointer_cast<vkRenderPassData>(RenderPass->ApiData)->NativeHandle;
 
     //Create color images
-    std::shared_ptr<image> *ColorImages = (std::shared_ptr<image>*)AllocateMemory(sizeof(std::shared_ptr<image>) * CreateInfo.ColorFormats.size());
+    std::vector<std::shared_ptr<image>> ColorImages(CreateInfo.ColorFormats.size());
     std::vector<vk::ImageView> Attachments(CreateInfo.ColorFormats.size() + 1);
     for (sz i = 0; i < CreateInfo.ColorFormats.size(); i++)
     {
@@ -1383,8 +1384,8 @@ void context::DestroyFramebuffer(framebufferHandle FramebufferHandle)
 
     VkData->Device.destroyFramebuffer(VkFramebufferData->Handle);
     ResourceManager.Framebuffers.ReleaseResource(FramebufferHandle);
-
-    DeallocateMemory(VkFramebufferData->ColorImages);
+    
+    VkFramebufferData->ColorImages.resize(0);
 }
 
 void context::DestroySwapchain()

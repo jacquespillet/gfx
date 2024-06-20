@@ -114,8 +114,10 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->Imgui = gfx::imgui::Initialize(Singleton->GfxContext, Singleton->Window, Singleton->SwapchainPass);
     Singleton->GUI = std::make_shared<contextGUI>(Singleton.get());
 
+    // Register pipelines that will be used in the app
     Singleton->Pipelines[PBRPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/PBR/PBR.json");
     Singleton->Pipelines[ShadowsPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/ShadowMaps/ShadowMaps.json");
+    Singleton->Pipelines[GBufferPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/Deferred/GBuffer.json");
 
     struct rgba {uint8_t r, g, b, a;};
     u32 TexWidth = 64;
@@ -188,13 +190,16 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     
     Singleton->ShadowsRenderer = std::make_shared<hlgfx::shadowsRenderer>();
     Singleton->MainRenderer = std::make_shared<hlgfx::mainRenderer>();
+    // Singleton->MainRenderer = std::make_shared<hlgfx::deferredRenderer>();
+
 
 
     return Singleton;
 }
 
-gfx::pipelineCreation context::GetPipelineCreation(materialFlags::bits Flags)
+gfx::pipelineCreation context::GetPipelineCreation(materialFlags::bits Flags, gfx::renderPassHandle RenderPassHandle)
 {
+    // This is odd. We should get all of that from the json file instead..
 
     gfx::pipelineCreation PipelineCreation = {};
 
@@ -212,6 +217,18 @@ gfx::pipelineCreation context::GetPipelineCreation(materialFlags::bits Flags)
         {
             ShaderFileName = "PBR.hlsl";
         }
+    } else if(Flags & materialFlags::GBuffer)
+    {
+        PipelineCreation.Name = gfx::AllocateCString("GBuffer");
+        ShaderParentPath = "resources/Hlgfx/Shaders/Deferred/";
+        if(GFX_API == GFX_VK || GFX_API == GFX_GL)
+        {
+            ShaderFileName = "GBuffer.glsl";
+        }
+        else
+        {
+            ShaderFileName = "GBuffer.hlsl";
+        }        
     }
 
 
@@ -293,16 +310,32 @@ gfx::pipelineCreation context::GetPipelineCreation(materialFlags::bits Flags)
     PipelineCreation.DepthStencil.DepthWriteEnable = (u8)((b8)(Flags & materialFlags::DepthWriteEnabled));
     PipelineCreation.DepthStencil.DepthComparison = gfx::compareOperation::LessOrEqual;
     
-
-    gfx::blendState &BlendState = PipelineCreation.BlendState.AddBlendState();
-    BlendState.BlendEnabled = Flags & materialFlags::BlendEnabled;
-    BlendState.SeparateBlend=false;
-    if(BlendState.BlendEnabled)
-        BlendState.SetColor(gfx::blendFactor::SrcAlpha, gfx::blendFactor::OneMinusSrcAlpha, gfx::blendOperation::Add);
+    // TODO: If GBuffer, add blend states
+    if(Flags & materialFlags::GBuffer)
+    {
+        for(int i=0; i<4; i++)
+        {
+            gfx::blendState &BlendState = PipelineCreation.BlendState.AddBlendState();
+            BlendState.BlendEnabled = false;
+            // BlendState.BlendEnabled = Flags & materialFlags::BlendEnabled;
+            // BlendState.SeparateBlend=false;
+            // if(BlendState.BlendEnabled)
+            //     BlendState.SetColor(gfx::blendFactor::SrcAlpha, gfx::blendFactor::OneMinusSrcAlpha, gfx::blendOperation::Add);
+        }
+    }
+    else
+    {
+        gfx::blendState &BlendState = PipelineCreation.BlendState.AddBlendState();
+        BlendState.BlendEnabled = Flags & materialFlags::BlendEnabled;
+        BlendState.SeparateBlend=false;
+        if(BlendState.BlendEnabled)
+            BlendState.SetColor(gfx::blendFactor::SrcAlpha, gfx::blendFactor::OneMinusSrcAlpha, gfx::blendOperation::Add);
+    }
 
     PipelineCreation.Rasterization.CullMode = (Flags & materialFlags::CullModeOn) ? gfx::cullMode::Back : gfx::cullMode::None;
 
-    PipelineCreation.RenderPassHandle = gfx::context::Get()->SwapchainRenderPass;
+    
+    PipelineCreation.RenderPassHandle = (RenderPassHandle == gfx::InvalidHandle) ? gfx::context::Get()->SwapchainRenderPass : RenderPassHandle;
 
     return PipelineCreation;    
 }
@@ -644,8 +677,13 @@ void context::Render(std::shared_ptr<camera> Camera)
         }
     }
     
-    MainRenderer->RenderTarget = GfxContext->GetSwapchainFramebuffer();
+    // Render with main renderer
+    
     MainRenderer->Render(Scene, Camera);
+
+    // Render with deferred renderer
+
+    // 
 }
 
 void context::Update()
@@ -850,6 +888,47 @@ void context::LoadProjectFromFile(const char *FileName)
         Project.Scenes[Scene->UUID] = Scene;  
         if(i==0) this->Scene = Scene;
     }
+
+    // We need all those materials to be using the deferred pipeline.
+    // 
+
+    // if(std::shared_ptr<deferredRenderer> DeferredRenderer =  std::dynamic_pointer_cast<deferredRenderer>(Singleton->MainRenderer))
+    // {
+    //     gfx::renderPassHandle RenderPass = gfx::context::Get()->GetFramebuffer(DeferredRenderer->RenderTarget)->RenderPass;
+        
+    //     // Convert all pipelines in the scene to GBuffer pipeline
+    //     std::unordered_map<materialFlags::bits, gfx::pipelineHandle> NewPipelines;
+    //     for(auto &Pipeline : AllPipelines)
+    //     {
+    //         materialFlags::bits Flag = Pipeline.first;
+
+    //         Flag = (materialFlags::bits)((u32)Flag & ~(u32)materialFlags::bits::PBR);
+    //         Flag = (materialFlags::bits)((u32)Flag |  (u32)materialFlags::bits::GBuffer);
+    //         gfx::pipelineCreation PipelineCreation = context::Get()->GetPipelineCreation(Flag, RenderPass);
+    //         gfx::context::Get()->RecreatePipeline(PipelineCreation, Pipeline.second);
+
+    //         NewPipelines[Flag] = Pipeline.second;
+    //     }
+    //     this->AllPipelines= NewPipelines;
+
+    //     // Change the materials so they bind with the new materials
+    //     for(auto &Material : Singleton->Project.Materials)
+    //     {
+    //         Material.second->Flags = (materialFlags::bits)((u32)Material.second->Flags & ~(u32)materialFlags::bits::PBR);
+    //         Material.second->Flags = (materialFlags::bits)((u32)Material.second->Flags |  (u32)materialFlags::bits::GBuffer);
+    //         gfx::context::Get()->BindUniformsToPipeline(Material.second->Uniforms, Material.second->PipelineHandle, MaterialDescriptorSetBinding, true);
+    //         Material.second->Uniforms->Update();                     
+    //     }
+
+    //     for(auto &PipelineMeshes : Singleton->Scene->Meshes)
+    //     {
+    //         for(auto &Mesh : PipelineMeshes.second)
+    //         {
+    //             gfx::context::Get()->BindUniformsToPipeline(Mesh->Uniforms, Mesh->Material->PipelineHandle, ModelDescriptorSetBinding, true);
+    //             Mesh->Uniforms->Update();
+    //         }
+    //     }
+    // }    
 }
 
 void context::SaveProjectToFile(const char *FileName)

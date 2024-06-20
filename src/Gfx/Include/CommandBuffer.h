@@ -50,7 +50,7 @@ struct commandBuffer
     void Initialize();
     
     void Begin();
-    void BeginPass(framebufferHandle Framebuffer, clearColorValues ClearColor, clearDepthStencilValues DepthStencil);
+    void BeginPass(framebufferHandle Framebuffer, std::vector<clearColorValues> &ClearColor, clearDepthStencilValues DepthStencil);
     void BindGraphicsPipeline(pipelineHandle Pipeline);
     void BindComputePipeline(pipelineHandle Pipeline);
     void BindVertexBuffer(vertexBufferHandle Buffer);

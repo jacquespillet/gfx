@@ -36,7 +36,7 @@ void commandBuffer::Begin()
     VkCommandBufferData->Handle.begin(CommandBufferBeginInfo);
 }
 
-void commandBuffer::BeginPass(framebufferHandle FramebufferHandle, clearColorValues ClearColor, clearDepthStencilValues DepthStencil)
+void commandBuffer::BeginPass(framebufferHandle FramebufferHandle, std::vector<clearColorValues> &ClearColor, clearDepthStencilValues DepthStencil)
 {
     context *Context = context::Get();
     GET_CONTEXT(VkData, Context);
@@ -55,21 +55,28 @@ void commandBuffer::BeginPass(framebufferHandle FramebufferHandle, clearColorVal
     RenderArea.setExtent(vk::Extent2D(Framebuffer->Width, Framebuffer->Height));
     RenderArea.setOffset(vk::Offset2D(0, 0));
 
-    std::array<float, 4> ClearColorsArray = { ClearColor.R, ClearColor.G, ClearColor.B, ClearColor.A};
-    vk::ClearValue ClearValue[3];
-    if(VkFramebufferData->IsMultiSampled)
+    static vk::ClearValue ClearValue[16 + 1];
+    for(s32 i=0; i<ClearColor.size(); i++)
     {
-        ClearValue[0].color.setFloat32(ClearColorsArray);
-        ClearValue[1].color.setFloat32(ClearColorsArray);
-        ClearValue[2].depthStencil.setDepth(DepthStencil.Depth);
-        ClearValue[2].depthStencil.setStencil(DepthStencil.Stencil);
+        static std::array<float, 4> ClearColorsArray = { ClearColor[i].R, ClearColor[i].G, ClearColor[i].B, ClearColor[i].A};
+        ClearValue[i].color.setFloat32(ClearColorsArray);
     }
-    else
-    {
-        ClearValue[0].color.setFloat32(ClearColorsArray);
-        ClearValue[1].depthStencil.setDepth(DepthStencil.Depth);
-        ClearValue[1].depthStencil.setStencil(DepthStencil.Stencil);
-    }
+    ClearValue[ClearColor.size()].depthStencil.setDepth(DepthStencil.Depth);
+    ClearValue[ClearColor.size()].depthStencil.setStencil(DepthStencil.Stencil);
+    
+    // if(VkFramebufferData->IsMultiSampled)
+    // {
+    //     ClearValue[0].color.setFloat32(ClearColorsArray);
+    //     ClearValue[1].color.setFloat32(ClearColorsArray);
+    //     ClearValue[2].depthStencil.setDepth(DepthStencil.Depth);
+    //     ClearValue[2].depthStencil.setStencil(DepthStencil.Stencil);
+    // }
+    // else
+    // {
+    //     ClearValue[0].color.setFloat32(ClearColorsArray);
+    //     ClearValue[1].depthStencil.setDepth(DepthStencil.Depth);
+    //     ClearValue[1].depthStencil.setStencil(DepthStencil.Stencil);
+    // }
 
     vk::RenderPassBeginInfo RenderPassBegin;
     RenderPassBegin.setRenderPass(VkRenderPassHandle)

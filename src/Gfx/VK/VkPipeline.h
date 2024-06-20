@@ -54,6 +54,8 @@ struct vkPipelineData
     VkStridedDeviceAddressRegionKHR IsectSBTAddress = {};
     VkStridedDeviceAddressRegionKHR CallableSBTAddress = {};
 
+    vk::GraphicsPipelineCreateInfo CreateInfo;
+
     void Create(const pipelineCreation &PipelineCreation);
 
     void DestroyVkResources();
