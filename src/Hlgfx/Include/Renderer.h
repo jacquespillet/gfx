@@ -8,6 +8,8 @@ struct scene;
 struct camera;
 struct material;
 struct renderer;
+struct indexedGeometryBuffers;
+
 
 
 struct renderer
@@ -27,11 +29,11 @@ struct deferredRenderer : public renderer
 {
     // gfx::pipelineHandle GBufferPipeline;
     
-    // gfx::pipelineHandle CompositionPipeline;
-    // std::shared_ptr<material> CompositionMaterial = nullptr;
+    gfx::pipelineHandle CompositionPipeline;
+    std::shared_ptr<material> CompositionMaterial = nullptr;
 
-    // std::shared_ptr<indexedGeometryBuffers> QuadGeometry;
-    // // std::shared_ptr<mesh> Quad;
+    std::shared_ptr<indexedGeometryBuffers> QuadGeometry;
+    // std::shared_ptr<mesh> Quad;
 
     // gfx::framebufferHandle GFramebuffer;
     deferredRenderer();

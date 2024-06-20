@@ -118,6 +118,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->Pipelines[PBRPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/PBR/PBR.json");
     Singleton->Pipelines[ShadowsPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/ShadowMaps/ShadowMaps.json");
     Singleton->Pipelines[GBufferPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/Deferred/GBuffer.json");
+    Singleton->Pipelines[CompositionPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/Deferred/Composition.json");
 
     struct rgba {uint8_t r, g, b, a;};
     u32 TexWidth = 64;
@@ -162,8 +163,6 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     defaultTextures::WhiteTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
     defaultTextures::WhiteTexture->UUID = "WHITE_TEXTURE";
 
-    Singleton->NoMaterial = std::make_shared<pbrMaterial>("NO_MATERIAL");
-    Singleton->NoMaterial->UUID = "NO_MATERIAL";
     
 
     //Initialize default 3d objects WITHOUT materials. materials are created when these objects are instanciated.
@@ -189,11 +188,17 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->ShadowMaps = Singleton->GfxContext->CreateImageArray(ShadowMapSize, ShadowMapSize, MaxLights, ShadowMapFormat, gfx::imageUsage::SHADER_READ);
     
     Singleton->ShadowsRenderer = std::make_shared<hlgfx::shadowsRenderer>();
-    Singleton->MainRenderer = std::make_shared<hlgfx::mainRenderer>();
+    
+    if(Singleton->RenderType == rendererType::forward)
+        Singleton->MainRenderer = std::make_shared<hlgfx::mainRenderer>();
+    else if(Singleton->RenderType == rendererType::deferred)
+        Singleton->MainRenderer = std::make_shared<hlgfx::deferredRenderer>();
+
     // Singleton->MainRenderer = std::make_shared<hlgfx::deferredRenderer>();
 
-
-
+    Singleton->NoMaterial = std::make_shared<pbrMaterial>("NO_MATERIAL");
+    Singleton->NoMaterial->UUID = "NO_MATERIAL";
+    
     return Singleton;
 }
 
@@ -259,7 +264,7 @@ gfx::pipelineCreation context::GetPipelineCreation(materialFlags::bits Flags, gf
     gfx::ShaderConcatenate(ShaderFileName, VertexCode, ShaderParentPath);
     std::string VertexCustomDefines = "#define VERTEX\n";
     VertexCustomDefines += ApiDefinition;
-    VertexCode = std::regex_replace(VertexCode, std::regex("CUSTOM_DEFINES"), VertexCustomDefines);
+    VertexCode = std::regex_replace(VertexCode, std::regex("// CUSTOM_DEFINES"), VertexCustomDefines);
     const char *VertexCodeCStr = gfx::AllocateCString(VertexCode.c_str());
     const char *VertexFileNameCStr = gfx::AllocateCString(ShaderParentPath + "/" + ShaderFileName);
     PipelineCreation.Shaders.AddStage(VertexCodeCStr, VertexFileNameCStr, (u32)strlen(VertexCodeCStr), gfx::shaderStageFlags::bits::Vertex);
@@ -268,7 +273,7 @@ gfx::pipelineCreation context::GetPipelineCreation(materialFlags::bits Flags, gf
     gfx::ShaderConcatenate(ShaderFileName, FragmentCode, ShaderParentPath);
     std::string FragmentCustomDefines = "#define FRAGMENT\n";
     FragmentCustomDefines += ApiDefinition;
-    FragmentCode = std::regex_replace(FragmentCode, std::regex("CUSTOM_DEFINES"), FragmentCustomDefines);
+    FragmentCode = std::regex_replace(FragmentCode, std::regex("// CUSTOM_DEFINES"), FragmentCustomDefines);
     const char *FragmentCodeCStr = gfx::AllocateCString(FragmentCode.c_str());
     const char *FragmentFileNameCStr = gfx::AllocateCString(ShaderParentPath + "/" + ShaderFileName);
     PipelineCreation.Shaders.AddStage(FragmentCodeCStr, FragmentFileNameCStr, (u32)strlen(FragmentCodeCStr), gfx::shaderStageFlags::bits::Fragment);
@@ -353,7 +358,8 @@ gfx::pipelineHandle context::CreateOrGetPipeline(materialFlags::bits Flags)
 {
     if(this->AllPipelines.find(Flags) == this->AllPipelines.end())
     {
-        gfx::pipelineCreation Creation = GetPipelineCreation(Flags);
+        gfx::renderPassHandle RenderPass = GfxContext->GetFramebuffer(this->MainRenderer->RenderTarget)->RenderPass;
+        gfx::pipelineCreation Creation = GetPipelineCreation(Flags, RenderPass);
         this->AllPipelines[Flags] = gfx::context::Get()->CreatePipeline(Creation);
     }
 
@@ -696,6 +702,12 @@ void context::EndFrame()
     GfxContext->EndFrame();
     GfxContext->Present();   
      
+}
+
+void context::SetRenderFlags(materialFlags::bits &Flags)
+{
+    Flags = (materialFlags::bits)((u32)Flags & ~(u32)materialFlags::bits::PBR);
+    Flags = (materialFlags::bits)((u32)Flags |  (u32)materialFlags::bits::GBuffer);
 }
 
 void context::OnResize(u32 Width, u32 Height)

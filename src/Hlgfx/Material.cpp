@@ -43,6 +43,8 @@ pbrMaterial::pbrMaterial(std::string Name) : material(Name)
 {
     gfx::context *Context = gfx::context::Get();
     Flags =  (materialFlags::bits)(materialFlags::PBR | materialFlags::BlendEnabled | materialFlags::CullModeOn | materialFlags::DepthWriteEnabled | materialFlags::DepthTestEnabled);
+    context::Get()->SetRenderFlags(Flags);
+    
     this->PipelineHandle = context::Get()->CreateOrGetPipeline(Flags);
 
 
@@ -86,6 +88,8 @@ pbrMaterial::pbrMaterial(std::string Name) : material(Name)
 pbrMaterial::pbrMaterial(std::string Name, materialFlags::bits Flags) : material(Name)
 {
     gfx::context *Context = gfx::context::Get();
+    context::Get()->SetRenderFlags(Flags);
+
 
     this->BaseColorTexture = defaultTextures::WhiteTexture;
     this->NormalTexture = defaultTextures::BlueTexture;
@@ -325,10 +329,12 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
     std::string Name; Name.resize(NameSize);
     FileStream.read(Name.data(), Name.size());
 
-    u32 Flags;
-    FileStream.read((char*)&Flags, sizeof(u32));
+    u32 FlagsUI;
+    FileStream.read((char*)&FlagsUI, sizeof(u32));
 
-    std::shared_ptr<pbrMaterial> Result = std::make_shared<pbrMaterial>(Name, (materialFlags::bits)Flags);
+    materialFlags::bits Flags = (materialFlags::bits)FlagsUI;
+    
+    std::shared_ptr<pbrMaterial> Result = std::make_shared<pbrMaterial>(Name, Flags);
     Result->UUID = UUID;
     
     FileStream.read((char*)&Result->UniformData, sizeof(pbrMaterial::materialData));

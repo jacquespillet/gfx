@@ -269,7 +269,7 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
             }
             
             // Code.replace(Code.begin(), Code.end(), "{{CustomDefines}}", CustomDefines);
-            Code = std::regex_replace(Code, std::regex("CUSTOM_DEFINES"), CustomDefines);
+            Code = std::regex_replace(Code, std::regex("// CUSTOM_DEFINES"), CustomDefines);
             const char *CodeCStr = AllocateCString(Code.c_str());
             const char *FileNameCStr = AllocateCString(ParentPath + "/" + ShaderFileName.c_str());
 
@@ -419,6 +419,10 @@ void ParseGPUPipeline(nlohmann::json &PipelineJSON, pipelineCreation &PipelineCr
             if(Name == "less_or_equal")
             {
                 PipelineCreation.DepthStencil.DepthComparison = compareOperation::LessOrEqual;
+            }
+            else if(Name == "less")
+            {
+                PipelineCreation.DepthStencil.DepthComparison = compareOperation::Less;
             }
             else if(Name == "equal")
             {

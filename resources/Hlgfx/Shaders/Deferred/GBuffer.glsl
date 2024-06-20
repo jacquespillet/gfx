@@ -135,7 +135,11 @@ void main()
 #if defined(FRAGMENT)
 
 layout (location = 0) in PSInput Input;
-layout(location = 0) out vec4 OutputColor; 
+
+layout (location = 0) out vec4 outPositionDepth;
+layout (location = 1) out vec4 outNormal;
+layout (location = 2) out uvec4 outAlbedoMetallicRoughnessOcclusionOcclusionStrength;
+layout (location = 3) out vec4 outEmission;
 
 #include "../Common/Util.glsl"
 #include "../Common/Material.glsl"
@@ -143,26 +147,43 @@ layout(location = 0) out vec4 OutputColor;
 void main() 
 {
     // //Color
-    // vec4 BaseColor = GetBaseColor(Input.FragUV);
+    vec4 BaseColor = GetBaseColor(Input.FragUV);
+    if(BaseColor.a < Material.AlphaCutoff)
+        discard;
 
-    // materialInfo MaterialInfo;
-    // MaterialInfo.BaseColor = BaseColor.rgb;
-    // MaterialInfo.ior = 1.5;
-    // MaterialInfo.f0 = vec3(0.04,0.04,0.04);
-    // MaterialInfo.SpecularWeight = 1.0;
-    // MaterialInfo = GetMetallicRoughnessInfo(MaterialInfo, Input.FragUV);
+    // Material
+    materialInfo MaterialInfo;
+    MaterialInfo.BaseColor = BaseColor.rgb;
+    MaterialInfo.ior = 1.5;
+    MaterialInfo.f0 = vec3(0.04,0.04,0.04);
+    MaterialInfo.SpecularWeight = 1.0;
+    MaterialInfo = GetMetallicRoughnessInfo(MaterialInfo, Input.FragUV);
 
-    // //Emissive
-    // // FinalEmissive = Material.Emission * Material.EmissiveFactor;
-    // // vec3 EmissiveSample = SampleTexture(EmissionTexture, DefaultSampler, Input.FragUV).rgb;
-    // // EmissiveSample = mix(vec3(1,1,1), EmissiveSample, Material.UseEmissionTexture);
-    // // FinalEmissive *= EmissiveSample;
+    //Emissive
+    vec3 FinalEmissive = Material.Emission * Material.EmissiveFactor;
+    vec3 EmissiveSample = SampleTexture(EmissionTexture, DefaultSampler, Input.FragUV).rgb;
+    EmissiveSample = mix(vec3(1,1,1), EmissiveSample, Material.UseEmissionTexture);
+    FinalEmissive *= EmissiveSample;
 
-    // if(BaseColor.a < Material.AlphaCutoff)
-    //     discard;
 
-    // OutputColor = vec4(BaseColor);
-    OutputColor = vec4(1,0,0,1);
+    //Normal
+    vec3 View = normalize(CameraPosition.xyz - Input.FragPosition);
+    normalInfo NormalInfo = GetNormalInfo(Input.T, Input.B, Input.N, Input.FragUV);
+    vec3 Normal = NormalInfo.ShadingNormal;
+
+    // AO
+    float AmbientOcclusion = 1.0;
+    AmbientOcclusion = SampleTexture(OcclusionTexture, DefaultSampler, Input.FragUV).r;
+    AmbientOcclusion = mix(1, AmbientOcclusion, Material.UseOcclusionTexture);
+
+	outAlbedoMetallicRoughnessOcclusionOcclusionStrength.r = packHalf2x16(BaseColor.rg); //Packs 2 floats into a uint
+	outAlbedoMetallicRoughnessOcclusionOcclusionStrength.g = packHalf2x16(BaseColor.ba);
+	outAlbedoMetallicRoughnessOcclusionOcclusionStrength.b = packHalf2x16(vec2(MaterialInfo.Metallic, MaterialInfo.PerceptualRoughness));
+	outAlbedoMetallicRoughnessOcclusionOcclusionStrength.a = packHalf2x16(vec2(AmbientOcclusion, Material.OcclusionStrength));        
+    
+    outPositionDepth = vec4(Input.FragPosition, 0);
+    outNormal.xyz = Normal  * 0.5 + 0.5;
+    outEmission.xyz = FinalEmissive;
 }
 
 #endif

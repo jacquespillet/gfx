@@ -75,6 +75,8 @@ struct context
     static const u32 PBRPipeline = 0;
     static const u32 ShadowsPipeline = 1;
     static const u32 GBufferPipeline = 2;
+    static const u32 CompositionPipeline = 4;
+
     std::unordered_map<u32, gfx::pipelineHandle> Pipelines;
     std::unordered_map<materialFlags::bits, gfx::pipelineHandle> AllPipelines;
 
@@ -119,7 +121,15 @@ struct context
 
     //Shadow maps
     std::shared_ptr<hlgfx::shadowsRenderer> ShadowsRenderer;
+
+    // RenderType
+    enum class rendererType
+    {
+        forward,
+        deferred
+    } RenderType = rendererType::deferred;
     std::shared_ptr<hlgfx::renderer> MainRenderer;
+    void SetRenderFlags(materialFlags::bits &Flags);
 	
     gfx::imageHandle ShadowMaps;
 

@@ -2,7 +2,7 @@
 	"name" : "main",
 	"pipelines" : [
 		{
-			"name" : "GBuffer",
+			"name" : "Composition",
 			"vertex_streams":
 			[
 				{
@@ -34,31 +34,31 @@
 					"name" : "Position"
 				}
 			],
-			"render_pass" : "GBuffer",
+			"render_pass" : "Composition",
 			"depth" : {
 				"write" : true,
-				"test" : "less"
+				"test" : "less_or_equal"
 			},
 			"shaders" : [
 				{
 					"language": "GLSL",
 					"stage" : "vertex",
-					"shader" : "GBuffer.glsl"
+					"shader" : "Composition.glsl"
 				},
 				{
 					"language": "GLSL",
 					"stage" : "fragment",
-					"shader" : "GBuffer.glsl"
+					"shader" : "Composition.glsl"
 				},
 				{
 					"language": "HLSL",
 					"stage" : "vertex",
-					"shader" : "GBuffer.hlsl"
+					"shader" : "Composition.hlsl"
 				},
 				{
 					"language": "HLSL",
 					"stage" : "fragment",
-					"shader" : "GBuffer.hlsl"
+					"shader" : "Composition.hlsl"
 				}				
 			]
 		}

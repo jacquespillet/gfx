@@ -495,6 +495,7 @@ void vkImageData::InitSampler(const imageCreateInfo &CreateInfo, u32 MipLevelCou
 
 void vkImageData::InitSamplerDefault(format Format)
 {
+
     vk::SamplerCreateInfo SamplerCreateInfo;
     SamplerCreateInfo.setMagFilter(vk::Filter::eLinear)
                      .setMinFilter(vk::Filter::eLinear)
@@ -509,6 +510,11 @@ void vkImageData::InitSamplerDefault(format Format)
     if(IsDepthFormat(Format))
     {
         SamplerCreateInfo.setCompareEnable(true).setCompareOp(vk::CompareOp::eLess);
+    }
+    if(Format == format::R32G32B32A32_UINT) //TODO: Add all the formats that do not support compare
+    {
+        SamplerCreateInfo.setMagFilter(vk::Filter::eNearest).setMinFilter(vk::Filter::eNearest);
+        // SamplerCreateInfo.setCompareEnable(true);
     }
     auto Vulkan = context::Get();
     GET_CONTEXT(VkData, context::Get());
