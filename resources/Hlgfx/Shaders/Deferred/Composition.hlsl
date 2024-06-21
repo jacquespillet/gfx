@@ -1,10 +1,8 @@
-#version 450
-
-#include "../Common/Macros.glsl"
-#include "../Common/Bindings.h"
+#include "resources/Hlgfx/Shaders/Common/Macros.hlsl"
+#include "resources/Hlgfx/Shaders/Common/Bindings.h"
 
 
-DECLARE_UNIFORM_BUFFER(CameraDescriptorSetBinding, CameraBinding, Camera)
+cbuffer Camera : register(b0)
 {
     float FOV;
     float AspectRatio;
@@ -32,7 +30,7 @@ struct lightData
 };
 
 
-DECLARE_UNIFORM_BUFFER(SceneDescriptorSetBinding, SceneBinding, Scene)
+cbuffer Scene : register(b2)
 {
 
     float LightCount;
@@ -46,65 +44,61 @@ DECLARE_UNIFORM_BUFFER(SceneDescriptorSetBinding, SceneBinding, Scene)
 
 struct PSInput
 {
-    vec2 FragUV;
+    vec4 Position : SV_POSITION;
+    vec2 FragUV : TEXCOORD;
 };
 
 
 /////////////////////////////////
 //////////VERTEX/////////////////
 /////////////////////////////////
-#if defined(VERTEX)
-layout(location = 0) in vec4 PositionUvX;
-layout(location = 1) in vec4 NormalUvY;
-layout(location = 2) in vec4 Tangent;
-
-layout (location = 0) out PSInput Output;
-
-void main() 
+PSInput VSMain(vec4 PositionUvX : POSITION0, vec4 NormalUvY : POSITION1, vec4 Tangent : POSITION2)
 {
+    PSInput Output;
     Output.FragUV = vec2(PositionUvX.w, NormalUvY.w);
-#if GRAPHICS_API == VK    
+    Output.Position = vec4(PositionUvX.xyz, 1);
     Output.FragUV.y = 1 - Output.FragUV.y;
-#endif
-    gl_Position = vec4(PositionUvX.xyz, 1);
+    return Output;
 }
-
-#endif
 
 
 /////////////////////////////////
 //////////FRAGMENT///////////////
 /////////////////////////////////
-#if defined(FRAGMENT)
 
-layout (location = 0) in PSInput Input;
-layout(location = 0) out vec4 OutputColor; 
+SamplerState DefaultSampler : register(s0);
+SamplerComparisonState ShadowSampler : register(s1);
 
-DECLARE_UNIFORM_TEXTURE(GBufferDescriptorSetBinding, GBufferPositionBinding, SamplerPositionDepth);
-DECLARE_UNIFORM_TEXTURE(GBufferDescriptorSetBinding, GBufferNormalBinding, SamplerNormal);
-DECLARE_UNIFORM_TEXTURE_UINT(GBufferDescriptorSetBinding, GBufferAlbedoBinding, samplerAlbedoMetallicRoughnessOcclusionOcclusionStrength);
-DECLARE_UNIFORM_TEXTURE(GBufferDescriptorSetBinding, GBufferEmissionBinding, samplerEmission);
 
-DECLARE_UNIFORM_TEXTURE_ARRAY_SHADOW(SceneDescriptorSetBinding, ShadowMapsBinding, ShadowMap);
+Texture2DArray ShadowMap : register(t10);
+
+Texture2D SamplerPositionDepth : register(t11);
+Texture2D SamplerNormal : register(t12);
+Texture2D<uvec4> samplerAlbedoMetallicRoughnessOcclusionOcclusionStrength : register(t13);
+Texture2D samplerEmission : register(t14);
+
 
 
 #define DEFERRED
-#include "../Common/Util.glsl"  
-#include "../Common/Material.glsl"
-#include "../Common/Tonemapping.glsl"
-#include "../Common/BRDF.glsl"
-void main() 
+
+#include "resources/Hlgfx/Shaders/Common/Util.glsl"
+#include "resources/Hlgfx/Shaders/Common/Material.glsl"
+#include "resources/Hlgfx/Shaders/Common/Tonemapping.glsl"
+#include "resources/Hlgfx/Shaders/Common/BRDF.glsl"
+
+
+vec4 PSMain(PSInput Input) : SV_TARGET
 {
     vec2 inUV = Input.FragUV;
 
-	vec4 PositionDepth = texture(SamplerPositionDepth, inUV);
+	vec4 PositionDepth = SampleTexture(SamplerPositionDepth, DefaultSampler, inUV);
 	vec3 Position = PositionDepth.xyz;
 	float Depth = PositionDepth.w;
 
-	vec3 Normal = texture(SamplerNormal, inUV).xyz * 2.0 - 1.0;
+	vec3 Normal = SampleTexture(SamplerNormal, DefaultSampler, inUV).xyz * 2.0 - 1.0;
 
 	ivec2 texDim = textureSize(samplerAlbedoMetallicRoughnessOcclusionOcclusionStrength, 0);
-	uvec4 albedo = texelFetch(samplerAlbedoMetallicRoughnessOcclusionOcclusionStrength, ivec2(inUV.st * texDim ), 0);
+	uvec4 albedo = texelFetch(samplerAlbedoMetallicRoughnessOcclusionOcclusionStrength, ivec2(inUV * texDim ), 0);
 	vec4 BaseColor;
 	BaseColor.rg = unpackHalf2x16(albedo.r);
 	BaseColor.ba = unpackHalf2x16(albedo.g);
@@ -120,14 +114,14 @@ void main()
 	float OcclusionStrength = OcclusionOcclusionStrength.y;
 
 	
-	vec3 Emission = texture(samplerEmission, inUV).xyz;
+	vec3 Emission = SampleTexture(samplerEmission, DefaultSampler, inUV).xyz;
 
 	materialInfo MaterialInfo;
     MaterialInfo.BaseColor = BaseColor.rgb;
     
     
     MaterialInfo.ior = 1.5;
-    MaterialInfo.f0 = vec3(0.04);
+    MaterialInfo.f0 = vec3(0.04, 0.04, 0.04);
     MaterialInfo.SpecularWeight = 1.0;
     MaterialInfo = GetMetallicRoughnessInfo(MaterialInfo, Roughness, Metallic);
 
@@ -136,14 +130,14 @@ void main()
 
 	float Reflectance = max(max(MaterialInfo.f0.r, MaterialInfo.f0.g), MaterialInfo.f0.b);
 
-    MaterialInfo.F90 = vec3(1.0);
+    MaterialInfo.F90 = vec3(1.0, 1.0, 1.0);
 
-    vec3 FinalSpecular = vec3(0.0);
-    vec3 FinalDiffuse = vec3(0.0);
-    vec3 FinalEmissive = vec3(0.0);
-    vec3 FinalClearcoat = vec3(0.0);
-    vec3 FinalSheen = vec3(0.0);
-    vec3 FinalTransmission = vec3(0.0);
+    vec3 FinalSpecular = vec3(0.0, 0.0, 0.0);
+    vec3 FinalDiffuse = vec3(0.0, 0.0, 0.0);
+    vec3 FinalEmissive = vec3(0.0, 0.0, 0.0);
+    vec3 FinalClearcoat = vec3(0.0, 0.0, 0.0);
+    vec3 FinalSheen = vec3(0.0, 0.0, 0.0);
+    vec3 FinalTransmission = vec3(0.0, 0.0, 0.0);
 
     float Visibility = 1.0f;
     for(int i=0; i<LightCount; i++)
@@ -172,20 +166,18 @@ void main()
             FinalDiffuse += LightIntensity * NdotL *  GetBRDFLambertian(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.CDiff, MaterialInfo.SpecularWeight, VdotH);
             FinalSpecular += LightIntensity * NdotL * GetBRDFSpecularGGX(MaterialInfo.f0, MaterialInfo.F90, MaterialInfo.AlphaRoughness, MaterialInfo.SpecularWeight, VdotH, NdotL, NdotV, NdotH);
 
-            vec4 DepthMapUV =  Lights[i].LightSpaceMatrix * vec4(Position.xyz, 1);
-            vec3 ProjCoords = DepthMapUV.xyz / DepthMapUV.w; // Between 0 and 1
-#if GRAPHICS_API == VK
-            ProjCoords.xy = ProjCoords.xy * 0.5 + 0.5; 
-#else
-            ProjCoords = ProjCoords * 0.5 + 0.5;
-#endif
-            
+            vec4 DepthMapUV =  mul(Lights[i].LightSpaceMatrix, vec4(Position.xyz, 1));
+            vec3 ProjCoords = DepthMapUV.xyz;
+            ProjCoords.xy /= DepthMapUV.w;
+            ProjCoords.xy = ProjCoords.xy * 0.5 + 0.5;
+            ProjCoords.y = 1 - ProjCoords.y;
+  
             // float Bias = CalculateBias(Normal, -LightDirection, CurrentDepth);
             float Bias = max(ShadowBias * (1.0 - dot(Normal, -LightDirection)), 0.0001);
             if(ProjCoords.z > 1.0)
                 Visibility *= 1.0;
             else 
-                Visibility *= mix(0.1f, 1.0f, SampleTexture(ShadowMap, PointWrapSampler, vec4(ProjCoords.xy, i, ProjCoords.z - Bias)).r);
+                Visibility *= mix(0.1f, 1.0f, SampleShadowTextureArray(ShadowMap, ShadowSampler, vec3(ProjCoords.xy, i), ProjCoords.z - Bias).r);
         }
     }
 
@@ -195,12 +187,10 @@ void main()
     FinalEmissive = Emission;
 
 
-    vec3 Color = vec3(0);
+    vec3 Color = vec3(0,0,0);
     Color = FinalEmissive + FinalDiffuse + FinalSpecular;
     Color *= Visibility;
     
-    OutputColor = vec4(Tonemap(Color, 1), BaseColor.a);	
-	
+    vec4 OutputColor = vec4(Tonemap(Color, 1), BaseColor.a);	
+	return OutputColor;
 }
-
-#endif

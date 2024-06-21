@@ -2,6 +2,7 @@
 #define CameraDescriptorSetBinding 1
 #define ModelDescriptorSetBinding 2
 #define MaterialDescriptorSetBinding 3
+#define GBufferDescriptorSetBinding 4
 
 //Each of the following bindings must be unique
 //Because there's no descriptor set in opengl and d3d so no overlapping possible
@@ -22,6 +23,11 @@
 #define SpotLight 2
 #define AreaLight 2
 
-#define ShadowMapsBindingStart 10
+#define ShadowMapsBinding 10
+
+#define GBufferPositionBinding 11
+#define GBufferNormalBinding 12
+#define GBufferAlbedoBinding 13
+#define GBufferEmissionBinding 14
 
 #define MaxLights 16

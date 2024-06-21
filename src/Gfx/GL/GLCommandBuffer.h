@@ -36,8 +36,7 @@ struct command
         struct framebufferState
         {
             framebufferHandle FramebufferHandle;
-            
-            f32 ClearColor[4];
+            clearColorValues ClearColors;
             f32 ClearDepth;
             u8 ClearStencil;
         } BeginPass;

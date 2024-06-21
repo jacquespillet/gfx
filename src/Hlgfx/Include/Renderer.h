@@ -26,16 +26,12 @@ struct mainRenderer : public renderer
 };
 
 struct deferredRenderer : public renderer
-{
-    // gfx::pipelineHandle GBufferPipeline;
-    
+{   
     gfx::pipelineHandle CompositionPipeline;
     std::shared_ptr<material> CompositionMaterial = nullptr;
 
     std::shared_ptr<indexedGeometryBuffers> QuadGeometry;
-    // std::shared_ptr<mesh> Quad;
-
-    // gfx::framebufferHandle GFramebuffer;
+ 
     deferredRenderer();
     virtual void Render(std::shared_ptr<scene> Scene, std::shared_ptr<camera> Camera) override;
 };

@@ -706,8 +706,20 @@ void context::EndFrame()
 
 void context::SetRenderFlags(materialFlags::bits &Flags)
 {
-    Flags = (materialFlags::bits)((u32)Flags & ~(u32)materialFlags::bits::PBR);
-    Flags = (materialFlags::bits)((u32)Flags |  (u32)materialFlags::bits::GBuffer);
+    if(this->RenderType == rendererType::deferred)
+    {
+        if(Flags & materialFlags::bits::PBR)
+            Flags = (materialFlags::bits)((u32)Flags & ~(u32)materialFlags::bits::PBR);
+        if(!(Flags & materialFlags::bits::GBuffer))
+            Flags = (materialFlags::bits)((u32)Flags |  (u32)materialFlags::bits::GBuffer);
+    }
+    else
+    {
+        if(Flags & materialFlags::bits::GBuffer)
+            Flags = (materialFlags::bits)((u32)Flags & ~(u32)materialFlags::bits::GBuffer);
+        if(!(Flags & materialFlags::bits::PBR))
+            Flags = (materialFlags::bits)((u32)Flags |  (u32)materialFlags::bits::PBR);
+    }
 }
 
 void context::OnResize(u32 Width, u32 Height)

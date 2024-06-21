@@ -72,25 +72,20 @@ deferredRenderer::deferredRenderer()
                             .SetClearColor(0, 0, 0, 0);
     this->RenderTarget = gfx::context::Get()->CreateFramebuffer(FramebufferCreateInfo);
 
-    gfx::framebuffer *Framebuffer = gfx::context::Get()->GetFramebuffer(this->RenderTarget);
-    // std::shared_ptr<gfx::commandBuffer> CommandBuffer = gfx::context::Get()->GetCurrentFrameCommandBuffer();    
-    
-    // context::Get()->Pipelines[context::Composition]
     this->CompositionPipeline = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/Deferred/Composition.json", context::Get()->GfxContext->GetSwapchainFramebuffer());
- 
+    
     this->CompositionMaterial = std::make_shared<customMaterial>("CompositionMaterial", this->CompositionPipeline);    
-
     this->CompositionMaterial->Uniforms = std::make_shared<gfx::uniformGroup>();
     this->CompositionMaterial->Uniforms->Reset()
-                  .AddFramebufferRenderTarget(0, this->RenderTarget, 0)
-                  .AddFramebufferRenderTarget(1, this->RenderTarget, 1)
-                  .AddFramebufferRenderTarget(2, this->RenderTarget, 2)
-                  .AddFramebufferRenderTarget(3, this->RenderTarget, 3);
+                  .AddFramebufferRenderTarget(GBufferPositionBinding, this->RenderTarget, 0)
+                  .AddFramebufferRenderTarget(GBufferNormalBinding, this->RenderTarget, 1)
+                  .AddFramebufferRenderTarget(GBufferAlbedoBinding, this->RenderTarget, 2)
+                  .AddFramebufferRenderTarget(GBufferEmissionBinding, this->RenderTarget, 3);
 
-    context::Get()->GfxContext->BindUniformsToPipeline(this->CompositionMaterial->Uniforms, this->CompositionPipeline, 4);
+    context::Get()->GfxContext->BindUniformsToPipeline(this->CompositionMaterial->Uniforms, this->CompositionPipeline, GBufferDescriptorSetBinding);
     this->CompositionMaterial->Uniforms->Update();
 
-    this->QuadGeometry = GetQuadGeometry();
+    this->QuadGeometry = GetQuadGeometry(); 
 }
 
 
@@ -130,7 +125,7 @@ void deferredRenderer::Render(std::shared_ptr<scene> Scene, std::shared_ptr<came
         CommandBuffer->BindGraphicsPipeline(CompositionPipeline);
         CommandBuffer->BindUniformGroup(Scene->Uniforms, SceneDescriptorSetBinding);
         CommandBuffer->BindUniformGroup(Camera->Uniforms, CameraDescriptorSetBinding);
-        CommandBuffer->BindUniformGroup(CompositionMaterial->Uniforms, 4);
+        CommandBuffer->BindUniformGroup(CompositionMaterial->Uniforms, GBufferDescriptorSetBinding);
 
         CommandBuffer->BindVertexBuffer(this->QuadGeometry->VertexBuffer);
         CommandBuffer->BindIndexBuffer(this->QuadGeometry->IndexBuffer, this->QuadGeometry->Start, gfx::indexType::Uint32);

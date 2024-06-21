@@ -246,16 +246,16 @@ void commandBuffer::Begin()
     GLCommandBuffer->IsRecording=true;
 }
 
-void commandBuffer::BeginPass(framebufferHandle Framebuffer, clearColorValues ClearColor, clearDepthStencilValues DepthStencil)
+void commandBuffer::BeginPass(framebufferHandle Framebuffer, std::vector<clearColorValues> &ClearColors, clearDepthStencilValues DepthStencil)
 {
     GET_D11_COMMANDS
     command Command;
     Command.Type = commandType::BeginPass;
     Command.BeginPass.FramebufferHandle = Framebuffer;
-    Command.BeginPass.ClearColor[0] = ClearColor.R;
-    Command.BeginPass.ClearColor[1] = ClearColor.G;
-    Command.BeginPass.ClearColor[2] = ClearColor.B;
-    Command.BeginPass.ClearColor[3] = ClearColor.A;
+    Command.BeginPass.ClearColor[0] = ClearColors[0].R;
+    Command.BeginPass.ClearColor[1] = ClearColors[0].G;
+    Command.BeginPass.ClearColor[2] = ClearColors[0].B;
+    Command.BeginPass.ClearColor[3] = ClearColors[0].A;
     Command.BeginPass.ClearDepth = DepthStencil.Depth;
     Command.BeginPass.ClearStencil = DepthStencil.Stencil;
 

@@ -155,7 +155,7 @@ framebufferHandle context::CreateFramebuffer(const framebufferCreateInfo &Create
         glTexImage2D(GL_TEXTURE_2D, 0, FormatToNativeInternal(CreateInfo.ColorFormats[i]), CreateInfo.Width, CreateInfo.Height, 0, FormatToNative(CreateInfo.ColorFormats[i]), FormatToType(CreateInfo.ColorFormats[i]), nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GLFramebufferData->ColorTextures[i], 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, GLFramebufferData->ColorTextures[i], 0);
 
         ColorAttachments[i] = (GLenum)(GL_COLOR_ATTACHMENT0 + i);
     }

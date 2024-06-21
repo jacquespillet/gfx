@@ -72,7 +72,7 @@ void ExecuteBeginPass(const command &Command)
 
     glBindFramebuffer(GL_FRAMEBUFFER, GLFramebuffer->Handle);
 
-    glClearColor(Command.BeginPass.ClearColor[0], Command.BeginPass.ClearColor[1], Command.BeginPass.ClearColor[2], Command.BeginPass.ClearColor[3]);
+    glClearColor(Command.BeginPass.ClearColors.R, Command.BeginPass.ClearColors.G, Command.BeginPass.ClearColors.B, Command.BeginPass.ClearColors.A);
     glClearDepth(Command.BeginPass.ClearDepth);
     glClearStencil(Command.BeginPass.ClearStencil);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -223,16 +223,14 @@ void commandBuffer::Begin()
     GLCommandBuffer->IsRecording=true;
 }
 
-void commandBuffer::BeginPass(framebufferHandle Framebuffer, clearColorValues ClearColor, clearDepthStencilValues DepthStencil)
+void commandBuffer::BeginPass(framebufferHandle Framebuffer, std::vector<clearColorValues> &ClearColors, clearDepthStencilValues DepthStencil)
 {
     GET_GL_COMMANDS
     command Command;
     Command.Type = commandType::BeginPass;
     Command.BeginPass.FramebufferHandle = Framebuffer;
-    Command.BeginPass.ClearColor[0] = ClearColor.R;
-    Command.BeginPass.ClearColor[1] = ClearColor.G;
-    Command.BeginPass.ClearColor[2] = ClearColor.B;
-    Command.BeginPass.ClearColor[3] = ClearColor.A;
+
+    Command.BeginPass.ClearColors = ClearColors[0];
     Command.BeginPass.ClearDepth = DepthStencil.Depth;
     Command.BeginPass.ClearStencil = DepthStencil.Stencil;
 

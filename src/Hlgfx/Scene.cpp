@@ -37,7 +37,7 @@ scene::scene(std::string Name) : object3D(Name)
     this->Uniforms = std::make_shared<gfx::uniformGroup>();
     this->Uniforms->Reset();
     this->Uniforms->AddUniformBuffer(SceneBinding, this->SceneBuffer);
-    this->Uniforms->AddTexture(ShadowMapsBindingStart + 0, context::Get()->ShadowMaps);
+    this->Uniforms->AddTexture(ShadowMapsBinding, context::Get()->ShadowMaps);
 
     //Bind the uniform group to the context pipelines
     for(auto &Pipeline : context::Get()->Pipelines)

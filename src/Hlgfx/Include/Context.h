@@ -128,6 +128,7 @@ struct context
         forward,
         deferred
     } RenderType = rendererType::deferred;
+
     std::shared_ptr<hlgfx::renderer> MainRenderer;
     void SetRenderFlags(materialFlags::bits &Flags);
 	

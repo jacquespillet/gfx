@@ -113,7 +113,7 @@ materialInfo GetMetallicRoughnessInfo(materialInfo info, float Roughness, float 
     info.Metallic = Metallic;
     info.PerceptualRoughness = Roughness;
     // Achromatic f0 based on IOR.
-    info.CDiff = mix(info.BaseColor.rgb,  vec3(0), info.Metallic);
+    info.CDiff = mix(info.BaseColor.rgb,  vec3(0,0,0), info.Metallic);
     info.f0 = mix(info.f0, info.BaseColor.rgb, info.Metallic);
 
 
