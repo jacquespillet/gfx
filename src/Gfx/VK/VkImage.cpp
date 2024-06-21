@@ -15,7 +15,7 @@ namespace gfx
 {
 
 
-void GenerateMipmaps(vk::Image Image, u32 Width, u32 Height, u32 MipLevels, vk::CommandBuffer &CommandBuffer, int LayerIndex = 0)
+void GenerateImageMipmaps(vk::Image Image, u32 Width, u32 Height, u32 MipLevels, vk::CommandBuffer &CommandBuffer, int LayerIndex = 0)
 {
     // VkImageMemoryBarrier Barrier {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
     vk::ImageMemoryBarrier Barrier;
@@ -150,7 +150,7 @@ void image::Init(imageData &ImageData, const imageCreateInfo &CreateInfo)
         VkData->ImmediateCommandBuffer->TransferLayout(*this, imageUsage::TRANSFER_DESTINATION, imageUsage::SHADER_READ);
     else
     {
-        GenerateMipmaps(VKImage->Handle, this->Extent.Width, this->Extent.Height, MipLevelCount, std::static_pointer_cast<vkCommandBufferData>(VkData->ImmediateCommandBuffer->ApiData)->Handle);
+        GenerateImageMipmaps(VKImage->Handle, this->Extent.Width, this->Extent.Height, MipLevelCount, std::static_pointer_cast<vkCommandBufferData>(VkData->ImmediateCommandBuffer->ApiData)->Handle);
     }
 
     
@@ -241,7 +241,7 @@ void image::InitAsCubemap(const imageData &Left, const imageData &Right, const i
 
         for(sz i=0; i<6; i++)
         {
-            GenerateMipmaps(VKImage->Handle, this->Extent.Width, this->Extent.Height, this->MipLevelCount, std::static_pointer_cast<vkCommandBufferData>(VkData->ImmediateCommandBuffer->ApiData)->Handle, i);
+            GenerateImageMipmaps(VKImage->Handle, this->Extent.Width, this->Extent.Height, this->MipLevelCount, std::static_pointer_cast<vkCommandBufferData>(VkData->ImmediateCommandBuffer->ApiData)->Handle, i);
         }
         VkData->ImmediateCommandBuffer->End();
         context::Get()->SubmitCommandBufferImmediate(VkData->ImmediateCommandBuffer.get());
@@ -266,7 +266,13 @@ image::image(vk::Image VkImage, u32 Width, u32 Height, format Format)
     ImageData->CurrentLayout = imageLayout::Undefined;
 }
 
-
+void image::GenerateMipmaps(std::shared_ptr<gfx::commandBuffer> CommandBuffer)
+{
+    GET_API_DATA(VkImageData, vkImageData, this);
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, CommandBuffer);
+    u32 MipLevels = static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1;
+    GenerateImageMipmaps(VkImageData->Handle, this->Extent.Width, this->Extent.Height, MipLevels, VkCommandBufferData->Handle, 0);
+}
 
 void image::InitAsArray(u32 Width, u32 Height, u32 Depth, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage, u32 SampleCount)
 {
@@ -303,7 +309,7 @@ void image::InitAsArray(u32 Width, u32 Height, u32 Depth, format Format, imageUs
 
     VkImageData->Allocation = gfx::AllocateImage(ImageCreateInfo, MemoryUsage, &VkImageData->Handle);
     VkImageData->InitViews(*this, VkImageData->Handle,  Format, vk::ImageViewType::e2DArray);
-    VkImageData->InitSamplerDefault(Format); 
+    VkImageData->InitSamplerDefault(Format, MipLevelCount); 
     VkImageData->CurrentLayout = imageLayout::Undefined;   
 
     commandBuffer *CommandBuffer = gfx::context::Get()->GetImmediateCommandBuffer();
@@ -314,20 +320,23 @@ void image::InitAsArray(u32 Width, u32 Height, u32 Depth, format Format, imageUs
     
 }
 
-void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage, u32 SampleCount)
+void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUsage, memoryUsage MemoryUsage, u32 SampleCount, b8 GenerateMips)
 {
     ApiData = std::make_shared<vkImageData>();
     GET_API_DATA(VkImageData, vkImageData, this);
     
-    this->MipLevelCount = 1;
-    this->LayerCount = 1;
-    this->Format = Format;
     this->Extent.Width = Width;
     this->Extent.Height = Height;
+
+    u32 MipLevelCount = GenerateMips ? static_cast<u32>(std::floor(std::log2((std::max)(this->Extent.Width, this->Extent.Height)))) + 1 : 1;
+
+    this->MipLevelCount = MipLevelCount;
+    this->LayerCount = 1;
+    this->Format = Format;
     this->Data.resize(Width * Height * FormatSize(Format));
     this->Type = type::BYTE;
     
-    if(ImageUsage == imageUsage::COLOR_ATTACHMENT || ImageUsage == imageUsage::DEPTH_STENCIL_ATTACHMENT) ImageUsage |= imageUsage::SHADER_READ | imageUsage::TRANSFER_SOURCE;
+    if(ImageUsage & imageUsage::COLOR_ATTACHMENT || ImageUsage & imageUsage::DEPTH_STENCIL_ATTACHMENT) ImageUsage |= imageUsage::SHADER_READ | imageUsage::TRANSFER_SOURCE;
     
     
     vk::ImageCreateInfo ImageCreateInfo;
@@ -355,11 +364,11 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
     VkImageData->InitSamplerDefault(Format);
     VkImageData->CurrentLayout = imageLayout::Undefined;
 
-    if(ImageUsage == imageUsage::STORAGE)
+    if(ImageUsage & imageUsage::STORAGE)
     {
         commandBuffer *CommandBuffer = gfx::context::Get()->GetImmediateCommandBuffer();
         CommandBuffer->Begin();
-        CommandBuffer->TransferLayout(*this, VkImageData->CurrentLayout, ImageUsageToImageLayout((imageUsage::bits)ImageUsage));
+        CommandBuffer->TransferLayout(*this, VkImageData->CurrentLayout, ImageUsageToImageLayout(imageUsage::STORAGE));
         CommandBuffer->End();
         context::Get()->SubmitCommandBufferImmediate(CommandBuffer);
     }
@@ -493,7 +502,7 @@ void vkImageData::InitSampler(const imageCreateInfo &CreateInfo, u32 MipLevelCou
     this->Sampler = VkData->Device.createSampler(SamplerCreateInfo);
 }
 
-void vkImageData::InitSamplerDefault(format Format)
+void vkImageData::InitSamplerDefault(format Format, u32 MipLevelCount)
 {
 
     vk::SamplerCreateInfo SamplerCreateInfo;
@@ -504,7 +513,7 @@ void vkImageData::InitSamplerDefault(format Format)
                      .setAddressModeV(vk::SamplerAddressMode::eClampToBorder)
                      .setAddressModeW(vk::SamplerAddressMode::eClampToBorder)
                      .setMinLod(0)
-                     .setMaxLod(1.0f)
+                     .setMaxLod(f32(MipLevelCount))
                      .setBorderColor(vk::BorderColor::eFloatOpaqueWhite);
     
     if(IsDepthFormat(Format))

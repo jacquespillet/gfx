@@ -84,12 +84,13 @@ DECLARE_UNIFORM_TEXTURE(GBufferDescriptorSetBinding, GBufferPositionBinding, Sam
 DECLARE_UNIFORM_TEXTURE(GBufferDescriptorSetBinding, GBufferNormalBinding, SamplerNormal);
 DECLARE_UNIFORM_TEXTURE_UINT(GBufferDescriptorSetBinding, GBufferAlbedoBinding, samplerAlbedoMetallicRoughnessOcclusionOcclusionStrength);
 DECLARE_UNIFORM_TEXTURE(GBufferDescriptorSetBinding, GBufferEmissionBinding, samplerEmission);
+DECLARE_UNIFORM_TEXTURE(GBufferDescriptorSetBinding, GBufferReflectionBinding, samplerReflections);
 
 
 
 DECLARE_UNIFORM_TEXTURE_ARRAY_SHADOW(SceneDescriptorSetBinding, ShadowMapsBinding, ShadowMap);
 
-layout(binding = GBufferReflectionBinding, set = GBufferDescriptorSetBinding, rgba8) uniform readonly image2D ReflectionImage;
+// layout(binding = GBufferReflectionBinding, set = GBufferDescriptorSetBinding, rgba8) uniform readonly image2D ReflectionImage;
 
 
 #define DEFERRED
@@ -205,7 +206,7 @@ void main()
     Color = FinalEmissive + FinalDiffuse + FinalSpecular;
     Color *= Visibility;
 
-    Color += imageLoad(ReflectionImage, TexelPos).xyz;
+    Color += textureLod(samplerReflections, inUV, 1 - MaterialInfo.AlphaRoughness).rgb;
     
     OutputColor = vec4(Tonemap(Color, 1), BaseColor.a);	
 	

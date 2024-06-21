@@ -693,7 +693,7 @@ imageHandle context::CreateImage(imageData &ImageData, const imageCreateInfo& Cr
     return ImageHandle;
 }
 
-imageHandle context::CreateImage(u32 Width, u32 Height, format Format, imageUsage::bits ImageUsage, memoryUsage MemoryUsage, u8 *Pixels)
+imageHandle context::CreateImage(u32 Width, u32 Height, format Format, imageUsage::bits ImageUsage, memoryUsage MemoryUsage, u8 *Pixels, b8 GenerateMips)
 {
     imageHandle ImageHandle = ResourceManager.Images.ObtainResource();
     if(ImageHandle == InvalidHandle)
@@ -702,7 +702,7 @@ imageHandle context::CreateImage(u32 Width, u32 Height, format Format, imageUsag
     }
     image *Image = GetImage(ImageHandle);
     *Image = image();
-    Image->Init(Width, Height, Format, ImageUsage, MemoryUsage);
+    Image->Init(Width, Height, Format, ImageUsage, MemoryUsage, 1, GenerateMips);
     return ImageHandle;
 }
 

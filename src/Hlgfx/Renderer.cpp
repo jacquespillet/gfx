@@ -78,7 +78,7 @@ deferredRenderer::deferredRenderer()
                             .SetClearColor(0, 0, 0, 0);
     this->RenderTarget = GfxContext->CreateFramebuffer(FramebufferCreateInfo);
 
-    this->ReflectionImage = GfxContext->CreateImage(Context->Width, Context->Height, gfx::format::R8G8B8A8_UNORM, gfx::imageUsage::STORAGE, gfx::memoryUsage::GpuOnly, nullptr);
+    this->ReflectionImage = GfxContext->CreateImage(Context->Width, Context->Height, gfx::format::R8G8B8A8_UNORM, gfx::imageUsage::bits(gfx::imageUsage::STORAGE | gfx::imageUsage::SHADER_READ | gfx::imageUsage::TRANSFER_SOURCE | gfx::imageUsage::TRANSFER_DESTINATION), gfx::memoryUsage::GpuOnly, nullptr, true);
     this->ReflectionsPipeline = GfxContext->CreatePipelineFromFile("resources/Hlgfx/Shaders/RTX/Reflections.json");
     UniformsReflection = std::make_shared<gfx::uniformGroup>();
     UniformsReflection->Reset();  
@@ -93,7 +93,7 @@ deferredRenderer::deferredRenderer()
                   .AddFramebufferRenderTarget(GBufferNormalBinding, this->RenderTarget, 1)
                   .AddFramebufferRenderTarget(GBufferAlbedoBinding, this->RenderTarget, 2)
                   .AddFramebufferRenderTarget(GBufferEmissionBinding, this->RenderTarget, 3)
-                  .AddStorageImage(GBufferReflectionBinding, this->ReflectionImage);
+                  .AddTexture(GBufferReflectionBinding, this->ReflectionImage);
 
     Context->GfxContext->BindUniformsToPipeline(this->CompositionMaterial->Uniforms, this->CompositionPipeline, GBufferDescriptorSetBinding);
     this->CompositionMaterial->Uniforms->Update();
@@ -148,7 +148,13 @@ void deferredRenderer::Render(std::shared_ptr<scene> Scene, std::shared_ptr<came
         CommandBuffer->BindUniformGroup(Camera->Uniforms, CameraDescriptorSetBinding);
         CommandBuffer->BindUniformGroup(UniformsReflection, ReflectionsDescriptorSetBinding);
 
-        CommandBuffer->RayTrace(context::Get()->Width, context::Get()->Height, 1, 0, 1, 2);        
+        CommandBuffer->RayTrace(context::Get()->Width, context::Get()->Height, 1, 0, 1, 2); 
+        
+        CommandBuffer->TransferLayout(ReflectionImage, gfx::imageUsage::STORAGE, gfx::imageUsage::TRANSFER_DESTINATION);     
+        gfx::context::Get()->GetImage(ReflectionImage)->GenerateMipmaps(CommandBuffer);
+
+        // CommandBuffer->TransferLayout(ReflectionImage, gfx::imageUsage::TRANSFER_DESTINATION, gfx::imageUsage::SHADER_READ);     
+
     }
 
 
@@ -174,11 +180,13 @@ void deferredRenderer::Render(std::shared_ptr<scene> Scene, std::shared_ptr<came
         CommandBuffer->BindIndexBuffer(this->QuadGeometry->IndexBuffer, this->QuadGeometry->Start, gfx::indexType::Uint32);
         CommandBuffer->DrawIndexed(this->QuadGeometry->Start, this->QuadGeometry->Count, 1);        
 
+
         ImGui::GetIO().KeyCtrl = context::Get()->CtrlPressed;
         
         gfx::imgui::Get()->EndFrame(CommandBuffer);
         CommandBuffer->EndPass();    
     }
+    CommandBuffer->TransferLayout(ReflectionImage, gfx::imageUsage::SHADER_READ, gfx::imageUsage::STORAGE);       
 }  
 
 
