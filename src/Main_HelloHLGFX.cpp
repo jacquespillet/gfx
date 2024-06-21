@@ -29,6 +29,8 @@ struct application
 		
 		Camera = std::make_shared<hlgfx::camera>(60, (float)Context->Width / (float)Context->Height, 0.01f, 100.0f);
 		Camera->SetLocalPosition(hlgfx::v3f(0, 0, 3));
+
+		Context->CurrentCamera = Camera;
 		
 		if(ProjectFile != "")
 		{

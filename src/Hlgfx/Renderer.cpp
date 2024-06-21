@@ -9,6 +9,9 @@
 namespace hlgfx
 {
 
+void renderer::SceneUpdate(){}
+
+
 void shadowsRenderer::Render(std::shared_ptr<scene> Scene, std::shared_ptr<camera> Camera)
 {
     gfx::framebuffer *Framebuffer = gfx::context::Get()->GetFramebuffer(this->RenderTarget);
@@ -62,30 +65,54 @@ void mainRenderer::Render(std::shared_ptr<scene> Scene, std::shared_ptr<camera> 
 // Deferred
 deferredRenderer::deferredRenderer()
 {
+    context *Context = context::Get();
+    std::shared_ptr<gfx::context> GfxContext = Context->GfxContext;
+
     gfx::framebufferCreateInfo FramebufferCreateInfo = {};
-    FramebufferCreateInfo.SetSize(context::Get()->Width, context::Get()->Height)
+    FramebufferCreateInfo.SetSize(Context->Width, Context->Height)
                             .AddColorFormat(gfx::format::R32G32B32A32_SFLOAT) //PositionDepth  
                             .AddColorFormat(gfx::format::R8G8B8A8_UNORM) //Normal
                             .AddColorFormat(gfx::format::R32G32B32A32_UINT) //AlbedoMetallicRoughnessOcclusionOcclusionStrength  
                             .AddColorFormat(gfx::format::R8G8B8A8_UNORM) //Emission  
                             .SetDepthFormat(gfx::format::D32_SFLOAT)
                             .SetClearColor(0, 0, 0, 0);
-    this->RenderTarget = gfx::context::Get()->CreateFramebuffer(FramebufferCreateInfo);
+    this->RenderTarget = GfxContext->CreateFramebuffer(FramebufferCreateInfo);
 
-    this->CompositionPipeline = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/Deferred/Composition.json", context::Get()->GfxContext->GetSwapchainFramebuffer());
+    this->ReflectionImage = GfxContext->CreateImage(Context->Width, Context->Height, gfx::format::R8G8B8A8_UNORM, gfx::imageUsage::STORAGE, gfx::memoryUsage::GpuOnly, nullptr);
+    this->ReflectionsPipeline = GfxContext->CreatePipelineFromFile("resources/Hlgfx/Shaders/RTX/Reflections.json");
+    UniformsReflection = std::make_shared<gfx::uniformGroup>();
+    UniformsReflection->Reset();  
+
     
+    
+    this->CompositionPipeline = GfxContext->CreatePipelineFromFile("resources/Hlgfx/Shaders/Deferred/Composition.json", Context->GfxContext->GetSwapchainFramebuffer());
     this->CompositionMaterial = std::make_shared<customMaterial>("CompositionMaterial", this->CompositionPipeline);    
     this->CompositionMaterial->Uniforms = std::make_shared<gfx::uniformGroup>();
     this->CompositionMaterial->Uniforms->Reset()
                   .AddFramebufferRenderTarget(GBufferPositionBinding, this->RenderTarget, 0)
                   .AddFramebufferRenderTarget(GBufferNormalBinding, this->RenderTarget, 1)
                   .AddFramebufferRenderTarget(GBufferAlbedoBinding, this->RenderTarget, 2)
-                  .AddFramebufferRenderTarget(GBufferEmissionBinding, this->RenderTarget, 3);
+                  .AddFramebufferRenderTarget(GBufferEmissionBinding, this->RenderTarget, 3)
+                  .AddStorageImage(GBufferReflectionBinding, this->ReflectionImage);
 
-    context::Get()->GfxContext->BindUniformsToPipeline(this->CompositionMaterial->Uniforms, this->CompositionPipeline, GBufferDescriptorSetBinding);
+    Context->GfxContext->BindUniformsToPipeline(this->CompositionMaterial->Uniforms, this->CompositionPipeline, GBufferDescriptorSetBinding);
     this->CompositionMaterial->Uniforms->Update();
 
+
     this->QuadGeometry = GetQuadGeometry(); 
+}
+
+void deferredRenderer::SceneUpdate()
+{
+    UniformsReflection->Reset()
+        .AddAccelerationStructure(16, context::Get()->Scene->TLAS)
+        .AddStorageImage(17, ReflectionImage)
+        .AddFramebufferRenderTarget(18, this->RenderTarget, 0)
+        .AddFramebufferRenderTarget(19, this->RenderTarget, 1);
+    context::Get()->GfxContext->BindUniformsToPipeline(this->UniformsReflection, this->ReflectionsPipeline, ReflectionsDescriptorSetBinding);
+    context::Get()->GfxContext->BindUniformsToPipeline(context::Get()->CurrentCamera->Uniforms, this->ReflectionsPipeline, CameraDescriptorSetBinding);
+
+    this->UniformsReflection->Update();
 }
 
 deferredRenderer::~deferredRenderer()
@@ -114,6 +141,14 @@ void deferredRenderer::Render(std::shared_ptr<scene> Scene, std::shared_ptr<came
         Scene->OnAfterRender(Camera);
         
         CommandBuffer->EndPass();
+    }
+
+    {
+        CommandBuffer->BindRayTracingPipeline(ReflectionsPipeline);
+        CommandBuffer->BindUniformGroup(Camera->Uniforms, CameraDescriptorSetBinding);
+        CommandBuffer->BindUniformGroup(UniformsReflection, ReflectionsDescriptorSetBinding);
+
+        CommandBuffer->RayTrace(context::Get()->Width, context::Get()->Height, 1, 0, 1, 2);        
     }
 
 

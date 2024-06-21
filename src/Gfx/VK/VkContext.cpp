@@ -1190,17 +1190,20 @@ void context::BindUniformsToPipeline(std::shared_ptr<uniformGroup> Uniforms, pip
     pipeline *Pipeline = GetPipeline(PipelineHandle);
     GET_API_DATA(VkPipeline, vkPipelineData, Pipeline);
     GET_API_DATA(VkUniformData, vkUniformData, Uniforms);
-
+    
     if(VkUniformData->DescriptorInfos.find(Pipeline->Name) == VkUniformData->DescriptorInfos.end() || Force)
     {
-        Uniforms->Bindings[PipelineHandle] = Binding;
-        VkUniformData->DescriptorInfos[Pipeline->Name] = {};
-        VkUniformData->DescriptorInfos[Pipeline->Name].DescriptorSetLayout = VkPipeline->DescriptorSetLayouts[Binding];
+        if (VkPipeline->DescriptorSetLayouts[Binding] != nullptr)
+        {
+            Uniforms->Bindings[PipelineHandle] = Binding;
+            VkUniformData->DescriptorInfos[Pipeline->Name] = {};
+            VkUniformData->DescriptorInfos[Pipeline->Name].DescriptorSetLayout = VkPipeline->DescriptorSetLayouts[Binding];
         
-        //We allocate a new descriptor set everytime the uniforms will be used in a new pipeline.
-        //This is because each pipeline might or might not use some uniforms in the group, so we need to use the descriptor set layout of the pipeline just in case.
-        //Maybe that's not ideal...
-        VkUniformData->DescriptorInfos[Pipeline->Name].DescriptorSet = AllocateDescriptorSet(VkUniformData->DescriptorInfos[Pipeline->Name].DescriptorSetLayout->NativeHandle, Uniforms);
+            //We allocate a new descriptor set everytime the uniforms will be used in a new pipeline.
+            //This is because each pipeline might or might not use some uniforms in the group, so we need to use the descriptor set layout of the pipeline just in case.
+            //Maybe that's not ideal...
+            VkUniformData->DescriptorInfos[Pipeline->Name].DescriptorSet = AllocateDescriptorSet(VkUniformData->DescriptorInfos[Pipeline->Name].DescriptorSetLayout->NativeHandle, Uniforms);
+        }
         VkUniformData->Initialized=true;
     }
 }

@@ -85,7 +85,11 @@ DECLARE_UNIFORM_TEXTURE(GBufferDescriptorSetBinding, GBufferNormalBinding, Sampl
 DECLARE_UNIFORM_TEXTURE_UINT(GBufferDescriptorSetBinding, GBufferAlbedoBinding, samplerAlbedoMetallicRoughnessOcclusionOcclusionStrength);
 DECLARE_UNIFORM_TEXTURE(GBufferDescriptorSetBinding, GBufferEmissionBinding, samplerEmission);
 
+
+
 DECLARE_UNIFORM_TEXTURE_ARRAY_SHADOW(SceneDescriptorSetBinding, ShadowMapsBinding, ShadowMap);
+
+layout(binding = GBufferReflectionBinding, set = GBufferDescriptorSetBinding, rgba8) uniform readonly image2D ReflectionImage;
 
 
 #define DEFERRED
@@ -103,8 +107,10 @@ void main()
 
 	vec3 Normal = texture(SamplerNormal, inUV).xyz * 2.0 - 1.0;
 
+
 	ivec2 texDim = textureSize(samplerAlbedoMetallicRoughnessOcclusionOcclusionStrength, 0);
-	uvec4 albedo = texelFetch(samplerAlbedoMetallicRoughnessOcclusionOcclusionStrength, ivec2(inUV.st * texDim ), 0);
+    ivec2 TexelPos = ivec2(inUV.st * texDim);
+	uvec4 albedo = texelFetch(samplerAlbedoMetallicRoughnessOcclusionOcclusionStrength, TexelPos, 0);
 	vec4 BaseColor;
 	BaseColor.rg = unpackHalf2x16(albedo.r);
 	BaseColor.ba = unpackHalf2x16(albedo.g);
@@ -193,11 +199,13 @@ void main()
 
 
     FinalEmissive = Emission;
-
+    
 
     vec3 Color = vec3(0);
     Color = FinalEmissive + FinalDiffuse + FinalSpecular;
     Color *= Visibility;
+
+    Color += imageLoad(ReflectionImage, TexelPos).xyz;
     
     OutputColor = vec4(Tonemap(Color, 1), BaseColor.a);	
 	

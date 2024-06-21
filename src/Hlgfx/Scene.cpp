@@ -203,6 +203,29 @@ void scene::DrawGUI()
     this->SceneGUI->DrawGUI();
 }
 
+void scene::BuildTLAS()
+{
+	std::vector<glm::mat4> Transforms;
+    std::vector<s32> Instances;
+    std::vector<gfx::accelerationStructureHandle> BLAS;
+    
+    s32 i=0;
+    for(auto &PipelineMeshes : Meshes)
+    {
+        for(auto &Mesh : PipelineMeshes.second)
+        {
+            Transforms.push_back(Mesh->Transform.Matrices.LocalToWorld);
+            Instances.push_back(i++);
+            BLAS.push_back(Mesh->GeometryBuffers->BLAS); //TODO: That's not optimal
+            // What would be best is to store all the geometries in a buffer in the scene, and mesh references this buffer.
+            // We could then pass this buffer directly
+        }
+    }
+
+    TLAS = gfx::context::Get()->CreateTLAccelerationStructure(Transforms, BLAS, Instances);    
+}
+
+
 
 void ClearObject(std::shared_ptr<object3D> Object)
 {

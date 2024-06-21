@@ -3,6 +3,7 @@
 #define ModelDescriptorSetBinding 2
 #define MaterialDescriptorSetBinding 3
 #define GBufferDescriptorSetBinding 4
+#define ReflectionsDescriptorSetBinding 5
 
 //Each of the following bindings must be unique
 //Because there's no descriptor set in opengl and d3d so no overlapping possible
@@ -29,5 +30,6 @@
 #define GBufferNormalBinding 12
 #define GBufferAlbedoBinding 13
 #define GBufferEmissionBinding 14
+#define GBufferReflectionBinding 15
 
 #define MaxLights 16

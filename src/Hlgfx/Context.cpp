@@ -106,6 +106,9 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     ContextInitialize.ErrorCallback = ErrorCallback;
     ContextInitialize.InfoCallback = InfoCallback;
     ContextInitialize.Debug = true;
+#if GFX_API == GFX_VK
+    ContextInitialize.EnableRTX = true;
+#endif
     Singleton->GfxContext = gfx::context::Initialize(ContextInitialize, *Singleton->Window);
     Singleton->Swapchain = Singleton->GfxContext->CreateSwapchain(Singleton->Width, Singleton->Height);
     Singleton->SwapchainPass = Singleton->GfxContext->GetDefaultRenderPass();
@@ -115,10 +118,13 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->GUI = std::make_shared<contextGUI>(Singleton.get());
 
     // Register pipelines that will be used in the app
-    Singleton->Pipelines[PBRPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/PBR/PBR.json");
-    Singleton->Pipelines[ShadowsPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/ShadowMaps/ShadowMaps.json");
-    Singleton->Pipelines[GBufferPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/Deferred/GBuffer.json");
-    Singleton->Pipelines[CompositionPipeline] = gfx::context::Get()->CreatePipelineFromFile("resources/Hlgfx/Shaders/Deferred/Composition.json");
+    Singleton->Pipelines[PBRPipeline] = Singleton->GfxContext->CreatePipelineFromFile("resources/Hlgfx/Shaders/PBR/PBR.json");
+    Singleton->Pipelines[ShadowsPipeline] = Singleton->GfxContext->CreatePipelineFromFile("resources/Hlgfx/Shaders/ShadowMaps/ShadowMaps.json");
+    Singleton->Pipelines[GBufferPipeline] = Singleton->GfxContext->CreatePipelineFromFile("resources/Hlgfx/Shaders/Deferred/GBuffer.json");
+    Singleton->Pipelines[CompositionPipeline] = Singleton->GfxContext->CreatePipelineFromFile("resources/Hlgfx/Shaders/Deferred/Composition.json");
+#if GFX_API == GFX_VK
+    Singleton->Pipelines[RTXReflectionsPipeline] = Singleton->GfxContext->CreatePipelineFromFile("resources/Hlgfx/Shaders/RTX/Reflections.json");
+#endif
 
     struct rgba {uint8_t r, g, b, a;};
     u32 TexWidth = 64;
@@ -722,6 +728,7 @@ void context::SetRenderFlags(materialFlags::bits &Flags)
     }
 }
 
+
 void context::OnResize(u32 Width, u32 Height)
 {
     GfxContext->OnResize(Width, Height);
@@ -912,7 +919,13 @@ void context::LoadProjectFromFile(const char *FileName)
         std::shared_ptr<scene> Scene = std::static_pointer_cast<scene>(object3D::Deserialize(SceneFiles[i]));
         Project.Scenes[Scene->UUID] = Scene;  
         if(i==0) this->Scene = Scene;
+        if(this->GfxContext->RTXEnabled)
+        {
+            Scene->BuildTLAS();
+            this->MainRenderer->SceneUpdate();
+        }
     }
+
 
     // We need all those materials to be using the deferred pipeline.
     // 

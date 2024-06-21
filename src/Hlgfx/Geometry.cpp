@@ -29,9 +29,21 @@ void indexedGeometryBuffers::BuildBuffers()
     VertexBufferCreateInfo.Init().AddVertexStream(VertexStream1);
     this->VertexBuffer = Context->CreateVertexBuffer(VertexBufferCreateInfo);
 
-    this->IndexBuffer = Context->CreateBuffer(this->IndexData.size() * sizeof(u32), gfx::bufferUsage::IndexBuffer, gfx::memoryUsage::GpuOnly);
+    gfx::bufferUsage::Bits IndexBufferUsage = gfx::bufferUsage::IndexBuffer;
+    if(Context->RTXEnabled) IndexBufferUsage = (gfx::bufferUsage::Bits)((u32)IndexBufferUsage | (u32)gfx::bufferUsage::ShaderDeviceAddress | (u32)gfx::bufferUsage::AccelerationStructureBuildInputReadonly);
+
+    this->IndexBuffer = Context->CreateBuffer(this->IndexData.size() * sizeof(u32), IndexBufferUsage, gfx::memoryUsage::GpuOnly);
     Context->CopyDataToBuffer(this->IndexBuffer, this->IndexData.data(), this->IndexData.size() * sizeof(u32), 0);
     
+#if GFX_API == GFX_VK
+    if(Context->RTXEnabled)
+    {
+        gfx::vertexBuffer *VBuffer = Context->GetVertexBuffer(this->VertexBuffer);
+		BLAS = Context->CreateBLAccelerationStructure(this->VertexData.size(), sizeof(vertex), gfx::format::R32G32B32_SFLOAT, VBuffer->VertexStreams[0].Buffer,
+                                                      gfx::indexType::Uint32, this->IndexData.size() / 3, this->IndexBuffer, 0);
+    }
+#endif
+
     this->Count = this->IndexData.size();
     this->Start=0;  
 }  
@@ -602,6 +614,7 @@ void indexedGeometryBuffers::Serialize(std::string FileName)
 
 void indexedGeometryBuffers::Destroy()
 {
+    gfx::context::Get()->DestroyAccelerationStructure(this->BLAS);
     gfx::context::Get()->QueueDestroyBuffer(this->IndexBuffer);
     gfx::context::Get()->QueueDestroyVertexBuffer(this->VertexBuffer);    
 }

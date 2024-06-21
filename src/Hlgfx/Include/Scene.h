@@ -25,6 +25,10 @@ struct scene : public object3D
 
     void UpdateMeshPipeline(gfx::pipelineHandle OldPipelineHandle, mesh *Mesh);
     std::unordered_map<gfx::pipelineHandle, std::vector<std::shared_ptr<mesh>>> Meshes;
+    std::vector<gfx::accelerationStructureHandle> BLAS;
+
+    gfx::accelerationStructureHandle TLAS;
+    void BuildTLAS();
     
     virtual std::shared_ptr<object3D> Clone(b8 CloneUUID) override;
 

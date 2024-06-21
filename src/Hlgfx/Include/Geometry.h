@@ -20,6 +20,8 @@ struct indexedGeometryBuffers
     indexedGeometryBuffers();
     gfx::vertexBufferHandle VertexBuffer = gfx::InvalidHandle;
     gfx::bufferHandle IndexBuffer = gfx::InvalidHandle;
+    gfx::accelerationStructureHandle BLAS;
+	
     u32 Start = 0;
     u32 Count = 0;
 

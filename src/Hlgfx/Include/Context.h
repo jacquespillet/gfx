@@ -76,6 +76,7 @@ struct context
     static const u32 ShadowsPipeline = 1;
     static const u32 GBufferPipeline = 2;
     static const u32 CompositionPipeline = 4;
+    static const u32 RTXReflectionsPipeline = 5;
 
     std::unordered_map<u32, gfx::pipelineHandle> Pipelines;
     std::unordered_map<materialFlags::bits, gfx::pipelineHandle> AllPipelines;
@@ -105,6 +106,7 @@ struct context
     void SaveProjectToFile(const char *FolderName);
     void LoadProjectFromFile(const char *FolderName);
     void NewProject();
+
     std::shared_ptr<scene> Scene = nullptr;
 
     std::shared_ptr<gfx::imgui> Imgui;
