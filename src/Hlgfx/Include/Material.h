@@ -37,8 +37,8 @@ struct material
 {
     material(std::string Name);
     
-    gfx::pipelineHandle PipelineHandle;
-    gfx::bufferHandle UniformBuffer;
+    gfx::pipelineHandle PipelineHandle = gfx::InvalidHandle;
+    gfx::bufferHandle UniformBuffer = gfx::InvalidHandle;
     std::shared_ptr<gfx::uniformGroup> Uniforms;
     materialFlags::bits Flags;
     std::string Name;

@@ -88,6 +88,14 @@ deferredRenderer::deferredRenderer()
     this->QuadGeometry = GetQuadGeometry(); 
 }
 
+deferredRenderer::~deferredRenderer()
+{
+    this->QuadGeometry->Destroy();
+    this->CompositionMaterial = nullptr;
+    gfx::context::Get()->DestroyPipeline(this->CompositionPipeline);
+    gfx::context::Get()->DestroyFramebuffer(this->RenderTarget);
+}
+
 
 void deferredRenderer::Render(std::shared_ptr<scene> Scene, std::shared_ptr<camera> Camera)
 {

@@ -36,7 +36,8 @@ std::shared_ptr<material> customMaterial::Clone() {
 customMaterial::~customMaterial()
 {
     printf("Destroying Material \n");
-    gfx::context::Get()->QueueDestroyBuffer(this->UniformBuffer);
+    if(this->UniformBuffer != gfx::InvalidHandle)
+        gfx::context::Get()->QueueDestroyBuffer(this->UniformBuffer);
 }
 
 pbrMaterial::pbrMaterial(std::string Name) : material(Name)

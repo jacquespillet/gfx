@@ -771,6 +771,7 @@ void context::Cleanup()
 {
     GfxContext->WaitIdle();
     
+    this->MainRenderer = nullptr;
 
     //Clean project
     this->Project.Geometries.clear();

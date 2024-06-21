@@ -31,7 +31,9 @@ struct deferredRenderer : public renderer
     std::shared_ptr<material> CompositionMaterial = nullptr;
 
     std::shared_ptr<indexedGeometryBuffers> QuadGeometry;
+
  
+    ~deferredRenderer();
     deferredRenderer();
     virtual void Render(std::shared_ptr<scene> Scene, std::shared_ptr<camera> Camera) override;
 };
