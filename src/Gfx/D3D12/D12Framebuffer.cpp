@@ -32,7 +32,7 @@ void d3d12FramebufferData::AddRenderTarget(format Format, const f32 *ClearValues
     heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
 
     D3D12_CLEAR_VALUE clearValue = {};
-    clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    clearValue.Format = FormatToNative(Format);
     clearValue.Color[0] = ClearValues[0];
     clearValue.Color[1] = ClearValues[1];
     clearValue.Color[2] = ClearValues[2];

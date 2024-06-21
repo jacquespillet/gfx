@@ -165,7 +165,7 @@ void commandBuffer::TransferLayout(const image &Texture, imageUsage::bits OldLay
     }
 }
 
-void commandBuffer::BeginPass(framebufferHandle FramebufferHandle, clearColorValues ClearColor, clearDepthStencilValues DepthStencil)
+void commandBuffer::BeginPass(framebufferHandle FramebufferHandle, std::vector<clearColorValues> &ClearColor, clearDepthStencilValues DepthStencil)
 {
     GET_API_DATA(D12CommandBufferData, d3d12CommandBufferData, this);
 
@@ -183,14 +183,28 @@ void commandBuffer::BeginPass(framebufferHandle FramebufferHandle, clearColorVal
         CD3DX12_CPU_DESCRIPTOR_HANDLE ColorHandle(D12FramebufferData->RenderTargetViewHeap->GetCPUDescriptorHandleForHeapStart(), D12FramebufferData->MultisampledColorImageIndex, D12FramebufferData->RTVDescriptorSize);
         CD3DX12_CPU_DESCRIPTOR_HANDLE DepthHandle(D12FramebufferData->DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart(), D12FramebufferData->MultisampledDepthImageIndex, D12FramebufferData->DSVDescriptorSize);
         D12CommandBufferData->CommandList->OMSetRenderTargets(1, &ColorHandle, FALSE, &DepthHandle);    
-        D12CommandBufferData->CommandList->ClearRenderTargetView(ColorHandle, (f32*)&ClearColor, 0, nullptr);    
+        D12CommandBufferData->CommandList->ClearRenderTargetView(ColorHandle, (f32*)&ClearColor[0], 0, nullptr);    
         D12CommandBufferData->CommandList->ClearDepthStencilView(DepthHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, DepthStencil.Depth, (u8)DepthStencil.Stencil, 0, nullptr);
     }
-    else
+    else if(D12FramebufferData->IsSwapchain)
     {
         CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(D12FramebufferData->RenderTargetViewHeap->GetCPUDescriptorHandleForHeapStart(), D12FramebufferData->CurrentTarget, D12FramebufferData->RTVDescriptorSize);
         D12CommandBufferData->CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &D12FramebufferData->DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart());    
         D12CommandBufferData->CommandList->ClearRenderTargetView(rtvHandle, (f32*)&ClearColor, 0, nullptr);    
+    }
+    else
+    {
+        std::vector<CD3DX12_CPU_DESCRIPTOR_HANDLE> Handles(D12FramebufferData->RenderTargetsCount);
+        for(int i=0; i<D12FramebufferData->RenderTargetsCount; i++)
+        {
+            Handles[i] = CD3DX12_CPU_DESCRIPTOR_HANDLE(D12FramebufferData->RenderTargetViewHeap->GetCPUDescriptorHandleForHeapStart(), i, D12FramebufferData->RTVDescriptorSize);
+        }
+
+        D12CommandBufferData->CommandList->OMSetRenderTargets(D12FramebufferData->RenderTargetsCount, Handles.data(), FALSE, &D12FramebufferData->DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart());    
+        for(int i=0; i<D12FramebufferData->RenderTargetsCount; i++) 
+        {
+            D12CommandBufferData->CommandList->ClearRenderTargetView(Handles[i], (f32*)&ClearColor[0], 0, nullptr);    
+        }
         D12CommandBufferData->CommandList->ClearDepthStencilView(D12FramebufferData->DepthBufferViewHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, DepthStencil.Depth, (u8)DepthStencil.Stencil, 0, nullptr);
     }
 

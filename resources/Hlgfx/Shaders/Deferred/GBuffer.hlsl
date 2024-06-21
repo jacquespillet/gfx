@@ -129,7 +129,7 @@ struct PSOutput {
     vec4 outEmission : SV_Target3;
 };
 
-PSOutput PSMain(PSInput Input) : SV_TARGET
+PSOutput PSMain(PSInput Input)
 {
     PSOutput Output;
     
@@ -169,8 +169,8 @@ PSOutput PSMain(PSInput Input) : SV_TARGET
 	Output.outAlbedoMetallicRoughnessOcclusionOcclusionStrength.a = packHalf2x16(vec2(AmbientOcclusion, Material.OcclusionStrength));        
     
     Output.outPositionDepth = vec4(Input.FragPosition, 0);
-    Output.outNormal.xyz = Normal  * 0.5 + 0.5;
-    Output.outEmission.xyz = FinalEmissive;
+    Output.outNormal = vec4(Normal  * 0.5 + 0.5, 0);
+    Output.outEmission = vec4(FinalEmissive, 0);
 
     return Output;
 }
