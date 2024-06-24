@@ -129,7 +129,7 @@ struct context
     {
         forward,
         deferred
-    } RenderType = rendererType::forward;
+    } RenderType = rendererType::deferred;
 
     std::shared_ptr<hlgfx::renderer> MainRenderer;
     void SetRenderFlags(materialFlags::bits &Flags);

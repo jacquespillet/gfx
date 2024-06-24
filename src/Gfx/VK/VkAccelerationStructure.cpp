@@ -135,15 +135,15 @@ void vkAccelerationStructureData::InitBLAS(uint32_t NumVertices, uint32_t Stride
 }
 
 
-void vkAccelerationStructureData::InitTLAS(std::vector<glm::mat4> &Transforms, std::vector<accelerationStructureHandle> &AccelerationStructures, std::vector<int> Instances)
+void vkAccelerationStructureData::InitTLAS(std::vector<glm::mat4> &Transforms, std::vector<accelerationStructureHandle> &AccelerationStructures, std::vector<int> InstanceBLASIndices)
 {
     IsTLAS = true;
     gfx::context *Context = context::Get();
     GET_CONTEXT(VkContext, Context);
 
     std::vector<VkAccelerationStructureInstanceKHR> BLASInstances;
-    BLASInstances.resize(Instances.size());
-    for(size_t i=0; i<Instances.size(); i++)
+    BLASInstances.resize(InstanceBLASIndices.size());
+    for(size_t i=0; i<InstanceBLASIndices.size(); i++)
     {	
 
         glm::mat4& Transform = Transforms[i];
@@ -154,7 +154,7 @@ void vkAccelerationStructureData::InitTLAS(std::vector<glm::mat4> &Transforms, s
             Transform[0][2], Transform[1][2], Transform[2][2], Transform[3][2],
         };
 
-        int MeshIndex = Instances[i];
+        int MeshIndex = InstanceBLASIndices[i];
         accelerationStructure *BLAS = Context->GetAccelerationStructure(AccelerationStructures[MeshIndex]);
         GET_API_DATA(VkBLAS, vkAccelerationStructureData, BLAS);
 

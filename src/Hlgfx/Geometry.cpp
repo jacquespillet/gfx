@@ -42,6 +42,9 @@ void indexedGeometryBuffers::BuildBuffers()
 		BLAS = Context->CreateBLAccelerationStructure(this->VertexData.size(), sizeof(vertex), gfx::format::R32G32B32_SFLOAT, VBuffer->VertexStreams[0].Buffer,
                                                       gfx::indexType::Uint32, this->IndexData.size() / 3, this->IndexBuffer, 0);
     }
+
+    
+
 #endif
 
     this->Count = this->IndexData.size();

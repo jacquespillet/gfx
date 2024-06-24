@@ -104,13 +104,19 @@ deferredRenderer::deferredRenderer()
 
 void deferredRenderer::SceneUpdate()
 {
+
     UniformsReflection->Reset()
         .AddAccelerationStructure(16, context::Get()->Scene->TLAS)
         .AddStorageImage(17, ReflectionImage)
         .AddFramebufferRenderTarget(18, this->RenderTarget, 0)
-        .AddFramebufferRenderTarget(19, this->RenderTarget, 1);
+        .AddFramebufferRenderTarget(19, this->RenderTarget, 1)
+        .AddStorageBuffer(20, context::Get()->Scene->VertexBuffer)
+        .AddStorageBuffer(21, context::Get()->Scene->OffsetsBuffer)
+        .AddStorageBuffer(22, context::Get()->Scene->IndexBuffer);
+        
     context::Get()->GfxContext->BindUniformsToPipeline(this->UniformsReflection, this->ReflectionsPipeline, ReflectionsDescriptorSetBinding);
     context::Get()->GfxContext->BindUniformsToPipeline(context::Get()->CurrentCamera->Uniforms, this->ReflectionsPipeline, CameraDescriptorSetBinding);
+    
 
     this->UniformsReflection->Update();
 }

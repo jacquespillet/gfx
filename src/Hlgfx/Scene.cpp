@@ -217,14 +217,49 @@ void scene::BuildTLAS()
         for(auto &Mesh : PipelineMeshes.second)
         {
             Transforms.push_back(Mesh->Transform.Matrices.LocalToWorld);
-            Instances.push_back(i++);
-            BLAS.push_back(context::Get()->Project.Geometries[Mesh->GeometryID]->BLAS); //TODO: That's not optimal
-            // What would be best is to store all the geometries in a buffer in the scene, and mesh references this buffer.
-            // We could then pass this buffer directly
+            Instances.push_back(Mesh->GeometryID);
         }
     }
 
-    TLAS = gfx::context::Get()->CreateTLAccelerationStructure(Transforms, BLAS, Instances);    
+    for(auto &Geometry : context::Get()->Project.Geometries)
+    {
+        BLAS.push_back(Geometry->BLAS);
+    }
+
+    TLAS = gfx::context::Get()->CreateTLAccelerationStructure(Transforms, BLAS, Instances);
+
+    std::vector<vertex> Vertices;
+    std::vector<u32> Triangles;
+    std::vector<u32> GeometryOffsets;
+
+    u32 IndexBase = 0;
+    for(auto &Geometry :  context::Get()->Project.Geometries)
+    {
+        u32 VertexBase = Vertices.size();
+
+        GeometryOffsets.push_back(IndexBase ) ;
+
+        for(auto &Index : Geometry->IndexData)
+        {
+            Triangles.push_back(VertexBase + Index);
+            IndexBase++;
+        }
+
+        for(auto &Vertex : Geometry->VertexData)
+        {
+            Vertices.push_back(Vertex);
+        }
+
+    }
+
+    this->IndexBuffer = gfx::context::Get()->CreateBuffer(Triangles.size() * sizeof(u32), gfx::bufferUsage::StorageBuffer, gfx::memoryUsage::GpuOnly);
+    gfx::context::Get()->CopyDataToBuffer(this->IndexBuffer, Triangles.data(), Triangles.size() * sizeof(u32), 0);    
+
+    this->VertexBuffer = gfx::context::Get()->CreateBuffer(Vertices.size() * sizeof(vertex), gfx::bufferUsage::StorageBuffer, gfx::memoryUsage::GpuOnly);
+    gfx::context::Get()->CopyDataToBuffer(this->VertexBuffer, Vertices.data(), Vertices.size() * sizeof(vertex), 0);        
+
+    this->OffsetsBuffer = gfx::context::Get()->CreateBuffer(GeometryOffsets.size() * sizeof(u32), gfx::bufferUsage::StorageBuffer, gfx::memoryUsage::GpuOnly);
+    gfx::context::Get()->CopyDataToBuffer(this->OffsetsBuffer, GeometryOffsets.data(), GeometryOffsets.size() * sizeof(u32), 0);    
 }
 
 

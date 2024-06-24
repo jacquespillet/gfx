@@ -28,6 +28,9 @@ struct indexedGeometryBuffers
     std::vector<vertex> VertexData;
     std::vector<u32> IndexData;
 
+    u32 SceneBufferOffset;
+    
+
     std::string Name;
     u32 ID;
 

@@ -28,6 +28,11 @@ struct scene : public object3D
     std::vector<gfx::accelerationStructureHandle> BLAS;
 
     gfx::accelerationStructureHandle TLAS;
+    gfx::bufferHandle VertexBuffer;
+    gfx::bufferHandle IndexBuffer;
+    gfx::bufferHandle OffsetsBuffer;
+
+
     void BuildTLAS();
     
     virtual std::shared_ptr<object3D> Clone(b8 CloneUUID) override;
