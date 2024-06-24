@@ -1,14 +1,15 @@
 #pragma once
-#include <gfx/Include/Types.h>
+#include "gfx/Include/Types.h"
 #include <string>
 #include <memory>
+#include "Types.h"
 
 namespace hlgfx
 {
 struct texture
 {
     gfx::imageHandle Handle;
-    std::string UUID;
+    u32 ID;
     std::string Name;
     texture() = default;
     texture(std::string Name);

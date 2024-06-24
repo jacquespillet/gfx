@@ -39,7 +39,7 @@ struct object3D
     b8 FrustumCulled=false;
     b8 CastShadow=false;
     b8 ReceiveShadow=false;
-    std::string UUID;
+    u32 ID;
     std::vector<std::shared_ptr<object3D>> Children;
 
     

@@ -88,11 +88,11 @@ struct context
     std::string GetUUID();
     struct project
     {
-        std::unordered_map<std::string, std::shared_ptr<material>> Materials;
-        std::unordered_map<std::string, std::shared_ptr<indexedGeometryBuffers>> Geometries;
-        std::unordered_map<std::string, std::shared_ptr<texture>> Textures;
-        std::unordered_map<std::string, std::shared_ptr<object3D>> Objects;
-        std::unordered_map<std::string, std::shared_ptr<scene>> Scenes;
+        std::unordered_map<u32, std::shared_ptr<material>> Materials;
+        std::unordered_map<u32, std::shared_ptr<indexedGeometryBuffers>> Geometries;
+        std::unordered_map<u32, std::shared_ptr<texture>> Textures;
+        std::unordered_map<u32, std::shared_ptr<object3D>> Objects;
+        std::unordered_map<u32, std::shared_ptr<scene>> Scenes;
     } Project;
     void AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level = 0);
     void RemoveObjectFromProject(std::shared_ptr<object3D> Object);
@@ -129,7 +129,7 @@ struct context
     {
         forward,
         deferred
-    } RenderType = rendererType::deferred;
+    } RenderType = rendererType::forward;
 
     std::shared_ptr<hlgfx::renderer> MainRenderer;
     void SetRenderFlags(materialFlags::bits &Flags);

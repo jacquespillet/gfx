@@ -252,7 +252,7 @@ void contextGUI::DrawAssetsWindow()
                     static char Buffer[64];
                     memcpy(&Buffer, Object.second->Name.data(), Object.second->Name.size());
                     ImGui::SetKeyboardFocusHere();
-                    ImGui::PushID(Object.second->UUID.c_str());
+                    ImGui::PushID(Object.second->ID);
                     if(ImGui::InputText("", Buffer, IM_ARRAYSIZE(Buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
                     {
                         Object.second->Name = Buffer;
@@ -309,7 +309,7 @@ void contextGUI::DrawAssetsWindow()
                 if ( Result == NFD_OKAY ) {
                     object3D::AddToScene = false;
                     std::shared_ptr<hlgfx::object3D> Mesh = hlgfx::loaders::gltf::Load(OutPath);
-                    Context->AddObjectToProject(Mesh);
+                    // Context->AddObjectToProject(Mesh);
                     object3D::AddToScene = true;
                 }                    
             }
@@ -340,7 +340,7 @@ void contextGUI::DrawAssetsWindow()
                     static char Buffer[64];
                     memcpy(&Buffer, Material.second->Name.data(), Material.second->Name.size());
                     ImGui::SetKeyboardFocusHere();
-                    ImGui::PushID(Material.second->UUID.c_str());
+                    ImGui::PushID(Material.second->ID);
                     if(ImGui::InputText("", Buffer, IM_ARRAYSIZE(Buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
                     {
                         Material.second->Name = Buffer;
@@ -432,7 +432,7 @@ void contextGUI::DrawAssetsWindow()
                     static char Buffer[64];
                     memcpy(&Buffer, Texture.second->Name.data(), Texture.second->Name.size());
                     ImGui::SetKeyboardFocusHere();
-                    ImGui::PushID(Texture.second->UUID.c_str());
+                    ImGui::PushID(Texture.second->ID);
                     if(ImGui::InputText("", Buffer, IM_ARRAYSIZE(Buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
                     {
                         Texture.second->Name = Buffer;
@@ -502,7 +502,7 @@ void contextGUI::DrawAssetsWindow()
                     static char Buffer[64];
                     memcpy(&Buffer, Geometry.second->Name.data(), Geometry.second->Name.size());
                     ImGui::SetKeyboardFocusHere();
-                    ImGui::PushID(Geometry.second->UUID.c_str());
+                    ImGui::PushID(Geometry.second->ID);
                     if(ImGui::InputText("", Buffer, IM_ARRAYSIZE(Buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
                     {
                         Geometry.second->Name = Buffer;
@@ -559,7 +559,7 @@ void contextGUI::DrawAssetsWindow()
                     static char Buffer[64];
                     memcpy(&Buffer, Scene.second->Name.data(), Scene.second->Name.size());
                     ImGui::SetKeyboardFocusHere();
-                    ImGui::PushID(Scene.second->UUID.c_str());
+                    ImGui::PushID(Scene.second->ID);
                     if(ImGui::InputText("", Buffer, IM_ARRAYSIZE(Buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
                     {
                         Scene.second->Name = Buffer;
@@ -602,6 +602,7 @@ void contextGUI::DrawAssetsWindow()
                 }
                 if(ImGui::Button("Delete") || ImGui::IsKeyPressed(ImGuiKey_Delete))
                 {
+#if 0
                     if(Context->Project.Scenes.size() > 1)
                     {
                         Context->Project.Scenes.erase(this->Context->Scene->UUID);
@@ -613,6 +614,7 @@ void contextGUI::DrawAssetsWindow()
                         }
                     }
                     this->SelectedScene = nullptr;
+#endif
                 }
             }
             ImGui::EndTabItem();
@@ -1277,6 +1279,7 @@ bool pbrMaterial::DrawTexture(const char *Name, std::shared_ptr<texture> &Textur
     }
     Changed |= ShowTextureSelection(Name, Texture);            
  
+ 
     ImGui::SameLine();
     gfx::image *BlackImage = gfx::context::Get()->GetImage(defaultTextures::BlackTexture->Handle);
     ImGui::Image(BlackImage->GetImGuiID(), ImVec2(30, ImageHeight));
@@ -1303,7 +1306,6 @@ bool pbrMaterial::DrawTexture(const char *Name, std::shared_ptr<texture> &Textur
         Changed = true;
         Texture = defaultTextures::BlueTexture;
     }
-
     
     
     return Changed;

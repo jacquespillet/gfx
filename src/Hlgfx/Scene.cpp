@@ -29,7 +29,8 @@ void RemoveMeshInChildren(std::vector<std::shared_ptr<mesh>>& Children, std::sha
 
 scene::scene(std::string Name) : object3D(Name)
 {
-    this->UUID = context::Get()->GetUUID();
+    this->ID = context::Get()->Project.Scenes.size();
+
     this->SceneGUI = std::make_shared<sceneGUI>(this);
     this->SceneBufferData.LightCount = 0;
     this->SceneBuffer = gfx::context::Get()->CreateBuffer(sizeof(sceneBuffer), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu, sizeof(sceneBuffer));
@@ -57,7 +58,7 @@ std::shared_ptr<object3D> scene::Clone(b8 CloneUUID)
     Result->CastShadow=this->CastShadow;
     Result->ReceiveShadow=this->ReceiveShadow;
     Result->Transform =  this->Transform;
-    if(CloneUUID) Result->UUID = this->UUID;
+    if(CloneUUID) Result->ID = this->ID;
 
     transform::DoCompute = false;
     for (sz i = 0; i < this->Children.size(); i++)
@@ -294,9 +295,7 @@ void scene::Serialize(std::ofstream &FileStream)
     u32 Object3DType = (u32) object3DType::Scene;
     FileStream.write((char*)&Object3DType, sizeof(u32));
 
-    u32 UUIDSize = this->UUID.size();
-    FileStream.write((char*)&UUIDSize, sizeof(u32));
-    FileStream.write(this->UUID.data(), this->UUID.size());
+    FileStream.write((char*)&this->ID, sizeof(u32));
     
     u32 StringLength = this->Name.size();
     FileStream.write((char*)&StringLength, sizeof(u32));

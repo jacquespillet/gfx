@@ -151,9 +151,7 @@ void light::Serialize(std::ofstream &FileStream)
 
     FileStream.write((char*)&Object3DType, sizeof(u32));
 
-    u32 UUIDSize = this->UUID.size();
-    FileStream.write((char*)&UUIDSize, sizeof(u32));
-    FileStream.write(this->UUID.data(), this->UUID.size());
+    FileStream.write((char*)&this->ID, sizeof(u32));
     
     u32 StringLength = this->Name.size();
     FileStream.write((char*)&StringLength, sizeof(u32));

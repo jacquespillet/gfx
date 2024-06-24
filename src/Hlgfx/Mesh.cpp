@@ -13,7 +13,7 @@ mesh::mesh(std::string Name) : object3D(Name)
 {
     this->Material = nullptr;
     this->GeometryBuffers = nullptr;
-    this->UUID = context::Get()->GetUUID();
+    this->ID = context::Get()->Project.Objects.size();
     this->UniformBuffer = gfx::context::Get()->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
     this->Uniforms = std::make_shared<gfx::uniformGroup>();
     this->Uniforms->Reset().AddUniformBuffer(ModelBinding, this->UniformBuffer);
@@ -39,7 +39,7 @@ mesh::mesh() : object3D("Mesh")
     this->Material = nullptr;
     this->GeometryBuffers = nullptr;
 
-    this->UUID = context::Get()->GetUUID();
+    this->ID = context::Get()->Project.Objects.size();
     this->UniformBuffer = gfx::context::Get()->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
     this->Uniforms = std::make_shared<gfx::uniformGroup>();
     this->Uniforms->Reset().AddUniformBuffer(ModelBinding, this->UniformBuffer);
@@ -61,7 +61,7 @@ mesh::mesh() : object3D("Mesh")
 }
 
 
-std::shared_ptr<object3D> mesh::Clone(b8 CloneUUID)
+std::shared_ptr<object3D> mesh::Clone(b8 CloneID)
 {
     std::shared_ptr<mesh> Result = std::make_shared<mesh>(this->Name);
     
@@ -69,7 +69,7 @@ std::shared_ptr<object3D> mesh::Clone(b8 CloneUUID)
     Result->FrustumCulled=this->FrustumCulled;
     Result->CastShadow=this->CastShadow;
     Result->ReceiveShadow=this->ReceiveShadow;
-    if(CloneUUID) Result->UUID= this->UUID;
+    if(CloneID) Result->ID= this->ID;
     Result->Transform =  this->Transform;
     Result->Transform.HasChanged=true;
 
@@ -82,7 +82,7 @@ std::shared_ptr<object3D> mesh::Clone(b8 CloneUUID)
     transform::DoCompute=false;
     for (sz i = 0; i < this->Children.size(); i++)
     {
-        Result->AddObject(this->Children[i]->Clone(CloneUUID));
+        Result->AddObject(this->Children[i]->Clone(CloneID));
     }
     if(DoCompute) transform::DoCompute=true;
     
@@ -128,9 +128,7 @@ void mesh::Serialize(std::ofstream &FileStream)
     u32 Object3DType = (u32) object3DType::Mesh;
     FileStream.write((char*)&Object3DType, sizeof(u32));
 
-    u32 UUIDSize = this->UUID.size();
-    FileStream.write((char*)&UUIDSize, sizeof(u32));
-    FileStream.write(this->UUID.data(), this->UUID.size());
+    FileStream.write((char*)&this->ID, sizeof(u32));
     
     u32 StringLength = this->Name.size();
     FileStream.write((char*)&StringLength, sizeof(u32));
@@ -139,13 +137,9 @@ void mesh::Serialize(std::ofstream &FileStream)
     FileStream.write((char*)&this->Transform.Matrices, sizeof(transform::matrices));
     FileStream.write((char*)&this->Transform.LocalValues, sizeof(transform::localValues));
     
-    u32 GeometryUUIDSize = this->GeometryBuffers->UUID.size();
-    FileStream.write((char*)&GeometryUUIDSize, sizeof(u32));
-    FileStream.write(this->GeometryBuffers->UUID.data(), GeometryUUIDSize);
+    FileStream.write((char*)&this->GeometryBuffers->ID, sizeof(u32));
     
-    u32 MaterialUUIDSize = this->Material->UUID.size();
-    FileStream.write((char*)&MaterialUUIDSize, sizeof(u32));
-    FileStream.write(this->Material->UUID.data(), MaterialUUIDSize);
+    FileStream.write((char*)&this->Material->ID, sizeof(u32));
 
 
     u32 NumChildren = this->Children.size();

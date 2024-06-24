@@ -9,7 +9,7 @@ namespace hlgfx
 {
 indexedGeometryBuffers::indexedGeometryBuffers()
 {
-    this->UUID = context::Get()->GetUUID();
+    this->ID = context::Get()->Project.Geometries.size();
 }
 
 void indexedGeometryBuffers::BuildBuffers()
@@ -598,9 +598,7 @@ void indexedGeometryBuffers::Serialize(std::string FileName)
     FileStream.write((char*)&Start, sizeof(u32));
     FileStream.write((char*)&Count, sizeof(u32));
     
-    u32 UUIDSize = this->UUID.size();
-    FileStream.write((char*)&UUIDSize, sizeof(u32));
-    FileStream.write(this->UUID.data(), this->UUID.size());
+    FileStream.write((char*)&ID, sizeof(u32));
 
     
     sz VertexDataSize = this->VertexData.size();
@@ -635,10 +633,7 @@ std::shared_ptr<indexedGeometryBuffers> indexedGeometryBuffers::Deserialize(cons
     FileStream.read((char*)&Result->Start, sizeof(u32));
     FileStream.read((char*)&Result->Count, sizeof(u32));
     
-    u32 UUIDSize = Result->UUID.size();
-    FileStream.read((char*)&UUIDSize, sizeof(u32));
-    Result->UUID.resize(UUIDSize);
-    FileStream.read(Result->UUID.data(), Result->UUID.size());
+    FileStream.read((char*)&Result->ID, sizeof(u32));
 
     
     sz VertexDataSize;

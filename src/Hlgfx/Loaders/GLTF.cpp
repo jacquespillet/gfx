@@ -20,7 +20,9 @@
 #include "../Include/Texture.h"
 #include "../Include/Mesh.h"
 #include "../Include/Util.h"
+#include "../Include/Context.h"
 #include "gfx/Include/Pipeline.h"
+
 
 #include <glm/gtx/matrix_decompose.hpp>
 
@@ -73,7 +75,7 @@ gfx::samplerWrapMode BorderMode(int Mode)
 }
 
 
-void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geometryData>> &Geometries, std::vector<std::vector<uint32_t>> &InstanceMapping)
+void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geometryData>> &Geometries, context::project &Project, std::vector<std::vector<uint32_t>> &InstanceMapping, u32 BaseMaterialIndex)
 {
     uint32_t GIndexBase=0;
     InstanceMapping.resize(GLTFModel.meshes.size());
@@ -93,8 +95,9 @@ void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geomet
 
             std::shared_ptr<geometryData> &Geometry = Geometries[BaseIndex + j];
             Geometry = std::make_shared<geometryData>();
-            Geometry->MaterialIndex = GLTFPrimitive.material;
+            Geometry->MaterialIndex = BaseMaterialIndex + GLTFPrimitive.material;
             Geometry->Buffers = std::make_shared<indexedGeometryBuffers>();
+            Project.Geometries[Geometry->Buffers->ID] = Geometry->Buffers;
             
             std::string GeometryName = gltfMesh.name;
             if(GeometryName == "")
@@ -266,7 +269,7 @@ void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geomet
     }
 }    
 
-void TraverseNodes(tinygltf::Model &GLTFModel, uint32_t nodeIndex, std::vector<std::shared_ptr<geometryData>> &Geometries, std::vector<std::vector<uint32_t>> &InstanceMapping, std::vector<std::shared_ptr<material>> &Materials, std::shared_ptr<object3D> Parent)
+void TraverseNodes(tinygltf::Model &GLTFModel, uint32_t nodeIndex, std::vector<std::shared_ptr<geometryData>> &Geometries, std::vector<std::vector<uint32_t>> &InstanceMapping, context::project &Project, std::shared_ptr<object3D> Parent)
 {
     tinygltf::Node GLTFNode = GLTFModel.nodes[nodeIndex];
 
@@ -276,7 +279,8 @@ void TraverseNodes(tinygltf::Model &GLTFModel, uint32_t nodeIndex, std::vector<s
         NodeName = "Node";
     }
     std::shared_ptr<object3D> Node = std::make_shared<object3D>(NodeName.c_str());
-    
+    Project.Objects[Node->ID] = Node;
+
     if(GLTFNode.matrix.size() > 0)
     {
         m4x4 Matrix;
@@ -323,13 +327,13 @@ void TraverseNodes(tinygltf::Model &GLTFModel, uint32_t nodeIndex, std::vector<s
         for(int i=0; i<GLTFMesh.primitives.size(); i++)
         {
             std::shared_ptr<mesh> Mesh = std::make_shared<mesh>();
-            
+            Project.Objects[Mesh->ID] = Mesh;
             // Mesh->Transform.SetLocalPosition(0,0,0);
 
             uint32_t Inx = InstanceMapping[GLTFNode.mesh][i];
             Mesh->GeometryBuffers = Geometries[Inx]->Buffers;
             Mesh->Name = GLTFMesh.name;
-            Mesh->Material = Materials[Geometries[Inx]->MaterialIndex];
+            Mesh->Material = Project.Materials[Geometries[Inx]->MaterialIndex];
 
             if(strcmp(Mesh->Name.c_str(), "") == 0)
             {
@@ -343,18 +347,18 @@ void TraverseNodes(tinygltf::Model &GLTFModel, uint32_t nodeIndex, std::vector<s
 
     for (size_t i = 0; i < GLTFNode.children.size(); i++)
     {
-        TraverseNodes(GLTFModel, GLTFNode.children[i], Geometries, InstanceMapping, Materials, Node);
+        TraverseNodes(GLTFModel, GLTFNode.children[i], Geometries, InstanceMapping, Project, Node);
     }
     
 
 }
 
-void LoadInstances(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geometryData>> &Geometries, std::vector<std::vector<uint32_t>> &InstanceMapping, std::vector<std::shared_ptr<material>> &Materials, std::shared_ptr<object3D> Root)
+void LoadInstances(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geometryData>> &Geometries, std::vector<std::vector<uint32_t>> &InstanceMapping, context::project &Project, std::shared_ptr<object3D> Root)
 {
     const tinygltf::Scene GLTFScene = GLTFModel.scenes[GLTFModel.defaultScene];
     for (size_t i = 0; i < GLTFScene.nodes.size(); i++)
     {
-        TraverseNodes(GLTFModel, GLTFScene.nodes[i], Geometries, InstanceMapping, Materials, Root);
+        TraverseNodes(GLTFModel, GLTFScene.nodes[i], Geometries, InstanceMapping, Project, Root);
     }
 }
 
@@ -372,7 +376,7 @@ std::string ExtractFileName(const std::string& Path) {
 }
 
 
-void LoadTextures(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<texture>> &Images)
+void LoadTextures(tinygltf::Model &GLTFModel, context::project &Project)
 {
     for (size_t i = 0; i < GLTFModel.textures.size(); i++)
     {
@@ -422,16 +426,14 @@ void LoadTextures(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<textur
         }
 		gfx::imageHandle Image = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);
         std::shared_ptr<texture> ImagePtr = std::make_shared<texture>(TexName, Image);
-        Images.push_back(ImagePtr);
+
+        Project.Textures[ImagePtr->ID] = ImagePtr;
     }
 }
 
-void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<material>> &Materials, std::vector<std::shared_ptr<texture>> &Textures)
+void LoadMaterials(tinygltf::Model &GLTFModel, context::project &Project, u32 BaseTextureID)
 {
     
-    // AScene->mMaterials[i]->Get(AI_MATKEY_TEXTURE_DIFFUSE(0), Materials[i].MaterialData.BaseColorTextureID);
-    Materials.resize(GLTFModel.materials.size());
-
     int NoNameCount=0;
     for (size_t i = 0; i < GLTFModel.materials.size(); i++)
     {
@@ -453,8 +455,9 @@ void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<mater
             MatName = "Material_" + std::to_string(NoNameCount++);
         }
         
-        Materials[i] = std::make_shared<pbrMaterial>(MatName, Flags);  
-        std::shared_ptr<pbrMaterial> PBRMat = std::static_pointer_cast<pbrMaterial>(Materials[i]);
+        std::shared_ptr<material> Material = std::make_shared<pbrMaterial>(MatName, Flags);  
+        std::shared_ptr<pbrMaterial> PBRMat = std::static_pointer_cast<pbrMaterial>(Material);
+        Project.Materials[Material->ID] = Material;
         
         PBRMat->UniformData.BaseColorFactor = v3f(PBR.baseColorFactor[0], PBR.baseColorFactor[1], PBR.baseColorFactor[2]);
         PBRMat->UniformData.OpacityFactor = PBR.baseColorFactor[3];
@@ -467,23 +470,23 @@ void LoadMaterials(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<mater
  
         if(PBR.baseColorTexture.index > -1)
         {
-            PBRMat->SetBaseColorTexture(Textures[PBR.baseColorTexture.index]);
+            PBRMat->SetBaseColorTexture(Project.Textures[BaseTextureID + PBR.baseColorTexture.index]);
         }
         if(PBR.metallicRoughnessTexture.index > -1)
         {
-            PBRMat->SetMetallicRoughnessTexture(Textures[PBR.metallicRoughnessTexture.index]);
+            PBRMat->SetMetallicRoughnessTexture(Project.Textures[BaseTextureID + PBR.metallicRoughnessTexture.index]);
         }
         if(GLTFMaterial.occlusionTexture.index > -1)
         {
-            PBRMat->SetOcclusionTexture(Textures[GLTFMaterial.occlusionTexture.index]);
+            PBRMat->SetOcclusionTexture(Project.Textures[BaseTextureID + GLTFMaterial.occlusionTexture.index]);
         }
         if(GLTFMaterial.normalTexture.index > -1)
         {
-            PBRMat->SetNormalTexture(Textures[GLTFMaterial.normalTexture.index]);
+            PBRMat->SetNormalTexture(Project.Textures[BaseTextureID + GLTFMaterial.normalTexture.index]);
         }
         if(GLTFMaterial.emissiveTexture.index > -1)
         {
-            PBRMat->SetEmissiveTexture(Textures[GLTFMaterial.emissiveTexture.index]);
+            PBRMat->SetEmissiveTexture(Project.Textures[BaseTextureID + GLTFMaterial.emissiveTexture.index]);
         }
 
         PBRMat->Update();
@@ -525,10 +528,16 @@ std::shared_ptr<object3D> Load(std::string FileName)
     std::vector<std::shared_ptr<texture>> Textures;
     std::vector<std::shared_ptr<material>> Materials;
     
-    LoadTextures(GLTFModel, Textures);
-    LoadMaterials(GLTFModel, Materials, Textures);
-    LoadGeometry(GLTFModel, Geometries, InstanceMapping);
-    LoadInstances(GLTFModel, Geometries, InstanceMapping, Materials, Result);
+    context::project &Project = context::Get()->Project;
+    u32 BaseTextureID = Project.Textures.size();
+    u32 BaseGeometryID = Project.Geometries.size();
+    u32 BaseMaterialID = Project.Materials.size();
+    u32 BaseObjectID = Project.Objects.size();
+
+    LoadTextures(GLTFModel, Project);
+    LoadMaterials(GLTFModel, Project, BaseTextureID);
+    LoadGeometry(GLTFModel, Geometries, Project, InstanceMapping, BaseMaterialID);
+    LoadInstances(GLTFModel, Geometries, InstanceMapping, Project, Result);
 
 
     

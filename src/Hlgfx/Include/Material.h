@@ -42,7 +42,7 @@ struct material
     std::shared_ptr<gfx::uniformGroup> Uniforms;
     materialFlags::bits Flags;
     std::string Name;
-    std::string UUID;
+    u32 ID;
 
     virtual void DrawGUI() = 0;
     virtual void SetCullMode(gfx::cullMode Mode) = 0;
@@ -51,7 +51,7 @@ struct material
     virtual std::shared_ptr<material> Clone() = 0;
     static std::shared_ptr<material> Deserialize(const std::string &FileName);
     b8 ShouldRecreate = false;
-    std::unordered_map<std::string, std::shared_ptr<texture>> AllTextures;
+    std::unordered_map<u32, std::shared_ptr<texture>> AllTextures;
 };
 
 struct customMaterial : public material

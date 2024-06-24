@@ -10,13 +10,13 @@ texture::texture(std::string Name)
 {
     this->Name = Name;
     this->Handle = gfx::InvalidHandle;
-    this->UUID = context::Get()->GetUUID();
+    this->ID = context::Get()->Project.Textures.size();
 }
 
 texture::texture(std::string Name, gfx::imageHandle Handle) : Handle(Handle)
 {
     this->Name = Name;
-    this->UUID = context::Get()->GetUUID();
+    this->ID = context::Get()->Project.Textures.size();
 }
 
 void texture::Serialize(std::string FilePath)
@@ -27,9 +27,7 @@ void texture::Serialize(std::string FilePath)
 
     gfx::image *Image = gfx::context::Get()->GetImage(this->Handle);
 
-    u32 UUIDSize = UUID.size();
-    FileStream.write((char*)&UUIDSize, sizeof(u32));
-    FileStream.write((char*)UUID.data(), UUID.size());
+    FileStream.write((char*)&this->ID, sizeof(u32));
     
     u32 NameSize = Name.size();
     FileStream.write((char*)&NameSize, sizeof(u32));
@@ -71,10 +69,7 @@ std::shared_ptr<texture> texture::Deserialize(std::string FilePath)
     
     std::shared_ptr<texture> Result = std::make_shared<texture>();
 
-    u32 UUIDSize;
-    FileStream.read((char*)&UUIDSize, sizeof(u32));
-    Result->UUID.resize(UUIDSize);
-    FileStream.read(Result->UUID.data(), Result->UUID.size());
+    FileStream.read((char*)&Result->ID, sizeof(u32));
 
     u32 NameSize;
     FileStream.read((char*)&NameSize, sizeof(u32));

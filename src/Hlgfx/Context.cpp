@@ -153,24 +153,26 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
         gfx::samplerWrapMode::Repeat,
         true
     };    
-
+    defaultTextures::BlackTexture = std::make_shared<texture>("Black", gfx::InvalidHandle);
     defaultTextures::BlackTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
-    defaultTextures::BlackTexture->UUID = "BLACK_TEXTURE";
 
     Color = {127,127,255,255};
     for (sz i = 0; i < TexWidth * TexHeight; i++)
         ColorData[i] = Color;
+    
+    defaultTextures::BlueTexture =std::make_shared<texture>("Blue", gfx::InvalidHandle);
     defaultTextures::BlueTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
-    defaultTextures::BlueTexture->UUID = "BLUE_TEXTURE";
     
     Color = {255,255,255,255};
     for (sz i = 0; i < TexWidth * TexHeight; i++)
         ColorData[i] = Color;
+
+    defaultTextures::WhiteTexture = std::make_shared<texture>("White", gfx::InvalidHandle);
     defaultTextures::WhiteTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
-    defaultTextures::WhiteTexture->UUID = "WHITE_TEXTURE";
 
     
 
+#if 0 //TODO
     //Initialize default 3d objects WITHOUT materials. materials are created when these objects are instanciated.
     Singleton->Quad = GetQuadGeometry();
     Singleton->Quad->UUID = "DEFAULT_QUAD";
@@ -188,7 +190,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->Capsule->UUID = "DEFAULT_CAPSULE";
     //We need a way of knowing that the main render pass depends on the shadows render pass
     //so that it can transition all the resources it needs to shader read]
-
+#endif
 
     //Only one for directinoal shadows
     Singleton->ShadowMaps = Singleton->GfxContext->CreateImageArray(ShadowMapSize, ShadowMapSize, MaxLights, ShadowMapFormat, gfx::imageUsage::SHADER_READ);
@@ -201,10 +203,11 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
         Singleton->MainRenderer = std::make_shared<hlgfx::deferredRenderer>();
 
     // Singleton->MainRenderer = std::make_shared<hlgfx::deferredRenderer>();
-
+#if 0 //TODO
     Singleton->NoMaterial = std::make_shared<pbrMaterial>("NO_MATERIAL");
     Singleton->NoMaterial->UUID = "NO_MATERIAL";
-    
+#endif
+
     return Singleton;
 }
 
@@ -399,7 +402,7 @@ std::string context::GetUUID()
 
 void context::AddTextureToProject(std::shared_ptr<texture> Texture)
 {
-    if(this->Project.Textures.find(Texture->UUID) != this->Project.Textures.end()) return;
+    if(this->Project.Textures.find(Texture->ID) != this->Project.Textures.end()) return;
 
     //Check unicity of name
     u32 Count = 0;
@@ -420,13 +423,13 @@ void context::AddTextureToProject(std::shared_ptr<texture> Texture)
         if(OK) break;
     }    
 
-    this->Project.Textures[Texture->UUID] = Texture;
+    this->Project.Textures[Texture->ID] = Texture;
 }
 
 void context::RemoveTextureFromProject(std::shared_ptr<texture> Texture)
 {
     //Remove from project
-    this->Project.Textures.erase(Texture->UUID);
+    this->Project.Textures.erase(Texture->ID);
 
     //remove from all materials
     for (auto &Material : this->Project.Materials)
@@ -456,12 +459,11 @@ void context::RemoveTextureFromProject(std::shared_ptr<texture> Texture)
             }
         }
     }
-    
 }
 
 void context::AddMaterialToProject(std::shared_ptr<material> Material)
 {
-    if(this->Project.Materials.find(Material->UUID) != this->Project.Materials.end()) return;
+    if(this->Project.Materials.find(Material->ID) != this->Project.Materials.end()) return;
     //Check unicity of name
     u32 Count = 0;
     std::string BaseName = Material->Name;
@@ -482,13 +484,13 @@ void context::AddMaterialToProject(std::shared_ptr<material> Material)
         if(OK) break;
     }
 
-    this->Project.Materials[Material->UUID] = Material;
+    this->Project.Materials[Material->ID] = Material;
 }
 
 void context::RemoveMaterialFromProject(std::shared_ptr<material> Material)
 {
     //remove from materiails
-    this->Project.Materials.erase(Material->UUID);
+    this->Project.Materials.erase(Material->ID);
     //remove from all objects
     for(auto &Object : this->Project.Objects)
     {
@@ -542,7 +544,7 @@ void context::RemoveMaterialFromProject(std::shared_ptr<material> Material)
 
 void context::AddGeometryToProject(std::shared_ptr<indexedGeometryBuffers> Geometry)
 {
-    if(this->Project.Geometries.find(Geometry->UUID) != this->Project.Geometries.end()) return;
+    if(this->Project.Geometries.find(Geometry->ID) != this->Project.Geometries.end()) return;
 
     //Check unicity of name
     u32 Count = 0;
@@ -564,7 +566,7 @@ void context::AddGeometryToProject(std::shared_ptr<indexedGeometryBuffers> Geome
         if(OK) break;
     }
 
-    this->Project.Geometries[Geometry->UUID] = Geometry;
+    this->Project.Geometries[Geometry->ID] = Geometry;
 }
 
 void context::AddMeshToProject(std::shared_ptr<mesh> Mesh)
@@ -598,13 +600,13 @@ void context::AddSceneToProject(std::shared_ptr<scene> Scene)
 
         if(OK) break;
     }
-    this->Project.Scenes[Scene->UUID] = Scene;
+    this->Project.Scenes[Scene->ID] = Scene;
     this->Scene = Scene;
 }
 
 void context::RemoveObjectFromProject(std::shared_ptr<object3D> Object)
 {
-    this->Project.Objects.erase(Object->UUID);
+    this->Project.Objects.erase(Object->ID);
 }
   
 void context::AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level)
@@ -630,7 +632,7 @@ void context::AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level)
 
             if(OK) break;
         }
-        this->Project.Objects[Object->UUID] = (Object);
+        this->Project.Objects[Object->ID] = (Object);
     }
     
     
@@ -807,6 +809,7 @@ void context::Cleanup()
     
     NoMaterial = nullptr;
 
+    //TODO: Is that necessary ?
     GfxContext->DestroyImage(defaultTextures::BlackTexture->Handle);
     GfxContext->DestroyImage(defaultTextures::WhiteTexture->Handle);
     GfxContext->DestroyImage(defaultTextures::BlueTexture->Handle);
@@ -893,31 +896,31 @@ void context::LoadProjectFromFile(const char *FileName)
     for (sz i = 0; i < TextureFiles.size(); i++)
     {
         std::shared_ptr<texture> Texture = texture::Deserialize(TextureFiles[i]);
-        Project.Textures[Texture->UUID] = Texture;   
+        Project.Textures[Texture->ID] = Texture;   
     }
 
     for (sz i = 0; i < MaterialFiles.size(); i++)
     {
         std::shared_ptr<material> Material = material::Deserialize(MaterialFiles[i]);
-        Project.Materials[Material->UUID] = Material;
+        Project.Materials[Material->ID] = Material;
     }
     
     for (sz i = 0; i < GeometryFiles.size(); i++)
     {
         std::shared_ptr<indexedGeometryBuffers> Geometry = indexedGeometryBuffers::Deserialize(GeometryFiles[i]);
-        Project.Geometries[Geometry->UUID] = Geometry;
+        Project.Geometries[Geometry->ID] = Geometry;
     }
     
     for (sz i = 0; i < ObjectFiles.size(); i++)
     {
         std::shared_ptr<object3D> Object = object3D::Deserialize(ObjectFiles[i]);
-        Project.Objects[Object->UUID] = Object;   
+        Project.Objects[Object->ID] = Object;   
     }
     
     for (sz i = 0; i < SceneFiles.size(); i++)
     {
         std::shared_ptr<scene> Scene = std::static_pointer_cast<scene>(object3D::Deserialize(SceneFiles[i]));
-        Project.Scenes[Scene->UUID] = Scene;  
+        Project.Scenes[Scene->ID] = Scene;  
         if(i==0) this->Scene = Scene;
         if(this->GfxContext->RTXEnabled)
         {

@@ -11,14 +11,14 @@
 
 namespace hlgfx
 {
-std::shared_ptr<texture> defaultTextures::BlackTexture = std::make_shared<texture>("Black", gfx::InvalidHandle);
-std::shared_ptr<texture> defaultTextures::BlueTexture = std::make_shared<texture>("Blue", gfx::InvalidHandle);
-std::shared_ptr<texture> defaultTextures::WhiteTexture = std::make_shared<texture>("White", gfx::InvalidHandle);
+std::shared_ptr<texture> defaultTextures::BlackTexture = nullptr;
+std::shared_ptr<texture> defaultTextures::BlueTexture = nullptr;
+std::shared_ptr<texture> defaultTextures::WhiteTexture = nullptr;
 
 material::material(std::string Name)
 {
     this->Name = Name;
-    this->UUID = context::Get()->GetUUID();
+    this->ID = context::Get()->Project.Materials.size();
 }
 
 customMaterial::customMaterial(std::string Name, gfx::pipelineHandle Pipeline) : material(Name)
@@ -139,47 +139,47 @@ void pbrMaterial::SetCullMode(gfx::cullMode Mode)
 
 void pbrMaterial::SetBaseColorTexture(std::shared_ptr<texture> Texture)
 {
-    this->AllTextures.erase(this->BaseColorTexture->UUID);
+    this->AllTextures.erase(this->BaseColorTexture->ID);
     this->BaseColorTexture = Texture;
     this->Uniforms->Uniforms[1].ResourceHandle = Texture->Handle;
     this->Uniforms->Update();
-    this->AllTextures[this->BaseColorTexture->UUID] = Texture;
+    this->AllTextures[this->BaseColorTexture->ID] = Texture;
 }
 
 void pbrMaterial::SetMetallicRoughnessTexture(std::shared_ptr<texture> Texture)
 {
-    this->AllTextures.erase(this->MetallicRoughnessTexture->UUID);
+    this->AllTextures.erase(this->MetallicRoughnessTexture->ID);
     this->MetallicRoughnessTexture = Texture;
     this->Uniforms->Uniforms[2].ResourceHandle = Texture->Handle;
     this->Uniforms->Update();    
-    this->AllTextures[this->MetallicRoughnessTexture->UUID] = Texture;
+    this->AllTextures[this->MetallicRoughnessTexture->ID] = Texture;
 }
 
 void pbrMaterial::SetOcclusionTexture(std::shared_ptr<texture> Texture)
 {
-    this->AllTextures.erase(this->OcclusionTexture->UUID);
+    this->AllTextures.erase(this->OcclusionTexture->ID);
     this->OcclusionTexture = Texture;
     this->Uniforms->Uniforms[3].ResourceHandle = Texture->Handle;
     this->Uniforms->Update(); 
-    this->AllTextures[this->OcclusionTexture->UUID] = Texture;
+    this->AllTextures[this->OcclusionTexture->ID] = Texture;
 }
 
 void pbrMaterial::SetNormalTexture(std::shared_ptr<texture> Texture)
 {
-    this->AllTextures.erase(this->NormalTexture->UUID);
+    this->AllTextures.erase(this->NormalTexture->ID);
     this->NormalTexture = Texture;
     this->Uniforms->Uniforms[4].ResourceHandle = Texture->Handle;
     this->Uniforms->Update();
-    this->AllTextures[this->NormalTexture->UUID] = Texture;
+    this->AllTextures[this->NormalTexture->ID] = Texture;
 }
 
 void pbrMaterial::SetEmissiveTexture(std::shared_ptr<texture> Texture)
 {
-    this->AllTextures.erase(this->EmissiveTexture->UUID);
+    this->AllTextures.erase(this->EmissiveTexture->ID);
     this->EmissiveTexture = Texture;
     this->Uniforms->Uniforms[5].ResourceHandle = Texture->Handle;
     this->Uniforms->Update();
-    this->AllTextures[this->EmissiveTexture->UUID] = Texture;
+    this->AllTextures[this->EmissiveTexture->ID] = Texture;
 }
 
 void pbrMaterial::RecreatePipeline()
@@ -194,7 +194,7 @@ void pbrMaterial::RecreatePipeline()
     else
     {
         u32 Uses = 0;
-        std::unordered_map<std::string, std::shared_ptr<material>> &Materials = context::Get()->Project.Materials;
+        std::unordered_map<u32, std::shared_ptr<material>> &Materials = context::Get()->Project.Materials;
         for (auto &Material : Materials)
         {
             if(Material.second->PipelineHandle == this->PipelineHandle) Uses++;
@@ -223,7 +223,7 @@ std::shared_ptr<material> pbrMaterial::Clone()
 {
     std::shared_ptr<pbrMaterial> Result = std::make_shared<pbrMaterial>(this->Name + "_Duplicated", this->Flags);
     Result->UniformData = this->UniformData;
-    Result->UUID = context::Get()->GetUUID();
+    Result->ID = context::Get()->Project.Textures.size();
     Result->SetBaseColorTexture(this->BaseColorTexture);
     Result->SetOcclusionTexture(this->OcclusionTexture);
     Result->SetEmissiveTexture(this->EmissiveTexture);
@@ -250,9 +250,7 @@ void pbrMaterial::Serialize(const std::string &FileName)
     u32 MaterialType = (u32)materialType::PBR;
     FileStream.write((char*)&MaterialType, sizeof(u32));
 
-    u32 UUIDSize = this->UUID.size();
-    FileStream.write((char*)&UUIDSize, sizeof(u32));
-    FileStream.write(this->UUID.data(), this->UUID.size());
+    FileStream.write((char*)&this->ID, sizeof(u32));
 
     u32 NameSize = this->Name.size();
     FileStream.write((char*)&NameSize, sizeof(u32));
@@ -266,45 +264,35 @@ void pbrMaterial::Serialize(const std::string &FileName)
     FileStream.write((char*)&HasBaseColorTexture, sizeof(u8));
     if(HasBaseColorTexture)
     {
-        u32 UUIDSize = this->BaseColorTexture->UUID.size();
-        FileStream.write((char*)&UUIDSize, sizeof(u32));
-        FileStream.write(this->BaseColorTexture->UUID.data(), this->BaseColorTexture->UUID.size()); 
+        FileStream.write((char*)&this->BaseColorTexture->ID, sizeof(u32)); 
     }
 
     u8 HasMetallicRoughnessTexture = u8(this->MetallicRoughnessTexture->Handle != defaultTextures::BlackTexture->Handle); 
     FileStream.write((char*)&HasMetallicRoughnessTexture, sizeof(u8));
     if(HasMetallicRoughnessTexture)
     {
-        u32 UUIDSize = this->MetallicRoughnessTexture->UUID.size();
-        FileStream.write((char*)&UUIDSize, sizeof(u32));
-        FileStream.write(this->MetallicRoughnessTexture->UUID.data(), this->MetallicRoughnessTexture->UUID.size()); 
+        FileStream.write((char*)&this->MetallicRoughnessTexture->ID, sizeof(u32)); 
     }
 
     u8 HasOcclusionTexture = u8(this->OcclusionTexture->Handle != defaultTextures::WhiteTexture->Handle && this->OcclusionTexture->Handle != defaultTextures::BlackTexture->Handle); 
     FileStream.write((char*)&HasOcclusionTexture, sizeof(u8));
     if(HasOcclusionTexture)
     {
-        u32 UUIDSize = this->OcclusionTexture->UUID.size();
-        FileStream.write((char*)&UUIDSize, sizeof(u32));
-        FileStream.write(this->OcclusionTexture->UUID.data(), this->OcclusionTexture->UUID.size()); 
+        FileStream.write((char*)&this->OcclusionTexture->ID, sizeof(u32)); 
     }
 
     u8 HasNormalTexture = u8(this->NormalTexture->Handle != defaultTextures::BlueTexture->Handle && this->OcclusionTexture->Handle != defaultTextures::BlackTexture->Handle); 
     FileStream.write((char*)&HasNormalTexture, sizeof(u8));
     if(HasNormalTexture)
     {
-        u32 UUIDSize = this->NormalTexture->UUID.size();
-        FileStream.write((char*)&UUIDSize, sizeof(u32));
-        FileStream.write(this->NormalTexture->UUID.data(), this->NormalTexture->UUID.size()); 
+        FileStream.write((char*)&this->NormalTexture->ID, sizeof(u32)); 
     }
 
     u8 HasEmissiveTexture = u8(this->EmissiveTexture->Handle != defaultTextures::BlackTexture->Handle); 
     FileStream.write((char*)&HasEmissiveTexture, sizeof(u8));
     if(HasEmissiveTexture)
     {
-        u32 UUIDSize = this->EmissiveTexture->UUID.size();
-        FileStream.write((char*)&UUIDSize, sizeof(u32));
-        FileStream.write(this->EmissiveTexture->UUID.data(), this->EmissiveTexture->UUID.size()); 
+        FileStream.write((char*)&this->EmissiveTexture->ID, sizeof(u32)); 
     }
 
     FileStream.close();
@@ -320,10 +308,8 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
     FileStream.read((char*)&MaterialType, sizeof(u32));
 
 
-    u32 UUIDSize;
-    FileStream.read((char*)&UUIDSize, sizeof(u32));
-    std::string UUID; UUID.resize(UUIDSize);
-    FileStream.read(UUID.data(), UUID.size());
+    u32 ID;
+    FileStream.read((char*)&ID, sizeof(u32));
 
     u32 NameSize;
     FileStream.read((char*)&NameSize, sizeof(u32));
@@ -336,7 +322,7 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
     materialFlags::bits Flags = (materialFlags::bits)FlagsUI;
     
     std::shared_ptr<pbrMaterial> Result = std::make_shared<pbrMaterial>(Name, Flags);
-    Result->UUID = UUID;
+    Result->ID = ID;
     
     FileStream.read((char*)&Result->UniformData, sizeof(pbrMaterial::materialData));
     
@@ -345,16 +331,10 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
     FileStream.read((char*)&HasBaseColorTexture, sizeof(u8));
     if(HasBaseColorTexture)
     {
-        u32 UUIDSize;
-        FileStream.read((char*)&UUIDSize, sizeof(u32));
-        std::string UUID; UUID.resize(UUIDSize);
-        FileStream.read(UUID.data(), UUID.size());
+        u32 ID;
+        FileStream.read((char*)&ID, sizeof(u32));
         
-        std::shared_ptr<texture> Texture;
-        if(UUID == "BLUE_TEXTURE") Texture = defaultTextures::BlueTexture;
-        else if(UUID == "WHITE_TEXTURE") Texture = defaultTextures::WhiteTexture;
-        else if(UUID == "BLACK_TEXTURE") Texture = defaultTextures::BlackTexture;
-        else Texture = context::Get()->Project.Textures[UUID];
+        std::shared_ptr<texture> Texture = context::Get()->Project.Textures[ID];
 
         Result->SetBaseColorTexture(Texture); 
     }
@@ -367,16 +347,10 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
     FileStream.read((char*)&HasMetallicRoughnessTexture, sizeof(u8));
     if(HasMetallicRoughnessTexture)
     {
-        u32 UUIDSize;
-        FileStream.read((char*)&UUIDSize, sizeof(u32));
-        std::string UUID; UUID.resize(UUIDSize);
-        FileStream.read(UUID.data(), UUID.size());
+        u32 ID;
+        FileStream.read((char*)&ID, sizeof(u32));
 
-        std::shared_ptr<texture> Texture;
-        if(UUID == "BLUE_TEXTURE") Texture = defaultTextures::BlueTexture;
-        else if(UUID == "WHITE_TEXTURE") Texture = defaultTextures::WhiteTexture;
-        else if(UUID == "BLACK_TEXTURE") Texture = defaultTextures::BlackTexture;
-        else Texture = context::Get()->Project.Textures[UUID];
+        std::shared_ptr<texture> Texture = context::Get()->Project.Textures[ID];
         
         Result->SetMetallicRoughnessTexture(Texture); 
     }
@@ -389,16 +363,10 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
     FileStream.read((char*)&HasOcclusionTexture, sizeof(u8));
     if(HasOcclusionTexture)
     {
-        u32 UUIDSize;
-        FileStream.read((char*)&UUIDSize, sizeof(u32));
-        std::string UUID; UUID.resize(UUIDSize);
-        FileStream.read(UUID.data(), UUID.size());
+        u32 ID;
+        FileStream.read((char*)&ID, sizeof(u32));
 
-        std::shared_ptr<texture> Texture;
-        if(UUID == "BLUE_TEXTURE") Texture = defaultTextures::BlueTexture;
-        else if(UUID == "WHITE_TEXTURE") Texture = defaultTextures::WhiteTexture;
-        else if(UUID == "BLACK_TEXTURE") Texture = defaultTextures::BlackTexture;
-        else Texture = context::Get()->Project.Textures[UUID];
+        std::shared_ptr<texture> Texture = context::Get()->Project.Textures[ID];
         
         Result->SetOcclusionTexture(Texture); 
     }
@@ -411,16 +379,10 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
     FileStream.read((char*)&HasNormalTexture, sizeof(u8));
     if(HasNormalTexture)
     {
-        u32 UUIDSize;
-        FileStream.read((char*)&UUIDSize, sizeof(u32));
-        std::string UUID; UUID.resize(UUIDSize);
-        FileStream.read(UUID.data(), UUID.size());
+        u32 ID;
+        FileStream.read((char*)&ID, sizeof(u32));
 
-        std::shared_ptr<texture> Texture;
-        if(UUID == "BLUE_TEXTURE") Texture = defaultTextures::BlueTexture;
-        else if(UUID == "WHITE_TEXTURE") Texture = defaultTextures::WhiteTexture;
-        else if(UUID == "BLACK_TEXTURE") Texture = defaultTextures::BlackTexture;
-        else Texture = context::Get()->Project.Textures[UUID];
+        std::shared_ptr<texture> Texture = context::Get()->Project.Textures[ID];
         
         Result->SetNormalTexture(Texture); 
     }
@@ -433,16 +395,10 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
     FileStream.read((char*)&HasEmissiveTexture, sizeof(u8));
     if(HasEmissiveTexture)
     {
-        u32 UUIDSize;
-        FileStream.read((char*)&UUIDSize, sizeof(u32));
-        std::string UUID; UUID.resize(UUIDSize);
-        FileStream.read(UUID.data(), UUID.size());
+        u32 ID;
+        FileStream.read((char*)&ID, sizeof(u32));
 
-        std::shared_ptr<texture> Texture;
-        if(UUID == "BLUE_TEXTURE") Texture = defaultTextures::BlueTexture;
-        else if(UUID == "WHITE_TEXTURE") Texture = defaultTextures::WhiteTexture;
-        else if(UUID == "BLACK_TEXTURE") Texture = defaultTextures::BlackTexture;
-        else Texture = context::Get()->Project.Textures[UUID];
+        std::shared_ptr<texture> Texture = context::Get()->Project.Textures[ID];
         
         Result->SetEmissiveTexture(Texture); 
     }

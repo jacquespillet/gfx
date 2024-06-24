@@ -29,7 +29,7 @@ struct indexedGeometryBuffers
     std::vector<u32> IndexData;
 
     std::string Name;
-    std::string UUID;
+    u32 ID;
 
     void BuildBuffers();
 

@@ -24,7 +24,7 @@ object3D::object3D(std::string Name)
 {
     this->Name = Name;
     this->Parent = nullptr;
-    this->UUID = context::Get()->GetUUID();
+    this->ID = context::Get()->Project.Objects.size();
 }
 
 std::shared_ptr<object3D> object3D::Clone(b8 CloneUUID)
@@ -35,7 +35,7 @@ std::shared_ptr<object3D> object3D::Clone(b8 CloneUUID)
     Result->FrustumCulled=this->FrustumCulled;
     Result->CastShadow=this->CastShadow;
     Result->ReceiveShadow=this->ReceiveShadow;
-    if(CloneUUID) Result->UUID= this->UUID;
+    if(CloneUUID) Result->ID= this->ID;
     Result->Transform =  this->Transform;
     Result->Transform.HasChanged=true;
     
@@ -221,9 +221,7 @@ void object3D::Serialize(std::ofstream &FileStream)
     u32 Object3DType = (u32) object3DType::Object3d;
     FileStream.write((char*)&Object3DType, sizeof(u32));
 
-    u32 UUIDSize = this->UUID.size();
-    FileStream.write((char*)&UUIDSize, sizeof(u32));
-    FileStream.write(this->UUID.data(), this->UUID.size());
+    FileStream.write((char*)&this->ID, sizeof(u32));
 
     u32 StringLength = this->Name.size();
     FileStream.write((char*)&StringLength, sizeof(u32));
@@ -260,10 +258,8 @@ std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
     u32 Object3DType;
     FileStream.read((char*)&Object3DType, sizeof(u32));
 
-    u32 UUIDSize;
-    FileStream.read((char*)&UUIDSize, sizeof(u32));
-    std::string UUID; UUID.resize(UUIDSize);
-    FileStream.read(UUID.data(), UUID.size());
+    u32 ID;
+    FileStream.read((char*)&ID, sizeof(u32));
 
     u32 NameLength;
     FileStream.read((char*)&NameLength, sizeof(u32));
@@ -282,7 +278,7 @@ std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
     else if(Object3DType == (u32)(object3DType::Light_Point))
         Result = std::make_shared<light>(Name, light::lightType::Point);
 
-    Result->UUID = UUID;
+    Result->ID = ID;
 
 
     FileStream.read((char*)&Result->Transform.Matrices, sizeof(transform::matrices));
@@ -292,33 +288,31 @@ std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
     {
         std::shared_ptr<mesh> Mesh = std::static_pointer_cast<mesh>(Result);
 
-        u32 GeometryUUIDSize;
-        FileStream.read((char*)&GeometryUUIDSize, sizeof(u32));
-        std::string GeometryUUID; GeometryUUID.resize(GeometryUUIDSize);
-        FileStream.read(GeometryUUID.data(), GeometryUUIDSize);
+        u32 GeometryID;
+        FileStream.read((char*)&GeometryID, sizeof(u32));
         
-        if(GeometryUUID == "DEFAULT_QUAD")
+#if 0
+        if(GeometryID == "DEFAULT_QUAD")
             Mesh->GeometryBuffers = Context->Quad;
-        else if(GeometryUUID == "DEFAULT_CUBE")
+        else if(GeometryID == "DEFAULT_CUBE")
             Mesh->GeometryBuffers = Context->Cube;
-        else if(GeometryUUID == "DEFAULT_SPHERE")
+        else if(GeometryID == "DEFAULT_SPHERE")
             Mesh->GeometryBuffers = Context->Sphere;
-        else if(GeometryUUID == "DEFAULT_CONE")
+        else if(GeometryID == "DEFAULT_CONE")
             Mesh->GeometryBuffers = Context->Cone;
-        else if(GeometryUUID == "DEFAULT_CAPSULE")
+        else if(GeometryID == "DEFAULT_CAPSULE")
             Mesh->GeometryBuffers = Context->Capsule;
-        else if(GeometryUUID == "DEFAULT_CYLINDER")
+        else if(GeometryID == "DEFAULT_CYLINDER")
             Mesh->GeometryBuffers = Context->Cylinder;
         else
-            Mesh->GeometryBuffers = Context->Project.Geometries[GeometryUUID];
+#endif
+            Mesh->GeometryBuffers = Context->Project.Geometries[GeometryID];
         
         
-        u32 MaterialUUIDSize;
-        FileStream.read((char*)&MaterialUUIDSize, sizeof(u32));
-        std::string MaterialUUID; MaterialUUID.resize(MaterialUUIDSize);
-        FileStream.read(MaterialUUID.data(), MaterialUUIDSize);
-        if(MaterialUUID == "NO_MATERIAL") Mesh->Material = Context->NoMaterial;
-        else Mesh->Material = Context->Project.Materials[MaterialUUID];
+        u32 MaterialID;
+        FileStream.read((char*)&MaterialID, sizeof(u32));
+        if(MaterialID == (u32)-1) Mesh->Material = Context->NoMaterial;
+        else Mesh->Material = Context->Project.Materials[MaterialID];
 
         assert(Mesh->Material);
 

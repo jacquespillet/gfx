@@ -11,41 +11,6 @@ namespace hlgfx
 b8 transform::DoCompute = true;
 
 
-// m4x4 GetRotationMatrix(v3f EulerAngles, rotationOrder Order)
-// {
-//     m4x4 UnitMatrix(1.0f);
-
-//     m4x4 RotationX = glm::rotate(UnitMatrix, glm::radians(EulerAngles.x), v3f(1,0,0));
-//     m4x4 RotationY = glm::rotate(UnitMatrix, glm::radians(EulerAngles.y), v3f(0,1,0));
-//     m4x4 RotationZ = glm::rotate(UnitMatrix, glm::radians(EulerAngles.z), v3f(1,0,1));
-
-//     switch (Order)
-//     {
-//     case rotationOrder::xyz:
-//         return RotationZ * RotationY * RotationX;
-//         break;
-//     case rotationOrder::xzy:
-//         return RotationY * RotationZ * RotationX;
-//         break;
-//     case rotationOrder::yxz:
-//         return RotationZ * RotationX * RotationY;
-//         break;
-//     case rotationOrder::yzx:
-//         return RotationX * RotationZ * RotationY;
-//         break;
-//     case rotationOrder::zxy:
-//         return RotationY * RotationX * RotationZ;
-//         break;
-//     case rotationOrder::zyx:
-//         return RotationX * RotationY * RotationZ;
-//         break;
-//     default:
-//         break;
-//     }
-
-//     assert(false);
-// }
-
 transform::transform()
 {
     this->Parent = nullptr;
