@@ -194,10 +194,10 @@ void pbrMaterial::RecreatePipeline()
     else
     {
         u32 Uses = 0;
-        std::unordered_map<u32, std::shared_ptr<material>> &Materials = context::Get()->Project.Materials;
+        std::vector<std::shared_ptr<material>> &Materials = context::Get()->Project.Materials;
         for (auto &Material : Materials)
         {
-            if(Material.second->PipelineHandle == this->PipelineHandle) Uses++;
+            if(Material->PipelineHandle == this->PipelineHandle) Uses++;
         }
         
         gfx::context::Get()->WaitIdle();

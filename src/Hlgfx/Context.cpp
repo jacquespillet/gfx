@@ -402,8 +402,6 @@ std::string context::GetUUID()
 
 void context::AddTextureToProject(std::shared_ptr<texture> Texture)
 {
-    if(this->Project.Textures.find(Texture->ID) != this->Project.Textures.end()) return;
-
     //Check unicity of name
     u32 Count = 0;
     std::string BaseName = Texture->Name;
@@ -413,7 +411,7 @@ void context::AddTextureToProject(std::shared_ptr<texture> Texture)
         for (auto &ProjectTexture : this->Project.Textures)
         {
             //If another object has the same name, we append the count, and set OK to false so that we iterate again for this new name
-            if(ProjectTexture.second->Name == Texture->Name)
+            if(ProjectTexture->Name == Texture->Name)
             {
                 Texture->Name = BaseName + "_" + std::to_string(Count);
                 OK = false;
@@ -428,6 +426,7 @@ void context::AddTextureToProject(std::shared_ptr<texture> Texture)
 
 void context::RemoveTextureFromProject(std::shared_ptr<texture> Texture)
 {
+#if 0 //todo
     //Remove from project
     this->Project.Textures.erase(Texture->ID);
 
@@ -459,10 +458,12 @@ void context::RemoveTextureFromProject(std::shared_ptr<texture> Texture)
             }
         }
     }
+#endif
 }
 
 void context::AddMaterialToProject(std::shared_ptr<material> Material)
 {
+#if 0 //todo
     if(this->Project.Materials.find(Material->ID) != this->Project.Materials.end()) return;
     //Check unicity of name
     u32 Count = 0;
@@ -485,10 +486,12 @@ void context::AddMaterialToProject(std::shared_ptr<material> Material)
     }
 
     this->Project.Materials[Material->ID] = Material;
+#endif
 }
 
 void context::RemoveMaterialFromProject(std::shared_ptr<material> Material)
 {
+#if 0 //todo
     //remove from materiails
     this->Project.Materials.erase(Material->ID);
     //remove from all objects
@@ -540,10 +543,12 @@ void context::RemoveMaterialFromProject(std::shared_ptr<material> Material)
             }
         }
     }    
+#endif
 }
 
 void context::AddGeometryToProject(std::shared_ptr<indexedGeometryBuffers> Geometry)
 {
+#if 0 //todo
     if(this->Project.Geometries.find(Geometry->ID) != this->Project.Geometries.end()) return;
 
     //Check unicity of name
@@ -567,6 +572,7 @@ void context::AddGeometryToProject(std::shared_ptr<indexedGeometryBuffers> Geome
     }
 
     this->Project.Geometries[Geometry->ID] = Geometry;
+#endif
 }
 
 void context::AddMeshToProject(std::shared_ptr<mesh> Mesh)
@@ -590,7 +596,7 @@ void context::AddSceneToProject(std::shared_ptr<scene> Scene)
         for (auto &ProjectScene : this->Project.Scenes)
         {
             //If another object has the same name, we append the count, and set OK to false so that we iterate again for this new name
-            if(ProjectScene.second->Name == Scene->Name)
+            if(ProjectScene->Name == Scene->Name)
             {
                 Scene->Name = BaseName + "_" + std::to_string(Count);
                 OK = false;
@@ -600,13 +606,19 @@ void context::AddSceneToProject(std::shared_ptr<scene> Scene)
 
         if(OK) break;
     }
+    if (Project.Scenes.size() < Scene->ID + 1)
+    {
+        Project.Scenes.resize(Scene->ID + 1);
+    }
     this->Project.Scenes[Scene->ID] = Scene;
     this->Scene = Scene;
 }
 
 void context::RemoveObjectFromProject(std::shared_ptr<object3D> Object)
 {
+#if 0 //todo
     this->Project.Objects.erase(Object->ID);
+#endif
 }
   
 void context::AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level)
@@ -622,7 +634,7 @@ void context::AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level)
             for (auto &ProjectObject : this->Project.Objects)
             {
                 //If another object has the same name, we append the count, and set OK to false so that we iterate again for this new name
-                if(ProjectObject.second->Name == Object->Name)
+                if(ProjectObject->Name == Object->Name)
                 {
                     Object->Name = BaseName + "_" + std::to_string(Count);
                     OK = false;
@@ -896,30 +908,50 @@ void context::LoadProjectFromFile(const char *FileName)
     for (sz i = 0; i < TextureFiles.size(); i++)
     {
         std::shared_ptr<texture> Texture = texture::Deserialize(TextureFiles[i]);
+        if(Project.Textures.size() < Texture->ID + 1)
+        {
+            Project.Textures.resize(Texture->ID + 1);
+        }             
         Project.Textures[Texture->ID] = Texture;   
     }
 
     for (sz i = 0; i < MaterialFiles.size(); i++)
     {
         std::shared_ptr<material> Material = material::Deserialize(MaterialFiles[i]);
+        if(Project.Materials.size() < Material->ID + 1)
+        {
+            Project.Materials.resize(Material->ID + 1);
+        }            
         Project.Materials[Material->ID] = Material;
     }
     
     for (sz i = 0; i < GeometryFiles.size(); i++)
     {
         std::shared_ptr<indexedGeometryBuffers> Geometry = indexedGeometryBuffers::Deserialize(GeometryFiles[i]);
+        if(Project.Geometries.size() < Geometry->ID + 1)
+        {
+            Project.Geometries.resize(Geometry->ID + 1);
+        }            
         Project.Geometries[Geometry->ID] = Geometry;
     }
     
     for (sz i = 0; i < ObjectFiles.size(); i++)
     {
         std::shared_ptr<object3D> Object = object3D::Deserialize(ObjectFiles[i]);
+        if(Project.Objects.size() < Object->ID + 1)
+        {
+            Project.Objects.resize(Object->ID + 1);
+        }            
         Project.Objects[Object->ID] = Object;   
     }
     
     for (sz i = 0; i < SceneFiles.size(); i++)
     {
         std::shared_ptr<scene> Scene = std::static_pointer_cast<scene>(object3D::Deserialize(SceneFiles[i]));
+        if(Project.Scenes.size() < Scene->ID + 1)
+        {
+            Project.Scenes.resize(Scene->ID + 1);
+        }            
         Project.Scenes[Scene->ID] = Scene;  
         if(i==0) this->Scene = Scene;
         if(this->GfxContext->RTXEnabled)
@@ -988,40 +1020,40 @@ void context::SaveProjectToFile(const char *FileName)
     //Save all the materials
     for (auto &Material : Project.Materials)
     {
-        std::string FileName = Material.second->Name + ".mat";
-        Material.second->Serialize(FolderName + "/" + FileName);
+        std::string FileName = Material->Name + ".mat";
+        Material->Serialize(FolderName + "/" + FileName);
         AllFiles.push_back(FileName);
     }
     
     //Save all the textures
     for (auto &Texture : Project.Textures)
     {
-        std::string FileName = Texture.second->Name + ".tex";
-        Texture.second->Serialize(FolderName + "/" + FileName);
+        std::string FileName = Texture->Name + ".tex";
+        Texture->Serialize(FolderName + "/" + FileName);
         AllFiles.push_back(FileName);
     }
 
     //Save all the geometries
     for (auto &Geometry : Project.Geometries)
     {
-        std::string FileName = Geometry.second->Name + ".geom";
-        Geometry.second->Serialize(FolderName + "/" + FileName);
+        std::string FileName = Geometry->Name + ".geom";
+        Geometry->Serialize(FolderName + "/" + FileName);
         AllFiles.push_back(FileName);
     }
 
     //Save all the objects
     for (auto &Object : Project.Objects)
     {
-        std::string FileName = Object.second->Name + ".obj";
-        Object.second->Serialize(FolderName + "/" + FileName);
+        std::string FileName = Object->Name + ".obj";
+        Object->Serialize(FolderName + "/" + FileName);
         AllFiles.push_back(FileName);
     }
 
     //Save all the scenes
     for (auto &Scene : Project.Scenes)
     {
-        std::string FileName = Scene.second->Name + ".scene";
-        Scene.second->Serialize(FolderName + "/" +FileName) ;
+        std::string FileName = Scene->Name + ".scene";
+        Scene->Serialize(FolderName + "/" +FileName) ;
         AllFiles.push_back(FileName);
     }
 

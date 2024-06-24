@@ -97,6 +97,11 @@ void LoadGeometry(tinygltf::Model &GLTFModel, std::vector<std::shared_ptr<geomet
             Geometry = std::make_shared<geometryData>();
             Geometry->MaterialIndex = BaseMaterialIndex + GLTFPrimitive.material;
             Geometry->Buffers = std::make_shared<indexedGeometryBuffers>();
+
+            if(Project.Geometries.size() < Geometry->Buffers->ID + 1)
+            {
+                Project.Geometries.resize(Geometry->Buffers->ID + 1);
+            }
             Project.Geometries[Geometry->Buffers->ID] = Geometry->Buffers;
             
             std::string GeometryName = gltfMesh.name;
@@ -279,6 +284,11 @@ void TraverseNodes(tinygltf::Model &GLTFModel, uint32_t nodeIndex, std::vector<s
         NodeName = "Node";
     }
     std::shared_ptr<object3D> Node = std::make_shared<object3D>(NodeName.c_str());
+
+    if(Project.Objects.size() < Node->ID + 1)
+    {
+        Project.Objects.resize(Node->ID + 1);
+    }
     Project.Objects[Node->ID] = Node;
 
     if(GLTFNode.matrix.size() > 0)
@@ -327,6 +337,11 @@ void TraverseNodes(tinygltf::Model &GLTFModel, uint32_t nodeIndex, std::vector<s
         for(int i=0; i<GLTFMesh.primitives.size(); i++)
         {
             std::shared_ptr<mesh> Mesh = std::make_shared<mesh>();
+
+            if(Project.Objects.size() < Mesh->ID + 1)
+            {
+                Project.Objects.resize(Mesh->ID + 1);
+            }            
             Project.Objects[Mesh->ID] = Mesh;
             // Mesh->Transform.SetLocalPosition(0,0,0);
 
@@ -427,6 +442,10 @@ void LoadTextures(tinygltf::Model &GLTFModel, context::project &Project)
 		gfx::imageHandle Image = gfx::context::Get()->CreateImage(ImageData, ImageCreateInfo);
         std::shared_ptr<texture> ImagePtr = std::make_shared<texture>(TexName, Image);
 
+        if(Project.Textures.size() < ImagePtr->ID + 1)
+        {
+            Project.Textures.resize(ImagePtr->ID + 1);
+        }     
         Project.Textures[ImagePtr->ID] = ImagePtr;
     }
 }
@@ -457,6 +476,11 @@ void LoadMaterials(tinygltf::Model &GLTFModel, context::project &Project, u32 Ba
         
         std::shared_ptr<material> Material = std::make_shared<pbrMaterial>(MatName, Flags);  
         std::shared_ptr<pbrMaterial> PBRMat = std::static_pointer_cast<pbrMaterial>(Material);
+        
+        if(Project.Materials.size() < Material->ID + 1)
+        {
+            Project.Materials.resize(Material->ID + 1);
+        }     
         Project.Materials[Material->ID] = Material;
         
         PBRMat->UniformData.BaseColorFactor = v3f(PBR.baseColorFactor[0], PBR.baseColorFactor[1], PBR.baseColorFactor[2]);

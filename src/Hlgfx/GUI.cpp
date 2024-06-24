@@ -238,38 +238,38 @@ void contextGUI::DrawAssetsWindow()
             for (auto &Object : Context->Project.Objects)
             {
                 ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
-                if(this->SelectedObject3D.get() == Object.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
+                if(this->SelectedObject3D.get() == Object.get()) Flags |= ImGuiTreeNodeFlags_Selected;
                 
-                if(IsRenaming && this->SelectedObject3D.get() == Object.second.get())
+                if(IsRenaming && this->SelectedObject3D.get() == Object.get())
                 {
                     //Get cursor pos so we render the text box at the same position as the treenode
                     f32 CursorPos = ImGui::GetCursorPosX();
-                    ImGui::TreeNodeEx(Object.second->Name.c_str(), Flags);
+                    ImGui::TreeNodeEx(Object->Name.c_str(), Flags);
                     ImGui::SameLine();
                     ImGui::SetCursorPosX(CursorPos);
 
                     //Draw text input
                     static char Buffer[64];
-                    memcpy(&Buffer, Object.second->Name.data(), Object.second->Name.size());
+                    memcpy(&Buffer, Object->Name.data(), Object->Name.size());
                     ImGui::SetKeyboardFocusHere();
-                    ImGui::PushID(Object.second->ID);
+                    ImGui::PushID(Object->ID);
                     if(ImGui::InputText("", Buffer, IM_ARRAYSIZE(Buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
                     {
-                        Object.second->Name = Buffer;
+                        Object->Name = Buffer;
                         this->IsRenaming=false;
                     }
                     ImGui::PopID();
                 }
                 else
                 {
-                    ImGui::TreeNodeEx(Object.second->Name.c_str(), Flags);
+                    ImGui::TreeNodeEx(Object->Name.c_str(), Flags);
                 }
                 
                 
                 if(ImGui::IsItemClicked())
                 {
-                    if(this->SelectedObject3D == Object.second && !IsRenaming) this->SelectedObject3D = nullptr;
-                    else this->SelectedObject3D = Object.second;
+                    if(this->SelectedObject3D == Object && !IsRenaming) this->SelectedObject3D = nullptr;
+                    else this->SelectedObject3D = Object;
 
                     context::Get()->Scene->SceneGUI->NodeClicked = nullptr;
                 }
@@ -326,37 +326,37 @@ void contextGUI::DrawAssetsWindow()
             for (auto &Material : Context->Project.Materials)
             {
                 ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
-                if(this->SelectedMaterial.get() == Material.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
+                if(this->SelectedMaterial.get() == Material.get()) Flags |= ImGuiTreeNodeFlags_Selected;
                 
-                if(IsRenaming && this->SelectedMaterial.get() == Material.second.get())
+                if(IsRenaming && this->SelectedMaterial.get() == Material.get())
                 {
                     //Get cursor pos so we render the text box at the same position as the treenode
                     f32 CursorPos = ImGui::GetCursorPosX();
-                    ImGui::TreeNodeEx(Material.second->Name.c_str(), Flags);
+                    ImGui::TreeNodeEx(Material->Name.c_str(), Flags);
                     ImGui::SameLine();
                     ImGui::SetCursorPosX(CursorPos);
 
                     //Draw text input
                     static char Buffer[64];
-                    memcpy(&Buffer, Material.second->Name.data(), Material.second->Name.size());
+                    memcpy(&Buffer, Material->Name.data(), Material->Name.size());
                     ImGui::SetKeyboardFocusHere();
-                    ImGui::PushID(Material.second->ID);
+                    ImGui::PushID(Material->ID);
                     if(ImGui::InputText("", Buffer, IM_ARRAYSIZE(Buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
                     {
-                        Material.second->Name = Buffer;
+                        Material->Name = Buffer;
                         this->IsRenaming=false;
                     }
                     ImGui::PopID();
                 }
                 else
                 {
-                    ImGui::TreeNodeEx(Material.second->Name.c_str(), Flags);
+                    ImGui::TreeNodeEx(Material->Name.c_str(), Flags);
                 }                
 
                 if(ImGui::IsItemClicked())
                 {
-                    if(this->SelectedMaterial == Material.second && !this->IsRenaming) this->SelectedMaterial = nullptr;
-                    else this->SelectedMaterial = Material.second;
+                    if(this->SelectedMaterial == Material && !this->IsRenaming) this->SelectedMaterial = nullptr;
+                    else this->SelectedMaterial = Material;
                     context::Get()->Scene->SceneGUI->NodeClicked = nullptr;
                 }
 
@@ -414,41 +414,41 @@ void contextGUI::DrawAssetsWindow()
             for (auto &Texture : Context->Project.Textures)
             {
                 ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
-                if(this->SelectedTexture.get() == Texture.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
+                if(this->SelectedTexture.get() == Texture.get()) Flags |= ImGuiTreeNodeFlags_Selected;
 
-                gfx::image *Image = gfx::context::Get()->GetImage(Texture.second->Handle);
+                gfx::image *Image = gfx::context::Get()->GetImage(Texture->Handle);
                 ImGui::Image(Image->GetImGuiID(), ImVec2(40, 40));
                 ImGui::SameLine();
-                if(IsRenaming && this->SelectedTexture.get() == Texture.second.get())
+                if(IsRenaming && this->SelectedTexture.get() == Texture.get())
                 {
   
                     //Get cursor pos so we render the text box at the same position as the treenode
                     f32 CursorPos = ImGui::GetCursorPosX();
-                    ImGui::TreeNodeEx(Texture.second->Name.c_str(), Flags);
+                    ImGui::TreeNodeEx(Texture->Name.c_str(), Flags);
                     ImGui::SameLine();
                     ImGui::SetCursorPosX(CursorPos);
 
                     //Draw text input
                     static char Buffer[64];
-                    memcpy(&Buffer, Texture.second->Name.data(), Texture.second->Name.size());
+                    memcpy(&Buffer, Texture->Name.data(), Texture->Name.size());
                     ImGui::SetKeyboardFocusHere();
-                    ImGui::PushID(Texture.second->ID);
+                    ImGui::PushID(Texture->ID);
                     if(ImGui::InputText("", Buffer, IM_ARRAYSIZE(Buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
                     {
-                        Texture.second->Name = Buffer;
+                        Texture->Name = Buffer;
                         this->IsRenaming=false;
                     }
                     ImGui::PopID();
                 }
                 else
                 {
-                    ImGui::TreeNodeEx(Texture.second->Name.c_str(), Flags);
+                    ImGui::TreeNodeEx(Texture->Name.c_str(), Flags);
                 }      
 
                 if(ImGui::IsItemClicked())
                 {
-                    if(this->SelectedTexture == Texture.second && !IsRenaming) this->SelectedTexture =nullptr;
-                    else this->SelectedTexture = Texture.second;
+                    if(this->SelectedTexture == Texture && !IsRenaming) this->SelectedTexture =nullptr;
+                    else this->SelectedTexture = Texture;
                     context::Get()->Scene->SceneGUI->NodeClicked = nullptr;
                 }
                 ImGui::TreePop();
@@ -487,38 +487,38 @@ void contextGUI::DrawAssetsWindow()
             for (auto &Geometry : Context->Project.Geometries)
             {
                 ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
-                if(this->SelectedIndexedGeometryBuffers.get() == Geometry.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
+                if(this->SelectedIndexedGeometryBuffers.get() == Geometry.get()) Flags |= ImGuiTreeNodeFlags_Selected;
                 
 
-                if(IsRenaming && this->SelectedIndexedGeometryBuffers.get() == Geometry.second.get())
+                if(IsRenaming && this->SelectedIndexedGeometryBuffers.get() == Geometry.get())
                 {
                     //Get cursor pos so we render the text box at the same position as the treenode
                     f32 CursorPos = ImGui::GetCursorPosX();
-                    ImGui::TreeNodeEx(Geometry.second->Name.c_str(), Flags);
+                    ImGui::TreeNodeEx(Geometry->Name.c_str(), Flags);
                     ImGui::SameLine();
                     ImGui::SetCursorPosX(CursorPos);
 
                     //Draw text input
                     static char Buffer[64];
-                    memcpy(&Buffer, Geometry.second->Name.data(), Geometry.second->Name.size());
+                    memcpy(&Buffer, Geometry->Name.data(), Geometry->Name.size());
                     ImGui::SetKeyboardFocusHere();
-                    ImGui::PushID(Geometry.second->ID);
+                    ImGui::PushID(Geometry->ID);
                     if(ImGui::InputText("", Buffer, IM_ARRAYSIZE(Buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
                     {
-                        Geometry.second->Name = Buffer;
+                        Geometry->Name = Buffer;
                         this->IsRenaming=false;
                     }
                     ImGui::PopID();
                 }
                 else
                 {
-                    ImGui::TreeNodeEx(Geometry.second->Name.c_str(), Flags);
+                    ImGui::TreeNodeEx(Geometry->Name.c_str(), Flags);
                 }  
 
                 if(ImGui::IsItemClicked())
                 {
-                    if(this->SelectedIndexedGeometryBuffers == Geometry.second && !IsRenaming) this->SelectedIndexedGeometryBuffers =nullptr;
-                    else this->SelectedIndexedGeometryBuffers = Geometry.second;    
+                    if(this->SelectedIndexedGeometryBuffers == Geometry && !IsRenaming) this->SelectedIndexedGeometryBuffers =nullptr;
+                    else this->SelectedIndexedGeometryBuffers = Geometry;    
                     context::Get()->Scene->SceneGUI->NodeClicked = nullptr;                
                 }
                 ImGui::TreePop();
@@ -545,38 +545,38 @@ void contextGUI::DrawAssetsWindow()
             for (auto &Scene : Context->Project.Scenes)
             {
                 ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
-                if(this->SelectedScene.get() == Scene.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
+                if(this->SelectedScene.get() == Scene.get()) Flags |= ImGuiTreeNodeFlags_Selected;
                 
-                if(IsRenaming && this->SelectedScene.get() == Scene.second.get())
+                if(IsRenaming && this->SelectedScene.get() == Scene.get())
                 {
                     //Get cursor pos so we render the text box at the same position as the treenode
                     f32 CursorPos = ImGui::GetCursorPosX();
-                    ImGui::TreeNodeEx(Scene.second->Name.c_str(), Flags);
+                    ImGui::TreeNodeEx(Scene->Name.c_str(), Flags);
                     ImGui::SameLine();
                     ImGui::SetCursorPosX(CursorPos);
 
                     //Draw text input
                     static char Buffer[64];
-                    memcpy(&Buffer, Scene.second->Name.data(), Scene.second->Name.size());
+                    memcpy(&Buffer, Scene->Name.data(), Scene->Name.size());
                     ImGui::SetKeyboardFocusHere();
-                    ImGui::PushID(Scene.second->ID);
+                    ImGui::PushID(Scene->ID);
                     if(ImGui::InputText("", Buffer, IM_ARRAYSIZE(Buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
                     {
-                        Scene.second->Name = Buffer;
+                        Scene->Name = Buffer;
                         this->IsRenaming=false;
                     }
                     ImGui::PopID();
                 }
                 else
                 {
-                    ImGui::TreeNodeEx(Scene.second->Name.c_str(), Flags);
+                    ImGui::TreeNodeEx(Scene->Name.c_str(), Flags);
                 }  
 
                 
                 if(ImGui::IsItemClicked())
                 {
-                    if(this->SelectedScene == Scene.second && !IsRenaming) this->SelectedScene =nullptr;
-                    else this->SelectedScene = Scene.second;          
+                    if(this->SelectedScene == Scene && !IsRenaming) this->SelectedScene =nullptr;
+                    else this->SelectedScene = Scene;          
                     context::Get()->Scene->SceneGUI->NodeClicked = nullptr;                  
                 }
                 ImGui::TreePop();
@@ -1061,11 +1061,11 @@ void mesh::ShowMaterialSelection(std::shared_ptr<material> &Material)
         for (auto &Material : Project.Materials)
         {
             ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
-            if(SelectedMaterial.get() == Material.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
-            ImGui::TreeNodeEx(Material.second->Name.c_str(), Flags);
+            if(SelectedMaterial.get() == Material.get()) Flags |= ImGuiTreeNodeFlags_Selected;
+            ImGui::TreeNodeEx(Material->Name.c_str(), Flags);
             if(ImGui::IsItemClicked())
             {
-                SelectedMaterial = Material.second;
+                SelectedMaterial = Material;
             }
             ImGui::TreePop();
         }
@@ -1222,15 +1222,15 @@ b8 pbrMaterial::ShowTextureSelection(const char *ID, std::shared_ptr<texture> &T
         for (auto &Tex : Project.Textures)
         {
             ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf;
-            if(SelectedTexture.get() == Tex.second.get()) Flags |= ImGuiTreeNodeFlags_Selected;
+            if(SelectedTexture.get() == Tex.get()) Flags |= ImGuiTreeNodeFlags_Selected;
             
-            gfx::image *Image = gfx::context::Get()->GetImage(Tex.second->Handle);
+            gfx::image *Image = gfx::context::Get()->GetImage(Tex->Handle);
             ImGui::Image(Image->GetImGuiID(), ImVec2(ImageWidth, ImageHeight));
             ImGui::SameLine();
-            ImGui::TreeNodeEx(Tex.second->Name.c_str(), Flags);
+            ImGui::TreeNodeEx(Tex->Name.c_str(), Flags);
             if(ImGui::IsItemClicked())
             {
-                SelectedTexture = Tex.second;
+                SelectedTexture = Tex;
             }
             ImGui::TreePop();
         }
