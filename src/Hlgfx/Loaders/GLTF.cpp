@@ -346,9 +346,9 @@ void TraverseNodes(tinygltf::Model &GLTFModel, uint32_t nodeIndex, std::vector<s
             // Mesh->Transform.SetLocalPosition(0,0,0);
 
             uint32_t Inx = InstanceMapping[GLTFNode.mesh][i];
-            Mesh->GeometryBuffers = Geometries[Inx]->Buffers;
+            Mesh->GeometryID = Geometries[Inx]->Buffers->ID;
             Mesh->Name = GLTFMesh.name;
-            Mesh->Material = Project.Materials[Geometries[Inx]->MaterialIndex];
+            Mesh->MaterialID = Project.Materials[Geometries[Inx]->MaterialIndex]->ID;
 
             if(strcmp(Mesh->Name.c_str(), "") == 0)
             {

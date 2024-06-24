@@ -8,9 +8,8 @@ hitAttributeEXT vec2 attribs;
 void main()
 {
   // TODO: 
-  // Stop using UUID, and use simple IDs instead
-  // Change the way we serialize the project (Use the same as in gpupt...)
-  // Mesh.h : Store a GeometryID and a MaterialID instead of pointers, that will point to the objects in the Project object.
+  // Stop using UUID, and use simple IDs instead                                                                                        OK
+  // Mesh.h : Store a GeometryID and a MaterialID instead of pointers, that will point to the objects in the Project object.            OK
 
   // During scene creation, if RTX is enabled, create a bindless descriptor set that will contain all the vertex buffers in the project.
   

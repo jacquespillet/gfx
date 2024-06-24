@@ -11,8 +11,8 @@ namespace hlgfx
 {
 mesh::mesh(std::string Name) : object3D(Name)
 {
-    this->Material = nullptr;
-    this->GeometryBuffers = nullptr;
+    this->MaterialID = (u32)-1;
+    this->GeometryID = (u32)-1;
     this->ID = context::Get()->Project.Objects.size();
     this->UniformBuffer = gfx::context::Get()->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
     this->Uniforms = std::make_shared<gfx::uniformGroup>();
@@ -36,8 +36,8 @@ mesh::mesh(std::string Name) : object3D(Name)
 
 mesh::mesh() : object3D("Mesh")
 {
-    this->Material = nullptr;
-    this->GeometryBuffers = nullptr;
+    this->MaterialID = (u32)-1;
+    this->GeometryID = (u32)-1;
 
     this->ID = context::Get()->Project.Objects.size();
     this->UniformBuffer = gfx::context::Get()->CreateBuffer(sizeof(uniformData), gfx::bufferUsage::UniformBuffer, gfx::memoryUsage::CpuToGpu);
@@ -74,8 +74,8 @@ std::shared_ptr<object3D> mesh::Clone(b8 CloneID)
     Result->Transform.HasChanged=true;
 
     Result->UniformData = this->UniformData; 
-    Result->GeometryBuffers = this->GeometryBuffers;
-    Result->Material = this->Material;   
+    Result->GeometryID = this->GeometryID;
+    Result->MaterialID = this->MaterialID;   
 
     
     b8 DoCompute = transform::DoCompute;
@@ -92,11 +92,12 @@ std::shared_ptr<object3D> mesh::Clone(b8 CloneID)
 
 void mesh::OnEarlyUpdate()
 {
-    if(this->Material->ShouldRecreate)
+    std::shared_ptr<material> Material = context::Get()->Project.Materials[this->MaterialID];
+    if(Material->ShouldRecreate)
     {
-        gfx::pipelineHandle OldPipeline = this->Material->PipelineHandle;
-        this->Material->RecreatePipeline();
-        if(OldPipeline != this->Material->PipelineHandle)
+        gfx::pipelineHandle OldPipeline = Material->PipelineHandle;
+        Material->RecreatePipeline();
+        if(OldPipeline != Material->PipelineHandle)
             context::Get()->Scene->UpdateMeshPipeline(OldPipeline, this);
     }
 }
@@ -113,12 +114,14 @@ void mesh::OnRender(std::shared_ptr<camera> Camera)
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = gfx::context::Get()->GetCurrentFrameCommandBuffer();    
     CommandBuffer->BindUniformGroup(this->Uniforms, ModelDescriptorSetBinding);
     
-    std::shared_ptr<material> Material = context::Get()->Scene->OverrideMaterial ? context::Get()->Scene->OverrideMaterial : this->Material; 
+    std::shared_ptr<material> Material = context::Get()->Scene->OverrideMaterial ? context::Get()->Scene->OverrideMaterial : context::Get()->Project.Materials[this->MaterialID]; 
     if(Material->Uniforms) CommandBuffer->BindUniformGroup(Material->Uniforms, MaterialDescriptorSetBinding);
     
-    CommandBuffer->BindVertexBuffer(this->GeometryBuffers->VertexBuffer);
-    CommandBuffer->BindIndexBuffer(this->GeometryBuffers->IndexBuffer, this->GeometryBuffers->Start, gfx::indexType::Uint32);
-    CommandBuffer->DrawIndexed(this->GeometryBuffers->Start, this->GeometryBuffers->Count, 1);
+    std::shared_ptr<indexedGeometryBuffers> Geometry = context::Get()->Project.Geometries[this->GeometryID];
+
+    CommandBuffer->BindVertexBuffer(Geometry->VertexBuffer);
+    CommandBuffer->BindIndexBuffer(Geometry->IndexBuffer, Geometry->Start, gfx::indexType::Uint32);
+    CommandBuffer->DrawIndexed(Geometry->Start, Geometry->Count, 1);
 }
 
 void mesh::Serialize(std::ofstream &FileStream)
@@ -137,9 +140,9 @@ void mesh::Serialize(std::ofstream &FileStream)
     FileStream.write((char*)&this->Transform.Matrices, sizeof(transform::matrices));
     FileStream.write((char*)&this->Transform.LocalValues, sizeof(transform::localValues));
     
-    FileStream.write((char*)&this->GeometryBuffers->ID, sizeof(u32));
+    FileStream.write((char*)&this->GeometryID, sizeof(u32));
     
-    FileStream.write((char*)&this->Material->ID, sizeof(u32));
+    FileStream.write((char*)&this->MaterialID, sizeof(u32));
 
 
     u32 NumChildren = this->Children.size();
@@ -155,9 +158,9 @@ mesh::~mesh()
 {
     printf("Destroying Mesh\n");
     gfx::context::Get()->QueueDestroyBuffer(this->UniformBuffer);
-    if(this->GeometryBuffers.use_count() == 1)
+    if(context::Get()->Project.Geometries[this->GeometryID].use_count() == 1)
     {
-        this->GeometryBuffers->Destroy();
+        context::Get()->Project.Geometries[this->GeometryID]->Destroy();
     }
 }
 

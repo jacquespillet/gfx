@@ -306,15 +306,15 @@ std::shared_ptr<object3D> object3D::Deserialize(std::ifstream &FileStream)
             Mesh->GeometryBuffers = Context->Cylinder;
         else
 #endif
-            Mesh->GeometryBuffers = Context->Project.Geometries[GeometryID];
+        Mesh->GeometryID = Context->Project.Geometries[GeometryID]->ID;
         
         
         u32 MaterialID;
-        FileStream.read((char*)&MaterialID, sizeof(u32));
-        if(MaterialID == (u32)-1) Mesh->Material = Context->NoMaterial;
-        else Mesh->Material = Context->Project.Materials[MaterialID];
+        FileStream.read((char*)&MaterialID, sizeof(u32)); 
+        if(MaterialID == (u32)-1) Mesh->MaterialID = Context->NoMaterial->ID;
+        else Mesh->MaterialID = Context->Project.Materials[MaterialID]->ID;
 
-        assert(Mesh->Material);
+        assert(Mesh->MaterialID >=0);
 
         Mesh->UniformData.ModelMatrix = Mesh->Transform.Matrices.LocalToWorld;
         Mesh->UniformData.NormalMatrix = Mesh->Transform.Matrices.LocalToWorldNormal;

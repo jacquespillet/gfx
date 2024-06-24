@@ -26,8 +26,13 @@ struct mesh : public object3D
     virtual void DrawMaterial() override;
     virtual void DrawCustomGUI() override;
     //Api data
-    std::shared_ptr<material> Material;
-    std::shared_ptr<indexedGeometryBuffers> GeometryBuffers;
+    
+    // std::shared_ptr<material> Material;
+    // std::shared_ptr<indexedGeometryBuffers> GeometryBuffers;
+
+    u32 MaterialID;
+    u32 GeometryID;
+
     struct uniformData
     {
         m4x4 ModelMatrix;

@@ -577,12 +577,14 @@ void context::AddGeometryToProject(std::shared_ptr<indexedGeometryBuffers> Geome
 
 void context::AddMeshToProject(std::shared_ptr<mesh> Mesh)
 {
+#if 0 //TODO
     AddMaterialToProject(Mesh->Material);
     AddGeometryToProject(Mesh->GeometryBuffers);
     for(auto &Texture : Mesh->Material->AllTextures)
     {
         AddTextureToProject(Texture.second);
     }
+#endif
 }
 
 void context::AddSceneToProject(std::shared_ptr<scene> Scene)

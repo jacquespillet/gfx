@@ -113,9 +113,9 @@ void contextGUI::AddObjectMenu()
     {
         Add = true;
         std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<mesh>("Quad");
-        Mesh->GeometryBuffers = context::Get()->Quad;
-        Mesh->Material = context::Get()->NoMaterial->Clone();
-        context::Get()->AddMaterialToProject(Mesh->Material);
+        Mesh->GeometryID = context::Get()->Quad->ID;
+        Mesh->MaterialID = context::Get()->NoMaterial->Clone()->ID;
+        context::Get()->AddMaterialToProject(context::Get()->Project.Materials[Mesh->MaterialID]);
         
         ObjectToAdd = Mesh;
         if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
@@ -128,9 +128,9 @@ void contextGUI::AddObjectMenu()
     {
         Add = true;
         std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<mesh>("Cube");
-        Mesh->GeometryBuffers = context::Get()->Cube;
-        Mesh->Material = context::Get()->NoMaterial->Clone();
-        context::Get()->AddMaterialToProject(Mesh->Material);
+        Mesh->GeometryID = context::Get()->Cube->ID;
+        Mesh->MaterialID = context::Get()->NoMaterial->Clone()->ID;
+        context::Get()->AddMaterialToProject(context::Get()->Project.Materials[Mesh->MaterialID]);
         
         ObjectToAdd = Mesh;
         if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
@@ -142,9 +142,9 @@ void contextGUI::AddObjectMenu()
     {
         Add = true;
         std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<mesh>("Sphere");
-        Mesh->GeometryBuffers = context::Get()->Sphere;
-        Mesh->Material = context::Get()->NoMaterial->Clone();
-        context::Get()->AddMaterialToProject(Mesh->Material);
+        Mesh->GeometryID = context::Get()->Sphere->ID;
+        Mesh->MaterialID = context::Get()->NoMaterial->Clone()->ID;
+        context::Get()->AddMaterialToProject(context::Get()->Project.Materials[Mesh->MaterialID]);
         
         ObjectToAdd = Mesh;
         if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
@@ -156,9 +156,9 @@ void contextGUI::AddObjectMenu()
     {
         Add = true;
         std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<mesh>("Cone");
-        Mesh->GeometryBuffers = context::Get()->Cone;
-        Mesh->Material = context::Get()->NoMaterial->Clone();
-        context::Get()->AddMaterialToProject(Mesh->Material);
+        Mesh->GeometryID = context::Get()->Cone->ID;
+        Mesh->MaterialID = context::Get()->NoMaterial->Clone()->ID;
+        context::Get()->AddMaterialToProject(context::Get()->Project.Materials[Mesh->MaterialID]);
         
         ObjectToAdd = Mesh;
         if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
@@ -170,9 +170,9 @@ void contextGUI::AddObjectMenu()
     {
         Add = true;
         std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<mesh>("Capsule");
-        Mesh->GeometryBuffers = context::Get()->Capsule;
-        Mesh->Material = context::Get()->NoMaterial->Clone();
-        context::Get()->AddMaterialToProject(Mesh->Material);
+        Mesh->GeometryID = context::Get()->Capsule->ID;
+        Mesh->MaterialID = context::Get()->NoMaterial->Clone()->ID;
+        context::Get()->AddMaterialToProject(context::Get()->Project.Materials[Mesh->MaterialID]);
         
         ObjectToAdd = Mesh;
         if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
@@ -184,9 +184,9 @@ void contextGUI::AddObjectMenu()
     {
         Add = true;
         std::shared_ptr<hlgfx::mesh> Mesh = std::make_shared<mesh>("Cylinder");
-        Mesh->GeometryBuffers = context::Get()->Cylinder;
-        Mesh->Material = context::Get()->NoMaterial->Clone();
-        context::Get()->AddMaterialToProject(Mesh->Material);
+        Mesh->GeometryID = context::Get()->Cylinder->ID;
+        Mesh->MaterialID = context::Get()->NoMaterial->Clone()->ID;
+        context::Get()->AddMaterialToProject(context::Get()->Project.Materials[Mesh->MaterialID]);
         
         ObjectToAdd = Mesh;
         if(this->Context->Scene->SceneGUI->NodeClicked != nullptr)
@@ -1047,9 +1047,9 @@ void mesh::DrawMaterial()
     {
         ImGui::OpenPopup("Material Selection");
     }
-    ShowMaterialSelection(this->Material);
+    ShowMaterialSelection(context::Get()->Project.Materials[this->MaterialID]);
     
-    this->Material->DrawGUI();
+    context::Get()->Project.Materials[this->MaterialID]->DrawGUI();
 }
 
 

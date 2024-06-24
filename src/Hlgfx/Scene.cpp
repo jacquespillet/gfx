@@ -90,7 +90,7 @@ void scene::UpdateMeshPipeline(gfx::pipelineHandle OldPipelineHandle, mesh *Mesh
     
     Vec.erase(Vec.begin() + IndexToRemove);
 
-    gfx::pipelineHandle NewPipeline = Mesh->Material->PipelineHandle;
+    gfx::pipelineHandle NewPipeline = context::Get()->Project.Materials[Mesh->MaterialID]->PipelineHandle;
     if(this->Meshes.find(NewPipeline) == this->Meshes.end()) this->Meshes[NewPipeline] = {};
     this->Meshes[NewPipeline].push_back(MeshPtr);
 }
@@ -108,10 +108,11 @@ void scene::AddMesh(std::shared_ptr<object3D> Object)
     std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Object);
     if(Mesh)
     {
-        std::vector<std::shared_ptr<mesh>> &Meshes = this->Meshes[Mesh->Material->PipelineHandle]; 
+        std::shared_ptr<material> MeshMaterial = context::Get()->Project.Materials[Mesh->MaterialID];
+        std::vector<std::shared_ptr<mesh>> &Meshes = this->Meshes[MeshMaterial->PipelineHandle]; 
         if(std::find(Meshes.begin(), Meshes.end(), Mesh) == Meshes.end())
         {
-            this->Meshes[Mesh->Material->PipelineHandle].push_back(Mesh);
+            this->Meshes[MeshMaterial->PipelineHandle].push_back(Mesh);
         }
     }
 }
@@ -217,7 +218,7 @@ void scene::BuildTLAS()
         {
             Transforms.push_back(Mesh->Transform.Matrices.LocalToWorld);
             Instances.push_back(i++);
-            BLAS.push_back(Mesh->GeometryBuffers->BLAS); //TODO: That's not optimal
+            BLAS.push_back(context::Get()->Project.Geometries[Mesh->GeometryID]->BLAS); //TODO: That's not optimal
             // What would be best is to store all the geometries in a buffer in the scene, and mesh references this buffer.
             // We could then pass this buffer directly
         }
@@ -234,7 +235,8 @@ void ClearObject(std::shared_ptr<object3D> Object)
     std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Object);
     if(Mesh)
     {
-        RemoveMeshInChildren(context::Get()->Scene->Meshes[Mesh->Material->PipelineHandle], Mesh);
+        gfx::pipelineHandle MeshPipeline = context::Get()->Project.Materials[Mesh->MaterialID]->PipelineHandle;
+        RemoveMeshInChildren(context::Get()->Scene->Meshes[MeshPipeline], Mesh);
     }
 
     std::shared_ptr<light> Light = std::dynamic_pointer_cast<light>(Object);

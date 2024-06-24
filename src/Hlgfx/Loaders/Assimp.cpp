@@ -211,12 +211,12 @@ void ProcessNode(const aiNode *aNode, std::shared_ptr<object3D> Parent, const ai
     for (s16 i = 0; i < aNode->mNumMeshes; i++)
     {
         std::shared_ptr<mesh> Mesh = std::make_shared<mesh>();
-        Mesh->GeometryBuffers = Geometries[aNode->mMeshes[i]]->Buffers;
-        Mesh->Material = Materials[Geometries[aNode->mMeshes[i]]->MaterialIndex];
+        Mesh->GeometryID = Geometries[aNode->mMeshes[i]]->Buffers->ID;
+        Mesh->MaterialID = Materials[Geometries[aNode->mMeshes[i]]->MaterialIndex]->ID;
         Mesh->Name = Scene->mMeshes[aNode->mMeshes[i]]->mName.C_Str();
         if(Mesh->Name.compare("")==0)
         {
-            Mesh->Name = "Mesh " + Mesh->GeometryBuffers->Name + " " + std::to_string(i);
+            Mesh->Name = "Mesh " + Geometries[aNode->mMeshes[i]]->Buffers->Name + " " + std::to_string(i);
         }
         Node->AddObject(Mesh);
     }
