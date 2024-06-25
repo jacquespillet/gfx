@@ -109,6 +109,7 @@ struct context
 #if GFX_API == GFX_VK || GFX_API == GFX_D3D12
     accelerationStructureHandle CreateBLAccelerationStructure(uint32_t NumVertices, uint32_t Stride, gfx::format Format, bufferHandle VertexBufferHandle, gfx::indexType IndexType = gfx::indexType::Uint16, uint32_t NumTriangles = 0, bufferHandle IndexBufferHandle = InvalidHandle, uint32_t PositionOffset=0);
     accelerationStructureHandle CreateTLAccelerationStructure(std::vector<glm::mat4> &Transforms, std::vector<accelerationStructureHandle> &AccelerationStructures, std::vector<int> Instances);
+    void UpdateAccelerationStructureInstances(accelerationStructureHandle AS, std::vector<u32> &Indices, std::vector<m4x4*> &Transforms);
     // void CreateAccelerationStructure()
 #endif
 

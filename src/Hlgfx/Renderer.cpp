@@ -52,12 +52,12 @@ void mainRenderer::Render(std::shared_ptr<scene> Scene, std::shared_ptr<camera> 
 
     Scene->OnBeforeRender(Camera);
     Scene->OnRender(Camera);
-    Scene->OnAfterRender(Camera);
     
     ImGui::GetIO().KeyCtrl = context::Get()->CtrlPressed;
     
     gfx::imgui::Get()->EndFrame(CommandBuffer);
     CommandBuffer->EndPass();
+    
 
 }  
 
@@ -177,7 +177,7 @@ void deferredRenderer::Render(std::shared_ptr<scene> Scene, std::shared_ptr<came
 
         Scene->OnBeforeRender(Camera);
         Scene->OnRender(Camera);
-        Scene->OnAfterRender(Camera);
+        
         
         CommandBuffer->EndPass();
     }

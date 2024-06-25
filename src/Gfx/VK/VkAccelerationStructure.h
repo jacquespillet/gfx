@@ -8,7 +8,7 @@ struct vkAccelerationStructureData
     vkAccelerationStructureData() = default;
     void InitBLAS(uint32_t NumVertices, uint32_t Stride, gfx::format Format, bufferHandle VertexBufferHandle, gfx::indexType IndexType = gfx::indexType::Uint16, uint32_t NumTriangles = 0, bufferHandle IndexBufferHandle = InvalidHandle, uint32_t PositionOffset=0);
     void InitTLAS(std::vector<glm::mat4> &Transforms, std::vector<accelerationStructureHandle> &AccelerationStructures, std::vector<int> Instances);
-
+    void UpdateInstanceTransform(std::vector<u32> &Indices, std::vector<m4x4*> &Transforms);
     vk::AccelerationStructureKHR AccelerationStructure = VK_NULL_HANDLE;
     bufferHandle BufferHandle = InvalidHandle;
     u64 DeviceAddress = 0;
@@ -16,7 +16,6 @@ struct vkAccelerationStructureData
     // TLAS
     std::vector<VkAccelerationStructureInstanceKHR> Instances{};
     bufferHandle InstancesBuffer;
-    bufferHandle TransformMatricesBuffer;
 
     bool IsTLAS = false;
 

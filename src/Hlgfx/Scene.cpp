@@ -113,6 +113,8 @@ void scene::AddMesh(std::shared_ptr<object3D> Object)
         if(std::find(Meshes.begin(), Meshes.end(), Mesh) == Meshes.end())
         {
             this->Meshes[MeshMaterial->PipelineHandle].push_back(Mesh);
+            Mesh->MeshSceneID = this->Instances.size();
+            this->Instances.push_back(Mesh);
         }
     }
 }
@@ -194,10 +196,34 @@ void scene::OnAfterRender(std::shared_ptr<camera> Camera)
         {
             this->SceneBufferData.Lights[i] = this->Lights[i]->Data;
             UpdateLight(i);
+            this->Lights[i]->Transform.HasChanged=false;
         }
     }
 
     object3D::OnAfterRender(Camera);
+
+    if(InstancesToUpdate.size() > 0)
+    {
+        std::vector<glm::mat4*> Transforms(InstancesToUpdate.size());
+        for(int i=0; i<InstancesToUpdate.size(); i++)
+        {
+            Transforms[i] = &this->Instances[InstancesToUpdate[i]]->Transform.Matrices.LocalToWorld;
+        }
+        gfx::context::Get()->UpdateAccelerationStructureInstances(this->TLAS, InstancesToUpdate, Transforms);
+        InstancesToUpdate.clear();
+
+        // For all uniform groups that reference this TLAS, go and update them
+        for(auto *UniformGroup : gfx::uniformGroup::AllUniforms)
+        {
+            for(auto &Uniform : UniformGroup->Uniforms)
+            {
+                if(Uniform.ResourceHandle == this->TLAS)
+                {
+                    UniformGroup->Update();
+                }
+            }
+        }
+    }
 }
 
 void scene::DrawGUI()
@@ -205,31 +231,8 @@ void scene::DrawGUI()
     this->SceneGUI->DrawGUI();
 }
 
-void scene::BuildTLAS()
+void scene::BuildGlobalGeometryBuffers()
 {
-	std::vector<glm::mat4> Transforms;
-    std::vector<s32> Instances;
-    std::vector<gfx::accelerationStructureHandle> BLAS;
-    std::vector<u32> MaterialIDs;
-    
-    s32 i=0;
-    for(auto &PipelineMeshes : Meshes)
-    {
-        for(auto &Mesh : PipelineMeshes.second)
-        {
-            Transforms.push_back(Mesh->Transform.Matrices.LocalToWorld);
-            Instances.push_back(Mesh->GeometryID);
-            MaterialIDs.push_back(Mesh->MaterialID);
-        }
-    }
-
-    for(auto &Geometry : context::Get()->Project.Geometries)
-    {
-        BLAS.push_back(Geometry->BLAS);
-    }
-
-    TLAS = gfx::context::Get()->CreateTLAccelerationStructure(Transforms, BLAS, Instances);
-
     std::vector<vertex> Vertices;
     std::vector<u32> Triangles;
     std::vector<u32> GeometryOffsets;
@@ -253,6 +256,11 @@ void scene::BuildTLAS()
         }
     }
 
+    std::vector<u32> MaterialIDs;
+    for(auto &Instance : this->Instances)
+    {
+        MaterialIDs.push_back(Instance->MaterialID);
+    }
 
 
 
@@ -266,10 +274,36 @@ void scene::BuildTLAS()
     gfx::context::Get()->CopyDataToBuffer(this->VertexBuffer, Vertices.data(), Vertices.size() * sizeof(vertex), 0);        
 
     this->OffsetsBuffer = gfx::context::Get()->CreateBuffer(GeometryOffsets.size() * sizeof(u32), gfx::bufferUsage::StorageBuffer, gfx::memoryUsage::GpuOnly);
-    gfx::context::Get()->CopyDataToBuffer(this->OffsetsBuffer, GeometryOffsets.data(), GeometryOffsets.size() * sizeof(u32), 0);    
+    gfx::context::Get()->CopyDataToBuffer(this->OffsetsBuffer, GeometryOffsets.data(), GeometryOffsets.size() * sizeof(u32), 0); 
 }
 
+void scene::BuildTLAS()
+{
+	std::vector<glm::mat4> Transforms;
+    std::vector<s32> Instances;
+    std::vector<gfx::accelerationStructureHandle> BLAS;
+    std::vector<u32> MaterialIDs;
 
+    for(auto &Instance : this->Instances)
+    {
+        Transforms.push_back(Instance->Transform.Matrices.LocalToWorld);
+        Instances.push_back(Instance->GeometryID);
+        MaterialIDs.push_back(Instance->MaterialID);
+    }
+
+
+    for(auto &Geometry : context::Get()->Project.Geometries)
+    {
+        BLAS.push_back(Geometry->BLAS);
+    }
+
+    TLAS = gfx::context::Get()->CreateTLAccelerationStructure(Transforms, BLAS, Instances);   
+}
+
+void scene::UpdateBLASInstance(u32 Index)
+{
+    InstancesToUpdate.push_back(Index);
+}
 
 void ClearObject(std::shared_ptr<object3D> Object)
 {

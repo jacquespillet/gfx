@@ -12,6 +12,18 @@
 
 namespace gfx
 {
+
+uniformGroup::uniformGroup()
+{
+    uniformGroup::AllUniforms.push_back(this);    
+}
+
+uniformGroup::~uniformGroup()
+{
+    uniformGroup::AllUniforms.erase(
+        std::remove(uniformGroup::AllUniforms.begin(), uniformGroup::AllUniforms.end(), this), uniformGroup::AllUniforms.end());
+}
+
 uniformGroup &uniformGroup::Reset()
 {
     this->ApiData = std::make_shared<vkUniformData>();

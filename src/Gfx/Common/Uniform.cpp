@@ -6,6 +6,7 @@
 
 namespace gfx
 {
+std::vector<uniformGroup*> uniformGroup::AllUniforms = std::vector<uniformGroup*>();
 
 uniformGroup &uniformGroup::AddUniformBuffer(u32 Binding, bufferHandle Resource)
 {

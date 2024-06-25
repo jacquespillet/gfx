@@ -32,6 +32,7 @@ struct mesh : public object3D
 
     u32 MaterialID;
     u32 GeometryID;
+    u32 MeshSceneID;
 
     struct uniformData
     {

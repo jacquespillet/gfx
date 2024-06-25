@@ -1358,6 +1358,14 @@ accelerationStructureHandle context::CreateTLAccelerationStructure(std::vector<g
 
     return Handle;
 }
+ 
+void context::UpdateAccelerationStructureInstances(accelerationStructureHandle ASHandle, std::vector<u32> &Indices, std::vector<m4x4*> &Transforms)
+{
+    accelerationStructure *AS = GetAccelerationStructure(ASHandle);
+    GET_API_DATA(VkASData, vkAccelerationStructureData, AS);
+  
+    VkASData->UpdateInstanceTransform(Indices, Transforms);
+}
 
 void context::DestroyPipeline(pipelineHandle PipelineHandle)
 {
@@ -1421,7 +1429,6 @@ void context::DestroyAccelerationStructure(accelerationStructureHandle Accelerat
     if(VkAccelerationStructureData->IsTLAS)
     {
         DestroyBuffer(VkAccelerationStructureData->InstancesBuffer);
-        DestroyBuffer(VkAccelerationStructureData->TransformMatricesBuffer);
     }
     
 

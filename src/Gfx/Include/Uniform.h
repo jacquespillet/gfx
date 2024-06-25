@@ -47,6 +47,8 @@ struct uniformGroup
     std::unordered_map<pipelineHandle, u32> Bindings; //Store where this uniform group is bound in each pipeline
     std::vector<uniform> Uniforms;
     
+    uniformGroup();
+    ~uniformGroup();
     uniformGroup &Reset();
     
     uniformGroup &AddUniformBuffer(u32 Binding, bufferHandle Resource);
@@ -73,6 +75,8 @@ struct uniformGroup
 
 
     std::shared_ptr<void> ApiData;
+
+    static std::vector<uniformGroup*> AllUniforms;
 };
 
 }

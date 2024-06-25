@@ -365,23 +365,14 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
     VkImageData->InitSamplerDefault(Format, MipLevelCount);
     VkImageData->CurrentLayout = imageLayout::Undefined;
 
-    // if(ImageUsage & imageUsage::STORAGE)
-    // {
-    //     commandBuffer *CommandBuffer = gfx::context::Get()->GetImmediateCommandBuffer();
-    //     CommandBuffer->Begin();
-    //     CommandBuffer->TransferLayout(*this, VkImageData->CurrentLayout, ImageUsageToImageLayout(imageUsage::STORAGE));
-    //     CommandBuffer->End();
-    //     context::Get()->SubmitCommandBufferImmediate(CommandBuffer);
-    // }
 
-    // if(ImageUsage & imageUsage::SHADER_READ)
-    // {
+    if(ImageUsage & imageUsage::STORAGE) ImageUsage = imageUsage::STORAGE;
+    
     commandBuffer *CommandBuffer = gfx::context::Get()->GetImmediateCommandBuffer();
     CommandBuffer->Begin();
     CommandBuffer->TransferLayout(*this, VkImageData->CurrentLayout, ImageUsageToImageLayout((imageUsage::bits)ImageUsage));
     CommandBuffer->End();
     context::Get()->SubmitCommandBufferImmediate(CommandBuffer);
-    // }
 }
 
 vk::ImageSubresourceRange GetDefaultImageSubresourceRange(const image &Image)

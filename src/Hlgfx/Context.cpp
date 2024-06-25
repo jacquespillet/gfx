@@ -725,6 +725,7 @@ void context::EndFrame()
     GfxContext->EndFrame();
     GfxContext->Present();   
      
+    Scene->OnAfterRender(this->CurrentCamera);
 }
 
 void context::SetRenderFlags(materialFlags::bits &Flags)
@@ -964,6 +965,7 @@ void context::LoadProjectFromFile(const char *FileName)
             if(context::UseRTX)
             {
                 Scene->BuildTLAS();
+                Scene->BuildGlobalGeometryBuffers();
                 this->MainRenderer->SceneUpdate();
             }
         }

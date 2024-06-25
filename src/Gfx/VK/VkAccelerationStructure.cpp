@@ -10,15 +10,22 @@ namespace gfx
 
 void vkAccelerationStructureData::CreateAS(vk::AccelerationStructureBuildSizesInfoKHR Size, vk::AccelerationStructureTypeKHR Type)
 {
-#if 0
-    if(AccelerationStructure != 0)
-    {
-        DestroyAS();
-    }
-#endif
-
     GET_CONTEXT(VkContext, context::Get());
-    BufferHandle = context::Get()->CreateBuffer(Size.accelerationStructureSize, gfx::bufferUsage::AccelerationStructureStorage | gfx::bufferUsage::ShaderDeviceAddress, gfx::memoryUsage::GpuOnly);
+
+    if(this->BufferHandle == gfx::InvalidHandle)
+    {
+        BufferHandle = context::Get()->CreateBuffer(Size.accelerationStructureSize, gfx::bufferUsage::AccelerationStructureStorage | gfx::bufferUsage::ShaderDeviceAddress, gfx::memoryUsage::GpuOnly);
+    }
+    if((VkAccelerationStructureKHR)this->AccelerationStructure != VK_NULL_HANDLE)
+    {
+        VkContext->Device.waitIdle();
+        VkContext->_vkDestroyAccelerationStructureKHR(VkContext->Device, AccelerationStructure, nullptr);        
+
+        context::Get()->DestroyBuffer(this->BufferHandle);
+        BufferHandle = context::Get()->CreateBuffer(Size.accelerationStructureSize, gfx::bufferUsage::AccelerationStructureStorage | gfx::bufferUsage::ShaderDeviceAddress, gfx::memoryUsage::GpuOnly);
+    }
+
+
     buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
     GET_API_DATA(VkBufferData, vkBufferData, Buffer);
 
@@ -141,8 +148,7 @@ void vkAccelerationStructureData::InitTLAS(std::vector<glm::mat4> &Transforms, s
     gfx::context *Context = context::Get();
     GET_CONTEXT(VkContext, Context);
 
-    std::vector<VkAccelerationStructureInstanceKHR> BLASInstances;
-    BLASInstances.resize(InstanceBLASIndices.size());
+    Instances.resize(InstanceBLASIndices.size());
     for(size_t i=0; i<InstanceBLASIndices.size(); i++)
     {	
 
@@ -158,7 +164,7 @@ void vkAccelerationStructureData::InitTLAS(std::vector<glm::mat4> &Transforms, s
         accelerationStructure *BLAS = Context->GetAccelerationStructure(AccelerationStructures[MeshIndex]);
         GET_API_DATA(VkBLAS, vkAccelerationStructureData, BLAS);
 
-        VkAccelerationStructureInstanceKHR &BLASInstance = BLASInstances[i];
+        VkAccelerationStructureInstanceKHR &BLASInstance = Instances[i];
         BLASInstance.transform = TransformMatrix;
         BLASInstance.instanceCustomIndex = MeshIndex; //TODO: Is that right ?
         BLASInstance.mask = 0xFF;
@@ -168,12 +174,8 @@ void vkAccelerationStructureData::InitTLAS(std::vector<glm::mat4> &Transforms, s
 
     }
 
-    InstancesBuffer = Context->CreateBuffer(sizeof(VkAccelerationStructureInstanceKHR) * BLASInstances.size(), bufferUsage::ShaderDeviceAddress | bufferUsage::AccelerationStructureBuildInputReadonly, memoryUsage::CpuToGpu);
-    Context->CopyDataToBuffer(InstancesBuffer, BLASInstances.data(), sizeof(VkAccelerationStructureInstanceKHR) * BLASInstances.size(), 0);
-
-    // TODO: Do we need that ?
-    TransformMatricesBuffer = Context->CreateBuffer(sizeof(glm::mat4) * Transforms.size(), bufferUsage::ShaderDeviceAddress | bufferUsage::StorageBuffer, memoryUsage::CpuToGpu);
-    Context->CopyDataToBuffer(TransformMatricesBuffer, Transforms.data(), sizeof(glm::mat4) * Transforms.size(), 0);
+    InstancesBuffer = Context->CreateBuffer(sizeof(VkAccelerationStructureInstanceKHR) * Instances.size(), bufferUsage::ShaderDeviceAddress | bufferUsage::AccelerationStructureBuildInputReadonly, memoryUsage::CpuToGpu);
+    Context->CopyDataToBuffer(InstancesBuffer, Instances.data(), sizeof(VkAccelerationStructureInstanceKHR) * Instances.size(), 0);
 
     vk::DeviceOrHostAddressConstKHR InstanceDataDeviceAddress;
     InstanceDataDeviceAddress.deviceAddress = VkContext->GetBufferDeviceAddress(InstancesBuffer);
@@ -191,7 +193,93 @@ void vkAccelerationStructureData::InitTLAS(std::vector<glm::mat4> &Transforms, s
     AccelerationStructureBuildGeometryInfo.geometryCount=1;
     AccelerationStructureBuildGeometryInfo.pGeometries = &AccelerationStructureGeometry;
 
-    uint32_t PrimitivesCount = static_cast<uint32_t>(BLASInstances.size());
+    uint32_t PrimitivesCount = static_cast<uint32_t>(Instances.size());
+
+    vk::AccelerationStructureBuildSizesInfoKHR AccelerationStructureBuildSizesInfo;
+    VkContext->_vkGetAccelerationStructureBuildSizesKHR(
+        (VkDevice)VkContext->Device,
+        VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+        (VkAccelerationStructureBuildGeometryInfoKHR*)&AccelerationStructureBuildGeometryInfo,
+        &PrimitivesCount,
+        (VkAccelerationStructureBuildSizesInfoKHR*)&AccelerationStructureBuildSizesInfo
+    );
+
+    CreateAS(AccelerationStructureBuildSizesInfo, vk::AccelerationStructureTypeKHR::eTopLevel);
+
+    bufferHandle ScratchBufferHandle = Context->CreateBuffer(AccelerationStructureBuildSizesInfo.buildScratchSize, gfx::bufferUsage::StorageBuffer | gfx::bufferUsage::ShaderDeviceAddress, gfx::memoryUsage::GpuOnly);
+
+    vk::AccelerationStructureBuildGeometryInfoKHR AccelerationBuildGeometryInfo;
+    AccelerationBuildGeometryInfo.type = vk::AccelerationStructureTypeKHR::eTopLevel;
+    AccelerationBuildGeometryInfo.flags = vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace;
+    AccelerationBuildGeometryInfo.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
+    AccelerationBuildGeometryInfo.dstAccelerationStructure = AccelerationStructure;
+    AccelerationBuildGeometryInfo.geometryCount=1;
+    AccelerationBuildGeometryInfo.pGeometries=&AccelerationStructureGeometry;
+    AccelerationBuildGeometryInfo.scratchData.deviceAddress = VkContext->GetBufferDeviceAddress(ScratchBufferHandle);
+    
+
+    VkAccelerationStructureBuildRangeInfoKHR AccelerationStructureBuildRangeInfo {};
+    AccelerationStructureBuildRangeInfo.primitiveCount = PrimitivesCount;
+    AccelerationStructureBuildRangeInfo.primitiveOffset = 0;
+    AccelerationStructureBuildRangeInfo.firstVertex=0;
+    AccelerationStructureBuildRangeInfo.transformOffset=0;
+    std::vector<VkAccelerationStructureBuildRangeInfoKHR*> AccelerationStructureBuildRangeInfos = {&AccelerationStructureBuildRangeInfo};
+    
+    auto CommandBuffer = Context->GetImmediateCommandBuffer();
+    CommandBuffer->Begin();
+
+    GET_API_DATA(VkCommandBufferData, vkCommandBufferData, CommandBuffer);
+    vk::CommandBuffer VkCommandBufferHandle = VkCommandBufferData->Handle;
+    VkContext->_vkCmdBuildAccelerationStructuresKHR(
+            (VkCommandBuffer)VkCommandBufferHandle,
+            1,
+            (VkAccelerationStructureBuildGeometryInfoKHR*)&AccelerationBuildGeometryInfo,
+            AccelerationStructureBuildRangeInfos.data());
+    CommandBuffer->End();
+
+    Context->SubmitCommandBufferImmediate(CommandBuffer);
+
+    Context->DestroyBuffer(ScratchBufferHandle);
+}
+
+void vkAccelerationStructureData::UpdateInstanceTransform(std::vector<u32> &Indices, std::vector<m4x4*> &Transforms)
+{
+    IsTLAS = true;
+    gfx::context *Context = context::Get();
+    GET_CONTEXT(VkContext, Context);
+
+    for(int i=0; i<Indices.size(); i++)
+    {
+        VkTransformMatrixKHR TransformMatrix = 
+        {
+            (*Transforms[i])[0][0], (*Transforms[i])[1][0], (*Transforms[i])[2][0], (*Transforms[i])[3][0],
+            (*Transforms[i])[0][1], (*Transforms[i])[1][1], (*Transforms[i])[2][1], (*Transforms[i])[3][1],
+            (*Transforms[i])[0][2], (*Transforms[i])[1][2], (*Transforms[i])[2][2], (*Transforms[i])[3][2],
+        };
+
+        Instances[Indices[i]].transform = TransformMatrix;
+        Context->CopyDataToBuffer(InstancesBuffer, &Instances[Indices[i]], sizeof(VkAccelerationStructureInstanceKHR), Indices[i] * sizeof(VkAccelerationStructureInstanceKHR));
+    }
+
+
+
+    vk::DeviceOrHostAddressConstKHR InstanceDataDeviceAddress;
+    InstanceDataDeviceAddress.deviceAddress = VkContext->GetBufferDeviceAddress(InstancesBuffer);
+
+    vk::AccelerationStructureGeometryKHR AccelerationStructureGeometry;
+    AccelerationStructureGeometry.geometryType = vk::GeometryTypeKHR::eInstances;
+    AccelerationStructureGeometry.flags = vk::GeometryFlagBitsKHR::eOpaque;
+    AccelerationStructureGeometry.geometry.instances.arrayOfPointers =VK_FALSE;
+    AccelerationStructureGeometry.geometry.instances.data = InstanceDataDeviceAddress;
+    AccelerationStructureGeometry.geometry.instances.sType = vk::StructureType::eAccelerationStructureGeometryInstancesDataKHR;
+    
+    vk::AccelerationStructureBuildGeometryInfoKHR AccelerationStructureBuildGeometryInfo;
+    AccelerationStructureBuildGeometryInfo.type = vk::AccelerationStructureTypeKHR::eTopLevel;
+    AccelerationStructureBuildGeometryInfo.flags =vk::BuildAccelerationStructureFlagBitsKHR::ePreferFastTrace;
+    AccelerationStructureBuildGeometryInfo.geometryCount=1;
+    AccelerationStructureBuildGeometryInfo.pGeometries = &AccelerationStructureGeometry;
+
+    u32 PrimitivesCount = Instances.size();
 
     vk::AccelerationStructureBuildSizesInfoKHR AccelerationStructureBuildSizesInfo;
     VkContext->_vkGetAccelerationStructureBuildSizesKHR(

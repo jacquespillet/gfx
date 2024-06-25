@@ -24,7 +24,10 @@ struct scene : public object3D
     void AddLight(std::shared_ptr<object3D> Object);
 
     void UpdateMeshPipeline(gfx::pipelineHandle OldPipelineHandle, mesh *Mesh);
+    
     std::unordered_map<gfx::pipelineHandle, std::vector<std::shared_ptr<mesh>>> Meshes;
+    std::vector<std::shared_ptr<mesh>> Instances;
+
     std::vector<gfx::accelerationStructureHandle> BLAS;
 
     gfx::accelerationStructureHandle TLAS= gfx::InvalidHandle;
@@ -35,7 +38,11 @@ struct scene : public object3D
 
 
     void BuildTLAS();
+    void BuildGlobalGeometryBuffers();
     
+    std::vector<u32> InstancesToUpdate;
+    void UpdateBLASInstance(u32 Index);
+
     virtual std::shared_ptr<object3D> Clone(b8 CloneUUID) override;
 
     struct sceneBuffer
