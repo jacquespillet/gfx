@@ -336,7 +336,8 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
     this->Data.resize(Width * Height * FormatSize(Format));
     this->Type = type::BYTE;
     
-    if(ImageUsage & imageUsage::COLOR_ATTACHMENT || ImageUsage & imageUsage::DEPTH_STENCIL_ATTACHMENT) ImageUsage |= imageUsage::SHADER_READ | imageUsage::TRANSFER_SOURCE;
+    gfx::imageUsage::value FinalImageUsage = ImageUsage;
+    if(FinalImageUsage & imageUsage::COLOR_ATTACHMENT || FinalImageUsage & imageUsage::DEPTH_STENCIL_ATTACHMENT) FinalImageUsage |= imageUsage::SHADER_READ | imageUsage::TRANSFER_SOURCE;
     
     
     vk::ImageCreateInfo ImageCreateInfo;
@@ -347,7 +348,7 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
                     .setMipLevels(MipLevelCount)
                     .setArrayLayers(LayerCount)
                     .setTiling(vk::ImageTiling::eOptimal)
-                    .setUsage((vk::ImageUsageFlags)ImageUsage)
+                    .setUsage((vk::ImageUsageFlags)FinalImageUsage)
                     .setSharingMode(vk::SharingMode::eExclusive)
                     .setInitialLayout(vk::ImageLayout::eUndefined);
         
@@ -364,14 +365,23 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
     VkImageData->InitSamplerDefault(Format, MipLevelCount);
     VkImageData->CurrentLayout = imageLayout::Undefined;
 
-    if(ImageUsage & imageUsage::STORAGE)
-    {
-        commandBuffer *CommandBuffer = gfx::context::Get()->GetImmediateCommandBuffer();
-        CommandBuffer->Begin();
-        CommandBuffer->TransferLayout(*this, VkImageData->CurrentLayout, ImageUsageToImageLayout(imageUsage::STORAGE));
-        CommandBuffer->End();
-        context::Get()->SubmitCommandBufferImmediate(CommandBuffer);
-    }
+    // if(ImageUsage & imageUsage::STORAGE)
+    // {
+    //     commandBuffer *CommandBuffer = gfx::context::Get()->GetImmediateCommandBuffer();
+    //     CommandBuffer->Begin();
+    //     CommandBuffer->TransferLayout(*this, VkImageData->CurrentLayout, ImageUsageToImageLayout(imageUsage::STORAGE));
+    //     CommandBuffer->End();
+    //     context::Get()->SubmitCommandBufferImmediate(CommandBuffer);
+    // }
+
+    // if(ImageUsage & imageUsage::SHADER_READ)
+    // {
+    commandBuffer *CommandBuffer = gfx::context::Get()->GetImmediateCommandBuffer();
+    CommandBuffer->Begin();
+    CommandBuffer->TransferLayout(*this, VkImageData->CurrentLayout, ImageUsageToImageLayout((imageUsage::bits)ImageUsage));
+    CommandBuffer->End();
+    context::Get()->SubmitCommandBufferImmediate(CommandBuffer);
+    // }
 }
 
 vk::ImageSubresourceRange GetDefaultImageSubresourceRange(const image &Image)

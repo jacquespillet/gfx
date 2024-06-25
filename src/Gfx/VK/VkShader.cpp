@@ -233,10 +233,14 @@ void ParseSpirv(void* ByteCode, sz ByteCodeSize, spirvParseResult &Results)
         Binding.Count = 1;
         Binding.Name = DescriptorBinding->name;
 
-        //TODO: Not good!
-        if (DescriptorBinding->array.dims_count == 1) 
+        //Bindless descriptor
+        if (DescriptorBinding->array.dims_count == 1 && DescriptorBinding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) 
         {
-            Binding.Count = 1024;
+            Binding.Count = vkData::BindlessTexturesCount;
+        }
+        if (DescriptorBinding->array.dims_count == 1 && DescriptorBinding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER) 
+        {
+            Binding.Count = vkData::BindlessUniformBuffersCount;
         }
 
         if(DescriptorBinding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER)

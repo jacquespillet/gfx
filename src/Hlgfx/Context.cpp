@@ -106,9 +106,11 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     ContextInitialize.ErrorCallback = ErrorCallback;
     ContextInitialize.InfoCallback = InfoCallback;
     ContextInitialize.Debug = true;
+
 #if GFX_API == GFX_VK
-    ContextInitialize.EnableRTX = true;
+    ContextInitialize.EnableRTX = UseRTX;
 #endif
+
     Singleton->GfxContext = gfx::context::Initialize(ContextInitialize, *Singleton->Window);
     Singleton->Swapchain = Singleton->GfxContext->CreateSwapchain(Singleton->Width, Singleton->Height);
     Singleton->SwapchainPass = Singleton->GfxContext->GetDefaultRenderPass();
@@ -123,7 +125,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     Singleton->Pipelines[GBufferPipeline] = Singleton->GfxContext->CreatePipelineFromFile("resources/Hlgfx/Shaders/Deferred/GBuffer.json");
     Singleton->Pipelines[CompositionPipeline] = Singleton->GfxContext->CreatePipelineFromFile("resources/Hlgfx/Shaders/Deferred/Composition.json");
 #if GFX_API == GFX_VK
-    Singleton->Pipelines[RTXReflectionsPipeline] = Singleton->GfxContext->CreatePipelineFromFile("resources/Hlgfx/Shaders/RTX/Reflections.json");
+    if(context::UseRTX) Singleton->Pipelines[RTXReflectionsPipeline] = Singleton->GfxContext->CreatePipelineFromFile("resources/Hlgfx/Shaders/RTX/Reflections.json");
 #endif
 
     struct rgba {uint8_t r, g, b, a;};
@@ -959,7 +961,7 @@ void context::LoadProjectFromFile(const char *FileName)
         if(i==0) 
         {
             this->Scene = Scene;
-            if(this->GfxContext->RTXEnabled)
+            if(context::UseRTX)
             {
                 Scene->BuildTLAS();
                 this->MainRenderer->SceneUpdate();

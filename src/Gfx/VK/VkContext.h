@@ -76,8 +76,11 @@ struct vkData
     // RTX
     // vk::DescriptorPool BindlessDescriptorPool;
     
-    vk::DescriptorSetLayout  BindlessTexturesDescriptorSetLayout;
-    vk::DescriptorSet BindlessTextureDescriptorSet;
+    static const u32 BindlessTexturesCount = 1024;
+    static const u32 BindlessUniformBuffersCount = 1024;
+
+    vk::DescriptorSetLayout  BindlessDescriptorSetLayout;
+    vk::DescriptorSet BindlessDescriptorSet;
     
     // vk::DescriptorSetLayout  BindlessBuffersDescriptorSetLayout;
     // vk::DescriptorSet BindlessBufferDescriptorSet;

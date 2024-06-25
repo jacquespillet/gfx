@@ -110,6 +110,7 @@ void mesh::OnRender(std::shared_ptr<camera> Camera)
         this->UniformData.ModelMatrix = this->Transform.Matrices.LocalToWorld;
         this->UniformData.NormalMatrix = this->Transform.Matrices.LocalToWorldNormal;
         gfx::context::Get()->CopyDataToBuffer(this->UniformBuffer, &this->UniformData, sizeof(uniformData), 0);
+        this->Transform.HasChanged=false;
     }
     std::shared_ptr<gfx::commandBuffer> CommandBuffer = gfx::context::Get()->GetCurrentFrameCommandBuffer();    
     CommandBuffer->BindUniformGroup(this->Uniforms, ModelDescriptorSetBinding);

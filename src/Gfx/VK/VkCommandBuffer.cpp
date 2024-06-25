@@ -412,7 +412,7 @@ void commandBuffer::BindRayTracingPipeline(pipelineHandle PipelineHandle)
     CommandBuffer.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, VkPipeline->NativeHandle);
 
     CommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingKHR, VkPipeline->PipelineLayout, 6, 1, 
-        &VkData->BindlessTextureDescriptorSet, 0, 0);
+        &VkData->BindlessDescriptorSet, 0, 0);
     
     VkCommandBufferData->BoundPipeline = PipelineHandle; 
 }

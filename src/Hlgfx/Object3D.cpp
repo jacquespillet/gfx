@@ -142,7 +142,6 @@ void object3D::OnEarlyUpdate()
 {
     for (sz i = 0; i < Children.size(); i++)
     {
-        Children[i]->Transform.HasChanged=false;
         Children[i]->OnEarlyUpdate();
     }
 }
@@ -153,29 +152,35 @@ void object3D::OnBeforeRender(std::shared_ptr<camera> Camera)
     for (sz i = 0; i < Children.size(); i++)
     {
         Children[i]->OnBeforeRender(Camera);
+    }    
+}
+
+void object3D::OnRenderGUI(std::shared_ptr<camera> Camera)
+{
+    for (sz i = 0; i < Children.size(); i++)
+    {
+        Children[i]->OnRenderGUI(Camera);
     }
     
     if(context::Get()->Scene->SceneGUI->NodeClicked.get() == this && context::Get()->Scene.get() != this)
     {
-        // TODO: That's not going to work with deferred render targets.
-        
-        // m4x4 ModelMatrix = this->Transform.Matrices.LocalToWorld;
+        m4x4 ModelMatrix = this->Transform.Matrices.LocalToWorld;
     
-        // ImGuiIO& io = ImGui::GetIO();
-        // ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-        // if(ImGuizmo::Manipulate(glm::value_ptr(Camera->Data.ViewMatrix), glm::value_ptr(Camera->Data.ProjectionMatrix), context::Get()->GUI->CurrentGizmoOperation, context::Get()->GUI->CurrentGizmoMode, glm::value_ptr(ModelMatrix), NULL, NULL))
-        // {
-        //     //Remove the localToWorld component
-        //     ModelMatrix = glm::inverse(this->Transform.Parent->Matrices.LocalToWorld) * ModelMatrix;
+        ImGuiIO& io = ImGui::GetIO();
+        ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+        if(ImGuizmo::Manipulate(glm::value_ptr(Camera->Data.ViewMatrix), glm::value_ptr(Camera->Data.ProjectionMatrix), context::Get()->GUI->CurrentGizmoOperation, context::Get()->GUI->CurrentGizmoMode, glm::value_ptr(ModelMatrix), NULL, NULL))
+        {
+            //Remove the localToWorld component
+            ModelMatrix = glm::inverse(this->Transform.Parent->Matrices.LocalToWorld) * ModelMatrix;
 
-        //     //Decompose the matrix
-        //     v3f matrixTranslation, matrixRotation, matrixScale;
-        //     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(ModelMatrix), glm::value_ptr(matrixTranslation), glm::value_ptr(matrixRotation), glm::value_ptr(matrixScale));
-        //     //Set local properties
-        //     this->Transform.SetLocalPosition(matrixTranslation);
-        //     this->Transform.SetLocalRotation(matrixRotation);
-        //     this->Transform.SetLocalScale(matrixScale);
-        // }
+            //Decompose the matrix
+            v3f matrixTranslation, matrixRotation, matrixScale;
+            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(ModelMatrix), glm::value_ptr(matrixTranslation), glm::value_ptr(matrixRotation), glm::value_ptr(matrixScale));
+            //Set local properties
+            this->Transform.SetLocalPosition(matrixTranslation);
+            this->Transform.SetLocalRotation(matrixRotation);
+            this->Transform.SetLocalScale(matrixScale);
+        }
     }
 }
 

@@ -78,6 +78,8 @@ struct context
     static const u32 CompositionPipeline = 4;
     static const u32 RTXReflectionsPipeline = 5;
 
+    static const b8 UseRTX = false;
+
     std::unordered_map<u32, gfx::pipelineHandle> Pipelines;
     std::unordered_map<materialFlags::bits, gfx::pipelineHandle> AllPipelines;
 

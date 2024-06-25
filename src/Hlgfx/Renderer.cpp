@@ -78,12 +78,17 @@ deferredRenderer::deferredRenderer()
                             .SetClearColor(0, 0, 0, 0);
     this->RenderTarget = GfxContext->CreateFramebuffer(FramebufferCreateInfo);
 
-    this->ReflectionImage = GfxContext->CreateImage(Context->Width, Context->Height, gfx::format::R8G8B8A8_UNORM, gfx::imageUsage::bits(gfx::imageUsage::STORAGE | gfx::imageUsage::SHADER_READ | gfx::imageUsage::TRANSFER_SOURCE | gfx::imageUsage::TRANSFER_DESTINATION), gfx::memoryUsage::GpuOnly, nullptr, true);
-    this->ReflectionsPipeline = GfxContext->CreatePipelineFromFile("resources/Hlgfx/Shaders/RTX/Reflections.json");
-    UniformsReflection = std::make_shared<gfx::uniformGroup>();
-    UniformsReflection->Reset();  
+    if(context::UseRTX) 
+        this->ReflectionImage = GfxContext->CreateImage(Context->Width, Context->Height, gfx::format::R8G8B8A8_UNORM, gfx::imageUsage::bits(gfx::imageUsage::STORAGE | gfx::imageUsage::SHADER_READ | gfx::imageUsage::TRANSFER_SOURCE | gfx::imageUsage::TRANSFER_DESTINATION), gfx::memoryUsage::GpuOnly, nullptr, true);
+    else // if rtx isn't enabled, this will just be a black image
+        this->ReflectionImage = GfxContext->CreateImage(Context->Width, Context->Height, gfx::format::R8G8B8A8_UNORM, gfx::imageUsage::SHADER_READ, gfx::memoryUsage::GpuOnly, nullptr, false);
 
-    
+    if(context::UseRTX) 
+    {
+        this->ReflectionsPipeline = GfxContext->CreatePipelineFromFile("resources/Hlgfx/Shaders/RTX/Reflections.json");
+        UniformsReflection = std::make_shared<gfx::uniformGroup>();
+        UniformsReflection->Reset();  
+    }
     
     this->CompositionPipeline = GfxContext->CreatePipelineFromFile("resources/Hlgfx/Shaders/Deferred/Composition.json", Context->GfxContext->GetSwapchainFramebuffer());
     
@@ -105,42 +110,45 @@ deferredRenderer::deferredRenderer()
 
 void deferredRenderer::SceneUpdate()
 {
-
-    UniformsReflection->Reset()
-        .AddAccelerationStructure(16, context::Get()->Scene->TLAS)
-        .AddStorageImage(17, ReflectionImage)
-        .AddFramebufferRenderTarget(18, this->RenderTarget, 0)
-        .AddFramebufferRenderTarget(19, this->RenderTarget, 1)
-        .AddStorageBuffer(20, context::Get()->Scene->VertexBuffer)
-        .AddStorageBuffer(21, context::Get()->Scene->OffsetsBuffer)
-        .AddStorageBuffer(22, context::Get()->Scene->IndexBuffer)
-        .AddStorageBuffer(23, context::Get()->Scene->InstanceMaterialIndices);
-        
-    context::Get()->GfxContext->BindUniformsToPipeline(this->UniformsReflection, this->ReflectionsPipeline, ReflectionsDescriptorSetBinding);
-    context::Get()->GfxContext->BindUniformsToPipeline(context::Get()->CurrentCamera->Uniforms, this->ReflectionsPipeline, CameraDescriptorSetBinding);
-    
-    // Bind the bindless 
-
-    this->UniformsReflection->Update();
-
-    //Update bindless descriptor sets
-    std::vector<gfx::imageHandle> Images;
-    std::vector<std::shared_ptr<texture>> &Textures = context::Get()->Project.Textures;
-    for(auto &Texture : Textures)
+    if(context::UseRTX)
     {
-        Images.push_back(Texture->Handle);
-    }
-    gfx::context::Get()->UpdateBindlessTextureDescriptorSet(Images);
+
+        // Build uniforms for ray tracing pipeline
+        UniformsReflection->Reset()
+            .AddAccelerationStructure(16, context::Get()->Scene->TLAS)
+            .AddStorageImage(17, ReflectionImage)
+            .AddFramebufferRenderTarget(18, this->RenderTarget, 0)
+            .AddFramebufferRenderTarget(19, this->RenderTarget, 1)
+            .AddStorageBuffer(20, context::Get()->Scene->VertexBuffer)
+            .AddStorageBuffer(21, context::Get()->Scene->OffsetsBuffer)
+            .AddStorageBuffer(22, context::Get()->Scene->IndexBuffer)
+            .AddStorageBuffer(23, context::Get()->Scene->InstanceMaterialIndices);
+            
+        context::Get()->GfxContext->BindUniformsToPipeline(this->UniformsReflection, this->ReflectionsPipeline, ReflectionsDescriptorSetBinding);
+        context::Get()->GfxContext->BindUniformsToPipeline(context::Get()->CurrentCamera->Uniforms, this->ReflectionsPipeline, CameraDescriptorSetBinding);
+        
+        this->UniformsReflection->Update();
+
+        //Update bindless descriptor sets
+        std::vector<gfx::imageHandle> Images;
+        std::vector<std::shared_ptr<texture>> &Textures = context::Get()->Project.Textures;
+        for(auto &Texture : Textures)
+        {
+            Images.push_back(Texture->Handle);
+        }
+        gfx::context::Get()->UpdateBindlessTextureDescriptorSet(Images);
 
 
-    //Update bindless descriptor sets
-    std::vector<gfx::bufferHandle> MaterialBuffers;
-    std::vector<std::shared_ptr<material>> &Materials = context::Get()->Project.Materials;
-    for(auto &Material : Materials)
-    {   
-        MaterialBuffers.push_back(Material->UniformBuffer);
+        //Update bindless descriptor sets
+        std::vector<gfx::bufferHandle> MaterialBuffers;
+        std::vector<std::shared_ptr<material>> &Materials = context::Get()->Project.Materials;
+        for(auto &Material : Materials)
+        {   
+            MaterialBuffers.push_back(Material->UniformBuffer);
+        }
+        gfx::context::Get()->UpdateBindlessBufferDescriptorSet(MaterialBuffers);        
     }
-    gfx::context::Get()->UpdateBindlessBufferDescriptorSet(MaterialBuffers);        
+
 }
 
 deferredRenderer::~deferredRenderer()
@@ -148,9 +156,10 @@ deferredRenderer::~deferredRenderer()
     this->QuadGeometry->Destroy();
     this->CompositionMaterial = nullptr;
     gfx::context::Get()->DestroyPipeline(this->CompositionPipeline);
-    gfx::context::Get()->DestroyPipeline(this->ReflectionsPipeline);
     gfx::context::Get()->DestroyImage(this->ReflectionImage);
     gfx::context::Get()->DestroyFramebuffer(this->RenderTarget);
+    
+    if(context::UseRTX) gfx::context::Get()->DestroyPipeline(this->ReflectionsPipeline);
 } 
 
 
@@ -173,6 +182,7 @@ void deferredRenderer::Render(std::shared_ptr<scene> Scene, std::shared_ptr<came
         CommandBuffer->EndPass();
     }
 
+    if(context::UseRTX) 
     {
         if (UniformsReflection->Bindings.size() != 0)
         {
@@ -204,6 +214,9 @@ void deferredRenderer::Render(std::shared_ptr<scene> Scene, std::shared_ptr<came
         
         context::Get()->GUI->StartFrame();
         context::Get()->GUI->DrawGUI();
+        
+        Scene->OnRenderGUI(Camera);
+                
 
         CommandBuffer->BindGraphicsPipeline(CompositionPipeline);
         CommandBuffer->BindUniformGroup(Scene->Uniforms, SceneDescriptorSetBinding);
@@ -221,7 +234,7 @@ void deferredRenderer::Render(std::shared_ptr<scene> Scene, std::shared_ptr<came
         CommandBuffer->EndPass();    
     }
     
-    CommandBuffer->TransferLayout(ReflectionImage, gfx::imageUsage::SHADER_READ, gfx::imageUsage::STORAGE);       
+    if(context::UseRTX) CommandBuffer->TransferLayout(ReflectionImage, gfx::imageUsage::SHADER_READ, gfx::imageUsage::STORAGE);       
 
 }  
 

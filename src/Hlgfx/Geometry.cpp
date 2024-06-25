@@ -631,7 +631,7 @@ indexedGeometryBuffers::~indexedGeometryBuffers()
 void indexedGeometryBuffers::Destroy()
 {
     
-    if(this->BLAS != gfx::InvalidHandle) gfx::context::Get()->DestroyAccelerationStructure(this->BLAS);
+    if(context::UseRTX &&  this->BLAS != gfx::InvalidHandle) gfx::context::Get()->DestroyAccelerationStructure(this->BLAS);
     if(this->IndexBuffer != gfx::InvalidHandle)gfx::context::Get()->QueueDestroyBuffer(this->IndexBuffer);
     if(this->VertexBuffer != gfx::InvalidHandle)gfx::context::Get()->QueueDestroyVertexBuffer(this->VertexBuffer);
     this->VertexBuffer = gfx::InvalidHandle;

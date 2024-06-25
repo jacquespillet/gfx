@@ -568,17 +568,17 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
         VkData->_vkDestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkDestroyAccelerationStructureKHR") ;       
 
 
-        // TODO: Cleanup
+        //Create bindless descriptor set that will enable to store texture and uniform buffers for accessing in raytracing shaders
         {
             vk::DescriptorSetLayoutBinding LayoutBindings[2];
 
             LayoutBindings[0].setBinding(0)
                         .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-                        .setDescriptorCount(1024)
+                        .setDescriptorCount(vkData::BindlessTexturesCount)
                         .setStageFlags(vk::ShaderStageFlagBits::eAll);
             LayoutBindings[1].setBinding(1)
                         .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-                        .setDescriptorCount(1024)
+                        .setDescriptorCount(vkData::BindlessUniformBuffersCount)
                         .setStageFlags(vk::ShaderStageFlagBits::eAll);
 
             vk::DescriptorBindingFlags DescriptorBindingFlags[2];
@@ -590,38 +590,14 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
             vk::DescriptorSetLayoutCreateInfo LayoutInfo;
             LayoutInfo.setBindingCount(2).setPBindings(LayoutBindings).setPNext(&BindingFlags);
 
-            VkData->BindlessTexturesDescriptorSetLayout = VkData->Device.createDescriptorSetLayout(LayoutInfo);
+            VkData->BindlessDescriptorSetLayout = VkData->Device.createDescriptorSetLayout(LayoutInfo);
 
 
             vk::DescriptorSetAllocateInfo AllocInfo;
-            AllocInfo.setDescriptorPool(VkData->DescriptorPool).setDescriptorSetCount(1).setPSetLayouts(&VkData->BindlessTexturesDescriptorSetLayout);
+            AllocInfo.setDescriptorPool(VkData->DescriptorPool).setDescriptorSetCount(1).setPSetLayouts(&VkData->BindlessDescriptorSetLayout);
 
-            VkData->BindlessTextureDescriptorSet = VkData->Device.allocateDescriptorSets(AllocInfo)[0];        
-        }
- 
-        // {
-        //     vk::DescriptorSetLayoutBinding LayoutBinding;
-        //     LayoutBinding.setBinding(0)
-        //                 .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-        //                 .setDescriptorCount(1024)
-        //                 .setStageFlags(vk::ShaderStageFlagBits::eAll);
-
-
-        //     vk::DescriptorBindingFlags DescriptorBindingFlags = vk::DescriptorBindingFlagBits::ePartiallyBound;
-        //     vk::DescriptorSetLayoutBindingFlagsCreateInfo BindingFlags;
-        //     BindingFlags.setPBindingFlags(&DescriptorBindingFlags).setBindingCount(1);                        
-
-        //     vk::DescriptorSetLayoutCreateInfo LayoutInfo;
-        //     LayoutInfo.setBindingCount(1).setPBindings(&LayoutBinding).setPNext(&BindingFlags);
-
-        //     VkData->BindlessBuffersDescriptorSetLayout = VkData->Device.createDescriptorSetLayout(LayoutInfo);
-
-
-        //     vk::DescriptorSetAllocateInfo AllocInfo;
-        //     AllocInfo.setDescriptorPool(VkData->DescriptorPool).setDescriptorSetCount(1).setPSetLayouts(&VkData->BindlessBuffersDescriptorSetLayout);
-
-        //     VkData->BindlessBufferDescriptorSet = VkData->Device.allocateDescriptorSets(AllocInfo)[0];        
-        // }        
+            VkData->BindlessDescriptorSet = VkData->Device.allocateDescriptorSets(AllocInfo)[0];        
+        }    
     }
 
 
@@ -643,7 +619,7 @@ void context::UpdateBindlessTextureDescriptorSet(std::vector<imageHandle> &Image
 
 
     vk::WriteDescriptorSet DescriptorWrite;
-    DescriptorWrite.setDstSet(VkData->BindlessTextureDescriptorSet)
+    DescriptorWrite.setDstSet(VkData->BindlessDescriptorSet)
                    .setDstBinding(0)
                    .setDstArrayElement(0)
                    .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
@@ -669,7 +645,7 @@ void context::UpdateBindlessBufferDescriptorSet(std::vector<bufferHandle> &Buffe
 
 
     vk::WriteDescriptorSet DescriptorWrite;
-    DescriptorWrite.setDstSet(VkData->BindlessTextureDescriptorSet)
+    DescriptorWrite.setDstSet(VkData->BindlessDescriptorSet)
                    .setDstBinding(1)
                    .setDstArrayElement(0)
                    .setDescriptorType(vk::DescriptorType::eUniformBuffer)
@@ -1549,8 +1525,8 @@ void context::Cleanup()
 {
     GET_CONTEXT(VkData, this);
 
-    VkData->Device.destroyDescriptorSetLayout(VkData->BindlessTexturesDescriptorSetLayout);
-    VkData->Device.freeDescriptorSets(VkData->DescriptorPool, 1, &VkData->BindlessTextureDescriptorSet);
+    VkData->Device.destroyDescriptorSetLayout(VkData->BindlessDescriptorSetLayout);
+    VkData->Device.freeDescriptorSets(VkData->DescriptorPool, 1, &VkData->BindlessDescriptorSet);
 
     DeallocateMemory((void*)SwapchainOutput.Name);
     VkData->StageBuffer.Destroy();
