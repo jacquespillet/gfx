@@ -27,11 +27,11 @@ struct scene : public object3D
     std::unordered_map<gfx::pipelineHandle, std::vector<std::shared_ptr<mesh>>> Meshes;
     std::vector<gfx::accelerationStructureHandle> BLAS;
 
-    gfx::accelerationStructureHandle TLAS;
-    gfx::bufferHandle VertexBuffer;
-    gfx::bufferHandle IndexBuffer;
-    gfx::bufferHandle InstanceMaterialIndices;
-    gfx::bufferHandle OffsetsBuffer;
+    gfx::accelerationStructureHandle TLAS= gfx::InvalidHandle;
+    gfx::bufferHandle VertexBuffer = gfx::InvalidHandle;
+    gfx::bufferHandle IndexBuffer = gfx::InvalidHandle;
+    gfx::bufferHandle InstanceMaterialIndices = gfx::InvalidHandle;
+    gfx::bufferHandle OffsetsBuffer = gfx::InvalidHandle;
 
 
     void BuildTLAS();

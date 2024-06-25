@@ -568,29 +568,27 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
         VkData->_vkDestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkDestroyAccelerationStructureKHR") ;       
 
 
-        // Initialize bindless descriptor set for accessing textures and uniform buffers in RTX shaders
-        // vk::DescriptorPoolSize PoolSize;
-        // PoolSize.setDescriptorCount(1024).setType(vk::DescriptorType::eSampledImage);
-
-        // vk::DescriptorPoolCreateInfo PoolInfo;
-        // PoolInfo.setPoolSizeCount(1).setPPoolSizes(&PoolSize).setMaxSets(1);        
-        // VkData->BindlessDescriptorPool = VkData->Device.createDescriptorPool(PoolInfo);
-
         // TODO: Cleanup
         {
-            vk::DescriptorSetLayoutBinding LayoutBinding;
-            LayoutBinding.setBinding(0)
+            vk::DescriptorSetLayoutBinding LayoutBindings[2];
+
+            LayoutBindings[0].setBinding(0)
                         .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
                         .setDescriptorCount(1024)
                         .setStageFlags(vk::ShaderStageFlagBits::eAll);
+            LayoutBindings[1].setBinding(1)
+                        .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+                        .setDescriptorCount(1024)
+                        .setStageFlags(vk::ShaderStageFlagBits::eAll);
 
-
-            vk::DescriptorBindingFlags DescriptorBindingFlags = vk::DescriptorBindingFlagBits::ePartiallyBound;
+            vk::DescriptorBindingFlags DescriptorBindingFlags[2];
+            DescriptorBindingFlags[0] = vk::DescriptorBindingFlagBits::ePartiallyBound;
+            DescriptorBindingFlags[1] = vk::DescriptorBindingFlagBits::ePartiallyBound;
             vk::DescriptorSetLayoutBindingFlagsCreateInfo BindingFlags;
-            BindingFlags.setPBindingFlags(&DescriptorBindingFlags).setBindingCount(1);
+            BindingFlags.setPBindingFlags(DescriptorBindingFlags).setBindingCount(2);
 
             vk::DescriptorSetLayoutCreateInfo LayoutInfo;
-            LayoutInfo.setBindingCount(1).setPBindings(&LayoutBinding).setPNext(&BindingFlags);
+            LayoutInfo.setBindingCount(2).setPBindings(LayoutBindings).setPNext(&BindingFlags);
 
             VkData->BindlessTexturesDescriptorSetLayout = VkData->Device.createDescriptorSetLayout(LayoutInfo);
 
@@ -601,29 +599,29 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
             VkData->BindlessTextureDescriptorSet = VkData->Device.allocateDescriptorSets(AllocInfo)[0];        
         }
  
-        {
-            vk::DescriptorSetLayoutBinding LayoutBinding;
-            LayoutBinding.setBinding(0)
-                        .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-                        .setDescriptorCount(1024)
-                        .setStageFlags(vk::ShaderStageFlagBits::eAll);
+        // {
+        //     vk::DescriptorSetLayoutBinding LayoutBinding;
+        //     LayoutBinding.setBinding(0)
+        //                 .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+        //                 .setDescriptorCount(1024)
+        //                 .setStageFlags(vk::ShaderStageFlagBits::eAll);
 
 
-            vk::DescriptorBindingFlags DescriptorBindingFlags = vk::DescriptorBindingFlagBits::ePartiallyBound;
-            vk::DescriptorSetLayoutBindingFlagsCreateInfo BindingFlags;
-            BindingFlags.setPBindingFlags(&DescriptorBindingFlags).setBindingCount(1);                        
+        //     vk::DescriptorBindingFlags DescriptorBindingFlags = vk::DescriptorBindingFlagBits::ePartiallyBound;
+        //     vk::DescriptorSetLayoutBindingFlagsCreateInfo BindingFlags;
+        //     BindingFlags.setPBindingFlags(&DescriptorBindingFlags).setBindingCount(1);                        
 
-            vk::DescriptorSetLayoutCreateInfo LayoutInfo;
-            LayoutInfo.setBindingCount(1).setPBindings(&LayoutBinding).setPNext(&BindingFlags);
+        //     vk::DescriptorSetLayoutCreateInfo LayoutInfo;
+        //     LayoutInfo.setBindingCount(1).setPBindings(&LayoutBinding).setPNext(&BindingFlags);
 
-            VkData->BindlessBuffersDescriptorSetLayout = VkData->Device.createDescriptorSetLayout(LayoutInfo);
+        //     VkData->BindlessBuffersDescriptorSetLayout = VkData->Device.createDescriptorSetLayout(LayoutInfo);
 
 
-            vk::DescriptorSetAllocateInfo AllocInfo;
-            AllocInfo.setDescriptorPool(VkData->DescriptorPool).setDescriptorSetCount(1).setPSetLayouts(&VkData->BindlessBuffersDescriptorSetLayout);
+        //     vk::DescriptorSetAllocateInfo AllocInfo;
+        //     AllocInfo.setDescriptorPool(VkData->DescriptorPool).setDescriptorSetCount(1).setPSetLayouts(&VkData->BindlessBuffersDescriptorSetLayout);
 
-            VkData->BindlessBufferDescriptorSet = VkData->Device.allocateDescriptorSets(AllocInfo)[0];        
-        }        
+        //     VkData->BindlessBufferDescriptorSet = VkData->Device.allocateDescriptorSets(AllocInfo)[0];        
+        // }        
     }
 
 
@@ -671,8 +669,8 @@ void context::UpdateBindlessBufferDescriptorSet(std::vector<bufferHandle> &Buffe
 
 
     vk::WriteDescriptorSet DescriptorWrite;
-    DescriptorWrite.setDstSet(VkData->BindlessBufferDescriptorSet)
-                   .setDstBinding(0)
+    DescriptorWrite.setDstSet(VkData->BindlessTextureDescriptorSet)
+                   .setDstBinding(1)
                    .setDstArrayElement(0)
                    .setDescriptorType(vk::DescriptorType::eUniformBuffer)
                    .setDescriptorCount(BufferInfos.size())
@@ -1550,6 +1548,9 @@ void context::WaitIdle()
 void context::Cleanup()
 {
     GET_CONTEXT(VkData, this);
+
+    VkData->Device.destroyDescriptorSetLayout(VkData->BindlessTexturesDescriptorSetLayout);
+    VkData->Device.freeDescriptorSets(VkData->DescriptorPool, 1, &VkData->BindlessTextureDescriptorSet);
 
     DeallocateMemory((void*)SwapchainOutput.Name);
     VkData->StageBuffer.Destroy();

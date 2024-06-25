@@ -18,6 +18,7 @@ struct vertex
 struct indexedGeometryBuffers
 {
     indexedGeometryBuffers();
+    ~indexedGeometryBuffers();
     gfx::vertexBufferHandle VertexBuffer = gfx::InvalidHandle;
     gfx::bufferHandle IndexBuffer = gfx::InvalidHandle;
     gfx::accelerationStructureHandle BLAS;

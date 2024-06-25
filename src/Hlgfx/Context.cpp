@@ -202,7 +202,6 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     else if(Singleton->RenderType == rendererType::deferred)
         Singleton->MainRenderer = std::make_shared<hlgfx::deferredRenderer>();
 
-    // Singleton->MainRenderer = std::make_shared<hlgfx::deferredRenderer>();
 #if 0 //TODO
     Singleton->NoMaterial = std::make_shared<pbrMaterial>("NO_MATERIAL");
     Singleton->NoMaterial->UUID = "NO_MATERIAL";
@@ -797,11 +796,11 @@ void context::Cleanup()
     this->MainRenderer = nullptr;
 
     //Clean project
+    this->Project.Scenes.clear();
+    this->Project.Objects.clear();
     this->Project.Geometries.clear();
     this->Project.Materials.clear();
-    this->Project.Objects.clear();
     this->Project.Textures.clear();
-    this->Project.Scenes.clear();
     for (size_t i = 0; i < this->Scene->SceneBufferData.LightCount; i++)
     {
         this->Scene->Lights[i] = nullptr;
@@ -813,11 +812,13 @@ void context::Cleanup()
 
     GfxContext->QueueDestroyImage(ShadowMaps);
 
+#if 0 //TODO
     Quad->Destroy();
     Cube->Destroy();
     Sphere->Destroy();
     Cone->Destroy();
     Capsule->Destroy();
+#endif
 
     this->Quad = nullptr;
     
@@ -955,11 +956,14 @@ void context::LoadProjectFromFile(const char *FileName)
             Project.Scenes.resize(Scene->ID + 1);
         }            
         Project.Scenes[Scene->ID] = Scene;  
-        if(i==0) this->Scene = Scene;
-        if(this->GfxContext->RTXEnabled)
+        if(i==0) 
         {
-            Scene->BuildTLAS();
-            this->MainRenderer->SceneUpdate();
+            this->Scene = Scene;
+            if(this->GfxContext->RTXEnabled)
+            {
+                Scene->BuildTLAS();
+                this->MainRenderer->SceneUpdate();
+            }
         }
     }
 

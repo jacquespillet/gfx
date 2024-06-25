@@ -361,6 +361,16 @@ void scene::Serialize(std::ofstream &FileStream)
 scene::~scene()
 {
     printf("Destroying Scene\n");
+    if(this->TLAS != gfx::InvalidHandle) gfx::context::Get()->DestroyAccelerationStructure(this->TLAS);
+    if(this->VertexBuffer != gfx::InvalidHandle) gfx::context::Get()->DestroyBuffer(this->VertexBuffer);
+    if(this->IndexBuffer != gfx::InvalidHandle) gfx::context::Get()->DestroyBuffer(this->IndexBuffer);
+    if(this->InstanceMaterialIndices != gfx::InvalidHandle) gfx::context::Get()->DestroyBuffer(this->InstanceMaterialIndices);
+    if(this->OffsetsBuffer != gfx::InvalidHandle) gfx::context::Get()->DestroyBuffer(this->OffsetsBuffer);
+    this->TLAS = gfx::InvalidHandle;
+    this->VertexBuffer = gfx::InvalidHandle;
+    this->IndexBuffer = gfx::InvalidHandle;
+    this->InstanceMaterialIndices = gfx::InvalidHandle;
+    this->OffsetsBuffer = gfx::InvalidHandle;    
     gfx::context::Get()->QueueDestroyBuffer(this->SceneBuffer);
 }
 

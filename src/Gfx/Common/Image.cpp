@@ -21,7 +21,7 @@ imageData ImageFromFile(char *FileName)
     Result.Type = type::UNSIGNED_BYTE;
     Result.DataSize = Width * Height * Result.ChannelCount * sizeof(u8);
     return Result;
-    //TODO: Memory leak here !
+    //TODO: Memory leak here !  
 }
 u32 image::GetMipLevelWidth(u32 MipLevel)
 {

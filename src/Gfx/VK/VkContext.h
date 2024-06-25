@@ -79,8 +79,8 @@ struct vkData
     vk::DescriptorSetLayout  BindlessTexturesDescriptorSetLayout;
     vk::DescriptorSet BindlessTextureDescriptorSet;
     
-    vk::DescriptorSetLayout  BindlessBuffersDescriptorSetLayout;
-    vk::DescriptorSet BindlessBufferDescriptorSet;
+    // vk::DescriptorSetLayout  BindlessBuffersDescriptorSetLayout;
+    // vk::DescriptorSet BindlessBufferDescriptorSet;
         
 
     vk::PhysicalDeviceRayTracingPipelinePropertiesKHR RayTracingPipelineProperties;

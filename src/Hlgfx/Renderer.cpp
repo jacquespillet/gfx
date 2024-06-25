@@ -86,6 +86,7 @@ deferredRenderer::deferredRenderer()
     
     
     this->CompositionPipeline = GfxContext->CreatePipelineFromFile("resources/Hlgfx/Shaders/Deferred/Composition.json", Context->GfxContext->GetSwapchainFramebuffer());
+    
     this->CompositionMaterial = std::make_shared<customMaterial>("CompositionMaterial", this->CompositionPipeline);    
     this->CompositionMaterial->Uniforms = std::make_shared<gfx::uniformGroup>();
     this->CompositionMaterial->Uniforms->Reset()
@@ -143,12 +144,14 @@ void deferredRenderer::SceneUpdate()
 }
 
 deferredRenderer::~deferredRenderer()
-{
+{  
     this->QuadGeometry->Destroy();
     this->CompositionMaterial = nullptr;
     gfx::context::Get()->DestroyPipeline(this->CompositionPipeline);
+    gfx::context::Get()->DestroyPipeline(this->ReflectionsPipeline);
+    gfx::context::Get()->DestroyImage(this->ReflectionImage);
     gfx::context::Get()->DestroyFramebuffer(this->RenderTarget);
-}
+} 
 
 
 void deferredRenderer::Render(std::shared_ptr<scene> Scene, std::shared_ptr<camera> Camera)
@@ -171,17 +174,21 @@ void deferredRenderer::Render(std::shared_ptr<scene> Scene, std::shared_ptr<came
     }
 
     {
-        CommandBuffer->BindRayTracingPipeline(ReflectionsPipeline);
-        CommandBuffer->BindUniformGroup(Camera->Uniforms, CameraDescriptorSetBinding);
-        CommandBuffer->BindUniformGroup(UniformsReflection, ReflectionsDescriptorSetBinding);
+        if (UniformsReflection->Bindings.size() != 0)
+        {
+            CommandBuffer->BindRayTracingPipeline(ReflectionsPipeline);
+            CommandBuffer->BindUniformGroup(Camera->Uniforms, CameraDescriptorSetBinding);
+            CommandBuffer->BindUniformGroup(UniformsReflection, ReflectionsDescriptorSetBinding);
 
-        CommandBuffer->RayTrace(context::Get()->Width, context::Get()->Height, 1, 0, 1, 2); 
+            CommandBuffer->RayTrace(context::Get()->Width, context::Get()->Height, 1, 0, 1, 2); 
         
-        CommandBuffer->TransferLayout(ReflectionImage, gfx::imageUsage::STORAGE, gfx::imageUsage::TRANSFER_DESTINATION);     
-        gfx::context::Get()->GetImage(ReflectionImage)->GenerateMipmaps(CommandBuffer);
-
-        // CommandBuffer->TransferLayout(ReflectionImage, gfx::imageUsage::TRANSFER_DESTINATION, gfx::imageUsage::SHADER_READ);     
-
+            CommandBuffer->TransferLayout(ReflectionImage, gfx::imageUsage::STORAGE, gfx::imageUsage::TRANSFER_DESTINATION);     
+            gfx::context::Get()->GetImage(ReflectionImage)->GenerateMipmaps(CommandBuffer);
+        }
+        else
+        {
+            CommandBuffer->TransferLayout(ReflectionImage, gfx::imageUsage::STORAGE, gfx::imageUsage::SHADER_READ);     
+        }
     }
 
 
@@ -213,7 +220,9 @@ void deferredRenderer::Render(std::shared_ptr<scene> Scene, std::shared_ptr<came
         gfx::imgui::Get()->EndFrame(CommandBuffer);
         CommandBuffer->EndPass();    
     }
+    
     CommandBuffer->TransferLayout(ReflectionImage, gfx::imageUsage::SHADER_READ, gfx::imageUsage::STORAGE);       
+
 }  
 
 

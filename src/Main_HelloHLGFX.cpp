@@ -64,5 +64,5 @@ int main(int argc, char *argv[])
 		ProjectFolder = std::string(argv[1]);
     App.Init(ProjectFolder);
 	App.Run();
-	return 0;
+	return 0; 
 }

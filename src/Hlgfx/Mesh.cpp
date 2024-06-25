@@ -157,11 +157,14 @@ void mesh::Serialize(std::ofstream &FileStream)
 mesh::~mesh()
 {
     printf("Destroying Mesh\n");
-    gfx::context::Get()->QueueDestroyBuffer(this->UniformBuffer);
-    if(context::Get()->Project.Geometries[this->GeometryID].use_count() == 1)
-    {
-        context::Get()->Project.Geometries[this->GeometryID]->Destroy();
-    }
+    context *Context = context::Get();
+    std::shared_ptr<gfx::context> GfxContext = Context->GfxContext;
+
+    GfxContext->QueueDestroyBuffer(this->UniformBuffer);
+    // if(Context->Project.Geometries[this->GeometryID].use_count() == 1)
+    // {
+    //     Context->Project.Geometries[this->GeometryID]->Destroy();
+    // }
 }
 
 

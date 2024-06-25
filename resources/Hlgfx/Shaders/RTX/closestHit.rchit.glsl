@@ -55,7 +55,7 @@ struct materialData
     vec2 padding;
 };
 
-layout(set = 7, binding = 0) uniform UBO {
+layout(set = 6, binding = 1) uniform UBO {
     float RoughnessFactor;
     float MetallicFactor;
     float EmissiveFactor;

@@ -159,8 +159,10 @@ std::shared_ptr<indexedGeometryBuffers>  GetQuadGeometry()
     VertexBufferCreateInfo.Init().AddVertexStream(VertexStream1);
     Result->VertexBuffer = Context->CreateVertexBuffer(VertexBufferCreateInfo);
 
+    gfx::bufferUsage::Bits IndexBufferUsage = gfx::bufferUsage::IndexBuffer;
+    if(Context->RTXEnabled) IndexBufferUsage = (gfx::bufferUsage::Bits)((u32)IndexBufferUsage | (u32)gfx::bufferUsage::ShaderDeviceAddress | (u32)gfx::bufferUsage::AccelerationStructureBuildInputReadonly);
 
-    Result->IndexBuffer = Context->CreateBuffer(Indices.size() * sizeof(u32), gfx::bufferUsage::IndexBuffer, gfx::memoryUsage::GpuOnly);
+    Result->IndexBuffer = Context->CreateBuffer(Indices.size() * sizeof(u32), IndexBufferUsage, gfx::memoryUsage::GpuOnly);
     Context->CopyDataToBuffer(Result->IndexBuffer, Indices.data(), Indices.size() * sizeof(u32), 0);
     
     Result->VertexData = Vertices;
@@ -168,6 +170,14 @@ std::shared_ptr<indexedGeometryBuffers>  GetQuadGeometry()
 
     Result->Count = 6;
     Result->Start=0;
+
+    if(Context->RTXEnabled)
+    {
+        gfx::vertexBuffer *VBuffer = Context->GetVertexBuffer(Result->VertexBuffer);
+		Result->BLAS = Context->CreateBLAccelerationStructure(Result->VertexData.size(), sizeof(vertex), gfx::format::R32G32B32_SFLOAT, VBuffer->VertexStreams[0].Buffer,
+                                                      gfx::indexType::Uint32, Result->IndexData.size() / 3, Result->IndexBuffer, 0);
+    }
+
     return Result;
 }    
 
@@ -613,11 +623,20 @@ void indexedGeometryBuffers::Serialize(std::string FileName)
     FileStream.write((char*)this->IndexData.data(), IndexDataSize * sizeof(u32));
 }
 
+indexedGeometryBuffers::~indexedGeometryBuffers() 
+{
+    Destroy();
+}
+
 void indexedGeometryBuffers::Destroy()
 {
-    gfx::context::Get()->DestroyAccelerationStructure(this->BLAS);
-    gfx::context::Get()->QueueDestroyBuffer(this->IndexBuffer);
-    gfx::context::Get()->QueueDestroyVertexBuffer(this->VertexBuffer);    
+    
+    if(this->BLAS != gfx::InvalidHandle) gfx::context::Get()->DestroyAccelerationStructure(this->BLAS);
+    if(this->IndexBuffer != gfx::InvalidHandle)gfx::context::Get()->QueueDestroyBuffer(this->IndexBuffer);
+    if(this->VertexBuffer != gfx::InvalidHandle)gfx::context::Get()->QueueDestroyVertexBuffer(this->VertexBuffer);
+    this->VertexBuffer = gfx::InvalidHandle;
+    this->IndexBuffer = gfx::InvalidHandle;
+    this->BLAS = gfx::InvalidHandle;
 }
 
 std::shared_ptr<indexedGeometryBuffers> indexedGeometryBuffers::Deserialize(const std::string &FileName)
