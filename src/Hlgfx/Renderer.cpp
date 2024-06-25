@@ -112,13 +112,34 @@ void deferredRenderer::SceneUpdate()
         .AddFramebufferRenderTarget(19, this->RenderTarget, 1)
         .AddStorageBuffer(20, context::Get()->Scene->VertexBuffer)
         .AddStorageBuffer(21, context::Get()->Scene->OffsetsBuffer)
-        .AddStorageBuffer(22, context::Get()->Scene->IndexBuffer);
+        .AddStorageBuffer(22, context::Get()->Scene->IndexBuffer)
+        .AddStorageBuffer(23, context::Get()->Scene->InstanceMaterialIndices);
         
     context::Get()->GfxContext->BindUniformsToPipeline(this->UniformsReflection, this->ReflectionsPipeline, ReflectionsDescriptorSetBinding);
     context::Get()->GfxContext->BindUniformsToPipeline(context::Get()->CurrentCamera->Uniforms, this->ReflectionsPipeline, CameraDescriptorSetBinding);
     
+    // Bind the bindless 
 
     this->UniformsReflection->Update();
+
+    //Update bindless descriptor sets
+    std::vector<gfx::imageHandle> Images;
+    std::vector<std::shared_ptr<texture>> &Textures = context::Get()->Project.Textures;
+    for(auto &Texture : Textures)
+    {
+        Images.push_back(Texture->Handle);
+    }
+    gfx::context::Get()->UpdateBindlessTextureDescriptorSet(Images);
+
+
+    //Update bindless descriptor sets
+    std::vector<gfx::bufferHandle> MaterialBuffers;
+    std::vector<std::shared_ptr<material>> &Materials = context::Get()->Project.Materials;
+    for(auto &Material : Materials)
+    {   
+        MaterialBuffers.push_back(Material->UniformBuffer);
+    }
+    gfx::context::Get()->UpdateBindlessBufferDescriptorSet(MaterialBuffers);        
 }
 
 deferredRenderer::~deferredRenderer()

@@ -431,6 +431,7 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
 
         VkData->EnabledDescriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
         VkData->EnabledDescriptorIndexingFeatures.runtimeDescriptorArray=VK_TRUE;
+        VkData->EnabledDescriptorIndexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
         VkData->EnabledDescriptorIndexingFeatures.pNext = &VkData->EnabledAccelerationStructureFeatures;
 
 
@@ -565,10 +566,119 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
         VkData->_vkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkGetRayTracingShaderGroupHandlesKHR") ;       
         VkData->_vkCmdTraceRaysKHR = (PFN_vkCmdTraceRaysKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkCmdTraceRaysKHR") ;       
         VkData->_vkDestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)VkData->DynamicLoader.vkGetInstanceProcAddr(VkData->Instance, "vkDestroyAccelerationStructureKHR") ;       
+
+
+        // Initialize bindless descriptor set for accessing textures and uniform buffers in RTX shaders
+        // vk::DescriptorPoolSize PoolSize;
+        // PoolSize.setDescriptorCount(1024).setType(vk::DescriptorType::eSampledImage);
+
+        // vk::DescriptorPoolCreateInfo PoolInfo;
+        // PoolInfo.setPoolSizeCount(1).setPPoolSizes(&PoolSize).setMaxSets(1);        
+        // VkData->BindlessDescriptorPool = VkData->Device.createDescriptorPool(PoolInfo);
+
+        // TODO: Cleanup
+        {
+            vk::DescriptorSetLayoutBinding LayoutBinding;
+            LayoutBinding.setBinding(0)
+                        .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+                        .setDescriptorCount(1024)
+                        .setStageFlags(vk::ShaderStageFlagBits::eAll);
+
+
+            vk::DescriptorBindingFlags DescriptorBindingFlags = vk::DescriptorBindingFlagBits::ePartiallyBound;
+            vk::DescriptorSetLayoutBindingFlagsCreateInfo BindingFlags;
+            BindingFlags.setPBindingFlags(&DescriptorBindingFlags).setBindingCount(1);
+
+            vk::DescriptorSetLayoutCreateInfo LayoutInfo;
+            LayoutInfo.setBindingCount(1).setPBindings(&LayoutBinding).setPNext(&BindingFlags);
+
+            VkData->BindlessTexturesDescriptorSetLayout = VkData->Device.createDescriptorSetLayout(LayoutInfo);
+
+
+            vk::DescriptorSetAllocateInfo AllocInfo;
+            AllocInfo.setDescriptorPool(VkData->DescriptorPool).setDescriptorSetCount(1).setPSetLayouts(&VkData->BindlessTexturesDescriptorSetLayout);
+
+            VkData->BindlessTextureDescriptorSet = VkData->Device.allocateDescriptorSets(AllocInfo)[0];        
+        }
+ 
+        {
+            vk::DescriptorSetLayoutBinding LayoutBinding;
+            LayoutBinding.setBinding(0)
+                        .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+                        .setDescriptorCount(1024)
+                        .setStageFlags(vk::ShaderStageFlagBits::eAll);
+
+
+            vk::DescriptorBindingFlags DescriptorBindingFlags = vk::DescriptorBindingFlagBits::ePartiallyBound;
+            vk::DescriptorSetLayoutBindingFlagsCreateInfo BindingFlags;
+            BindingFlags.setPBindingFlags(&DescriptorBindingFlags).setBindingCount(1);                        
+
+            vk::DescriptorSetLayoutCreateInfo LayoutInfo;
+            LayoutInfo.setBindingCount(1).setPBindings(&LayoutBinding).setPNext(&BindingFlags);
+
+            VkData->BindlessBuffersDescriptorSetLayout = VkData->Device.createDescriptorSetLayout(LayoutInfo);
+
+
+            vk::DescriptorSetAllocateInfo AllocInfo;
+            AllocInfo.setDescriptorPool(VkData->DescriptorPool).setDescriptorSetCount(1).setPSetLayouts(&VkData->BindlessBuffersDescriptorSetLayout);
+
+            VkData->BindlessBufferDescriptorSet = VkData->Device.allocateDescriptorSets(AllocInfo)[0];        
+        }        
     }
 
 
     return Singleton;
+}
+
+void context::UpdateBindlessTextureDescriptorSet(std::vector<imageHandle> &Images)
+{
+    GET_CONTEXT(VkData, this);
+        
+
+    std::vector<vk::DescriptorImageInfo> ImageInfos;
+    for(auto &ImageHandle : Images)
+    {
+        image *Image = GetImage(ImageHandle);
+        GET_API_DATA(VkImage, vkImageData, Image);
+        ImageInfos.push_back(vk::DescriptorImageInfo(VkImage->Sampler, VkImage->DefaultImageViews.NativeView, vk::ImageLayout::eShaderReadOnlyOptimal));
+    }
+
+
+    vk::WriteDescriptorSet DescriptorWrite;
+    DescriptorWrite.setDstSet(VkData->BindlessTextureDescriptorSet)
+                   .setDstBinding(0)
+                   .setDstArrayElement(0)
+                   .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+                   .setDescriptorCount(ImageInfos.size())
+                   .setPImageInfo(ImageInfos.data());
+
+    VkData->Device.updateDescriptorSets(1, &DescriptorWrite, 0, nullptr);
+}
+
+void context::UpdateBindlessBufferDescriptorSet(std::vector<bufferHandle> &Buffers)
+{
+    GET_CONTEXT(VkData, this);
+        
+
+    std::vector<vk::DescriptorBufferInfo> BufferInfos;
+    for(auto &BufferHandle : Buffers)
+    {
+        buffer *Buffer = GetBuffer(BufferHandle);
+        GET_API_DATA(VkBuffer, vkBufferData, Buffer);
+
+        BufferInfos.push_back(vk::DescriptorBufferInfo(VkBuffer->Handle, 0, Buffer->Size));
+    }
+
+
+    vk::WriteDescriptorSet DescriptorWrite;
+    DescriptorWrite.setDstSet(VkData->BindlessBufferDescriptorSet)
+                   .setDstBinding(0)
+                   .setDstArrayElement(0)
+                   .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+                   .setDescriptorCount(BufferInfos.size())
+                   .setPBufferInfo(BufferInfos.data());
+
+    VkData->Device.updateDescriptorSets(1, &DescriptorWrite, 0, nullptr);
 }
 
 std::shared_ptr<commandBuffer> context::CreateCommandBuffer()

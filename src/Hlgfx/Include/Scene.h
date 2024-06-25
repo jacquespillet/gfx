@@ -30,6 +30,7 @@ struct scene : public object3D
     gfx::accelerationStructureHandle TLAS;
     gfx::bufferHandle VertexBuffer;
     gfx::bufferHandle IndexBuffer;
+    gfx::bufferHandle InstanceMaterialIndices;
     gfx::bufferHandle OffsetsBuffer;
 
 

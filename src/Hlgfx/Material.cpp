@@ -141,6 +141,7 @@ void pbrMaterial::SetBaseColorTexture(std::shared_ptr<texture> Texture)
 {
     this->AllTextures.erase(this->BaseColorTexture->ID);
     this->BaseColorTexture = Texture;
+    this->UniformData.ColourTextureID = Texture->ID;
     this->Uniforms->Uniforms[1].ResourceHandle = Texture->Handle;
     this->Uniforms->Update();
     this->AllTextures[this->BaseColorTexture->ID] = Texture;

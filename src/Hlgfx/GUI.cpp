@@ -53,11 +53,13 @@ void contextGUI::DrawObjectMenu()
     }
     if(ImGui::MenuItem("Delete"))
     {
+#if 0 //TODO
         if(Context->Scene->SceneGUI->NodeClicked)
         {
             Context->Scene->DeleteObject(Context->Scene->SceneGUI->NodeClicked);
             Context->Scene->SceneGUI->NodeClicked=nullptr;
         }
+#endif
     }
 }
 
@@ -294,8 +296,10 @@ void contextGUI::DrawAssetsWindow()
                 }
                 if(ImGui::Button("Delete") || ImGui::IsKeyPressed(ImGuiKey_Delete))
                 {
+#if 0 //TODO
                     Context->RemoveObjectFromProject(this->SelectedObject3D);
                     this->SelectedObject3D=nullptr;
+#endif
                 }
                 ImGui::EndChild();
             }
@@ -377,8 +381,10 @@ void contextGUI::DrawAssetsWindow()
                 }
                 if(ImGui::Button("Delete") || ImGui::IsKeyPressed(ImGuiKey_Delete))
                 {
+#if 0 //todo
                     Context->RemoveMaterialFromProject(this->SelectedMaterial);
                     this->SelectedMaterial = nullptr;
+#endif
                 }
                 this->SelectedMaterial->DrawGUI();
                 ImGui::EndChild();
@@ -470,8 +476,10 @@ void contextGUI::DrawAssetsWindow()
 
                 if(ImGui::Button("Delete") || ImGui::IsKeyPressed(ImGuiKey_Delete))
                 {
+#if 0 //TODO
                     Context->RemoveTextureFromProject(this->SelectedTexture);
                     this->SelectedTexture=nullptr;
+#endif
                 }
                 if(ImGui::Button("Duplicate") || (context::Get()->CtrlPressed && ImGui::IsKeyPressed(ImGuiKey_D)))
                 {
@@ -602,7 +610,7 @@ void contextGUI::DrawAssetsWindow()
                 }
                 if(ImGui::Button("Delete") || ImGui::IsKeyPressed(ImGuiKey_Delete))
                 {
-#if 0
+#if 0 //TODO
                     if(Context->Project.Scenes.size() > 1)
                     {
                         Context->Project.Scenes.erase(this->Context->Scene->UUID);
@@ -989,8 +997,10 @@ void object3D::DrawGUI()
 {
     if(ImGui::IsKeyPressed(ImGuiKey_Delete))
     {
+#if 0 //TODO
         context::Get()->Scene->DeleteObject(context::Get()->Scene->SceneGUI->NodeClicked);
         context::Get()->Scene->SceneGUI->NodeClicked=nullptr;
+#endif
         return;
     }
 

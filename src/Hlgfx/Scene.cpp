@@ -210,6 +210,7 @@ void scene::BuildTLAS()
 	std::vector<glm::mat4> Transforms;
     std::vector<s32> Instances;
     std::vector<gfx::accelerationStructureHandle> BLAS;
+    std::vector<u32> MaterialIDs;
     
     s32 i=0;
     for(auto &PipelineMeshes : Meshes)
@@ -218,6 +219,7 @@ void scene::BuildTLAS()
         {
             Transforms.push_back(Mesh->Transform.Matrices.LocalToWorld);
             Instances.push_back(Mesh->GeometryID);
+            MaterialIDs.push_back(Mesh->MaterialID);
         }
     }
 
@@ -249,8 +251,13 @@ void scene::BuildTLAS()
         {
             Vertices.push_back(Vertex);
         }
-
     }
+
+
+
+
+    this->InstanceMaterialIndices = gfx::context::Get()->CreateBuffer(MaterialIDs.size() * sizeof(u32), gfx::bufferUsage::StorageBuffer, gfx::memoryUsage::GpuOnly);
+    gfx::context::Get()->CopyDataToBuffer(this->InstanceMaterialIndices, MaterialIDs.data(), MaterialIDs.size() * sizeof(u32), 0);    
 
     this->IndexBuffer = gfx::context::Get()->CreateBuffer(Triangles.size() * sizeof(u32), gfx::bufferUsage::StorageBuffer, gfx::memoryUsage::GpuOnly);
     gfx::context::Get()->CopyDataToBuffer(this->IndexBuffer, Triangles.data(), Triangles.size() * sizeof(u32), 0);    

@@ -85,6 +85,9 @@ descriptorSetLayoutHandle CreateDescriptorSetLayout2(const descriptorSetLayoutCr
 
 
     u32 UsedBindings = 0;
+    std::vector<vk::DescriptorBindingFlags> DescriptorBindingFlags(Creation.NumBindings);
+    
+
     for(u32 R = 0; R < Creation.NumBindings; ++R)
     {
         descriptorBinding &Binding = DescriptorSetLayout->Bindings[R];
@@ -103,14 +106,19 @@ descriptorSetLayoutHandle CreateDescriptorSetLayout2(const descriptorSetLayoutCr
         VkBinding.descriptorType = InputBinding.Type;
         VkBinding.descriptorCount = InputBinding.Count;
         VkBinding.stageFlags = vk::ShaderStageFlagBits::eAll;
-        VkBinding.pImmutableSamplers = nullptr; 
+        VkBinding.pImmutableSamplers = nullptr;
+
+        if(Binding.Count>1)
+            DescriptorBindingFlags[R] = vk::DescriptorBindingFlagBits::ePartiallyBound;
 
         DescriptorSetLayout->UsedBindings[Binding.Start] = true;
     }
-
+    vk::DescriptorSetLayoutBindingFlagsCreateInfo BindingFlags;
+    BindingFlags.setPBindingFlags(DescriptorBindingFlags.data()).setBindingCount(DescriptorBindingFlags.size());
+    
     vk::DescriptorSetLayoutCreateInfo DescriptorSetLayoutCreateInfo;
     DescriptorSetLayoutCreateInfo.setBindingCount(UsedBindings)
-                                 .setPBindings(DescriptorSetLayout->BindingNativeHandle);
+                                 .setPBindings(DescriptorSetLayout->BindingNativeHandle).setPNext(&BindingFlags);
 
     
     DescriptorSetLayout->NativeHandle = VkData->Device.createDescriptorSetLayout(DescriptorSetLayoutCreateInfo);

@@ -5,6 +5,7 @@
 #define GBufferDescriptorSetBinding 4
 #define ReflectionsDescriptorSetBinding 5
 
+
 //Each of the following bindings must be unique
 //Because there's no descriptor set in opengl and d3d so no overlapping possible
 #define CameraBinding 0

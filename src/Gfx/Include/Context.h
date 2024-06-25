@@ -150,6 +150,10 @@ struct context
     renderPass *GetRenderPass(renderPassHandle Handle);
     framebuffer *GetFramebuffer(framebufferHandle Handle);
 
+
+    void UpdateBindlessTextureDescriptorSet(std::vector<imageHandle> &Images);
+    void UpdateBindlessBufferDescriptorSet(std::vector<bufferHandle> &Buffers);
+
 #if GFX_API==GFX_VK || GFX_API==GFX_D3D12
     accelerationStructure *GetAccelerationStructure(accelerationStructureHandle Handle);
 #endif

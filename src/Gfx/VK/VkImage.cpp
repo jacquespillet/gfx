@@ -361,7 +361,7 @@ void image::Init(u32 Width, u32 Height, format Format, imageUsage::value ImageUs
 
     VkImageData->Allocation = gfx::AllocateImage(ImageCreateInfo, MemoryUsage, &VkImageData->Handle);
     VkImageData->InitViews(*this, VkImageData->Handle,  Format);
-    VkImageData->InitSamplerDefault(Format);
+    VkImageData->InitSamplerDefault(Format, MipLevelCount);
     VkImageData->CurrentLayout = imageLayout::Undefined;
 
     if(ImageUsage & imageUsage::STORAGE)
@@ -508,7 +508,7 @@ void vkImageData::InitSamplerDefault(format Format, u32 MipLevelCount)
     vk::SamplerCreateInfo SamplerCreateInfo;
     SamplerCreateInfo.setMagFilter(vk::Filter::eLinear)
                      .setMinFilter(vk::Filter::eLinear)
-                     .setMipmapMode(vk::SamplerMipmapMode::eNearest)
+                     .setMipmapMode(MipLevelCount > 1 ? vk::SamplerMipmapMode::eLinear : vk::SamplerMipmapMode::eNearest)
                      .setAddressModeU(vk::SamplerAddressMode::eClampToBorder)
                      .setAddressModeV(vk::SamplerAddressMode::eClampToBorder)
                      .setAddressModeW(vk::SamplerAddressMode::eClampToBorder)

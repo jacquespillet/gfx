@@ -201,15 +201,14 @@ void main()
 
     FinalEmissive = Emission;
     
+    float MipCount = floor(log2(max(texDim.x, texDim.y))) + 1; 
+    vec3 FresnelTerm = FresnelShlick(MaterialInfo.f0, MaterialInfo.F90, NdotV);
+    vec3 ReflectionColour = MaterialInfo.PerceptualRoughness < 0.8 ? textureLod(samplerReflections, inUV, (MaterialInfo.PerceptualRoughness * MipCount)).rgb : vec3(0);
 
     vec3 Color = vec3(0);
-    Color = FinalEmissive + FinalDiffuse + FinalSpecular;
-    Color *= Visibility;
-
-    Color += textureLod(samplerReflections, inUV, 1 - MaterialInfo.AlphaRoughness).rgb;
-    
+    Color = FinalEmissive + FinalDiffuse + FinalSpecular + ReflectionColour * FresnelTerm;
+    Color *= Visibility;    
     OutputColor = vec4(Tonemap(Color, 1), BaseColor.a);	
-	
 }
 
 #endif

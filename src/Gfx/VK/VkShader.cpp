@@ -221,7 +221,7 @@ void ParseSpirv(void* ByteCode, sz ByteCodeSize, spirvParseResult &Results)
         // if(DescriptorBinding->set == device::BindlessSet && 
         //     (DescriptorBinding->binding == device::BindlessTextureBinding || DescriptorBinding->binding == (device::BindlessTextureBinding+1)))
         // {
-        //     continue;
+    //     continue;
         // }
 
         //Create a descriptor set layout
@@ -232,6 +232,12 @@ void ParseSpirv(void* ByteCode, sz ByteCodeSize, spirvParseResult &Results)
         Binding.Start = DescriptorBinding->binding;
         Binding.Count = 1;
         Binding.Name = DescriptorBinding->name;
+
+        //TODO: Not good!
+        if (DescriptorBinding->array.dims_count == 1) 
+        {
+            Binding.Count = 1024;
+        }
 
         if(DescriptorBinding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
             Binding.Type = vk::DescriptorType::eUniformBuffer;

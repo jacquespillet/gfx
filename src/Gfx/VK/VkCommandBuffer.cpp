@@ -400,6 +400,9 @@ void commandBuffer::BindUniformGroup(std::shared_ptr<uniformGroup> Group, u32 Bi
 
 void commandBuffer::BindRayTracingPipeline(pipelineHandle PipelineHandle)
 {
+    context *Context = context::Get();
+    GET_CONTEXT(VkData, Context);
+
     GET_API_DATA(VkCommandBufferData, vkCommandBufferData, this);
 
     pipeline *Pipeline = context::Get()->GetPipeline(PipelineHandle);
@@ -408,7 +411,12 @@ void commandBuffer::BindRayTracingPipeline(pipelineHandle PipelineHandle)
     vk::CommandBuffer CommandBuffer = (std::static_pointer_cast<vkCommandBufferData>(this->ApiData))->Handle;
     CommandBuffer.bindPipeline(vk::PipelineBindPoint::eRayTracingKHR, VkPipeline->NativeHandle);
 
-    VkCommandBufferData->BoundPipeline = PipelineHandle;
+    CommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingKHR, VkPipeline->PipelineLayout, 6, 1, 
+        &VkData->BindlessTextureDescriptorSet, 0, 0);
+    CommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eRayTracingKHR, VkPipeline->PipelineLayout, 7, 1, 
+        &VkData->BindlessBufferDescriptorSet, 0, 0);
+
+    VkCommandBufferData->BoundPipeline = PipelineHandle; 
 }
 
 void commandBuffer::RayTrace(u32 Width, u32 Height, u32 Depth, u32 RayGenIndex, u32 HitIndex, u32 MissIndex)

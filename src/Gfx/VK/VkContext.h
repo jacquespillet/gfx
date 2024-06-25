@@ -74,6 +74,15 @@ struct vkData
     u64 GetBufferDeviceAddress(bufferHandle Buffer);
 
     // RTX
+    // vk::DescriptorPool BindlessDescriptorPool;
+    
+    vk::DescriptorSetLayout  BindlessTexturesDescriptorSetLayout;
+    vk::DescriptorSet BindlessTextureDescriptorSet;
+    
+    vk::DescriptorSetLayout  BindlessBuffersDescriptorSetLayout;
+    vk::DescriptorSet BindlessBufferDescriptorSet;
+        
+
     vk::PhysicalDeviceRayTracingPipelinePropertiesKHR RayTracingPipelineProperties;
     vk::PhysicalDeviceAccelerationStructureFeaturesKHR AccelerationStructureFeatures;
     void *DevicePNextChain=nullptr;
