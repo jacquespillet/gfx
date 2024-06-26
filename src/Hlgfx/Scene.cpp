@@ -342,6 +342,17 @@ void scene::BuildGlobalGeometryBuffers()
     gfx::context::Get()->CopyDataToBuffer(this->OffsetsBuffer, GeometryOffsets.data(), GeometryOffsets.size() * sizeof(u32), 0); 
 }
 
+void scene::UpdateGlobalMaterialBuffer()
+{
+    std::vector<u32> MaterialIDs;
+    for(auto &Instance : this->Instances)
+    {
+        MaterialIDs.push_back(Instance->MaterialID);
+    }
+
+    gfx::context::Get()->CopyDataToBuffer(this->InstanceMaterialIndices, MaterialIDs.data(), MaterialIDs.size() * sizeof(u32), 0);
+ }
+
 void scene::BuildTLAS()
 {
 	std::vector<glm::mat4> Transforms;

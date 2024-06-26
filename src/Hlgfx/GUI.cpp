@@ -379,12 +379,10 @@ void contextGUI::DrawAssetsWindow()
                 }
                 if(ImGui::Button("Delete") || ImGui::IsKeyPressed(ImGuiKey_Delete))
                 {
-#if 0 //todo
-                    Context->RemoveMaterialFromProject(this->SelectedMaterial);
+                    Context->QueueRemoveMaterialFromProject(this->SelectedMaterial);
                     this->SelectedMaterial = nullptr;
-#endif
                 }
-                this->SelectedMaterial->DrawGUI();
+                if(this->SelectedMaterial) this->SelectedMaterial->DrawGUI();
                 ImGui::EndChild();
             }
             ImGui::Separator();
@@ -993,10 +991,8 @@ void object3D::DrawGUI()
 {
     if(ImGui::IsKeyPressed(ImGuiKey_Delete))
     {
-#if 0 //TODO
         context::Get()->Scene->QueueDeleteObject(context::Get()->Scene->SceneGUI->NodeClicked);
         context::Get()->Scene->SceneGUI->NodeClicked=nullptr;
-#endif
         return;
     }
 

@@ -77,12 +77,12 @@ struct context
     static const u32 GBufferPipeline = 2;
     static const u32 CompositionPipeline = 4;
     static const u32 RTXReflectionsPipeline = 5;
-
-    static const b8 UseRTX = true;
-
     std::unordered_map<u32, gfx::pipelineHandle> Pipelines;
+
+
     std::unordered_map<materialFlags::bits, gfx::pipelineHandle> AllPipelines;
 
+    static const b8 UseRTX = true;
     // Shadow consts
     static const u32 ShadowMapSize = 1024;
     static const gfx::format ShadowMapFormat = gfx::format::D32_SFLOAT;
@@ -96,13 +96,11 @@ struct context
         std::vector<std::shared_ptr<object3D>> Objects;
         std::vector<std::shared_ptr<scene>> Scenes;
     } Project;
+
     void AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level = 0);
     void RemoveObjectFromProject(std::shared_ptr<object3D> Object);
     void AddMaterialToProject(std::shared_ptr<material> Material);
-    void RemoveMaterialFromProject(std::shared_ptr<material> Material);
     void AddTextureToProject(std::shared_ptr<texture> Texture);
-    void QueueRemoveTextureFromProject(std::shared_ptr<texture> Texture);
-    void ProcessTextureDeletionQueue();
     void AddMeshToProject(std::shared_ptr<mesh> Object);
     void AddSceneToProject(std::shared_ptr<scene> Scene);
     void AddGeometryToProject(std::shared_ptr<indexedGeometryBuffers> Geometry);
@@ -111,7 +109,6 @@ struct context
     void NewProject();
     void UpdateBindlessDescriptors();
 
-    std::vector<u32> TextureFreeIndices;
 
     std::shared_ptr<scene> Scene = nullptr;
 
@@ -130,8 +127,17 @@ struct context
     //Shadow maps
     std::shared_ptr<hlgfx::shadowsRenderer> ShadowsRenderer;
 
-    // TODO: Make that a struct with the texture array, and make that a stack
+    
+    // TODO: Make that a struct with the main array, and make that a stack
+    void QueueRemoveTextureFromProject(std::shared_ptr<texture> Texture);
+    void QueueRemoveMaterialFromProject(std::shared_ptr<material> Material);
+    void ProcessTextureDeletionQueue();
+    void ProcessMaterialDeletionQueue();
     std::vector<std::shared_ptr<texture>> TextureDeletionQueue;
+    std::vector<std::shared_ptr<material>> MaterialDeletionQueue;
+    std::vector<u32> TextureFreeIndices;
+    std::vector<u32> MaterialFreeIndices;
+
 
     // RenderType
     enum class rendererType

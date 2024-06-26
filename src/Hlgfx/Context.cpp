@@ -211,9 +211,7 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     else if(Singleton->RenderType == rendererType::deferred)
         Singleton->MainRenderer = std::make_shared<hlgfx::deferredRenderer>();
 
-// #if 0 //TODO
-    // Singleton->NoMaterial = std::make_shared<pbrMaterial>("NO_MATERIAL");
-// #endif
+    Singleton->NoMaterial = std::make_shared<pbrMaterial>("NO_MATERIAL");
 
     return Singleton;
 }
@@ -516,62 +514,80 @@ void context::AddMaterialToProject(std::shared_ptr<material> Material)
 #endif
 }
 
-void context::RemoveMaterialFromProject(std::shared_ptr<material> Material)
+void context::QueueRemoveMaterialFromProject(std::shared_ptr<material> Material)
 {
-#if 0 //todo
-    //remove from materiails
-    this->Project.Materials.erase(Material->ID);
-    //remove from all objects
-    for(auto &Object : this->Project.Objects)
-    {
-        std::queue<std::shared_ptr<object3D>> ToCheck;
-        ToCheck.push(Object.second);
-        while(!ToCheck.empty())
-        {
-            std::shared_ptr<object3D> Obj = ToCheck.back();
-            ToCheck.pop();
-            std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Obj);
-            if(Mesh)
-            {
-                if(Mesh->Material.get() == Material.get())
-                {
-                    Mesh->Material = this->NoMaterial;
-                }
-            }
-
-            for (sz i = 0; i < Obj->Children.size(); i++)
-            {
-                ToCheck.push(Obj->Children[i]);
-            }
-        }
-    }
-
-    //remove from all scenes
-    for(auto &Scene : this->Project.Scenes)
-    {
-        std::queue<std::shared_ptr<object3D>> ToCheck;
-        ToCheck.push(Scene.second);
-        while(!ToCheck.empty())
-        {
-            std::shared_ptr<object3D> Obj = ToCheck.back();
-            ToCheck.pop();
-            std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Obj);
-            if(Mesh)
-            {
-                if(Mesh->Material.get() == Material.get())
-                {
-                    Mesh->Material = this->NoMaterial;
-                }
-            }
-
-            for (sz i = 0; i < Obj->Children.size(); i++)
-            {
-                ToCheck.push(Obj->Children[i]);
-            }
-        }
-    }    
-#endif
+    MaterialDeletionQueue.push_back(Material);
 }
+
+void context::ProcessMaterialDeletionQueue()
+{
+    if(MaterialDeletionQueue.size() > 0) GfxContext->WaitIdle();
+
+    for(auto &Material : MaterialDeletionQueue)
+    {
+        //Replace the material with NoMaterial, and add to the free indices
+        this->Project.Materials[Material->ID] = NoMaterial->Clone();
+        this->Project.Materials[Material->ID]->ID = Material->ID;
+        this->MaterialFreeIndices.push_back(Material->ID);
+
+        // When deleting a material, we fallback to the first material in the project.
+        std::shared_ptr<material> DefaultMat = Project.Materials[0];
+        
+        //remove that material from all objects
+        for(auto &Object : this->Project.Objects)
+        {
+            std::queue<std::shared_ptr<object3D>> ToCheck;
+            ToCheck.push(Object);
+            while(!ToCheck.empty())
+            {
+                std::shared_ptr<object3D> Obj = ToCheck.back();
+                ToCheck.pop();
+                std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Obj);
+                if(Mesh)
+                {
+                    if(Mesh->MaterialID == DefaultMat->ID)
+                    {
+                        Mesh->MaterialID = DefaultMat->ID;
+                    }
+                }
+                for (sz i = 0; i < Obj->Children.size(); i++)
+                {
+                    ToCheck.push(Obj->Children[i]);
+                }
+            }
+        }                
+        //remove from all scenes
+        for(auto &Scene : this->Project.Scenes)
+        {
+            std::queue<std::shared_ptr<object3D>> ToCheck;
+            ToCheck.push(Scene);
+            while(!ToCheck.empty())
+            {
+                std::shared_ptr<object3D> Obj = ToCheck.back();
+                ToCheck.pop();
+                std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Obj);
+                if(Mesh)
+                {
+                    if(Mesh->MaterialID == DefaultMat->ID)
+                    {
+                        Mesh->MaterialID = DefaultMat->ID;
+                    }
+                }
+
+                for (sz i = 0; i < Obj->Children.size(); i++)
+                {
+                    ToCheck.push(Obj->Children[i]);
+                }
+            }
+        }     
+    }
+    MaterialDeletionQueue.clear();
+  
+    UpdateBindlessDescriptors();
+    if(UseRTX) Scene->UpdateGlobalMaterialBuffer();
+}
+
+
 
 void context::AddGeometryToProject(std::shared_ptr<indexedGeometryBuffers> Geometry)
 {
@@ -782,6 +798,7 @@ void context::EndFrame()
     Scene->OnAfterRender(this->CurrentCamera);
     
     ProcessTextureDeletionQueue();    
+    ProcessMaterialDeletionQueue();    
     GfxContext->ProcessDeletionQueue();
 }
 

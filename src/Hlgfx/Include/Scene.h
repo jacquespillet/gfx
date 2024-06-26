@@ -40,6 +40,7 @@ struct scene : public object3D
     void BuildTLAS();
     void RebuildTLAS();
     void BuildGlobalGeometryBuffers();
+    void UpdateGlobalMaterialBuffer();
     std::vector<u32> InstancesToUpdate;
     void UpdateBLASInstance(u32 Index);
     void RemoveBLASInstancesInObject(std::shared_ptr<object3D> Object);
