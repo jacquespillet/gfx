@@ -27,6 +27,39 @@ void RemoveMeshInChildren(std::vector<std::shared_ptr<mesh>>& Children, std::sha
     }
 }
 
+void ClearObject(std::shared_ptr<object3D> Object)
+{
+    //If it's a mesh, we have to remove it from the meshes array
+    std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Object);
+    if(Mesh)
+    {
+        gfx::pipelineHandle MeshPipeline = context::Get()->Project.Materials[Mesh->MaterialID]->PipelineHandle;
+        RemoveMeshInChildren(context::Get()->Scene->Meshes[MeshPipeline], Mesh);
+    }
+
+    std::shared_ptr<light> Light = std::dynamic_pointer_cast<light>(Object);
+    if(Light)
+    {
+        std::shared_ptr<scene> Scene = context::Get()->Scene;
+        std::shared_ptr<light> *Lights = Scene->Lights; 
+        auto it = std::find(Lights, Lights + MaxLights, Light);
+        sz Inx = std::distance(Lights, it);
+        if (it != Lights + MaxLights) {
+            memcpy(&Scene->SceneBufferData.Lights[Inx], &Scene->SceneBufferData.Lights[Inx+1], (Scene->SceneBufferData.LightCount - Inx-1) * sizeof(light::lightData));
+            memcpy(&Scene->Lights[Inx], &Scene->Lights[Inx+1], (Scene->SceneBufferData.LightCount - Inx-1) * sizeof(std::shared_ptr<light>));
+        }        
+        Scene->SceneBufferData.LightCount--;
+        Scene->UpdateLightsAfter(Inx);
+    }
+
+    //Delete all children
+    for (sz i = 0; i < Object->Children.size(); i++)
+    {
+        ClearObject(Object->Children[i]);
+    }
+    Object->Children.clear();
+}
+
 scene::scene(std::string Name) : object3D(Name)
 {
     this->ID = context::Get()->Project.Scenes.size();
@@ -190,6 +223,7 @@ void scene::OnRender(std::shared_ptr<camera> Camera)
 }
 void scene::OnAfterRender(std::shared_ptr<camera> Camera)
 {
+    // Update lights
     for (sz i = 0; i < this->SceneBufferData.LightCount; i++)
     {
         if(this->Lights[i]->Transform.HasChanged)
@@ -202,6 +236,7 @@ void scene::OnAfterRender(std::shared_ptr<camera> Camera)
 
     object3D::OnAfterRender(Camera);
 
+    // Update TLAS
     if(InstancesToUpdate.size() > 0)
     {
         std::vector<glm::mat4*> Transforms(InstancesToUpdate.size());
@@ -223,6 +258,36 @@ void scene::OnAfterRender(std::shared_ptr<camera> Camera)
                 }
             }
         }
+    }
+
+    while(ObjectDeletionQueue.size() > 0)
+    {
+        gfx::context::Get()->WaitIdle();
+        std::shared_ptr<object3D> Object = ObjectDeletionQueue.top();
+        ObjectDeletionQueue.pop();
+        //Go through all children and delete them recursively
+        if(this->SceneGUI->NodeClicked == Object) this->SceneGUI->NodeClicked = nullptr;
+        this->RemoveBLASInstancesInObject(Object);
+
+        ClearObject(Object);
+        Object->Parent->DeleteChild(Object);    
+    }
+
+    if(QueueBuildTLAS) 
+    {
+        gfx::context::Get()->WaitIdle();
+        this->RebuildTLAS();
+        QueueBuildTLAS=false;
+        for(auto *UniformGroup : gfx::uniformGroup::AllUniforms)
+        {
+            for(auto &Uniform : UniformGroup->Uniforms)
+            {
+                if(Uniform.ResourceHandle == this->TLAS)
+                {
+                    UniformGroup->Update();
+                }
+            }
+        }        
     }
 }
 
@@ -284,8 +349,10 @@ void scene::BuildTLAS()
     std::vector<gfx::accelerationStructureHandle> BLAS;
     std::vector<u32> MaterialIDs;
 
+    u32 i=0;
     for(auto &Instance : this->Instances)
     {
+        Instance->MeshSceneID = i++;
         Transforms.push_back(Instance->Transform.Matrices.LocalToWorld);
         Instances.push_back(Instance->GeometryID);
         MaterialIDs.push_back(Instance->MaterialID);
@@ -300,6 +367,34 @@ void scene::BuildTLAS()
     TLAS = gfx::context::Get()->CreateTLAccelerationStructure(Transforms, BLAS, Instances);   
 }
 
+void scene::RebuildTLAS()
+{
+	std::vector<glm::mat4> Transforms;
+    std::vector<s32> Instances;
+    std::vector<gfx::accelerationStructureHandle> BLAS;
+    std::vector<u32> MaterialIDs;
+
+    u32 i=0;
+    for(auto &Instance : this->Instances)
+    {
+        Instance->MeshSceneID = i++;
+        Transforms.push_back(Instance->Transform.Matrices.LocalToWorld);
+        Instances.push_back(Instance->GeometryID);
+        MaterialIDs.push_back(Instance->MaterialID);
+    }
+
+    gfx::context::Get()->DestroyBuffer(this->InstanceMaterialIndices);
+    this->InstanceMaterialIndices = gfx::context::Get()->CreateBuffer(MaterialIDs.size() * sizeof(u32), gfx::bufferUsage::StorageBuffer, gfx::memoryUsage::GpuOnly);
+    gfx::context::Get()->CopyDataToBuffer(this->InstanceMaterialIndices, MaterialIDs.data(), MaterialIDs.size() * sizeof(u32), 0);    
+
+    for(auto &Geometry : context::Get()->Project.Geometries)
+    {
+        BLAS.push_back(Geometry->BLAS);
+    }
+
+    gfx::context::Get()->UpdateTLAccelerationStructure(TLAS , Transforms, BLAS, Instances);   
+}
+
 void scene::UpdateBLASInstance(u32 Index)
 {
     InstancesToUpdate.push_back(Index);
@@ -307,38 +402,45 @@ void scene::UpdateBLASInstance(u32 Index)
 
 
 
-void ClearObject(std::shared_ptr<object3D> Object)
+std::vector<std::shared_ptr<mesh>> GetInstanceInObject(std::shared_ptr<object3D> Object)
 {
-    //If it's a mesh, we have to remove it from the meshes array
+    std::vector<std::shared_ptr<mesh>> Result;
     std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Object);
-    if(Mesh)
+    if(Mesh) Result.push_back(Mesh);
+        
+    for(auto &Child : Object->Children)
     {
-        gfx::pipelineHandle MeshPipeline = context::Get()->Project.Materials[Mesh->MaterialID]->PipelineHandle;
-        RemoveMeshInChildren(context::Get()->Scene->Meshes[MeshPipeline], Mesh);
+        std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(Child);
+        if(Mesh) Result.push_back(Mesh);
+        std::vector<std::shared_ptr<mesh>> ChildMeshes = GetInstanceInObject(Child);
+        for(auto &ChildMesh : ChildMeshes)
+        {
+            Result.push_back(ChildMesh);
+        }
     }
-
-    std::shared_ptr<light> Light = std::dynamic_pointer_cast<light>(Object);
-    if(Light)
-    {
-        std::shared_ptr<scene> Scene = context::Get()->Scene;
-        std::shared_ptr<light> *Lights = Scene->Lights; 
-        auto it = std::find(Lights, Lights + MaxLights, Light);
-        sz Inx = std::distance(Lights, it);
-        if (it != Lights + MaxLights) {
-            memcpy(&Scene->SceneBufferData.Lights[Inx], &Scene->SceneBufferData.Lights[Inx+1], (Scene->SceneBufferData.LightCount - Inx-1) * sizeof(light::lightData));
-            memcpy(&Scene->Lights[Inx], &Scene->Lights[Inx+1], (Scene->SceneBufferData.LightCount - Inx-1) * sizeof(std::shared_ptr<light>));
-        }        
-        Scene->SceneBufferData.LightCount--;
-        Scene->UpdateLightsAfter(Inx);
-    }
-
-    //Delete all children
-    for (sz i = 0; i < Object->Children.size(); i++)
-    {
-        ClearObject(Object->Children[i]);
-    }
-    Object->Children.clear();
+    return Result;
 }
+
+void scene::RemoveBLASInstancesInObject(std::shared_ptr<object3D> Object)
+{
+    // We need to find the index of each mesh in the global instances buffer
+    std::vector<std::shared_ptr<mesh>> Instances = GetInstanceInObject(Object);
+    for(auto &Instance : Instances)
+    {
+        this->Instances.erase(
+            std::remove(this->Instances.begin(), this->Instances.end(), Instance), this->Instances.end());
+    }
+    u32 i=0;
+    for(auto &Instance : Instances)
+    {
+        Instance->MeshSceneID = i++;
+    }
+    this->QueueBuildTLAS=true;
+}
+
+
+
+
 
 void scene::Clear()
 {
@@ -351,12 +453,9 @@ void scene::Clear()
     this->SceneGUI->NodeClicked=nullptr;
 }
 
-void scene::DeleteObject(std::shared_ptr<object3D> Object)
+void scene::QueueDeleteObject(std::shared_ptr<object3D> Object)
 {
-    //Go through all children and delete them recursively
-    if(this->SceneGUI->NodeClicked == Object) this->SceneGUI->NodeClicked = nullptr;
-    ClearObject(Object);
-    Object->Parent->DeleteChild(Object);
+    ObjectDeletionQueue.push(Object);
 }
 
 

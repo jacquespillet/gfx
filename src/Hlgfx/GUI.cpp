@@ -53,13 +53,11 @@ void contextGUI::DrawObjectMenu()
     }
     if(ImGui::MenuItem("Delete"))
     {
-#if 0 //TODO
         if(Context->Scene->SceneGUI->NodeClicked)
         {
-            Context->Scene->DeleteObject(Context->Scene->SceneGUI->NodeClicked);
+            Context->Scene->QueueDeleteObject(Context->Scene->SceneGUI->NodeClicked);
             Context->Scene->SceneGUI->NodeClicked=nullptr;
         }
-#endif
     }
 }
 
@@ -996,7 +994,7 @@ void object3D::DrawGUI()
     if(ImGui::IsKeyPressed(ImGuiKey_Delete))
     {
 #if 0 //TODO
-        context::Get()->Scene->DeleteObject(context::Get()->Scene->SceneGUI->NodeClicked);
+        context::Get()->Scene->QueueDeleteObject(context::Get()->Scene->SceneGUI->NodeClicked);
         context::Get()->Scene->SceneGUI->NodeClicked=nullptr;
 #endif
         return;

@@ -1360,6 +1360,16 @@ accelerationStructureHandle context::CreateTLAccelerationStructure(std::vector<g
     return Handle;
 }
  
+void context::UpdateTLAccelerationStructure(accelerationStructureHandle ASHandle, std::vector<glm::mat4> &Transforms, std::vector<accelerationStructureHandle> &AccelerationStructures, std::vector<int> Instances)
+{
+    accelerationStructure *AS = GetAccelerationStructure(ASHandle);
+    AS->ApiData = std::make_shared<vkAccelerationStructureData>();
+    GET_API_DATA(VkASData, vkAccelerationStructureData, AS);
+    *VkASData = vkAccelerationStructureData(); 
+  
+    VkASData->InitTLAS(Transforms, AccelerationStructures, Instances);
+}
+ 
 void context::UpdateAccelerationStructureInstances(accelerationStructureHandle ASHandle, std::vector<u32> &Indices, std::vector<m4x4*> &Transforms)
 {
     accelerationStructure *AS = GetAccelerationStructure(ASHandle);
@@ -1367,6 +1377,7 @@ void context::UpdateAccelerationStructureInstances(accelerationStructureHandle A
   
     VkASData->UpdateInstanceTransform(Indices, Transforms);
 }
+
 
 void context::DestroyPipeline(pipelineHandle PipelineHandle)
 {

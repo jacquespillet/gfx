@@ -69,7 +69,7 @@ pbrMaterial::pbrMaterial(std::string Name) : material(Name)
     Context->BindUniformsToPipeline(this->Uniforms, this->PipelineHandle, MaterialDescriptorSetBinding);
     Uniforms->Update();
 
-    this->UniformData.RoughnessFactor = 1.0f;
+    this->UniformData.RoughnessFactor = 0.0f;
     this->UniformData.MetallicFactor = 0.0f;
     this->UniformData.EmissiveFactor = 0.0f;
     this->UniformData.AlphaCutoff = 0.0f;
@@ -114,7 +114,7 @@ pbrMaterial::pbrMaterial(std::string Name, materialFlags::bits Flags) : material
     Context->BindUniformsToPipeline(this->Uniforms, this->PipelineHandle, MaterialDescriptorSetBinding);
     Uniforms->Update();
 
-    this->UniformData.RoughnessFactor = 1.0f;
+    this->UniformData.RoughnessFactor = 0.0f;
     this->UniformData.MetallicFactor = 0.0f;
     this->UniformData.EmissiveFactor = 0.0f;
     this->UniformData.AlphaCutoff = 0.0f;
@@ -408,7 +408,11 @@ std::shared_ptr<material> material::Deserialize(const std::string &FileName)
     {
         Result->SetEmissiveTexture(defaultTextures::BlackTexture);
     }
-    
+
+#if 1 // TODO: REmove
+    Result->UniformData.RoughnessFactor=0.01f;
+#endif
+
     Result->Uniforms->Update();
     Result->Update();
     return Result;

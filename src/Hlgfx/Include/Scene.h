@@ -38,9 +38,12 @@ struct scene : public object3D
 
 
     void BuildTLAS();
+    void RebuildTLAS();
     void BuildGlobalGeometryBuffers();
     std::vector<u32> InstancesToUpdate;
     void UpdateBLASInstance(u32 Index);
+    void RemoveBLASInstancesInObject(std::shared_ptr<object3D> Object);
+    b8 QueueBuildTLAS=false;
     
 
     virtual std::shared_ptr<object3D> Clone(b8 CloneUUID) override;
@@ -66,8 +69,10 @@ struct scene : public object3D
     std::shared_ptr<sceneGUI> SceneGUI;
 
     void Clear();
-    void DeleteObject(std::shared_ptr<object3D> Object);
     
+    void QueueDeleteObject(std::shared_ptr<object3D> Object);
+    std::stack<std::shared_ptr<object3D>> ObjectDeletionQueue;
+
     virtual void Serialize(std::string FilePath) override;
     virtual void Serialize(std::ofstream &FileStream) override;
 };
