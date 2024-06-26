@@ -305,6 +305,8 @@ void scene::UpdateBLASInstance(u32 Index)
     InstancesToUpdate.push_back(Index);
 }
 
+
+
 void ClearObject(std::shared_ptr<object3D> Object)
 {
     //If it's a mesh, we have to remove it from the meshes array

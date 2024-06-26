@@ -1,4 +1,5 @@
 #include "../Include/Image.h"
+#include "../Include/Memory.h"
 #include <algorithm>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -12,7 +13,10 @@ imageData ImageFromFile(char *FileName)
     imageData Result;
 
     s32 Width, Height, ChannelCount;
-    Result.Data = stbi_load(FileName, &Width, &Height, &ChannelCount, 4);
+    
+    u8 *Data = stbi_load(FileName, &Width, &Height, &ChannelCount, 4);
+    Result.Data = (u8*)AllocateMemory(Width * Height * 4);
+    memcpy(Result.Data, Data, Width * Height * 4);
     assert(Result.Data);
     Result.Width = Width;
     Result.Height = Height;
@@ -20,8 +24,8 @@ imageData ImageFromFile(char *FileName)
     Result.Format = format::R8G8B8A8_UNORM;
     Result.Type = type::UNSIGNED_BYTE;
     Result.DataSize = Width * Height * Result.ChannelCount * sizeof(u8);
+    stbi_image_free(Data);
     return Result;
-    //TODO: Memory leak here !  
 }
 u32 image::GetMipLevelWidth(u32 MipLevel)
 {

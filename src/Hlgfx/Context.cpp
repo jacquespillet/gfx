@@ -171,6 +171,13 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
 
     defaultTextures::WhiteTexture = std::make_shared<texture>("White", gfx::InvalidHandle);
     defaultTextures::WhiteTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
+    
+    Color = {255,0,255,255};
+    for (sz i = 0; i < TexWidth * TexHeight; i++)
+        ColorData[i] = Color;
+
+    defaultTextures::PurpleTexture = std::make_shared<texture>("Purple", gfx::InvalidHandle);
+    defaultTextures::PurpleTexture->Handle = Singleton->GfxContext->CreateImage(ImageData, ImageCreateInfo);
 
     
 
@@ -204,10 +211,9 @@ std::shared_ptr<context> context::Initialize(u32 Width, u32 Height)
     else if(Singleton->RenderType == rendererType::deferred)
         Singleton->MainRenderer = std::make_shared<hlgfx::deferredRenderer>();
 
-#if 0 //TODO
-    Singleton->NoMaterial = std::make_shared<pbrMaterial>("NO_MATERIAL");
-    Singleton->NoMaterial->UUID = "NO_MATERIAL";
-#endif
+// #if 0 //TODO
+    // Singleton->NoMaterial = std::make_shared<pbrMaterial>("NO_MATERIAL");
+// #endif
 
     return Singleton;
 }
@@ -325,17 +331,12 @@ gfx::pipelineCreation context::GetPipelineCreation(materialFlags::bits Flags, gf
     PipelineCreation.DepthStencil.DepthWriteEnable = (u8)((b8)(Flags & materialFlags::DepthWriteEnabled));
     PipelineCreation.DepthStencil.DepthComparison = gfx::compareOperation::LessOrEqual;
     
-    // TODO: If GBuffer, add blend states
     if(Flags & materialFlags::GBuffer)
     {
         for(int i=0; i<4; i++)
         {
             gfx::blendState &BlendState = PipelineCreation.BlendState.AddBlendState();
             BlendState.BlendEnabled = false;
-            // BlendState.BlendEnabled = Flags & materialFlags::BlendEnabled;
-            // BlendState.SeparateBlend=false;
-            // if(BlendState.BlendEnabled)
-            //     BlendState.SetColor(gfx::blendFactor::SrcAlpha, gfx::blendFactor::OneMinusSrcAlpha, gfx::blendOperation::Add);
         }
     }
     else
@@ -425,41 +426,66 @@ void context::AddTextureToProject(std::shared_ptr<texture> Texture)
     this->Project.Textures[Texture->ID] = Texture;
 }
 
-void context::RemoveTextureFromProject(std::shared_ptr<texture> Texture)
+void context::QueueRemoveTextureFromProject(std::shared_ptr<texture> Texture)
 {
-#if 0 //todo
-    //Remove from project
-    this->Project.Textures.erase(Texture->ID);
-
-    //remove from all materials
-    for (auto &Material : this->Project.Materials)
+    TextureDeletionQueue.push_back(Texture);
+}
+void context::ProcessTextureDeletionQueue()
+{
+    for(auto &Texture : TextureDeletionQueue)
     {
-        std::shared_ptr<pbrMaterial> PBRMaterial = std::dynamic_pointer_cast<pbrMaterial>(Material.second);
-        if(PBRMaterial)
+        u32 IndexToFree=(u32)-1;
+        for(u32 i=0; i<this->Project.Textures.size(); i++)
         {
-            if(PBRMaterial->BaseColorTexture.get() == Texture.get())
+            if(this->Project.Textures[i] == Texture) 
             {
-                PBRMaterial->SetBaseColorTexture(defaultTextures::BlackTexture);
-            }
-            if(PBRMaterial->MetallicRoughnessTexture.get() == Texture.get())
-            {
-                PBRMaterial->SetMetallicRoughnessTexture(defaultTextures::BlackTexture);
-            }
-            if(PBRMaterial->NormalTexture.get() == Texture.get())
-            {
-                PBRMaterial->SetNormalTexture(defaultTextures::BlackTexture);
-            }
-            if(PBRMaterial->OcclusionTexture.get() == Texture.get())
-            {
-                PBRMaterial->SetOcclusionTexture(defaultTextures::BlackTexture);
-            }
-            if(PBRMaterial->EmissiveTexture.get() == Texture.get())
-            {
-                PBRMaterial->SetEmissiveTexture(defaultTextures::BlackTexture);
+                IndexToFree = i;
+                break;
             }
         }
+
+        this->TextureFreeIndices.push_back(IndexToFree);
+        //remove from all materials
+        for (auto &Material : this->Project.Materials)
+        {
+            std::shared_ptr<pbrMaterial> PBRMaterial = std::dynamic_pointer_cast<pbrMaterial>(Material);
+            if(PBRMaterial)
+            {
+                if(PBRMaterial->BaseColorTexture.get() == Texture.get())
+                {
+                    PBRMaterial->UniformData.UseBaseColor = 0;
+                    PBRMaterial->SetBaseColorTexture(defaultTextures::BlackTexture);
+                    this->Project.Textures[IndexToFree] = defaultTextures::BlackTexture;                    
+                }
+                if(PBRMaterial->MetallicRoughnessTexture.get() == Texture.get())
+                {
+                    PBRMaterial->UniformData.UseMetallicRoughnessTexture = 0;
+                    PBRMaterial->SetMetallicRoughnessTexture(defaultTextures::BlackTexture);
+                    this->Project.Textures[IndexToFree] = defaultTextures::BlackTexture;                    
+                }
+                if(PBRMaterial->NormalTexture.get() == Texture.get())
+                {
+                    PBRMaterial->UniformData.UseNormalTexture = 0;
+                    PBRMaterial->SetNormalTexture(defaultTextures::BlueTexture);
+                    this->Project.Textures[IndexToFree] = defaultTextures::BlueTexture;                    
+                }
+                if(PBRMaterial->OcclusionTexture.get() == Texture.get())
+                {
+                    PBRMaterial->UniformData.UseOcclusionTexture = 0;
+                    PBRMaterial->SetOcclusionTexture(defaultTextures::BlackTexture);
+                    this->Project.Textures[IndexToFree] = defaultTextures::BlackTexture;                    
+                }
+                if(PBRMaterial->EmissiveTexture.get() == Texture.get())
+                {
+                    PBRMaterial->UniformData.UseEmissionTexture = 0;
+                    PBRMaterial->SetEmissiveTexture(defaultTextures::BlackTexture);
+                    this->Project.Textures[IndexToFree] = defaultTextures::BlackTexture;                    
+                }
+            }
+        }
+        UpdateBindlessDescriptors();
     }
-#endif
+    TextureDeletionQueue.clear();
 }
 
 void context::AddMaterialToProject(std::shared_ptr<material> Material)
@@ -662,6 +688,33 @@ void context::AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level)
     }
 }
 
+void context::UpdateBindlessDescriptors()
+{
+    //Update bindless descriptor sets
+    std::vector<gfx::imageHandle> Images;
+    std::vector<std::shared_ptr<texture>> &Textures = context::Get()->Project.Textures;
+    u32 i=0;
+    for(auto &Texture : Textures)
+    {
+        Texture->ID = i++;
+        Images.push_back(Texture->Handle);
+    }
+    gfx::context::Get()->UpdateBindlessTextureDescriptorSet(Images);
+
+
+    //Update bindless descriptor sets
+    std::vector<gfx::bufferHandle> MaterialBuffers;
+    std::vector<std::shared_ptr<material>> &Materials = context::Get()->Project.Materials;
+    i=0;
+    for(auto &Material : Materials)
+    {   
+        Material->ID = i++;
+        MaterialBuffers.push_back(Material->UniformBuffer);
+    }
+    gfx::context::Get()->UpdateBindlessBufferDescriptorSet(MaterialBuffers);
+}
+
+
 void context::NewProject()
 {
     this->Project.Geometries.clear();
@@ -725,7 +778,11 @@ void context::EndFrame()
     GfxContext->EndFrame();
     GfxContext->Present();   
      
+
     Scene->OnAfterRender(this->CurrentCamera);
+    
+    ProcessTextureDeletionQueue();    
+    GfxContext->ProcessDeletionQueue();
 }
 
 void context::SetRenderFlags(materialFlags::bits &Flags)
@@ -828,6 +885,7 @@ void context::Cleanup()
     NoMaterial = nullptr;
 
     //TODO: Is that necessary ?
+    GfxContext->DestroyImage(defaultTextures::PurpleTexture->Handle);
     GfxContext->DestroyImage(defaultTextures::BlackTexture->Handle);
     GfxContext->DestroyImage(defaultTextures::WhiteTexture->Handle);
     GfxContext->DestroyImage(defaultTextures::BlueTexture->Handle);

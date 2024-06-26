@@ -39,9 +39,9 @@ struct scene : public object3D
 
     void BuildTLAS();
     void BuildGlobalGeometryBuffers();
-    
     std::vector<u32> InstancesToUpdate;
     void UpdateBLASInstance(u32 Index);
+    
 
     virtual std::shared_ptr<object3D> Clone(b8 CloneUUID) override;
 

@@ -112,7 +112,7 @@ void deferredRenderer::SceneUpdate()
 {
     if(context::UseRTX)
     {
-
+        // TODO: Move that to Scene().
         // Build uniforms for ray tracing pipeline
         UniformsReflection->Reset()
             .AddAccelerationStructure(16, context::Get()->Scene->TLAS)

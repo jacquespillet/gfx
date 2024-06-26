@@ -476,10 +476,8 @@ void contextGUI::DrawAssetsWindow()
 
                 if(ImGui::Button("Delete") || ImGui::IsKeyPressed(ImGuiKey_Delete))
                 {
-#if 0 //TODO
-                    Context->RemoveTextureFromProject(this->SelectedTexture);
+                    Context->QueueRemoveTextureFromProject(this->SelectedTexture);
                     this->SelectedTexture=nullptr;
-#endif
                 }
                 if(ImGui::Button("Duplicate") || (context::Get()->CtrlPressed && ImGui::IsKeyPressed(ImGuiKey_D)))
                 {

@@ -166,7 +166,7 @@ void vkAccelerationStructureData::InitTLAS(std::vector<glm::mat4> &Transforms, s
 
         VkAccelerationStructureInstanceKHR &BLASInstance = Instances[i];
         BLASInstance.transform = TransformMatrix;
-        BLASInstance.instanceCustomIndex = MeshIndex; //TODO: Is that right ?
+        BLASInstance.instanceCustomIndex = MeshIndex;
         BLASInstance.mask = 0xFF;
         BLASInstance.instanceShaderBindingTableRecordOffset = 0; //This defines which hit shader gets called for this instance.
         BLASInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;

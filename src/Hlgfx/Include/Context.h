@@ -101,13 +101,17 @@ struct context
     void AddMaterialToProject(std::shared_ptr<material> Material);
     void RemoveMaterialFromProject(std::shared_ptr<material> Material);
     void AddTextureToProject(std::shared_ptr<texture> Texture);
-    void RemoveTextureFromProject(std::shared_ptr<texture> Texture);
+    void QueueRemoveTextureFromProject(std::shared_ptr<texture> Texture);
+    void ProcessTextureDeletionQueue();
     void AddMeshToProject(std::shared_ptr<mesh> Object);
     void AddSceneToProject(std::shared_ptr<scene> Scene);
     void AddGeometryToProject(std::shared_ptr<indexedGeometryBuffers> Geometry);
     void SaveProjectToFile(const char *FolderName);
     void LoadProjectFromFile(const char *FolderName);
     void NewProject();
+    void UpdateBindlessDescriptors();
+
+    std::vector<u32> TextureFreeIndices;
 
     std::shared_ptr<scene> Scene = nullptr;
 
@@ -125,6 +129,9 @@ struct context
 
     //Shadow maps
     std::shared_ptr<hlgfx::shadowsRenderer> ShadowsRenderer;
+
+    // TODO: Make that a struct with the texture array, and make that a stack
+    std::vector<std::shared_ptr<texture>> TextureDeletionQueue;
 
     // RenderType
     enum class rendererType

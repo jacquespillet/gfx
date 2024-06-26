@@ -11,6 +11,7 @@
 
 namespace hlgfx
 {
+std::shared_ptr<texture> defaultTextures::PurpleTexture = nullptr;
 std::shared_ptr<texture> defaultTextures::BlackTexture = nullptr;
 std::shared_ptr<texture> defaultTextures::BlueTexture = nullptr;
 std::shared_ptr<texture> defaultTextures::WhiteTexture = nullptr;

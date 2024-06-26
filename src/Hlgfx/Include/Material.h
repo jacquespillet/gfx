@@ -31,6 +31,7 @@ struct defaultTextures
     static std::shared_ptr<texture> BlackTexture;
     static std::shared_ptr<texture> BlueTexture;
     static std::shared_ptr<texture> WhiteTexture;
+    static std::shared_ptr<texture> PurpleTexture;
 };
 
 struct material

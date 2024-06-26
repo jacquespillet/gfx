@@ -833,6 +833,7 @@ void context::EndFrame()
 {
     GET_CONTEXT(VkData, this);
     VkData->VirtualFrames->EndFrame();
+    ProcessDeletionQueue();
 }
 
 void context::Present()
