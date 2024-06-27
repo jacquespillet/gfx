@@ -376,25 +376,6 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
     /*DeviceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);    
     DeviceExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);*/
 
-    //Extensions
-    vk::PhysicalDeviceDescriptorIndexingFeatures DescriptorIndexingFeatures;
-    DescriptorIndexingFeatures.descriptorBindingPartiallyBound = true;
-    DescriptorIndexingFeatures.shaderInputAttachmentArrayDynamicIndexing = true;
-    DescriptorIndexingFeatures.shaderUniformTexelBufferArrayDynamicIndexing = true;
-    DescriptorIndexingFeatures.shaderStorageTexelBufferArrayDynamicIndexing = true;
-    DescriptorIndexingFeatures.shaderUniformBufferArrayNonUniformIndexing = true;
-    DescriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = true;
-    DescriptorIndexingFeatures.shaderStorageBufferArrayNonUniformIndexing = true;
-    DescriptorIndexingFeatures.shaderStorageImageArrayNonUniformIndexing = true;
-    DescriptorIndexingFeatures.shaderInputAttachmentArrayDynamicIndexing = true;
-    DescriptorIndexingFeatures.shaderUniformTexelBufferArrayNonUniformIndexing = true;
-    DescriptorIndexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = true;
-    DescriptorIndexingFeatures.descriptorBindingSampledImageUpdateAfterBind = true;
-    DescriptorIndexingFeatures.descriptorBindingStorageImageUpdateAfterBind = true;
-    DescriptorIndexingFeatures.descriptorBindingStorageBufferUpdateAfterBind = true;
-    DescriptorIndexingFeatures.descriptorBindingUniformTexelBufferUpdateAfterBind = true;
-    DescriptorIndexingFeatures.descriptorBindingStorageTexelBufferUpdateAfterBind = true;
-
 
     vk::DeviceCreateInfo DeviceCreateInfo = {};
 
@@ -427,6 +408,7 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
 
         VkData->EnabledAccelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
         VkData->EnabledAccelerationStructureFeatures.accelerationStructure=  VK_TRUE;
+        // VkData->EnabledAccelerationStructureFeatures.accelerationStructureHostCommands=  VK_TRUE;
         VkData->EnabledAccelerationStructureFeatures.pNext = &VkData->EnabledRayTracingPipelineFeatures;
 
         VkData->EnabledDescriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
@@ -440,6 +422,7 @@ std::shared_ptr<context> context::Initialize(context::initializeInfo &Initialize
 
         vk::PhysicalDeviceProperties2 DeviceProperties2;
         DeviceProperties2.pNext = &VkData->RayTracingPipelineProperties;
+        VkData->RayTracingPipelineProperties.pNext = &VkData->AccelerationStructureProperties;
         VkData->PhysicalDevice.getProperties2(&DeviceProperties2);
         
 
@@ -1363,9 +1346,7 @@ accelerationStructureHandle context::CreateTLAccelerationStructure(std::vector<g
 void context::UpdateTLAccelerationStructure(accelerationStructureHandle ASHandle, std::vector<glm::mat4> &Transforms, std::vector<accelerationStructureHandle> &AccelerationStructures, std::vector<int> Instances)
 {
     accelerationStructure *AS = GetAccelerationStructure(ASHandle);
-    AS->ApiData = std::make_shared<vkAccelerationStructureData>();
     GET_API_DATA(VkASData, vkAccelerationStructureData, AS);
-    *VkASData = vkAccelerationStructureData(); 
   
     VkASData->InitTLAS(Transforms, AccelerationStructures, Instances);
 }

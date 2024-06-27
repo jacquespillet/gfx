@@ -108,7 +108,14 @@ void main()
                 + Barycentric.y * UV1
                 + Barycentric.z * UV2;
 
-    vec4 Colour = texture(Textures[TextureIndex], UV);
+    // vec4 Colour = texture(Textures[TextureIndex], UV);
+    vec4 BaseColour = vec4(1,1,1,1);
+    BaseColour = vec4(Materials[MaterialIndex].BaseColorFactor, Materials[MaterialIndex].OpacityFactor);
+
+    vec4 SampleCol = texture(Textures[TextureIndex], UV);
+    SampleCol.rgb = pow(SampleCol.rgb, vec3(2.2,2.2,2.2));
+    SampleCol = mix(vec4(1,1,1,1), SampleCol, Materials[MaterialIndex].UseBaseColor);
+    BaseColour.rgb *= SampleCol.rgb;
 
     // 
 
@@ -119,6 +126,6 @@ void main()
 
     // vec3 Normal = V0.NormalUvY.xyz;
     // hitValue = vec3(UV, 0);
-    hitValue = Colour.xyz;
+    hitValue = BaseColour.xyz;
     // hitValue = Normal;
 }

@@ -4,6 +4,7 @@
 #include "Include/Util.h"
 #include "Include/Light.h"
 #include "Loaders/GLTF.h"
+#include "Include/Renderer.h"
 #include "Loaders/Assimp.h"
 #include <nfd.h>
 #include <glm/ext.hpp>
@@ -287,6 +288,7 @@ void contextGUI::DrawAssetsWindow()
                 if(ImGui::Button("Add To Scene"))
                 {
                     this->Context->Scene->AddObject(this->SelectedObject3D->Clone(false));
+                    this->Context->Scene->QueueBuildTLAS=true;
                 }
                 if(ImGui::Button("Duplicate") || (context::Get()->CtrlPressed && ImGui::IsKeyPressed(ImGuiKey_D)))
                 {
@@ -883,6 +885,7 @@ void sceneGUI::DrawNodeChildren(hlgfx::object3D *Object)
             NodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)i, NodeFlags, Object->Children[i]->Name.c_str(), i);
         }
 
+        std::shared_ptr<object3D> PrevNodeClicked = NodeClicked;
         if(ImGui::IsItemFocused())
         {
             NodeClicked = Object->Children[i];
@@ -891,6 +894,22 @@ void sceneGUI::DrawNodeChildren(hlgfx::object3D *Object)
         {
             if(NodeClicked == Object->Children[i] && ImGui::IsItemClicked(0) && !this->IsRenaming) NodeClicked = nullptr;
             else NodeClicked = Object->Children[i];
+        }
+
+        if(NodeClicked != PrevNodeClicked)
+        {
+            if(std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(NodeClicked))
+            {
+                Mesh->UniformData.Selected.x = 1;
+                Mesh->UniformData.Selected.y = 0;
+                Mesh->Transform.HasChanged=true;
+            }
+            if(std::shared_ptr<mesh> Mesh = std::dynamic_pointer_cast<mesh>(PrevNodeClicked))
+            {
+                Mesh->UniformData.Selected.x = 0;
+                Mesh->UniformData.Selected.y = 0;
+                Mesh->Transform.HasChanged=true;
+            }
         }
 
         ImGui::PushID(i);
@@ -1010,6 +1029,14 @@ void object3D::DrawGUI()
     {
         if(ImGui::BeginTabItem("Object"))
         {
+            if(mesh *Mesh = dynamic_cast<mesh*>(this))
+            {
+                if(Mesh->UniformData.Selected.y)
+                {
+                    Mesh->UniformData.Selected.y=0;
+                    Mesh->Transform.HasChanged=true;
+                }            
+            }
             v3f LocalPosition = Transform.LocalValues.LocalPosition;
             v3f LocalRotation = Transform.LocalValues.LocalRotation;
             v3f LocalScale = Transform.LocalValues.LocalScale;
@@ -1038,6 +1065,11 @@ void mesh::DrawCustomGUI()
 {
     if (ImGui::BeginTabItem("Material"))
     {
+        if(!this->UniformData.Selected.y)
+        {
+            this->UniformData.Selected.y=1;
+            this->Transform.HasChanged=true;
+        }
         DrawMaterial();
         ImGui::EndTabItem();
     }

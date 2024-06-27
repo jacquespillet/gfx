@@ -481,7 +481,7 @@ void context::ProcessTextureDeletionQueue()
                 }
             }
         }
-        UpdateBindlessDescriptors();
+        if(context::UseRTX) UpdateBindlessDescriptors();
     }
     TextureDeletionQueue.clear();
 }
@@ -523,6 +523,7 @@ void context::ProcessMaterialDeletionQueue()
 {
     if(MaterialDeletionQueue.size() > 0) GfxContext->WaitIdle();
 
+    bool DidDelete = MaterialDeletionQueue.size();
     for(auto &Material : MaterialDeletionQueue)
     {
         //Replace the material with NoMaterial, and add to the free indices
@@ -581,10 +582,12 @@ void context::ProcessMaterialDeletionQueue()
             }
         }     
     }
-    MaterialDeletionQueue.clear();
-  
-    UpdateBindlessDescriptors();
-    if(UseRTX) Scene->UpdateGlobalMaterialBuffer();
+    if(UseRTX && DidDelete)
+    {
+        MaterialDeletionQueue.clear();
+        UpdateBindlessDescriptors();
+        Scene->UpdateGlobalMaterialBuffer();
+    }
 }
 
 
@@ -706,6 +709,7 @@ void context::AddObjectToProject(std::shared_ptr<object3D> Object, u32 Level)
 
 void context::UpdateBindlessDescriptors()
 {
+    if(!context::UseRTX) return;
     //Update bindless descriptor sets
     std::vector<gfx::imageHandle> Images;
     std::vector<std::shared_ptr<texture>> &Textures = context::Get()->Project.Textures;

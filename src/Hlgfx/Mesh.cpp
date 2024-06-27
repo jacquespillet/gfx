@@ -100,6 +100,11 @@ void mesh::OnEarlyUpdate()
         if(OldPipeline != Material->PipelineHandle)
             context::Get()->Scene->UpdateMeshPipeline(OldPipeline, this);
     }
+    if(Material->ShouldUpdateUniforms)
+    {
+        Material->Uniforms->Update();
+        Material->ShouldUpdateUniforms=false;
+    }
 }
 
 

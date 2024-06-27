@@ -144,7 +144,7 @@ void pbrMaterial::SetBaseColorTexture(std::shared_ptr<texture> Texture)
     this->BaseColorTexture = Texture;
     this->UniformData.ColourTextureID = Texture->ID;
     this->Uniforms->Uniforms[1].ResourceHandle = Texture->Handle;
-    this->Uniforms->Update();
+    this->ShouldUpdateUniforms = true;;
     this->AllTextures[this->BaseColorTexture->ID] = Texture;
 }
 
@@ -153,7 +153,7 @@ void pbrMaterial::SetMetallicRoughnessTexture(std::shared_ptr<texture> Texture)
     this->AllTextures.erase(this->MetallicRoughnessTexture->ID);
     this->MetallicRoughnessTexture = Texture;
     this->Uniforms->Uniforms[2].ResourceHandle = Texture->Handle;
-    this->Uniforms->Update();    
+    this->ShouldUpdateUniforms = true;;    
     this->AllTextures[this->MetallicRoughnessTexture->ID] = Texture;
 }
 
@@ -162,7 +162,7 @@ void pbrMaterial::SetOcclusionTexture(std::shared_ptr<texture> Texture)
     this->AllTextures.erase(this->OcclusionTexture->ID);
     this->OcclusionTexture = Texture;
     this->Uniforms->Uniforms[3].ResourceHandle = Texture->Handle;
-    this->Uniforms->Update(); 
+    this->ShouldUpdateUniforms = true;; 
     this->AllTextures[this->OcclusionTexture->ID] = Texture;
 }
 
@@ -171,7 +171,7 @@ void pbrMaterial::SetNormalTexture(std::shared_ptr<texture> Texture)
     this->AllTextures.erase(this->NormalTexture->ID);
     this->NormalTexture = Texture;
     this->Uniforms->Uniforms[4].ResourceHandle = Texture->Handle;
-    this->Uniforms->Update();
+    this->ShouldUpdateUniforms = true;;
     this->AllTextures[this->NormalTexture->ID] = Texture;
 }
 
@@ -180,7 +180,7 @@ void pbrMaterial::SetEmissiveTexture(std::shared_ptr<texture> Texture)
     this->AllTextures.erase(this->EmissiveTexture->ID);
     this->EmissiveTexture = Texture;
     this->Uniforms->Uniforms[5].ResourceHandle = Texture->Handle;
-    this->Uniforms->Update();
+    this->ShouldUpdateUniforms = true;;
     this->AllTextures[this->EmissiveTexture->ID] = Texture;
 }
 

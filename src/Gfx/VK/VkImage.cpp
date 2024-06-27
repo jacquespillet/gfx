@@ -524,7 +524,6 @@ void vkImageData::InitSamplerDefault(format Format, u32 MipLevelCount)
     if(Format == format::R32G32B32A32_UINT) //TODO: Add all the formats that do not support compare
     {
         SamplerCreateInfo.setMagFilter(vk::Filter::eNearest).setMinFilter(vk::Filter::eNearest);
-        // SamplerCreateInfo.setCompareEnable(true);
     }
     auto Vulkan = context::Get();
     GET_CONTEXT(VkData, context::Get());

@@ -34,10 +34,12 @@ struct mesh : public object3D
     u32 GeometryID;
     u32 MeshSceneID;
 
+
     struct uniformData
     {
         m4x4 ModelMatrix;
         m4x4 NormalMatrix;
+        v4i Selected = v4i(0);
     } UniformData;
     gfx::bufferHandle UniformBuffer;
     std::shared_ptr<gfx::uniformGroup> Uniforms;

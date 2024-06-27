@@ -55,6 +55,7 @@ DECLARE_UNIFORM_BUFFER(ModelDescriptorSetBinding, ModelBinding, Model)
 {
     mat4 ModelMatrix;    
     mat4 NormalMatrix;    
+    ivec4 ModelSelected;
 };
 
 struct materialData
@@ -148,6 +149,7 @@ void main()
 {
     // //Color
     vec4 BaseColor = GetBaseColor(Input.FragUV);
+    if(ModelSelected.x > 0 && ModelSelected.y == 0) BaseColor = vec4(1, 1, 0, 1);
     if(BaseColor.a < Material.AlphaCutoff)
         discard;
 

@@ -4,6 +4,7 @@
 #include "Include/Scene.h"
 #include "Include/GUI.h"
 #include "Include/Mesh.h"
+#include "Include/Renderer.h"
 #include "Include/Material.h"
 #include "Include/Bindings.h"
 #include <imgui.h>
@@ -236,29 +237,6 @@ void scene::OnAfterRender(std::shared_ptr<camera> Camera)
 
     object3D::OnAfterRender(Camera);
 
-    // Update TLAS
-    if(InstancesToUpdate.size() > 0)
-    {
-        std::vector<glm::mat4*> Transforms(InstancesToUpdate.size());
-        for(int i=0; i<InstancesToUpdate.size(); i++)
-        {
-            Transforms[i] = &this->Instances[InstancesToUpdate[i]]->Transform.Matrices.LocalToWorld;
-        }
-        gfx::context::Get()->UpdateAccelerationStructureInstances(this->TLAS, InstancesToUpdate, Transforms);
-        InstancesToUpdate.clear();
-
-        // For all uniform groups that reference this TLAS, go and update them
-        for(auto *UniformGroup : gfx::uniformGroup::AllUniforms)
-        {
-            for(auto &Uniform : UniformGroup->Uniforms)
-            {
-                if(Uniform.ResourceHandle == this->TLAS)
-                {
-                    UniformGroup->Update();
-                }
-            }
-        }
-    }
 
     while(ObjectDeletionQueue.size() > 0)
     {
@@ -273,21 +251,41 @@ void scene::OnAfterRender(std::shared_ptr<camera> Camera)
         Object->Parent->DeleteChild(Object);    
     }
 
-    if(QueueBuildTLAS) 
+    if(context::UseRTX && (QueueBuildTLAS || InstancesToUpdate.size() > 0)) 
     {
+
+        
         gfx::context::Get()->WaitIdle();
-        this->RebuildTLAS();
-        QueueBuildTLAS=false;
-        for(auto *UniformGroup : gfx::uniformGroup::AllUniforms)
+        if(this->TLAS == gfx::InvalidHandle) //Build tlas for the first time
+            this->BuildTLAS();
+        else if(InstancesToUpdate.size() > 0) //Only update instance positions
         {
-            for(auto &Uniform : UniformGroup->Uniforms)
+            std::vector<glm::mat4*> Transforms(InstancesToUpdate.size());
+            for(int i=0; i<InstancesToUpdate.size(); i++)
             {
-                if(Uniform.ResourceHandle == this->TLAS)
-                {
-                    UniformGroup->Update();
-                }
+                Transforms[i] = &this->Instances[InstancesToUpdate[i]]->Transform.Matrices.LocalToWorld;
             }
-        }        
+            gfx::context::Get()->UpdateAccelerationStructureInstances(this->TLAS, InstancesToUpdate, Transforms);
+            InstancesToUpdate.clear();
+        }
+        else //Rebuilt the whole TLAS
+            this->RebuildTLAS();
+        
+        this->BuildGlobalGeometryBuffers(); //Rebuild the global buffers accessed in the closest hit shader
+        
+        context::Get()->MainRenderer->SceneUpdate(); // Update the uniforms that use the AS
+
+        QueueBuildTLAS=false;
+        // for(auto *UniformGroup : gfx::uniformGroup::AllUniforms)
+        // {
+        //     for(auto &Uniform : UniformGroup->Uniforms)
+        //     {
+        //         if(Uniform.ResourceHandle == this->TLAS)
+        //         {
+        //             UniformGroup->Update();
+        //         }
+        //     }
+        // }        
     }
 }
 
@@ -298,6 +296,8 @@ void scene::DrawGUI()
 
 void scene::BuildGlobalGeometryBuffers()
 {
+    if(!context::UseRTX) return;
+
     std::vector<vertex> Vertices;
     std::vector<u32> Triangles;
     std::vector<u32> GeometryOffsets;
@@ -344,6 +344,8 @@ void scene::BuildGlobalGeometryBuffers()
 
 void scene::UpdateGlobalMaterialBuffer()
 {
+    if(!context::UseRTX) return;
+
     std::vector<u32> MaterialIDs;
     for(auto &Instance : this->Instances)
     {
@@ -355,6 +357,8 @@ void scene::UpdateGlobalMaterialBuffer()
 
 void scene::BuildTLAS()
 {
+    if(!context::UseRTX) return;
+
 	std::vector<glm::mat4> Transforms;
     std::vector<s32> Instances;
     std::vector<gfx::accelerationStructureHandle> BLAS;
@@ -380,6 +384,8 @@ void scene::BuildTLAS()
 
 void scene::RebuildTLAS()
 {
+    if(!context::UseRTX) return;
+
 	std::vector<glm::mat4> Transforms;
     std::vector<s32> Instances;
     std::vector<gfx::accelerationStructureHandle> BLAS;
@@ -408,6 +414,8 @@ void scene::RebuildTLAS()
 
 void scene::UpdateBLASInstance(u32 Index)
 {
+    if(!context::UseRTX) return;
+
     InstancesToUpdate.push_back(Index);
 }
 

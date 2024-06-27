@@ -491,26 +491,36 @@ void LoadMaterials(tinygltf::Model &GLTFModel, context::project &Project, u32 Ba
         PBRMat->UniformData.EmissiveFactor = 1.0f;
         PBRMat->UniformData.AlphaCutoff = GLTFMaterial.alphaCutoff;
         PBRMat->UniformData.OcclusionStrength = 1.0f;
+        PBRMat->UniformData.UseBaseColor = 0.0f;
+        PBRMat->UniformData.UseEmissionTexture = 0.0f;
+        PBRMat->UniformData.UseMetallicRoughnessTexture = 0.0f;
+        PBRMat->UniformData.UseNormalTexture = 0.0f;
+        PBRMat->UniformData.UseOcclusionTexture = 0.0f;
  
         if(PBR.baseColorTexture.index > -1)
         {
             PBRMat->SetBaseColorTexture(Project.Textures[BaseTextureID + PBR.baseColorTexture.index]);
+            PBRMat->UniformData.UseBaseColor = 1.0f;
         }
         if(PBR.metallicRoughnessTexture.index > -1)
         {
             PBRMat->SetMetallicRoughnessTexture(Project.Textures[BaseTextureID + PBR.metallicRoughnessTexture.index]);
+            PBRMat->UniformData.UseMetallicRoughnessTexture = 1.0f;
         }
         if(GLTFMaterial.occlusionTexture.index > -1)
         {
             PBRMat->SetOcclusionTexture(Project.Textures[BaseTextureID + GLTFMaterial.occlusionTexture.index]);
+            PBRMat->UniformData.UseOcclusionTexture = 1.0f;
         }
         if(GLTFMaterial.normalTexture.index > -1)
         {
             PBRMat->SetNormalTexture(Project.Textures[BaseTextureID + GLTFMaterial.normalTexture.index]);
+            PBRMat->UniformData.UseNormalTexture = 1.0f;
         }
         if(GLTFMaterial.emissiveTexture.index > -1)
         {
             PBRMat->SetEmissiveTexture(Project.Textures[BaseTextureID + GLTFMaterial.emissiveTexture.index]);
+            PBRMat->UniformData.UseEmissionTexture = 1.0f;
         }
 
         PBRMat->Update();

@@ -87,6 +87,7 @@ struct vkData
         
 
     vk::PhysicalDeviceRayTracingPipelinePropertiesKHR RayTracingPipelineProperties;
+    vk::PhysicalDeviceAccelerationStructurePropertiesKHR AccelerationStructureProperties;
     vk::PhysicalDeviceAccelerationStructureFeaturesKHR AccelerationStructureFeatures;
     void *DevicePNextChain=nullptr;
     VkPhysicalDeviceRayQueryFeaturesKHR EnabledRayQueryFeatures{};

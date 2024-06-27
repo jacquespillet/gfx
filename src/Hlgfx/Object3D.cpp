@@ -168,11 +168,16 @@ void object3D::OnRenderGUI(std::shared_ptr<camera> Camera)
     
         ImGuiIO& io = ImGui::GetIO();
         ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+
+        mesh *Mesh = dynamic_cast<mesh*>(this);
+        if(Mesh) ModelMatrix = glm::translate(ModelMatrix, context::Get()->Project.Geometries[Mesh->GeometryID]->Centroid);
+                            
         if(ImGuizmo::Manipulate(glm::value_ptr(Camera->Data.ViewMatrix), glm::value_ptr(Camera->Data.ProjectionMatrix), context::Get()->GUI->CurrentGizmoOperation, context::Get()->GUI->CurrentGizmoMode, glm::value_ptr(ModelMatrix), NULL, NULL))
         {
             //Remove the localToWorld component
+            if(Mesh) ModelMatrix = glm::translate(ModelMatrix, -context::Get()->Project.Geometries[Mesh->GeometryID]->Centroid);
             ModelMatrix = glm::inverse(this->Transform.Parent->Matrices.LocalToWorld) * ModelMatrix;
-
+            
             //Decompose the matrix
             v3f matrixTranslation, matrixRotation, matrixScale;
             ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(ModelMatrix), glm::value_ptr(matrixTranslation), glm::value_ptr(matrixRotation), glm::value_ptr(matrixScale));

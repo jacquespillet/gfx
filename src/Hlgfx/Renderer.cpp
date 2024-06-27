@@ -136,7 +136,7 @@ void deferredRenderer::SceneUpdate()
         {
             Images.push_back(Texture->Handle);
         }
-        gfx::context::Get()->UpdateBindlessTextureDescriptorSet(Images);
+        if(Textures.size() >0) gfx::context::Get()->UpdateBindlessTextureDescriptorSet(Images);
 
 
         //Update bindless descriptor sets

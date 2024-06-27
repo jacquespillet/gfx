@@ -8,6 +8,8 @@
 namespace gfx
 {
 
+gfx::bufferHandle vkAccelerationStructureData::ScratchBuffer = gfx::InvalidHandle;
+
 void vkAccelerationStructureData::CreateAS(vk::AccelerationStructureBuildSizesInfoKHR Size, vk::AccelerationStructureTypeKHR Type)
 {
     GET_CONTEXT(VkContext, context::Get());
@@ -16,13 +18,18 @@ void vkAccelerationStructureData::CreateAS(vk::AccelerationStructureBuildSizesIn
     {
         BufferHandle = context::Get()->CreateBuffer(Size.accelerationStructureSize, gfx::bufferUsage::AccelerationStructureStorage | gfx::bufferUsage::ShaderDeviceAddress, gfx::memoryUsage::GpuOnly);
     }
-    if((VkAccelerationStructureKHR)this->AccelerationStructure != VK_NULL_HANDLE)
+    else
     {
-        VkContext->Device.waitIdle();
-        VkContext->_vkDestroyAccelerationStructureKHR(VkContext->Device, AccelerationStructure, nullptr);        
-
-        context::Get()->DestroyBuffer(this->BufferHandle);
-        BufferHandle = context::Get()->CreateBuffer(Size.accelerationStructureSize, gfx::bufferUsage::AccelerationStructureStorage | gfx::bufferUsage::ShaderDeviceAddress, gfx::memoryUsage::GpuOnly);
+    // if((VkAccelerationStructureKHR)this->AccelerationStructure != VK_NULL_HANDLE)
+    //     VkContext->Device.waitIdle();
+    //     VkContext->_vkDestroyAccelerationStructureKHR(VkContext->Device, AccelerationStructure, nullptr);        
+        
+        buffer *Buffer = context::Get()->GetBuffer(BufferHandle);
+        // if(Size.accelerationStructureSize >= Buffer->Size)
+        // {
+            context::Get()->QueueDestroyBuffer(this->BufferHandle);
+            BufferHandle = context::Get()->CreateBuffer(Size.accelerationStructureSize, gfx::bufferUsage::AccelerationStructureStorage | gfx::bufferUsage::ShaderDeviceAddress, gfx::memoryUsage::GpuOnly);
+        // }
     }
 
 
@@ -102,7 +109,9 @@ void vkAccelerationStructureData::InitBLAS(uint32_t NumVertices, uint32_t Stride
     // Allocate the AS
     CreateAS(AccelerationStructureBuildSizeInfo, vk::AccelerationStructureTypeKHR::eBottomLevel);
 
-    bufferHandle ScratchBufferHandle = Context->CreateBuffer(AccelerationStructureBuildSizeInfo.buildScratchSize, gfx::bufferUsage::StorageBuffer | gfx::bufferUsage::ShaderDeviceAddress, gfx::memoryUsage::GpuOnly);
+    
+    if(vkAccelerationStructureData::ScratchBuffer == gfx::InvalidHandle)
+       vkAccelerationStructureData::ScratchBuffer  = Context->CreateBuffer(1 << 25, gfx::bufferUsage::StorageBuffer | gfx::bufferUsage::ShaderDeviceAddress, gfx::memoryUsage::GpuOnly);
 
     // Create the acceleration structure
     vk::AccelerationStructureBuildGeometryInfoKHR AccelerationBuildGeometryInfo;
@@ -112,7 +121,7 @@ void vkAccelerationStructureData::InitBLAS(uint32_t NumVertices, uint32_t Stride
     AccelerationBuildGeometryInfo.dstAccelerationStructure = AccelerationStructure;
     AccelerationBuildGeometryInfo.geometryCount=1;
     AccelerationBuildGeometryInfo.pGeometries = &AccelerationStructureGeometry;
-    AccelerationBuildGeometryInfo.scratchData.deviceAddress = VkContext->GetBufferDeviceAddress(ScratchBufferHandle);
+    AccelerationBuildGeometryInfo.scratchData.deviceAddress = VkContext->GetBufferDeviceAddress(vkAccelerationStructureData::ScratchBuffer);
 
     VkAccelerationStructureBuildRangeInfoKHR AccelerationStructureBuildRangeInfo {};
     AccelerationStructureBuildRangeInfo.primitiveCount = NumPrimitives;
@@ -123,9 +132,9 @@ void vkAccelerationStructureData::InitBLAS(uint32_t NumVertices, uint32_t Stride
 
     // Build on the GPU
     // TODO: Add a host AS build capability as well
+#if 1
     auto CommandBuffer = Context->GetImmediateCommandBuffer();
     CommandBuffer->Begin();
-
     GET_API_DATA(VkCommandBufferData, vkCommandBufferData, CommandBuffer);
     vk::CommandBuffer VkCommandBufferHandle = VkCommandBufferData->Handle;
     VkContext->_vkCmdBuildAccelerationStructuresKHR(
@@ -134,10 +143,17 @@ void vkAccelerationStructureData::InitBLAS(uint32_t NumVertices, uint32_t Stride
             (VkAccelerationStructureBuildGeometryInfoKHR*)&AccelerationBuildGeometryInfo,
             AccelerationBuildStructureRangeInfos.data());
     CommandBuffer->End();
-
     Context->SubmitCommandBufferImmediate(CommandBuffer);
+#else
+    VkContext->_vkBuildAccelerationStructuresKHR(
+        VkContext->Device,
+        VK_NULL_HANDLE,
+        1,
+        (VkAccelerationStructureBuildGeometryInfoKHR*)&AccelerationBuildGeometryInfo,
+        AccelerationBuildStructureRangeInfos.data()
+    );
+#endif
 
-    Context->DestroyBuffer(ScratchBufferHandle);
     Context->DestroyBuffer(MatrixBufferHandle);
 }
 
@@ -207,7 +223,9 @@ void vkAccelerationStructureData::InitTLAS(std::vector<glm::mat4> &Transforms, s
 
     CreateAS(AccelerationStructureBuildSizesInfo, vk::AccelerationStructureTypeKHR::eTopLevel);
 
-    bufferHandle ScratchBufferHandle = Context->CreateBuffer(AccelerationStructureBuildSizesInfo.buildScratchSize, gfx::bufferUsage::StorageBuffer | gfx::bufferUsage::ShaderDeviceAddress, gfx::memoryUsage::GpuOnly);
+    
+    if(vkAccelerationStructureData::ScratchBuffer == gfx::InvalidHandle)
+       vkAccelerationStructureData::ScratchBuffer  = Context->CreateBuffer(1 << 25, gfx::bufferUsage::StorageBuffer | gfx::bufferUsage::ShaderDeviceAddress, gfx::memoryUsage::GpuOnly);
 
     vk::AccelerationStructureBuildGeometryInfoKHR AccelerationBuildGeometryInfo;
     AccelerationBuildGeometryInfo.type = vk::AccelerationStructureTypeKHR::eTopLevel;
@@ -216,7 +234,7 @@ void vkAccelerationStructureData::InitTLAS(std::vector<glm::mat4> &Transforms, s
     AccelerationBuildGeometryInfo.dstAccelerationStructure = AccelerationStructure;
     AccelerationBuildGeometryInfo.geometryCount=1;
     AccelerationBuildGeometryInfo.pGeometries=&AccelerationStructureGeometry;
-    AccelerationBuildGeometryInfo.scratchData.deviceAddress = VkContext->GetBufferDeviceAddress(ScratchBufferHandle);
+    AccelerationBuildGeometryInfo.scratchData.deviceAddress = VkContext->GetBufferDeviceAddress(ScratchBuffer);
     
 
     VkAccelerationStructureBuildRangeInfoKHR AccelerationStructureBuildRangeInfo {};
@@ -240,7 +258,6 @@ void vkAccelerationStructureData::InitTLAS(std::vector<glm::mat4> &Transforms, s
 
     Context->SubmitCommandBufferImmediate(CommandBuffer);
 
-    Context->DestroyBuffer(ScratchBufferHandle);
 }
 
 void vkAccelerationStructureData::UpdateInstanceTransform(std::vector<u32> &Indices, std::vector<m4x4*> &Transforms)
@@ -293,7 +310,9 @@ void vkAccelerationStructureData::UpdateInstanceTransform(std::vector<u32> &Indi
 
     CreateAS(AccelerationStructureBuildSizesInfo, vk::AccelerationStructureTypeKHR::eTopLevel);
 
-    bufferHandle ScratchBufferHandle = Context->CreateBuffer(AccelerationStructureBuildSizesInfo.buildScratchSize, gfx::bufferUsage::StorageBuffer | gfx::bufferUsage::ShaderDeviceAddress, gfx::memoryUsage::GpuOnly);
+
+    if(vkAccelerationStructureData::ScratchBuffer == gfx::InvalidHandle)
+       vkAccelerationStructureData::ScratchBuffer  = Context->CreateBuffer(1 << 25, gfx::bufferUsage::StorageBuffer | gfx::bufferUsage::ShaderDeviceAddress, gfx::memoryUsage::GpuOnly);
 
     vk::AccelerationStructureBuildGeometryInfoKHR AccelerationBuildGeometryInfo;
     AccelerationBuildGeometryInfo.type = vk::AccelerationStructureTypeKHR::eTopLevel;
@@ -302,7 +321,7 @@ void vkAccelerationStructureData::UpdateInstanceTransform(std::vector<u32> &Indi
     AccelerationBuildGeometryInfo.dstAccelerationStructure = AccelerationStructure;
     AccelerationBuildGeometryInfo.geometryCount=1;
     AccelerationBuildGeometryInfo.pGeometries=&AccelerationStructureGeometry;
-    AccelerationBuildGeometryInfo.scratchData.deviceAddress = VkContext->GetBufferDeviceAddress(ScratchBufferHandle);
+    AccelerationBuildGeometryInfo.scratchData.deviceAddress = VkContext->GetBufferDeviceAddress(ScratchBuffer);
     
 
     VkAccelerationStructureBuildRangeInfoKHR AccelerationStructureBuildRangeInfo {};
@@ -326,7 +345,6 @@ void vkAccelerationStructureData::UpdateInstanceTransform(std::vector<u32> &Indi
 
     Context->SubmitCommandBufferImmediate(CommandBuffer);
 
-    Context->DestroyBuffer(ScratchBufferHandle);
 }
 
 
@@ -375,7 +393,9 @@ void vkAccelerationStructureData::RemoveInstances(std::vector<u32> &IndicesToRem
 
     CreateAS(AccelerationStructureBuildSizesInfo, vk::AccelerationStructureTypeKHR::eTopLevel);
 
-    bufferHandle ScratchBufferHandle = Context->CreateBuffer(AccelerationStructureBuildSizesInfo.buildScratchSize, gfx::bufferUsage::StorageBuffer | gfx::bufferUsage::ShaderDeviceAddress, gfx::memoryUsage::GpuOnly);
+
+    if(vkAccelerationStructureData::ScratchBuffer == gfx::InvalidHandle)
+       vkAccelerationStructureData::ScratchBuffer  = Context->CreateBuffer(1 << 25, gfx::bufferUsage::StorageBuffer | gfx::bufferUsage::ShaderDeviceAddress, gfx::memoryUsage::GpuOnly);
 
     vk::AccelerationStructureBuildGeometryInfoKHR AccelerationBuildGeometryInfo;
     AccelerationBuildGeometryInfo.type = vk::AccelerationStructureTypeKHR::eTopLevel;
@@ -384,7 +404,7 @@ void vkAccelerationStructureData::RemoveInstances(std::vector<u32> &IndicesToRem
     AccelerationBuildGeometryInfo.dstAccelerationStructure = AccelerationStructure;
     AccelerationBuildGeometryInfo.geometryCount=1;
     AccelerationBuildGeometryInfo.pGeometries=&AccelerationStructureGeometry;
-    AccelerationBuildGeometryInfo.scratchData.deviceAddress = VkContext->GetBufferDeviceAddress(ScratchBufferHandle);
+    AccelerationBuildGeometryInfo.scratchData.deviceAddress = VkContext->GetBufferDeviceAddress(ScratchBuffer);
     
 
     VkAccelerationStructureBuildRangeInfoKHR AccelerationStructureBuildRangeInfo {};
@@ -408,7 +428,6 @@ void vkAccelerationStructureData::RemoveInstances(std::vector<u32> &IndicesToRem
 
     Context->SubmitCommandBufferImmediate(CommandBuffer);
 
-    Context->DestroyBuffer(ScratchBufferHandle);
 }
 
 }

@@ -42,10 +42,14 @@ void indexedGeometryBuffers::BuildBuffers()
 		BLAS = Context->CreateBLAccelerationStructure(this->VertexData.size(), sizeof(vertex), gfx::format::R32G32B32_SFLOAT, VBuffer->VertexStreams[0].Buffer,
                                                       gfx::indexType::Uint32, this->IndexData.size() / 3, this->IndexBuffer, 0);
     }
-
-    
-
 #endif
+
+    f32 InverseVertexCount = 1.0 / this->VertexData.size();
+    Centroid = v3f(0);
+    for(u32 i=0; i<this->VertexData.size(); i++)
+    {
+        Centroid += v3f(this->VertexData[i].PositionUvX) * InverseVertexCount;
+    }
 
     this->Count = this->IndexData.size();
     this->Start=0;  

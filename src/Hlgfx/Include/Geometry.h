@@ -30,7 +30,8 @@ struct indexedGeometryBuffers
     std::vector<u32> IndexData;
 
     u32 SceneBufferOffset;
-    
+
+    v3f Centroid;
 
     std::string Name;
     u32 ID;

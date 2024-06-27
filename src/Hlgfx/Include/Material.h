@@ -52,6 +52,7 @@ struct material
     virtual std::shared_ptr<material> Clone() = 0;
     static std::shared_ptr<material> Deserialize(const std::string &FileName);
     b8 ShouldRecreate = false;
+    b8 ShouldUpdateUniforms = false;
     std::unordered_map<u32, std::shared_ptr<texture>> AllTextures;
 };
 

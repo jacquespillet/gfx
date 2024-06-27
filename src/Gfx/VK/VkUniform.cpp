@@ -27,6 +27,8 @@ uniformGroup::~uniformGroup()
 uniformGroup &uniformGroup::Reset()
 {
     this->ApiData = std::make_shared<vkUniformData>();
+    this->Uniforms.clear();
+    this->Bindings.clear();
     return *this;
 }
 
@@ -103,8 +105,8 @@ uniformGroup & uniformGroup::Update()
                 GET_API_DATA(VkAccelerationStructure, vkAccelerationStructureData, AccelerationStructure);
                     // vk::DescriptorImageInfo DescriptorImageInfo(Texture->GetSampler(), Texture->GetNativeView(imageView::NATIVE), vk::ImageLayout::eShaderReadOnlyOptimal);
 
-                DescriptorAccelerationStructures.emplace_back();
-                vk::WriteDescriptorSetAccelerationStructureKHR &AccelerationStructureInfo = DescriptorAccelerationStructures.back();
+                DescriptorAccelerationStructures.push_back(vk::WriteDescriptorSetAccelerationStructureKHR());
+                vk::WriteDescriptorSetAccelerationStructureKHR &AccelerationStructureInfo = DescriptorAccelerationStructures[DescriptorAccelerationStructures.size()-1];
                 AccelerationStructureInfo.setAccelerationStructureCount(1).setPAccelerationStructures(&VkAccelerationStructure->AccelerationStructure);
 
                 DescriptorWrite.setDescriptorType(vk::DescriptorType::eAccelerationStructureKHR)

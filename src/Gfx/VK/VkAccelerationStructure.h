@@ -22,6 +22,7 @@ struct vkAccelerationStructureData
 
     void CreateAS(vk::AccelerationStructureBuildSizesInfoKHR Size, vk::AccelerationStructureTypeKHR Type);
     void DestroyAS();
-        
+
+    static gfx::bufferHandle ScratchBuffer;    
 };
 }
