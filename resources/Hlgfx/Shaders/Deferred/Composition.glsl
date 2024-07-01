@@ -106,6 +106,8 @@ void main()
 	vec3 Position = PositionDepth.xyz;
 	float Depth = PositionDepth.w;
 
+    if(Depth == 0.0f) discard;
+
 	vec3 Normal = texture(SamplerNormal, inUV).xyz * 2.0 - 1.0;
 
 

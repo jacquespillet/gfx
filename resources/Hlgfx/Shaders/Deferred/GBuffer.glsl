@@ -11,7 +11,7 @@ struct PSInput
     vec3 T;
     vec3 B;
     vec3 N;
-    vec4 DepthMapUV[MaxLights];
+    float Depth;
 };
 
 DECLARE_UNIFORM_BUFFER(CameraDescriptorSetBinding, CameraBinding, Camera)
@@ -119,11 +119,7 @@ void main()
 	Output.B = FragBitangent;
 	Output.N = Output.FragNormal;
 
-    for(int i=0; i<LightCount; i++)
-    {
-        Output.DepthMapUV[i] =  Lights[i].LightSpaceMatrix * vec4(Output.FragPosition, 1);
-    }
-    
+    Output.Depth = length(CameraPosition.xyz - Output.FragPosition);
     gl_Position = OutPosition;
 }
 
@@ -183,7 +179,7 @@ void main()
 	outAlbedoMetallicRoughnessOcclusionOcclusionStrength.b = packHalf2x16(vec2(MaterialInfo.Metallic, MaterialInfo.PerceptualRoughness));
 	outAlbedoMetallicRoughnessOcclusionOcclusionStrength.a = packHalf2x16(vec2(AmbientOcclusion, Material.OcclusionStrength));        
     
-    outPositionDepth = vec4(Input.FragPosition, 0);
+    outPositionDepth = vec4(Input.FragPosition, Input.Depth);
     outNormal.xyz = Normal  * 0.5 + 0.5;
     outEmission.xyz = FinalEmissive;
 }

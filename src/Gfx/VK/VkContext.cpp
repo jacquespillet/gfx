@@ -1525,6 +1525,9 @@ void context::Cleanup()
 {
     GET_CONTEXT(VkData, this);
 
+    if(this->RTXEnabled)
+        DestroyBuffer(vkAccelerationStructureData::ScratchBuffer);
+
     VkData->Device.destroyDescriptorSetLayout(VkData->BindlessDescriptorSetLayout);
     VkData->Device.freeDescriptorSets(VkData->DescriptorPool, 1, &VkData->BindlessDescriptorSet);
 
@@ -1549,8 +1552,6 @@ void context::Cleanup()
     glslang::FinalizeProcess();
 
     vmaDestroyAllocator(VkData->Allocator);
-    
-    //VkData->Instance.destroyDebugUtilsMessengerEXT(VkData->DebugUtilsMessenger, nullptr, VkData->DynamicLoader);
     
     VkData->Device.destroy();
     VkData->Instance.destroySurfaceKHR(VkData->Surface);

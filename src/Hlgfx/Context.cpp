@@ -874,6 +874,7 @@ void context::Cleanup()
 {
     GfxContext->WaitIdle();
     
+
     this->MainRenderer = nullptr;
 
     //Clean project

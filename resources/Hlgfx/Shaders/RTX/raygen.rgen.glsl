@@ -37,24 +37,23 @@ void main()
     vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
 
     vec2 UV = (pixelCenter/vec2(gl_LaunchSizeEXT.xy));
-    vec3 Origin = texture(SamplerPositionDepth, UV).xyz;
-    vec3 Normal = texture(SamplerNormal, UV).xyz * 2.0 - 1.0;;
+    vec4 PositionDepth = texture(SamplerPositionDepth, UV);
+    vec3 Normal = texture(SamplerNormal, UV).xyz * 2.0 - 1.0;
+
+
+    vec3 Origin = PositionDepth.xyz;
+    float Depth = PositionDepth.w;
+    if(Depth == 0.0f) return;
 
     vec3 EyeDir = normalize(Origin - CameraPosition.xyz);
 
     vec3 Direction = reflect(EyeDir, Normal);
 
-    uint  flags = gl_RayFlagsOpaqueEXT;
-
-
     vec2 LaunchID = vec2(gl_LaunchIDEXT.xy) / gl_LaunchSizeEXT.xy;
     LaunchID.y = 1.0 - LaunchID.y;
 
-    // Origin = (inverse(ViewMatrix) * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
-    // vec4 Target = inverse(ProjectionMatrix) * vec4((LaunchID) * 2.0 - 1.0, 0.0, 1.0);
-    // Direction = (inverse(ViewMatrix) * vec4(normalize(Target.xyz), 0.0)).xyz;
-
-    traceRayEXT(topLevelAS, flags, 0xff, 0, 0, 0, Origin.xyz, 0.001, Direction.xyz, 10000.0, 0);					    
+    // Args : AS, RayFlags, CullMask, sbtRecordOffset, SbtRecordStride, MissIndex, rayOrigin, tNear, rayDirection, tFar, payload
+    traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, Origin.xyz, 0.001, Direction.xyz, 10000.0, 0);					    
     vec3 ReflectedColour = hitValue;
     
 

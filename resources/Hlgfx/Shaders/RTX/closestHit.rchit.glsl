@@ -100,7 +100,7 @@ void main()
     vec2 UV2 = vec2(V2.PositionUvX.w, V2.NormalUvY.w);
 
     uint MaterialIndex = MaterialIndices[gl_InstanceID];
-    uint TextureIndex = uint(Materials[MaterialIndex].ColourTextureID);
+    int TextureIndex = int(Materials[MaterialIndex].ColourTextureID);
 
 
     const vec3 Barycentric = vec3(1.0f - attribs.x - attribs.y, attribs.x, attribs.y);
@@ -112,10 +112,13 @@ void main()
     vec4 BaseColour = vec4(1,1,1,1);
     BaseColour = vec4(Materials[MaterialIndex].BaseColorFactor, Materials[MaterialIndex].OpacityFactor);
 
-    vec4 SampleCol = texture(Textures[TextureIndex], UV);
-    SampleCol.rgb = pow(SampleCol.rgb, vec3(2.2,2.2,2.2));
-    SampleCol = mix(vec4(1,1,1,1), SampleCol, Materials[MaterialIndex].UseBaseColor);
-    BaseColour.rgb *= SampleCol.rgb;
+    if(TextureIndex >= 0)
+    {
+        vec4 SampleCol = texture(Textures[TextureIndex], UV);
+        SampleCol.rgb = pow(SampleCol.rgb, vec3(2.2,2.2,2.2));
+        SampleCol = mix(vec4(1,1,1,1), SampleCol, Materials[MaterialIndex].UseBaseColor);
+        BaseColour.rgb *= SampleCol.rgb;
+    }
 
     // 
 
